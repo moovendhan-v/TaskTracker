@@ -1,1 +1,13 @@
 research-data/
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl.bak
+infra/terraform/terraform.tfvars
