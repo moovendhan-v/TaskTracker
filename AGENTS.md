@@ -57,3 +57,16 @@ To audit the whole app against these rules and fix what's missing, use the `saas
 ## Website research with REA
 
 REA (reverse-engineering MCP server) is available. Before using any of its browser, network or bundle tools on a third-party website, follow [docs/research/REA_RESEARCH_PROTOCOL.md](docs/research/REA_RESEARCH_PROTOCOL.md): check the site's terms, log the decision in `docs/research/log.md`, and get the user's approval in chat. Never bypass access controls, call private APIs, or copy proprietary code, assets or design. Build original implementations.
+
+## gstack
+
+gstack skills are installed globally for Claude Code (`~/.claude/skills/gstack`). Use them for the normal build loop in this repo:
+
+- **Plan before building:** `/office-hours` to sharpen the idea, then `/autoplan` (or `/plan-eng-review`, `/plan-design-review`) before writing code for any non-trivial feature.
+- **Build and ship:** implement the plan, then `/review` on the diff, `/qa <local URL>` to test the running app, and `/ship` to open the PR.
+- **Security:** `/cso` for a security audit, alongside the `saas-security-audit` skill and the rules above.
+- **Debugging:** `/investigate` for root-cause analysis before fixing bugs.
+- **Design:** `/design-review` for visual and UX polish of our own pages.
+- **Web browsing:** use gstack's `/browse` for browsing and QA of our own app and docs, instead of `mcp__claude-in-chrome__*` tools. For any third-party website, the "Website research with REA" protocol above still applies first: `/browse`, `/scrape` and `/setup-browser-cookies` count as automated access and need the same terms check and user approval.
+
+If a gstack skill reports that its browser or binaries aren't built, tell the user to run `cd ~/.claude/skills/gstack && ./setup` rather than working around it.
