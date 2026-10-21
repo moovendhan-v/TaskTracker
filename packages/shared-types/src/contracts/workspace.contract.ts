@@ -1,10 +1,12 @@
-import type { WorkspaceRole } from '../domain/workspace.js';
+import type { Permission } from '../domain/permissions.js';
 
 export interface WorkspaceResponse {
   id: string;
   name: string;
   color: string;
-  role: WorkspaceRole;
+  roleName: string;
+  /** The caller's effective permissions in this workspace, for showing or hiding UI. */
+  permissions: Permission[];
   createdAt: string;
 }
 
