@@ -53,3 +53,7 @@ These cover the OWASP Top 10 (2025), API Security Top 10 (2023) and LLM Top 10 (
 ## Full audit
 
 To audit the whole app against these rules and fix what's missing, use the `saas-security-audit` skill (19 checks + OWASP pass) in `.claude/skills/saas-security-audit/SKILL.md` (in Claude Code: `/saas-security-audit`). It reports progress as `NN/19 FIXED`.
+
+## Website research with REA
+
+REA (reverse-engineering MCP server) is available. Before using any of its browser, network or bundle tools on a third-party website, follow [docs/research/REA_RESEARCH_PROTOCOL.md](docs/research/REA_RESEARCH_PROTOCOL.md): check the site's terms, log the decision in `docs/research/log.md`, and get the user's approval in chat. Never bypass access controls, call private APIs, or copy proprietary code, assets or design. Build original implementations.
