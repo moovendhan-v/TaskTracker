@@ -9,9 +9,8 @@
     "start": "node --enable-source-maps dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "openapi:export": "pnpm build && node dist/openapi/export-openapi.js ../../packages/sdk/openapi.json",
-    "migration:run": "pnpm build && node dist/database/run-migrations.js",
-    "auth:migrate": "npx @better-auth/cli migrate --config dist/auth/better-auth.config.js"
+    "openapi:export": "pnpm build && node dist/cli/export-openapi.js ../../packages/sdk/openapi.json",
+    "migration:run": "pnpm build && node dist/cli/run-migrations.js"
   },
   "dependencies": {
     "@nestjs/common": "12.2.0",

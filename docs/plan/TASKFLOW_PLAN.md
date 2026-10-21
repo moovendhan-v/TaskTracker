@@ -38,6 +38,8 @@ The API uses `@RequirePermissions(...)` plus a `WorkspaceAccessGuard`. The guard
 
 ## Architecture
 
+The file-by-file layout and SOLID rules are in [`docs/architecture/FOLDER_STRUCTURE.md`](../architecture/FOLDER_STRUCTURE.md). Summary:
+
 ```
 apps/
   api/          NestJS + TypeORM + Better Auth, one module per feature
@@ -50,7 +52,7 @@ infra/
   terraform/    the same local stack described with the Docker provider
 ```
 
-- **Backend modules** (NestJS style): `auth`, `users`, `workspaces`, `members`, `roles`, `spaces`, `lists`, `tasks`, `comments`, `sprints`, `documents`, `hr`, `audit`, `admin`, `health`. Each module has `controller → service → repository (TypeORM)`, DTOs implementing the shared contracts, and entities.
+- **Backend modules** (NestJS style): `auth`, `users`, `workspaces`, `members`, `roles`, `spaces`, `lists`, `tasks`, `comments`, `sprints`, `documents`, `hr`, `audit`, `admin`, `health`. Each module has four layers: `presentation` (controller, DTOs) → `application` (service, mapper) → `domain` (types, repository port, policies) ← `infrastructure` (TypeORM entity and repository adapter).
 - **Frontend modules** mirror the backend: `src/modules/<feature>/{api,hooks,components,pages,store}`. Shared UI lives in `src/components/ui` (shadcn) and `src/components/common`.
 - **SOLID:** controllers only handle HTTP, services hold the business rules, repositories handle persistence. Permission checks live in one place (guard + `AccessService`). Features depend on interfaces such as `AuditLogger` and `Clock` instead of on concrete classes.
 - **SDK flow:** `pnpm sdk:generate` → API writes `packages/sdk/openapi.json` → `openapi-typescript` generates `schema.d.ts` → `openapi-fetch` client used by the web app.

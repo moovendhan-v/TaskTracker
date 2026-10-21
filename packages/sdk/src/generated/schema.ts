@@ -4,20 +4,84 @@
  */
 
 export interface paths {
-    "/api/health": {
+    "/api/workspaces/{workspaceId}/members": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["Health_check"];
+        get: operations["Members_list"];
         put?: never;
-        post?: never;
+        post: operations["Members_add"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/members/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["Members_leave"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["Members_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["Members_updateRole"];
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Roles_list"];
+        put?: never;
+        post: operations["Roles_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/roles/{roleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["Roles_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["Roles_update"];
         trace?: never;
     };
     "/api/me": {
@@ -27,7 +91,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["Users_me"];
+        get: operations["Me_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Health_check"];
         put?: never;
         post?: never;
         delete?: never;
@@ -66,86 +146,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["Workspaces_update"];
-        trace?: never;
-    };
-    "/api/workspaces/{workspaceId}/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["Members_list"];
-        put?: never;
-        post: operations["Members_add"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{workspaceId}/members/{userId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["Members_remove"];
-        options?: never;
-        head?: never;
-        patch: operations["Members_updateRole"];
-        trace?: never;
-    };
-    "/api/workspaces/{workspaceId}/members/leave": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Members_leave"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{workspaceId}/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["Roles_list"];
-        put?: never;
-        post: operations["Roles_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{workspaceId}/roles/{roleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["Roles_remove"];
-        options?: never;
-        head?: never;
-        patch: operations["Roles_update"];
         trace?: never;
     };
     "/api/workspaces/{workspaceId}/spaces": {
@@ -264,11 +264,45 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        HealthDto: {
-            /** @enum {string} */
-            status: "ok" | "degraded";
+        MemberResponseDto: {
+            userId: string;
+            name: string;
+            email: string;
+            /** Format: uuid */
+            roleId: string;
+            roleName: string;
+            /** Format: date-time */
+            joinedAt: string;
         };
-        CurrentUserDto: {
+        AddMemberDto: {
+            /** Format: email */
+            email: string;
+            /** Format: uuid */
+            roleId: string;
+        };
+        AddMemberResultResponseDto: {
+            message: string;
+        };
+        UpdateMemberRoleDto: {
+            /** Format: uuid */
+            roleId: string;
+        };
+        RoleResponseDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            systemKey: string | null;
+            permissions: ("workspace.manage" | "members.manage" | "roles.manage" | "space.manage" | "list.manage" | "task.view" | "task.create" | "task.update" | "task.delete" | "task.assign" | "sprint.manage" | "doc.view" | "doc.create" | "doc.manage" | "hr.view" | "hr.manage" | "leave.request" | "leave.approve" | "audit.view")[];
+        };
+        CreateRoleDto: {
+            name: string;
+            permissions: ("workspace.manage" | "members.manage" | "roles.manage" | "space.manage" | "list.manage" | "task.view" | "task.create" | "task.update" | "task.delete" | "task.assign" | "sprint.manage" | "doc.view" | "doc.create" | "doc.manage" | "hr.view" | "hr.manage" | "leave.request" | "leave.approve" | "audit.view")[];
+        };
+        UpdateRoleDto: {
+            name?: string;
+            permissions?: ("workspace.manage" | "members.manage" | "roles.manage" | "space.manage" | "list.manage" | "task.view" | "task.create" | "task.update" | "task.delete" | "task.assign" | "sprint.manage" | "doc.view" | "doc.create" | "doc.manage" | "hr.view" | "hr.manage" | "leave.request" | "leave.approve" | "audit.view")[];
+        };
+        CurrentUserResponseDto: {
             id: string;
             name: string;
             email: string;
@@ -276,7 +310,11 @@ export interface components {
             /** @enum {string} */
             platformRole: "SUPER_ADMIN" | "USER";
         };
-        WorkspaceDto: {
+        HealthResponseDto: {
+            /** @enum {string} */
+            status: "ok" | "degraded";
+        };
+        WorkspaceResponseDto: {
             /** Format: uuid */
             id: string;
             name: string;
@@ -296,45 +334,7 @@ export interface components {
             /** @example #6366f1 */
             color?: string;
         };
-        MemberDto: {
-            userId: string;
-            name: string;
-            email: string;
-            /** Format: uuid */
-            roleId: string;
-            roleName: string;
-            /** Format: date-time */
-            joinedAt: string;
-        };
-        AddMemberDto: {
-            /** Format: email */
-            email: string;
-            /** Format: uuid */
-            roleId: string;
-        };
-        AddMemberResultDto: {
-            message: string;
-        };
-        UpdateMemberRoleDto: {
-            /** Format: uuid */
-            roleId: string;
-        };
-        RoleDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            systemKey: string | null;
-            permissions: ("workspace.manage" | "members.manage" | "roles.manage" | "space.manage" | "list.manage" | "task.view" | "task.create" | "task.update" | "task.delete" | "task.assign" | "sprint.manage" | "doc.view" | "doc.create" | "doc.manage" | "hr.view" | "hr.manage" | "leave.request" | "leave.approve" | "audit.view")[];
-        };
-        CreateRoleDto: {
-            name: string;
-            permissions: ("workspace.manage" | "members.manage" | "roles.manage" | "space.manage" | "list.manage" | "task.view" | "task.create" | "task.update" | "task.delete" | "task.assign" | "sprint.manage" | "doc.view" | "doc.create" | "doc.manage" | "hr.view" | "hr.manage" | "leave.request" | "leave.approve" | "audit.view")[];
-        };
-        UpdateRoleDto: {
-            name?: string;
-            permissions?: ("workspace.manage" | "members.manage" | "roles.manage" | "space.manage" | "list.manage" | "task.view" | "task.create" | "task.update" | "task.delete" | "task.assign" | "sprint.manage" | "doc.view" | "doc.create" | "doc.manage" | "hr.view" | "hr.manage" | "leave.request" | "leave.approve" | "audit.view")[];
-        };
-        SpaceDto: {
+        SpaceResponseDto: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -352,7 +352,7 @@ export interface components {
             name?: string;
             color?: string;
         };
-        TaskListDto: {
+        TaskListResponseDto: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -367,7 +367,7 @@ export interface components {
         UpdateTaskListDto: {
             name?: string;
         };
-        TaskDto: {
+        TaskResponseDto: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -387,13 +387,14 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
-        TaskPageDto: {
-            items: components["schemas"]["TaskDto"][];
+        TaskPageResponseDto: {
+            items: components["schemas"]["TaskResponseDto"][];
             page: number;
             pageSize: number;
             total: number;
         };
         CreateTaskDto: {
+            title: string;
             description?: string;
             /** @enum {string} */
             status?: "todo" | "in_progress" | "in_review" | "done";
@@ -402,9 +403,9 @@ export interface components {
             /** Format: date-time */
             dueDate?: string | null;
             assigneeId?: string | null;
-            title: string;
         };
         UpdateTaskDto: {
+            title?: string;
             description?: string;
             /** @enum {string} */
             status?: "todo" | "in_progress" | "in_review" | "done";
@@ -413,7 +414,6 @@ export interface components {
             /** Format: date-time */
             dueDate?: string | null;
             assigneeId?: string | null;
-            title?: string;
             position?: number;
         };
     };
@@ -425,166 +425,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    Health_check: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthDto"];
-                };
-            };
-        };
-    };
-    Users_me: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CurrentUserDto"];
-                };
-            };
-        };
-    };
-    Workspaces_list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceDto"][];
-                };
-            };
-        };
-    };
-    Workspaces_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateWorkspaceDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceDto"];
-                };
-            };
-        };
-    };
-    Workspaces_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceDto"];
-                };
-            };
-            /** @description Missing workspace permission */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Workspaces_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Missing workspace permission */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Workspaces_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateWorkspaceDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceDto"];
-                };
-            };
-            /** @description Missing workspace permission */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     Members_list: {
         parameters: {
             query?: never;
@@ -601,7 +441,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberDto"][];
+                    "application/json": components["schemas"]["MemberResponseDto"][];
                 };
             };
             /** @description Missing workspace permission */
@@ -633,9 +473,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AddMemberResultDto"];
+                    "application/json": components["schemas"]["AddMemberResultResponseDto"];
                 };
             };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Members_leave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
             /** @description Missing workspace permission */
             403: {
                 headers: {
@@ -687,29 +547,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberDto"];
+                    "application/json": components["schemas"]["MemberResponseDto"];
                 };
             };
-            /** @description Missing workspace permission */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Members_leave: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
             /** @description Missing workspace permission */
             403: {
                 headers: {
@@ -735,7 +575,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RoleDto"][];
+                    "application/json": components["schemas"]["RoleResponseDto"][];
                 };
             };
             /** @description Missing workspace permission */
@@ -767,7 +607,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RoleDto"];
+                    "application/json": components["schemas"]["RoleResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
@@ -821,7 +661,167 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RoleDto"];
+                    "application/json": components["schemas"]["RoleResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Me_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentUserResponseDto"];
+                };
+            };
+        };
+    };
+    Health_check: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthResponseDto"];
+                };
+            };
+        };
+    };
+    Workspaces_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"][];
+                };
+            };
+        };
+    };
+    Workspaces_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWorkspaceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"];
+                };
+            };
+        };
+    };
+    Workspaces_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Workspaces_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Workspaces_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkspaceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
@@ -849,7 +849,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpaceDto"][];
+                    "application/json": components["schemas"]["SpaceResponseDto"][];
                 };
             };
             /** @description Missing workspace permission */
@@ -881,7 +881,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpaceDto"];
+                    "application/json": components["schemas"]["SpaceResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
@@ -935,7 +935,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpaceDto"];
+                    "application/json": components["schemas"]["SpaceResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
@@ -963,7 +963,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskListDto"][];
+                    "application/json": components["schemas"]["TaskListResponseDto"][];
                 };
             };
             /** @description Missing workspace permission */
@@ -996,7 +996,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskListDto"];
+                    "application/json": components["schemas"]["TaskListResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
@@ -1050,7 +1050,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskListDto"];
+                    "application/json": components["schemas"]["TaskListResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
@@ -1084,7 +1084,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskPageDto"];
+                    "application/json": components["schemas"]["TaskPageResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
@@ -1117,7 +1117,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskDto"];
+                    "application/json": components["schemas"]["TaskResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
@@ -1146,7 +1146,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskDto"];
+                    "application/json": components["schemas"]["TaskResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
@@ -1200,7 +1200,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskDto"];
+                    "application/json": components["schemas"]["TaskResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
