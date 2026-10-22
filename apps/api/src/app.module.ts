@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppConfigModule } from './config/config.module.js';
 import { AccessModule } from './core/access/access.module.js';
+import { DataScopeInterceptor } from './core/access/data-scope.interceptor.js';
 import { AuditModule } from './core/audit/audit.module.js';
 import { AuthModule } from './core/auth/auth.module.js';
 import { SessionGuard } from './core/auth/session.guard.js';
@@ -57,6 +58,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     // Order matters: the session guard sets req.user, which the throttler uses as its key.
     { provide: APP_GUARD, useClass: SessionGuard },
     { provide: APP_GUARD, useClass: UserThrottlerGuard },
+    // Runs after the guards: opens each operation's transaction with its row-level security scope.
+    { provide: APP_INTERCEPTOR, useClass: DataScopeInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })

@@ -5,6 +5,7 @@ import type { Env } from '../../config/env.schema.js';
 import { buildDataSourceOptions } from './data-source-options.js';
 import { DatabaseHealthIndicator } from './database-health.indicator.js';
 import { pgPoolProvider, PG_POOL } from './pg-pool.provider.js';
+import { RowLevelSecurityCheck } from './row-level-security.check.js';
 import { TransactionalManager } from './transactional-manager.js';
 import { TypeOrmUnitOfWork } from './typeorm-unit-of-work.js';
 import { UnitOfWork } from './unit-of-work.port.js';
@@ -16,6 +17,7 @@ import { UnitOfWork } from './unit-of-work.port.js';
     TransactionalManager,
     { provide: UnitOfWork, useClass: TypeOrmUnitOfWork },
     DatabaseHealthIndicator,
+    RowLevelSecurityCheck,
     pgPoolProvider,
   ],
   exports: [TransactionalManager, UnitOfWork, DatabaseHealthIndicator, PG_POOL],

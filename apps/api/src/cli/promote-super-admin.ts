@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { loadEnv } from '../config/env.schema.js';
 import { buildDataSourceOptions } from '../core/database/data-source-options.js';
+import { APPLY_SCOPE_SQL, toScopeSettings } from '../core/database/data-scope.js';
 
 const CLI_ACTOR = 'system:cli';
 
@@ -21,6 +22,8 @@ async function main(): Promise<void> {
   await dataSource.initialize();
   try {
     await dataSource.transaction(async (manager) => {
+      // Platform-level audit entries have no workspace, so only the platform scope may write them.
+      await manager.query(APPLY_SCOPE_SQL, toScopeSettings({ kind: 'platform' }));
       const rows: { id: string; platformRole: string }[] = await manager.query(
         `SELECT id, "platformRole" FROM "user" WHERE LOWER(email) = LOWER($1) FOR UPDATE`,
         [email],

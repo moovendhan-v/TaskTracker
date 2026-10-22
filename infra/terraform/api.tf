@@ -36,10 +36,13 @@ resource "docker_image" "api" {
 
 # One-off: Better Auth tables, then TaskFlow migrations. Terraform waits for it to exit.
 resource "docker_container" "migrate" {
-  name     = "${var.project}-migrate"
-  image    = docker_image.api.image_id
-  command  = ["node", "dist/cli/run-migrations.js"]
-  env      = local.api_env
+  name    = "${var.project}-migrate"
+  image   = docker_image.api.image_id
+  command = ["node", "dist/cli/run-migrations.js"]
+  # Only the migrate job gets the owner role, which can change the schema.
+  env = concat(local.api_env, [
+    "MIGRATION_DATABASE_URL=postgres://${var.app_db_owner}:${urlencode(var.app_db_owner_password)}@postgres:5432/${var.postgres_db}",
+  ])
   must_run = false
   attach   = true
   logs     = true

@@ -12,6 +12,8 @@ import './enums.js';
 export const GRAPHQL_PATH = '/graphql';
 export const MAX_QUERY_DEPTH = 8;
 export const MAX_QUERY_COMPLEXITY = 5_000;
+/** Bounds parsing work before validation runs. The largest SDK operation is a few hundred tokens. */
+export const MAX_QUERY_TOKENS = 2_000;
 
 /** Removes "Did you mean …?" hints, which would reveal schema names when introspection is off. */
 function withoutSchemaHints(error: GraphQLFormattedError): GraphQLFormattedError {
@@ -41,6 +43,7 @@ function withoutSchemaHints(error: GraphQLFormattedError): GraphQLFormattedError
           csrfPrevention: true,
           includeStacktraceInErrorResponses: false,
           context: ({ req, res }: { req: unknown; res: unknown }) => ({ req, res }),
+          parseOptions: { maxTokens: MAX_QUERY_TOKENS },
           validationRules: [depthLimitRule(MAX_QUERY_DEPTH)],
           plugins: [ApolloServerPluginLandingPageDisabled(), complexityPlugin(MAX_QUERY_COMPLEXITY)],
           formatError: (error) => (production ? withoutSchemaHints(error) : error),

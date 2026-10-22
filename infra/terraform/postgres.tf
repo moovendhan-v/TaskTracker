@@ -16,6 +16,8 @@ resource "docker_container" "postgres" {
     "POSTGRES_USER=${var.postgres_superuser}",
     "POSTGRES_PASSWORD=${var.postgres_password}",
     "POSTGRES_DB=${var.postgres_db}",
+    "APP_DB_OWNER=${var.app_db_owner}",
+    "APP_DB_OWNER_PASSWORD=${var.app_db_owner_password}",
     "APP_DB_USER=${var.app_db_user}",
     "APP_DB_PASSWORD=${var.app_db_password}",
   ]

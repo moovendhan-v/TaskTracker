@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { DataScope } from './data-scope.js';
 import { TransactionalManager } from './transactional-manager.js';
 import { UnitOfWork } from './unit-of-work.port.js';
 
@@ -10,6 +11,10 @@ export class TypeOrmUnitOfWork extends UnitOfWork {
 
   /** Nested calls join the outer transaction instead of opening a new one. */
   run<T>(work: () => Promise<T>): Promise<T> {
-    return this.transactional.inTransaction ? work() : this.transactional.runInTransaction(work);
+    return this.transactional.runInTransaction(work);
+  }
+
+  runInScope<T>(scope: DataScope, work: () => Promise<T>): Promise<T> {
+    return this.transactional.runInScope(scope, work);
   }
 }

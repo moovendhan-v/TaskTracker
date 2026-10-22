@@ -6,14 +6,17 @@ name: taskflow
 x-api-env: &api-env
   NODE_ENV: production
   PORT: "3000"
-  DATABASE_URL: postgres://${APP_DB_USER:-taskflow}:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-taskflow}
+  # Runtime role: data only, subject to row-level security.
+  DATABASE_URL: postgres://${APP_DB_USER:-taskflow_app}:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-taskflow}
   DATABASE_SSL: "false"
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env}
   # The browser reaches the API through the web container's /api proxy, so both share one origin.
   BETTER_AUTH_URL: ${PUBLIC_URL:-http://localhost:8080}
   CORS_ORIGINS: ${PUBLIC_URL:-http://localhost:8080}
   TRUST_PROXY: "1"
-  TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+  # Production builds require a CAPTCHA. The default is Cloudflare's public test secret, which
+  # always passes; set your own keys for a real deployment.
+  TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-1x0000000000000000000000000000000AA}
 
 services:
   postgres:
@@ -23,7 +26,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-taskflow}
-      APP_DB_USER: ${APP_DB_USER:-taskflow}
+      APP_DB_OWNER: ${APP_DB_OWNER:-taskflow_owner}
+      APP_DB_OWNER_PASSWORD: ${APP_DB_OWNER_PASSWORD:?set APP_DB_OWNER_PASSWORD in .env}
+      APP_DB_USER: ${APP_DB_USER:-taskflow_app}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -44,7 +49,10 @@ services:
       dockerfile: apps/api/Dockerfile
     image: taskflow-api:local
     command: ["node", "dist/cli/run-migrations.js"]
-    environment: *api-env
+    environment:
+      <<: *api-env
+      # Only the migrate job gets the owner role, which can change the schema.
+      MIGRATION_DATABASE_URL: postgres://${APP_DB_OWNER:-taskflow_owner}:${APP_DB_OWNER_PASSWORD:?set APP_DB_OWNER_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-taskflow}
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,7 +76,8 @@ services:
       context: ../..
       dockerfile: apps/web/Dockerfile
       args:
-        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
+        # Cloudflare's public test site key by default (pairs with the test secret above).
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-1x00000000000000000000AA}
     image: taskflow-web:local
     restart: unless-stopped
     depends_on:

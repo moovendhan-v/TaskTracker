@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import type { CreateWorkspaceRequest, UpdateWorkspaceRequest, WorkspaceResponse } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
@@ -33,10 +34,15 @@ export class WorkspacesService {
     });
   }
 
-  /** Creates the workspace, its built-in roles and the owner membership in one transaction. */
+  /**
+   * Creates the workspace, its built-in roles and the owner membership in one
+   * transaction, scoped to the new workspace so row-level security allows the writes.
+   */
   async create(actor: Actor, request: CreateWorkspaceRequest): Promise<WorkspaceResponse> {
-    return this.unitOfWork.run(async () => {
+    const workspaceId = randomUUID();
+    return this.unitOfWork.runInScope({ kind: 'workspace', workspaceId, userId: actor.userId }, async () => {
       const workspace = await this.workspaces.create({
+        id: workspaceId,
         name: request.name.trim(),
         color: request.color ?? DEFAULT_WORKSPACE_COLOR,
         ownerId: actor.userId,

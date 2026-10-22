@@ -3,7 +3,11 @@ import { MembershipReader, type MembershipGrant } from '../../../core/access/mem
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import { WorkspaceMemberRepository } from '../domain/workspace-member.repository.js';
 
-/** Adapter for core's MembershipReader port, wired in app.module via AccessModule.forRoot. */
+/**
+ * Adapter for core's MembershipReader port, wired in app.module via AccessModule.forRoot.
+ * Guards call it before the operation's own transaction exists, so each lookup
+ * opens a short transaction with the narrowest row-level security scope that works.
+ */
 @Injectable()
 export class TypeOrmMembershipReader extends MembershipReader {
   constructor(
@@ -13,16 +17,22 @@ export class TypeOrmMembershipReader extends MembershipReader {
     super();
   }
 
-  async findGrant(workspaceId: string, userId: string): Promise<MembershipGrant | null> {
-    const membership = await this.members.findMembership(workspaceId, userId);
-    return membership ? { roleId: membership.roleId, permissions: membership.permissions } : null;
+  /** User scope: a user can read their own memberships and the roles they hold. */
+  findGrant(workspaceId: string, userId: string): Promise<MembershipGrant | null> {
+    return this.transactional.runInScope({ kind: 'user', userId }, async () => {
+      const membership = await this.members.findMembership(workspaceId, userId);
+      return membership ? { roleId: membership.roleId, permissions: membership.permissions } : null;
+    });
   }
 
+  /** Platform scope: AccessService only asks this for super admins, who may enter any workspace. */
   workspaceExists(workspaceId: string): Promise<boolean> {
-    return this.transactional.manager
-      .createQueryBuilder()
-      .from('workspace', 'workspace')
-      .where('workspace.id = :workspaceId', { workspaceId })
-      .getExists();
+    return this.transactional.runInScope({ kind: 'platform' }, () =>
+      this.transactional.manager
+        .createQueryBuilder()
+        .from('workspace', 'workspace')
+        .where('workspace.id = :workspaceId', { workspaceId })
+        .getExists(),
+    );
   }
 }

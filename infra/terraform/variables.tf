@@ -39,14 +39,26 @@ variable "postgres_superuser" {
   default = "postgres"
 }
 
-variable "app_db_user" {
-  description = "Least-privilege role the API connects as."
+variable "app_db_owner" {
+  description = "Role that owns the schema and runs migrations. Only the migrate job uses it."
   type        = string
-  default     = "taskflow"
+  default     = "taskflow_owner"
+}
+
+variable "app_db_user" {
+  description = "Least-privilege role the API connects as: data access only, subject to row-level security."
+  type        = string
+  default     = "taskflow_app"
 }
 
 variable "postgres_password" {
   description = "Password for the Postgres superuser. Only the init script uses it."
+  type        = string
+  sensitive   = true
+}
+
+variable "app_db_owner_password" {
+  description = "Password for the schema owner role."
   type        = string
   sensitive   = true
 }
@@ -69,14 +81,14 @@ variable "better_auth_secret" {
 }
 
 variable "turnstile_secret_key" {
-  description = "Cloudflare Turnstile secret. Leave empty to turn the CAPTCHA off locally."
+  description = "Cloudflare Turnstile secret. Production builds require one; the default is Cloudflare's public test secret, which always passes."
   type        = string
-  default     = ""
+  default     = "1x0000000000000000000000000000000AA"
   sensitive   = true
 }
 
 variable "turnstile_site_key" {
-  description = "Cloudflare Turnstile site key, baked into the web build."
+  description = "Cloudflare Turnstile site key, baked into the web build. The default is Cloudflare's public test key."
   type        = string
-  default     = ""
+  default     = "1x00000000000000000000AA"
 }
