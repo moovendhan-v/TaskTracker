@@ -6,12 +6,24 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import type { GqlContextType } from '@nestjs/graphql';
 import type { Response } from 'express';
+import { GraphQLError } from 'graphql';
 import { QueryFailedError } from 'typeorm';
 import { DomainError, type DomainErrorKind } from '../../domain/domain-error.js';
 
 const PG_UNIQUE_VIOLATION = '23505';
 const PG_FOREIGN_KEY_VIOLATION = '23503';
+
+/** GraphQL `extensions.code` per HTTP status, following common Apollo conventions. */
+const GRAPHQL_CODES: Partial<Record<number, string>> = {
+  400: 'BAD_USER_INPUT',
+  401: 'UNAUTHENTICATED',
+  403: 'FORBIDDEN',
+  404: 'NOT_FOUND',
+  409: 'CONFLICT',
+  429: 'TOO_MANY_REQUESTS',
+};
 
 const DOMAIN_STATUS: Record<DomainErrorKind, HttpStatus> = {
   not_found: HttpStatus.NOT_FOUND,
@@ -33,14 +45,19 @@ interface ClientError {
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost): void {
-    const response = host.switchToHttp().getResponse<Response>();
+  catch(exception: unknown, host: ArgumentsHost): GraphQLError | void {
     const { status, message } = this.toClientError(exception);
-
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(exception instanceof Error ? exception.stack : String(exception));
     }
-    response.status(status).json({ statusCode: status, message });
+
+    // GraphQL errors are returned to the executor, which puts them in the response's `errors` array.
+    if (host.getType<GqlContextType>() === 'graphql') {
+      return new GraphQLError(Array.isArray(message) ? message.join(', ') : message, {
+        extensions: { code: GRAPHQL_CODES[status] ?? 'INTERNAL_SERVER_ERROR', statusCode: status },
+      });
+    }
+    host.switchToHttp().getResponse<Response>().status(status).json({ statusCode: status, message });
   }
 
   private toClientError(exception: unknown): ClientError {

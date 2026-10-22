@@ -11,9 +11,13 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "openapi.json"],
+  "files": [
+    "dist",
+    "openapi.json",
+    "schema.graphql"
+  ],
   "scripts": {
-    "generate": "openapi-typescript openapi.json -o src/generated/schema.ts",
+    "generate": "openapi-typescript openapi.json -o src/generated/schema.ts && node scripts/generate-graphql-types.mjs",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "echo \"no tests\""
@@ -22,6 +26,9 @@
     "openapi-fetch": "0.17.0"
   },
   "devDependencies": {
+    "@graphql-codegen/core": "6.2.2",
+    "@graphql-codegen/typescript": "6.1.2",
+    "graphql": "16.14.2",
     "openapi-typescript": "7.13.0",
     "typescript": "5.9.3"
   }

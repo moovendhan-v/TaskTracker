@@ -67,7 +67,8 @@ apps/api/
     ├── config/                       env schema and config module
     ├── core/                         cross-cutting building blocks used by every module
     ├── modules/                      one folder per business feature
-    ├── cli/                          operator scripts (migrations, OpenAPI export, promote admin)
+    ├── graphql-resolvers.ts          single list of every GraphQL resolver (app and schema export share it)
+    ├── cli/                          operator scripts (migrations, OpenAPI and GraphQL schema export, promote admin)
     └── openapi/                      Swagger document builder
 ```
 
@@ -89,6 +90,7 @@ src/config/
 src/cli/
 ├── run-migrations.ts                 Better Auth migrations, then TypeORM migrations
 ├── export-openapi.ts                 writes packages/sdk/openapi.json without a database
+├── export-graphql-schema.ts          writes packages/sdk/schema.graphql from RESOLVERS, without a database
 └── promote-super-admin.ts            operator-only: grants SUPER_ADMIN by email, writes an audit entry
 
 src/openapi/
@@ -147,13 +149,22 @@ src/core/
 │   ├── storage.port.ts               abstract class FileStorage { put, signedUrl, delete }
 │   ├── s3.storage.ts                 adapter (MinIO locally), private bucket, short-lived URLs
 │   └── file-type.validator.ts        magic-byte check, size limit, blocks HTML/SVG
+├── graphql/                          code-first GraphQL at /api/graphql; reuses the REST services and guards
+│   ├── graphql-api.module.ts         Apollo driver; no introspection, playground or error hints in production; CSRF prevention on
+│   ├── depth-limit.rule.ts           validation rule: rejects queries nested deeper than 8
+│   ├── complexity.plugin.ts          rejects queries above a cost of 5000 (blocks alias amplification)
+│   ├── page.type.ts                  PageOf<T>, PageArgs, WorkspacePageArgs (max 100), complexity estimators
+│   ├── args.ts                       WorkspaceIdArg, UuidArg
+│   ├── enums.ts                      registerEnumType for shared-types enums
+│   └── json-object.scalar.ts         output-only JSONObject scalar (audit metadata)
 └── http/
+    ├── request-context.ts            REST/GraphQL-agnostic request, workspaceId target and write detection for guards
     ├── types/authenticated-request.ts    SessionUser, WorkspaceAccess, Actor
     ├── decorators/
     │   ├── public.decorator.ts
     │   ├── current-actor.decorator.ts
     │   └── current-user.decorator.ts
-    ├── filters/all-exceptions.filter.ts  generic client errors, details to logs
+    ├── filters/all-exceptions.filter.ts  generic client errors (HTTP status or GraphQL error code), details to logs
     ├── guards/user-throttler.guard.ts    rate limit by user, falling back to IP
     ├── pipes/uuid.pipe.ts
     ├── dto/page-query.dto.ts         shared page/pageSize validation (max 100) and toPageRequest()
@@ -185,8 +196,13 @@ src/modules/<feature>/
         ├── create-<entity>.dto.ts    class-validator + Swagger, implements the shared request type
         ├── update-<entity>.dto.ts
         ├── <entity>-query.dto.ts     list filters and paging
-        └── <entity>.response.dto.ts  Swagger schema, implements the shared response type
+        ├── <entity>.response.dto.ts  Swagger schema, implements the shared response type
+    └── graphql/
+        ├── <feature>.resolver.ts     GraphQL only: same guards, permissions and service calls as the controller
+        └── <entity>.types.ts         @ObjectType / @InputType / @ArgsType classes with class-validator rules
 ```
+
+REST and GraphQL are two presentation adapters over one application layer, so a business rule or permission check is never written twice. Every resolver is listed in `src/graphql-resolvers.ts`; a spec fails if a `*.resolver.ts` file is missing from it.
 
 Tests sit next to the code they test: `application/<feature>.service.spec.ts` (using the fake from `testing/`) and `domain/<rule>.policy.spec.ts`. Services and policies throw `DomainError`, never Nest HTTP exceptions; `AllExceptionsFilter` turns the error kind into a status code.
 
@@ -518,13 +534,20 @@ packages/sdk/
 ├── package.json
 ├── tsconfig.json
 ├── openapi.json                      ✅ written by `pnpm --filter @taskflow/api openapi:export`
+├── schema.graphql                    ✅ written by `pnpm --filter @taskflow/api graphql:export`
+├── scripts/
+│   └── generate-graphql-types.mjs    ✅ runs @graphql-codegen/core with the typescript plugin
 └── src/
-    ├── index.ts                      ✅
+    ├── index.ts                      ✅ REST client, GraphQL client, `GraphQL` type namespace
     ├── client.ts                     ✅ createTaskFlowClient, unwrap, ApiError
-    └── generated/schema.ts           ✅ written by openapi-typescript; never edit by hand
+    ├── graphql-client.ts             ✅ createGraphQLClient (cookie auth, CSRF-safe content type)
+    ├── graphql-error.ts              ✅ GraphQLRequestError with the server's error `code`
+    └── generated/
+        ├── schema.ts                 ✅ written by openapi-typescript; never edit by hand
+        └── graphql.ts                ✅ written by generate-graphql-types.mjs; never edit by hand
 ```
 
-Flow: API DTO classes → `openapi.json` → `schema.ts` → web `*.api.ts`. Run `pnpm sdk:generate` after any API change, and commit all three generated outputs.
+Flow: API DTO classes → `openapi.json` → `schema.ts` → web `*.api.ts`, and resolver types → `schema.graphql` → `graphql.ts`. Run `pnpm sdk:generate` after any API change, and commit all generated outputs.
 
 ---
 

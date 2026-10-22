@@ -46,16 +46,17 @@ apps/
   web/          React + Vite + TanStack Router/Query + Zustand + shadcn/ui
 packages/
   shared-types/ domain constants, permission keys, request/response contracts
-  sdk/          typed client generated from the API's OpenAPI (Swagger) file
+  sdk/          typed clients generated from the API's OpenAPI (Swagger) file and GraphQL schema
 infra/
   docker/       docker-compose for postgres, api and web
   terraform/    the same local stack described with the Docker provider
 ```
 
+- **REST and GraphQL:** both are served by the API (`/api/...` and `/api/graphql`). Each module's `presentation/` has a controller and a `graphql/` resolver that call the same services and use the same guards, so permissions and business rules live in one place.
 - **Backend modules** (NestJS style): `auth`, `users`, `workspaces`, `members`, `roles`, `spaces`, `lists`, `tasks`, `comments`, `sprints`, `documents`, `hr`, `audit`, `admin`, `health`. Each module has four layers: `presentation` (controller, DTOs) → `application` (service, mapper) → `domain` (types, repository port, policies) ← `infrastructure` (TypeORM entity and repository adapter).
 - **Frontend modules** mirror the backend: `src/modules/<feature>/{api,hooks,components,pages,store}`. Shared UI lives in `src/components/ui` (shadcn) and `src/components/common`.
 - **SOLID:** controllers only handle HTTP, services hold the business rules, repositories handle persistence. Permission checks live in one place (guard + `AccessService`). Features depend on interfaces such as `AuditLogger` and `Clock` instead of on concrete classes.
-- **SDK flow:** `pnpm sdk:generate` → API writes `packages/sdk/openapi.json` → `openapi-typescript` generates `schema.d.ts` → `openapi-fetch` client used by the web app.
+- **SDK flow:** `pnpm sdk:generate` → API writes `packages/sdk/openapi.json` and `schema.graphql` → `openapi-typescript` generates `schema.ts` and GraphQL codegen generates `graphql.ts` → `openapi-fetch` client (used by the web app today) and a small GraphQL client.
 
 ## Security baseline (from AGENTS.md)
 
@@ -66,6 +67,7 @@ infra/
 - helmet (CSP, HSTS, nosniff, frame-ancestors, Referrer-Policy), CORS from `CORS_ORIGINS`, generic error filter in production.
 - Append-only `audit_log` for admin, role and HR actions.
 - Max page size 100; body size limit.
+- GraphQL: depth limit 8, query cost limit 5000, CSRF prevention, no batching; introspection, playground and "did you mean" hints are off in production.
 - Postgres RLS on tenant tables is a follow-up (phase 7). Until then, tenant isolation is enforced in the repository layer.
 
 ## Phases

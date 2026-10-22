@@ -7,6 +7,7 @@ import { AuditModule } from './core/audit/audit.module.js';
 import { AuthModule } from './core/auth/auth.module.js';
 import { SessionGuard } from './core/auth/session.guard.js';
 import { DatabaseModule } from './core/database/database.module.js';
+import { GraphqlApiModule } from './core/graphql/graphql-api.module.js';
 import { TimeModule } from './core/time/time.module.js';
 import { AllExceptionsFilter } from './core/http/filters/all-exceptions.filter.js';
 import { UserThrottlerGuard } from './core/http/guards/user-throttler.guard.js';
@@ -32,6 +33,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     AppConfigModule,
     DatabaseModule,
     TimeModule,
+    GraphqlApiModule,
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     AuthModule,
     AuditModule,

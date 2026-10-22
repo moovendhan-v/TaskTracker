@@ -8,13 +8,12 @@ import {
 import { Reflector } from '@nestjs/core';
 import { isUUID } from 'class-validator';
 import type { Permission } from '@taskflow/shared-types';
-import type { AuthenticatedRequest } from '../http/types/authenticated-request.js';
 import { AuditLogger } from '../audit/audit-logger.port.js';
+import { describeOperation, getRequest, getWorkspaceIdTarget, isWriteOperation } from '../http/request-context.js';
 import { AccessService } from './access.service.js';
 import { REQUIRED_PERMISSIONS_KEY } from './require-permissions.decorator.js';
 
-const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
-
+/** Works for REST (`:workspaceId` param) and GraphQL (`workspaceId` argument). */
 @Injectable()
 export class WorkspaceAccessGuard implements CanActivate {
   constructor(
@@ -24,8 +23,8 @@ export class WorkspaceAccessGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const workspaceId = request.params['workspaceId'];
+    const request = getRequest(context);
+    const workspaceId = getWorkspaceIdTarget(context);
     if (typeof workspaceId !== 'string' || !isUUID(workspaceId)) throw new NotFoundException();
 
     const access = await this.accessService.resolve(request.user, workspaceId);
@@ -38,7 +37,7 @@ export class WorkspaceAccessGuard implements CanActivate {
       ]) ?? [];
     if (!AccessService.hasAll(access, required)) throw new ForbiddenException('Missing workspace permission');
 
-    if (access.viaPlatformRole && !READ_METHODS.has(request.method)) {
+    if (access.viaPlatformRole && isWriteOperation(context)) {
       await this.auditLogger.record(
         { userId: request.user.id, platformRole: request.user.platformRole, ip: request.ip ?? null },
         {
@@ -46,7 +45,7 @@ export class WorkspaceAccessGuard implements CanActivate {
           targetType: 'workspace',
           targetId: workspaceId,
           workspaceId,
-          metadata: { method: request.method, path: request.route?.path ?? null },
+          metadata: { operation: describeOperation(context) },
         },
       );
     }

@@ -5,6 +5,7 @@ import { MembersService } from './application/members.service.js';
 import { WorkspaceMemberRepository } from './domain/workspace-member.repository.js';
 import { TypeOrmMembershipReader } from './infrastructure/typeorm-membership.reader.js';
 import { TypeOrmWorkspaceMemberRepository } from './infrastructure/typeorm-workspace-member.repository.js';
+import { MembersResolver } from './presentation/graphql/members.resolver.js';
 import { MembersController } from './presentation/members.controller.js';
 
 @Module({
@@ -12,6 +13,7 @@ import { MembersController } from './presentation/members.controller.js';
   controllers: [MembersController],
   providers: [
     MembersService,
+    MembersResolver,
     { provide: WorkspaceMemberRepository, useClass: TypeOrmWorkspaceMemberRepository },
     TypeOrmMembershipReader,
   ],

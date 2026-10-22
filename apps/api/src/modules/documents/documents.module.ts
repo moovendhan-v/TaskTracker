@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { DocumentsResolver } from './presentation/graphql/documents.resolver.js';
 import { SpacesModule } from '../spaces/spaces.module.js';
 import { DocumentsService } from './application/documents.service.js';
 import { ContentSanitizer } from './domain/content-sanitizer.port.js';
@@ -12,6 +13,7 @@ import { DocumentsController } from './presentation/documents.controller.js';
   controllers: [DocumentsController],
   providers: [
     DocumentsService,
+    DocumentsResolver,
     { provide: DocumentRepository, useClass: TypeOrmDocumentRepository },
     { provide: ContentSanitizer, useClass: MarkdownSanitizer },
   ],

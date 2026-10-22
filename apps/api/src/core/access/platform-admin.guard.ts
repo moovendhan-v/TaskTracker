@@ -1,5 +1,5 @@
 import { type CanActivate, type ExecutionContext, Injectable, NotFoundException } from '@nestjs/common';
-import type { AuthenticatedRequest } from '../http/types/authenticated-request.js';
+import { getRequest } from '../http/request-context.js';
 
 /**
  * Platform admin routes answer 404 to everyone else, so their existence isn't revealed.
@@ -8,8 +8,7 @@ import type { AuthenticatedRequest } from '../http/types/authenticated-request.j
 @Injectable()
 export class PlatformAdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    if (request.user?.platformRole !== 'SUPER_ADMIN') throw new NotFoundException();
+    if (getRequest(context).user?.platformRole !== 'SUPER_ADMIN') throw new NotFoundException();
     return true;
   }
 }

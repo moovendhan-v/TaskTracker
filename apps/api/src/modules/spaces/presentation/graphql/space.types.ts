@@ -1,0 +1,41 @@
+import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
+import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { COLOR_PATTERN, NAME_MAX, type CreateSpaceRequest, type SpaceResponse, type UpdateSpaceRequest } from '@taskflow/shared-types';
+
+@ObjectType('Space')
+export class SpaceGql implements SpaceResponse {
+  @Field(() => ID) id: string;
+  @Field(() => ID) workspaceId: string;
+  @Field() name: string;
+  @Field() color: string;
+  @Field() createdAt: string;
+}
+
+@InputType()
+export class CreateSpaceInput implements CreateSpaceRequest {
+  @Field()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(NAME_MAX)
+  name: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @Matches(new RegExp(COLOR_PATTERN))
+  color?: string;
+}
+
+@InputType()
+export class UpdateSpaceInput implements UpdateSpaceRequest {
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(NAME_MAX)
+  name?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @Matches(new RegExp(COLOR_PATTERN))
+  color?: string;
+}

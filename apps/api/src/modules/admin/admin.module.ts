@@ -8,6 +8,7 @@ import { AdminWorkspaceRepository } from './domain/admin-workspace.repository.js
 import { TypeOrmAdminUserRepository } from './infrastructure/typeorm-admin-user.repository.js';
 import { TypeOrmAdminWorkspaceRepository } from './infrastructure/typeorm-admin-workspace.repository.js';
 import { AdminAuditController } from './presentation/admin-audit.controller.js';
+import { AdminResolver } from './presentation/graphql/admin.resolver.js';
 import { AdminUsersController } from './presentation/admin-users.controller.js';
 import { AdminWorkspacesController } from './presentation/admin-workspaces.controller.js';
 
@@ -19,6 +20,7 @@ import { AdminWorkspacesController } from './presentation/admin-workspaces.contr
     PlatformAdminGuard,
     AdminUsersService,
     AdminWorkspacesService,
+    AdminResolver,
     { provide: AdminUserRepository, useClass: TypeOrmAdminUserRepository },
     { provide: AdminWorkspaceRepository, useClass: TypeOrmAdminWorkspaceRepository },
   ],

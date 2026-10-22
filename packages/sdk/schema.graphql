@@ -1,0 +1,628 @@
+input AddMemberInput {
+  email: String!
+  roleId: ID!
+}
+
+type AddMemberResult {
+  """Same answer whether or not the email has an account"""
+  message: String!
+}
+
+type AdminUser {
+  createdAt: String!
+  email: String!
+  id: ID!
+  name: String!
+  platformRole: PlatformRole!
+  suspended: Boolean!
+  workspaceCount: Int!
+}
+
+type AdminUserPage {
+  items: [AdminUser!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+type AdminWorkspace {
+  createdAt: String!
+  id: ID!
+  memberCount: Int!
+  name: String!
+  ownerId: ID!
+  ownerName: String!
+}
+
+type AdminWorkspacePage {
+  items: [AdminWorkspace!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+type AuditLogEntry {
+  action: String!
+  actorId: ID!
+  actorName: String!
+  createdAt: String!
+  id: ID!
+
+  """Only shown to platform admins"""
+  ip: String
+  metadata: JSONObject!
+  targetId: String
+  targetType: String!
+  workspaceId: ID
+}
+
+type AuditLogPage {
+  items: [AuditLogEntry!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+type Comment {
+  authorId: ID!
+  authorName: String!
+
+  """Plain text; render as text, never HTML"""
+  body: String!
+  createdAt: String!
+  id: ID!
+  taskId: ID!
+  updatedAt: String!
+}
+
+input CommentInput {
+  body: String!
+}
+
+input CreateDepartmentInput {
+  headUserId: ID
+  name: String!
+}
+
+input CreateDocumentInput {
+  content: String
+  parentId: ID
+  spaceId: ID
+  title: String!
+}
+
+input CreateLeaveTypeInput {
+  """null means unlimited"""
+  annualAllowanceDays: Int
+  color: String
+  name: String!
+
+  """Defaults to true"""
+  requiresApproval: Boolean
+}
+
+input CreateRoleInput {
+  name: String!
+
+  """Permission keys such as task.create"""
+  permissions: [String!]!
+}
+
+input CreateSpaceInput {
+  color: String
+  name: String!
+}
+
+input CreateSprintInput {
+  """yyyy-mm-dd"""
+  endDate: String!
+  goal: String
+  name: String!
+
+  """yyyy-mm-dd"""
+  startDate: String!
+}
+
+input CreateTaskInput {
+  assigneeId: ID
+  description: String
+
+  """ISO date-time; null clears it"""
+  dueDate: String
+  priority: TaskPriority
+  status: TaskStatus
+  title: String!
+}
+
+input CreateWorkspaceInput {
+  color: String
+  name: String!
+}
+
+type CurrentUser {
+  email: String!
+  id: ID!
+  image: String
+  name: String!
+  platformRole: PlatformRole!
+}
+
+input DecideLeaveInput {
+  decision: LeaveDecision!
+  note: String
+}
+
+type Department {
+  headUserId: ID
+  id: ID!
+  memberCount: Int!
+  name: String!
+}
+
+type Document {
+  """Markdown; render without raw HTML"""
+  content: String!
+  createdAt: String!
+  createdById: ID!
+  id: ID!
+  parentId: ID
+  position: Float!
+  spaceId: ID
+  title: String!
+  updatedAt: String!
+}
+
+type DocumentSummary {
+  createdById: ID!
+  id: ID!
+  parentId: ID
+  position: Float!
+  spaceId: ID
+  title: String!
+  updatedAt: String!
+}
+
+type Employee {
+  departmentId: ID
+  departmentName: String
+  email: String!
+  employmentType: EmploymentType
+  jobTitle: String
+  managerUserId: ID
+  name: String!
+
+  """yyyy-mm-dd"""
+  startDate: String
+  userId: ID!
+}
+
+input EmployeeProfileInput {
+  departmentId: ID
+  employmentType: EmploymentType
+  jobTitle: String
+  managerUserId: ID
+  startDate: String
+}
+
+enum EmploymentType {
+  contractor
+  full_time
+  intern
+  part_time
+}
+
+"""A JSON object (read-only)"""
+scalar JSONObject
+
+type LeaveBalance {
+  """null means unlimited"""
+  allowanceDays: Int
+  color: String!
+  leaveTypeId: ID!
+  leaveTypeName: String!
+  pendingDays: Int!
+  remainingDays: Int
+  usedDays: Int!
+  year: Int!
+}
+
+enum LeaveDecision {
+  approved
+  rejected
+}
+
+type LeaveRequest {
+  createdAt: String!
+
+  """Working days"""
+  days: Int!
+  decidedAt: String
+  decidedById: ID
+  decisionNote: String!
+
+  """yyyy-mm-dd"""
+  endDate: String!
+  id: ID!
+  leaveTypeId: ID!
+  leaveTypeName: String!
+  reason: String!
+
+  """yyyy-mm-dd"""
+  startDate: String!
+  status: LeaveStatus!
+  userId: ID!
+  userName: String!
+}
+
+type LeaveRequestPage {
+  items: [LeaveRequest!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+enum LeaveStatus {
+  approved
+  cancelled
+  pending
+  rejected
+}
+
+type LeaveType {
+  """null means unlimited"""
+  annualAllowanceDays: Int
+  color: String!
+  id: ID!
+  name: String!
+  requiresApproval: Boolean!
+}
+
+type Member {
+  email: String!
+  joinedAt: String!
+  name: String!
+  roleId: ID!
+  roleName: String!
+  userId: ID!
+}
+
+type Mutation {
+  addMember(input: AddMemberInput!, workspaceId: ID!): AddMemberResult!
+  cancelLeaveRequest(requestId: ID!, workspaceId: ID!): LeaveRequest!
+
+  """
+  Unfinished tasks move to another planned sprint in the space, or to the backlog when omitted
+  """
+  completeSprint(moveOpenTasksToSprintId: ID, sprintId: ID!, workspaceId: ID!): Sprint!
+  createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
+  createDepartment(input: CreateDepartmentInput!, workspaceId: ID!): Department!
+  createDocument(input: CreateDocumentInput!, workspaceId: ID!): Document!
+  createLeaveType(input: CreateLeaveTypeInput!, workspaceId: ID!): LeaveType!
+  createList(input: TaskListInput!, spaceId: ID!, workspaceId: ID!): TaskList!
+  createRole(input: CreateRoleInput!, workspaceId: ID!): Role!
+  createSpace(input: CreateSpaceInput!, workspaceId: ID!): Space!
+  createSprint(input: CreateSprintInput!, spaceId: ID!, workspaceId: ID!): Sprint!
+  createTask(input: CreateTaskInput!, listId: ID!, workspaceId: ID!): Task!
+  createWorkspace(input: CreateWorkspaceInput!): Workspace!
+
+  """Approvers cannot decide on their own requests"""
+  decideLeaveRequest(input: DecideLeaveInput!, requestId: ID!, workspaceId: ID!): LeaveRequest!
+
+  """The author, or anyone with task.delete"""
+  deleteComment(commentId: ID!, workspaceId: ID!): Boolean!
+  deleteDepartment(departmentId: ID!, workspaceId: ID!): Boolean!
+
+  """Sub-pages are deleted too"""
+  deleteDocument(documentId: ID!, workspaceId: ID!): Boolean!
+  deleteLeaveType(leaveTypeId: ID!, workspaceId: ID!): Boolean!
+  deleteList(listId: ID!, workspaceId: ID!): Boolean!
+  deleteRole(roleId: ID!, workspaceId: ID!): Boolean!
+  deleteSpace(spaceId: ID!, workspaceId: ID!): Boolean!
+  deleteSprint(sprintId: ID!, workspaceId: ID!): Boolean!
+  deleteTask(taskId: ID!, workspaceId: ID!): Boolean!
+  deleteWorkspace(workspaceId: ID!): Boolean!
+
+  """Leave a workspace. The last owner cannot leave."""
+  leaveWorkspace(workspaceId: ID!): Boolean!
+
+  """parentId null moves the page to the top level"""
+  moveDocument(documentId: ID!, parentId: ID, position: Float, workspaceId: ID!): Document!
+  removeMember(userId: ID!, workspaceId: ID!): Boolean!
+  requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
+  startSprint(sprintId: ID!, workspaceId: ID!): Sprint!
+
+  """
+  Suspending signs the user out everywhere. You cannot change your own account.
+  """
+  updateAdminUser(input: UpdateAdminUserInput!, userId: ID!): AdminUser!
+
+  """Only the author can edit"""
+  updateComment(commentId: ID!, input: CommentInput!, workspaceId: ID!): Comment!
+  updateDepartment(departmentId: ID!, input: UpdateDepartmentInput!, workspaceId: ID!): Department!
+  updateDocument(documentId: ID!, input: UpdateDocumentInput!, workspaceId: ID!): Document!
+  updateLeaveType(input: UpdateLeaveTypeInput!, leaveTypeId: ID!, workspaceId: ID!): LeaveType!
+  updateList(input: TaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
+  updateMemberRole(roleId: ID!, userId: ID!, workspaceId: ID!): Member!
+  updateRole(input: UpdateRoleInput!, roleId: ID!, workspaceId: ID!): Role!
+  updateSpace(input: UpdateSpaceInput!, spaceId: ID!, workspaceId: ID!): Space!
+  updateSprint(input: UpdateSprintInput!, sprintId: ID!, workspaceId: ID!): Sprint!
+  updateTask(input: UpdateTaskInput!, taskId: ID!, workspaceId: ID!): Task!
+  updateWorkspace(input: UpdateWorkspaceInput!, workspaceId: ID!): Workspace!
+  upsertEmployeeProfile(input: EmployeeProfileInput!, userId: ID!, workspaceId: ID!): Employee!
+}
+
+enum PlatformRole {
+  SUPER_ADMIN
+  USER
+}
+
+type Query {
+  """Platform-wide audit log with IP addresses"""
+  adminAuditLog(
+    action: String
+    actorId: ID
+    page: Int
+
+    """1 to 100"""
+    pageSize: Int
+    workspaceId: ID
+  ): AuditLogPage!
+  adminUsers(
+    page: Int
+
+    """1 to 100"""
+    pageSize: Int
+    search: String
+  ): AdminUserPage!
+  adminWorkspaces(
+    page: Int
+
+    """1 to 100"""
+    pageSize: Int
+    search: String
+  ): AdminWorkspacePage!
+
+  """Unfinished tasks in a space that aren't in a sprint"""
+  backlog(spaceId: ID!, workspaceId: ID!): [Task!]!
+  comments(taskId: ID!, workspaceId: ID!): [Comment!]!
+  departments(workspaceId: ID!): [Department!]!
+  document(documentId: ID!, workspaceId: ID!): Document!
+
+  """Page tree without content"""
+  documents(
+    """Matches page titles"""
+    search: String
+    workspaceId: ID!
+  ): [DocumentSummary!]!
+  employee(userId: ID!, workspaceId: ID!): Employee!
+
+  """Current members with their HR profiles"""
+  employees(workspaceId: ID!): [Employee!]!
+
+  """Approver queue, oldest first"""
+  leaveRequests(
+    page: Int
+
+    """1 to 100"""
+    pageSize: Int
+    status: LeaveStatus
+    workspaceId: ID!
+  ): LeaveRequestPage!
+  leaveTypes(workspaceId: ID!): [LeaveType!]!
+
+  """Every list in the workspace"""
+  lists(workspaceId: ID!): [TaskList!]!
+
+  """The signed-in user"""
+  me: CurrentUser!
+  members(workspaceId: ID!): [Member!]!
+  myLeaveBalances(
+    workspaceId: ID!
+
+    """2000 to 2100; defaults to this year"""
+    year: Int
+  ): [LeaveBalance!]!
+  myLeaveRequests(workspaceId: ID!): [LeaveRequest!]!
+  roles(workspaceId: ID!): [Role!]!
+  spaces(workspaceId: ID!): [Space!]!
+  sprint(sprintId: ID!, workspaceId: ID!): Sprint!
+  sprintTasks(sprintId: ID!, workspaceId: ID!): [Task!]!
+  sprints(spaceId: ID!, workspaceId: ID!): [Sprint!]!
+  task(taskId: ID!, workspaceId: ID!): Task!
+  tasks(
+    listId: ID!
+    page: Int
+
+    """1 to 100"""
+    pageSize: Int
+    search: String
+    status: TaskStatus
+    workspaceId: ID!
+  ): TaskPage!
+  workspace(workspaceId: ID!): Workspace!
+
+  """This workspace’s audit log, newest first, without IP addresses"""
+  workspaceAuditLog(
+    """
+    Prefix of the action name, e.g. "hr."
+    """
+    action: String
+    actorId: ID
+    page: Int
+
+    """1 to 100"""
+    pageSize: Int
+    workspaceId: ID!
+  ): AuditLogPage!
+
+  """Workspaces the caller belongs to"""
+  workspaces: [Workspace!]!
+}
+
+input RequestLeaveInput {
+  """yyyy-mm-dd"""
+  endDate: String!
+  leaveTypeId: ID!
+  reason: String
+
+  """yyyy-mm-dd"""
+  startDate: String!
+}
+
+type Role {
+  id: ID!
+  name: String!
+  permissions: [String!]!
+
+  """Set for built-in roles"""
+  systemKey: String
+}
+
+type Space {
+  color: String!
+  createdAt: String!
+  id: ID!
+  name: String!
+  workspaceId: ID!
+}
+
+type Sprint {
+  completedAt: String
+  doneTasks: Int!
+
+  """yyyy-mm-dd"""
+  endDate: String!
+  goal: String!
+  id: ID!
+  name: String!
+  spaceId: ID!
+
+  """yyyy-mm-dd"""
+  startDate: String!
+  status: SprintStatus!
+  totalTasks: Int!
+}
+
+enum SprintStatus {
+  active
+  completed
+  planned
+}
+
+type Task {
+  assigneeId: ID
+  createdAt: String!
+  description: String!
+  dueDate: String
+  id: ID!
+  listId: ID!
+  position: Float!
+  priority: TaskPriority!
+  sprintId: ID
+  status: TaskStatus!
+  title: String!
+  updatedAt: String!
+}
+
+type TaskList {
+  createdAt: String!
+  id: ID!
+  name: String!
+  spaceId: ID!
+}
+
+input TaskListInput {
+  name: String!
+}
+
+type TaskPage {
+  items: [Task!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+enum TaskPriority {
+  high
+  low
+  none
+  normal
+  urgent
+}
+
+enum TaskStatus {
+  done
+  in_progress
+  in_review
+  todo
+}
+
+input UpdateAdminUserInput {
+  platformRole: PlatformRole
+  suspended: Boolean
+}
+
+input UpdateDepartmentInput {
+  headUserId: ID
+  name: String
+}
+
+input UpdateDocumentInput {
+  content: String
+  title: String
+}
+
+input UpdateLeaveTypeInput {
+  annualAllowanceDays: Int
+  color: String
+  name: String
+  requiresApproval: Boolean
+}
+
+input UpdateRoleInput {
+  name: String
+  permissions: [String!]
+}
+
+input UpdateSpaceInput {
+  color: String
+  name: String
+}
+
+input UpdateSprintInput {
+  endDate: String
+  goal: String
+  name: String
+  startDate: String
+}
+
+input UpdateTaskInput {
+  assigneeId: ID
+  description: String
+  dueDate: String
+  position: Float
+  priority: TaskPriority
+
+  """null moves the task to the backlog; needs sprint.manage"""
+  sprintId: ID
+  status: TaskStatus
+  title: String
+}
+
+input UpdateWorkspaceInput {
+  color: String
+  name: String
+}
+
+type Workspace {
+  color: String!
+  createdAt: String!
+  id: ID!
+  name: String!
+
+  """The caller's permissions, e.g. task.create"""
+  permissions: [String!]!
+
+  """The caller's role in this workspace"""
+  roleName: String!
+}

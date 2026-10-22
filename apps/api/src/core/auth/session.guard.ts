@@ -1,10 +1,10 @@
 import { type CanActivate, type ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { AuthenticatedRequest } from '../http/types/authenticated-request.js';
 import { IS_PUBLIC_KEY } from '../http/decorators/public.decorator.js';
+import { getRequest } from '../http/request-context.js';
 import { AuthService } from './auth.service.js';
 
-/** Global guard: every route needs a valid session unless it is marked @Public(). Fails closed. */
+/** Global guard: every REST route and GraphQL operation needs a valid session unless marked @Public(). Fails closed. */
 @Injectable()
 export class SessionGuard implements CanActivate {
   constructor(
@@ -13,13 +13,10 @@ export class SessionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
     if (isPublic) return true;
 
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const request = getRequest(context);
     const user = await this.authService.getSessionUser(request.headers).catch(() => null);
     if (!user) throw new UnauthorizedException();
 

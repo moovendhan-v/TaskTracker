@@ -11,12 +11,17 @@
     "test": "vitest run",
     "openapi:export": "pnpm build && node dist/cli/export-openapi.js ../../packages/sdk/openapi.json",
     "migration:run": "pnpm build && node dist/cli/run-migrations.js",
-    "admin:promote": "pnpm build && node dist/cli/promote-super-admin.js"
+    "admin:promote": "pnpm build && node dist/cli/promote-super-admin.js",
+    "graphql:export": "pnpm build && node dist/cli/export-graphql-schema.js ../../packages/sdk/schema.graphql"
   },
   "dependencies": {
+    "@apollo/server": "5.5.1",
+    "@as-integrations/express5": "1.1.2",
+    "@nestjs/apollo": "14.0.3",
     "@nestjs/common": "12.2.0",
     "@nestjs/config": "12.0.1",
     "@nestjs/core": "12.2.0",
+    "@nestjs/graphql": "14.0.3",
     "@nestjs/platform-express": "12.2.0",
     "@nestjs/swagger": "12.0.2",
     "@nestjs/throttler": "6.7.1",
@@ -25,6 +30,8 @@
     "better-auth": "1.7.12",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
+    "graphql": "16.14.2",
+    "graphql-query-complexity": "2.0.0",
     "helmet": "8.3.0",
     "pg": "8.23.1",
     "reflect-metadata": "0.2.2",
