@@ -13,6 +13,7 @@ import { UserThrottlerGuard } from './core/http/guards/user-throttler.guard.js';
 import { CommentsModule } from './modules/comments/comments.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { HrModule } from './modules/hr/hr.module.js';
 import { ListsModule } from './modules/lists/lists.module.js';
 import { TypeOrmMembershipReader } from './modules/members/infrastructure/typeorm-membership.reader.js';
 import { MembersModule } from './modules/members/members.module.js';
@@ -44,6 +45,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     CommentsModule,
     SprintsModule,
     DocumentsModule,
+    HrModule,
   ],
   providers: [
     // Order matters: the session guard sets req.user, which the throttler uses as its key.

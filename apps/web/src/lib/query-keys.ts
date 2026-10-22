@@ -23,4 +23,11 @@ export const queryKeys = {
   documentsRoot: (workspaceId: string) => ['workspaces', workspaceId, 'documents'] as const,
   documentTree: (workspaceId: string, search = '') => ['workspaces', workspaceId, 'documents', 'tree', search] as const,
   document: (workspaceId: string, documentId: string) => ['workspaces', workspaceId, 'documents', 'detail', documentId] as const,
+  hrRoot: (workspaceId: string) => ['workspaces', workspaceId, 'hr'] as const,
+  departments: (workspaceId: string) => ['workspaces', workspaceId, 'hr', 'departments'] as const,
+  employees: (workspaceId: string) => ['workspaces', workspaceId, 'hr', 'employees'] as const,
+  leaveTypes: (workspaceId: string) => ['workspaces', workspaceId, 'hr', 'leave-types'] as const,
+  myLeave: (workspaceId: string) => ['workspaces', workspaceId, 'hr', 'leave', 'mine'] as const,
+  leaveQueue: (workspaceId: string, status: string) => ['workspaces', workspaceId, 'hr', 'leave', 'queue', status] as const,
+  myBalances: (workspaceId: string, year: number) => ['workspaces', workspaceId, 'hr', 'leave', 'balances', year] as const,
 };

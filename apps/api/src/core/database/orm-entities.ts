@@ -1,6 +1,10 @@
 import { AuditLogOrmEntity } from '../audit/audit-log.orm-entity.js';
 import { CommentOrmEntity } from '../../modules/comments/infrastructure/comment.orm-entity.js';
 import { DocumentOrmEntity } from '../../modules/documents/infrastructure/document.orm-entity.js';
+import { DepartmentOrmEntity } from '../../modules/hr/departments/infrastructure/department.orm-entity.js';
+import { EmployeeProfileOrmEntity } from '../../modules/hr/employees/infrastructure/employee-profile.orm-entity.js';
+import { LeaveRequestOrmEntity } from '../../modules/hr/leave/infrastructure/leave-request.orm-entity.js';
+import { LeaveTypeOrmEntity } from '../../modules/hr/leave/infrastructure/leave-type.orm-entity.js';
 import { TaskListOrmEntity } from '../../modules/lists/infrastructure/task-list.orm-entity.js';
 import { WorkspaceMemberOrmEntity } from '../../modules/members/infrastructure/workspace-member.orm-entity.js';
 import { WorkspaceRoleOrmEntity } from '../../modules/roles/infrastructure/workspace-role.orm-entity.js';
@@ -25,5 +29,9 @@ export const ORM_ENTITIES = [
   CommentOrmEntity,
   SprintOrmEntity,
   DocumentOrmEntity,
+  DepartmentOrmEntity,
+  EmployeeProfileOrmEntity,
+  LeaveTypeOrmEntity,
+  LeaveRequestOrmEntity,
   AuditLogOrmEntity,
 ];

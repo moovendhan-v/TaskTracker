@@ -7,6 +7,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/modules/auth';
 import { DocumentsPage } from '@/modules/documents';
 import { HomePage } from '@/modules/home';
+import { ApprovalsPage, DepartmentsPage, DirectoryPage, LeaveTypesPage, TimeOffPage } from '@/modules/hr';
 import { ListPage } from '@/modules/lists';
 import { MembersPage } from '@/modules/members';
 import { RolesPage } from '@/modules/roles';
@@ -165,6 +166,23 @@ const documentRoute = createRoute({
   },
 });
 
+/** A simple page under /w/$workspaceId that only needs the workspace id. */
+function workspacePage<TPath extends string>(path: TPath, Page: (props: { workspaceId: string }) => React.ReactNode) {
+  return createRoute({
+    getParentRoute: () => workspaceRoute,
+    path,
+    component: function WorkspacePageRoute() {
+      return <Page workspaceId={workspaceRoute.useParams().workspaceId} />;
+    },
+  });
+}
+
+const directoryRoute = workspacePage('/people', DirectoryPage);
+const departmentsRoute = workspacePage('/people/departments', DepartmentsPage);
+const timeOffRoute = workspacePage('/people/time-off', TimeOffPage);
+const approvalsRoute = workspacePage('/people/approvals', ApprovalsPage);
+const leaveTypesRoute = workspacePage('/people/leave-types', LeaveTypesPage);
+
 const membersRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: '/members',
@@ -201,6 +219,11 @@ const routeTree = rootRoute.addChildren([
       sprintBoardRoute,
       documentsRoute,
       documentRoute,
+      directoryRoute,
+      departmentsRoute,
+      timeOffRoute,
+      approvalsRoute,
+      leaveTypesRoute,
       membersRoute,
       rolesRoute,
       settingsRoute,

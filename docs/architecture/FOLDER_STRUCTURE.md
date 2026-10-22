@@ -304,7 +304,7 @@ src/modules/
 │       ├── document-attachments.controller.ts    🔜 uses core/storage
 │       └── dto/{create-document,update-document,move-document,document-query,document.response}.dto.ts
 │
-├── hr/                                           🔜 [5] one parent module, three sub-features
+├── hr/                                           ✅ one parent module, three sub-features
 │   ├── hr.module.ts
 │   ├── departments/
 │   │   ├── domain/{department.ts,department.repository.ts}
@@ -320,13 +320,17 @@ src/modules/
 │       ├── domain/leave-type.ts
 │       ├── domain/leave-request.ts               pending → approved | rejected | cancelled
 │       ├── domain/leave-balance.ts
-│       ├── domain/leave.repository.ts
+│       ├── domain/leave-type.repository.ts       three small ports instead of one large one (ISP)
+│       ├── domain/leave-request.repository.ts
+│       ├── domain/leave-balance.repository.ts    lockUsedDays() takes a row lock (SELECT … FOR UPDATE)
 │       ├── domain/leave-approval.policy.ts       approver needs leave.approve and can't approve their own request
-│       ├── domain/leave-days.calculator.ts       working days between dates
-│       ├── application/leave.service.ts          request, approve and reject; balance changes under a row lock
+│       ├── domain/leave-days.calculator.ts       working days between dates (pure, unit tested)
+│       ├── domain/leave-request.policy.ts        range, one calendar year, no overlap
+│       ├── application/leave-types.service.ts
+│       ├── application/leave-requests.service.ts request, approve, reject, cancel; balance changes under a row lock
 │       ├── application/leave.mapper.ts
-│       ├── infrastructure/{leave-type,leave-request,leave-balance}.orm-entity.ts
-│       ├── infrastructure/typeorm-leave.repository.ts
+│       ├── infrastructure/{leave-type,leave-request}.orm-entity.ts
+│       ├── infrastructure/typeorm-leave-{type,request,balance}.repository.ts
 │       └── presentation/
 │           ├── leave-types.controller.ts
 │           ├── leave-requests.controller.ts
@@ -481,7 +485,7 @@ packages/shared-types/
     │   ├── pagination.ts             ✅ PAGE_SIZE_MAX, Paginated<T>
     │   ├── sprint.ts                 ✅ SPRINT_STATUSES, limits
     │   ├── document.ts               ✅ limits
-    │   └── hr.ts                     🔜 [5] LEAVE_STATUSES, EMPLOYMENT_TYPES
+    │   └── hr.ts                     ✅ LEAVE_STATUSES, EMPLOYMENT_TYPES, limits
     └── contracts/                    request and response shapes, one file per feature
         ├── user.contract.ts          ✅
         ├── workspace.contract.ts     ✅
@@ -493,7 +497,7 @@ packages/shared-types/
         ├── comment.contract.ts       ✅
         ├── sprint.contract.ts        ✅
         ├── document.contract.ts      ✅
-        ├── hr.contract.ts            🔜 [5]
+        ├── hr.contract.ts            ✅
         └── admin.contract.ts         🔜 [6]
 ```
 

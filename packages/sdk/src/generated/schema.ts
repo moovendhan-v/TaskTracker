@@ -436,6 +436,182 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/hr/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Departments_list"];
+        put?: never;
+        post: operations["Departments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/departments/{departmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["Departments_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["Departments_update"];
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/employees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Employees_directory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/employees/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Employees_get"];
+        put: operations["Employees_upsert"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/leave-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LeaveTypes_list"];
+        put?: never;
+        post: operations["LeaveTypes_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/leave-types/{leaveTypeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["LeaveTypes_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["LeaveTypes_update"];
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/leave-requests/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LeaveRequests_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/leave-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LeaveRequests_queue"];
+        put?: never;
+        post: operations["LeaveRequests_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/leave-requests/{requestId}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveRequests_decide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/leave-requests/{requestId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveRequests_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/hr/leave-balances/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LeaveRequests_myBalances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -723,6 +899,129 @@ export interface components {
              */
             parentId: string | null;
             position?: number;
+        };
+        DepartmentResponseDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            headUserId: string | null;
+            memberCount: number;
+        };
+        CreateDepartmentDto: {
+            name: string;
+            headUserId?: string | null;
+        };
+        UpdateDepartmentDto: {
+            name?: string;
+            headUserId?: string | null;
+        };
+        EmployeeResponseDto: {
+            userId: string;
+            name: string;
+            email: string;
+            jobTitle: string | null;
+            /** Format: uuid */
+            departmentId: string | null;
+            departmentName: string | null;
+            managerUserId: string | null;
+            /** @enum {string|null} */
+            employmentType: "full_time" | "part_time" | "contractor" | "intern" | null;
+            /** Format: date */
+            startDate: string | null;
+        };
+        UpsertEmployeeProfileDto: {
+            jobTitle?: string | null;
+            /** Format: uuid */
+            departmentId?: string | null;
+            managerUserId?: string | null;
+            /** @enum {string|null} */
+            employmentType?: "full_time" | "part_time" | "contractor" | "intern" | null;
+            /** Format: date */
+            startDate?: string | null;
+        };
+        LeaveTypeResponseDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            color: string;
+            annualAllowanceDays: number | null;
+            requiresApproval: boolean;
+        };
+        CreateLeaveTypeDto: {
+            name: string;
+            color?: string;
+            /** @description null means unlimited */
+            annualAllowanceDays: number | null;
+            /** @description Defaults to true */
+            requiresApproval?: boolean;
+        };
+        UpdateLeaveTypeDto: {
+            name?: string;
+            color?: string;
+            /** @description null means unlimited */
+            annualAllowanceDays?: number | null;
+            /** @description Defaults to true */
+            requiresApproval?: boolean;
+        };
+        LeaveRequestResponseDto: {
+            /** Format: uuid */
+            id: string;
+            userId: string;
+            userName: string;
+            /** Format: uuid */
+            leaveTypeId: string;
+            leaveTypeName: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            days: number;
+            reason: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "cancelled";
+            decidedById: string | null;
+            /** Format: date-time */
+            decidedAt: string | null;
+            decisionNote: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        LeaveRequestPageResponseDto: {
+            items: components["schemas"]["LeaveRequestResponseDto"][];
+            page: number;
+            pageSize: number;
+            total: number;
+        };
+        CreateLeaveRequestDto: {
+            /** Format: uuid */
+            leaveTypeId: string;
+            /**
+             * Format: date
+             * @example 2026-11-02
+             */
+            startDate: string;
+            /**
+             * Format: date
+             * @example 2026-11-06
+             */
+            endDate: string;
+            reason?: string;
+        };
+        DecideLeaveRequestDto: {
+            /** @enum {string} */
+            decision: "approved" | "rejected";
+            note?: string;
+        };
+        LeaveBalanceResponseDto: {
+            /** Format: uuid */
+            leaveTypeId: string;
+            leaveTypeName: string;
+            color: string;
+            year: number;
+            allowanceDays: number | null;
+            usedDays: number;
+            pendingDays: number;
+            remainingDays: number | null;
         };
     };
     responses: never;
@@ -2069,6 +2368,509 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Departments_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentResponseDto"][];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Departments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDepartmentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Departments_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                departmentId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Departments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                departmentId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDepartmentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Employees_directory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeResponseDto"][];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Employees_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Employees_upsert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertEmployeeProfileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveTypes_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveTypeResponseDto"][];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveTypes_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLeaveTypeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveTypeResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveTypes_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                leaveTypeId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveTypes_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                leaveTypeId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLeaveTypeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveTypeResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveRequests_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestResponseDto"][];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveRequests_queue: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                status?: "pending" | "approved" | "rejected" | "cancelled";
+            };
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestPageResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveRequests_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLeaveRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveRequests_decide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecideLeaveRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveRequests_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LeaveRequests_myBalances: {
+        parameters: {
+            query?: {
+                /** @description Defaults to the current year */
+                year?: number;
+            };
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveBalanceResponseDto"][];
                 };
             };
             /** @description Missing workspace permission */
