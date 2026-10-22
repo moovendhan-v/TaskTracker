@@ -287,21 +287,22 @@ src/modules/
 │       ├── sprints.controller.ts
 │       └── dto/{create-sprint,update-sprint,complete-sprint,sprint.response}.dto.ts
 │
-├── documents/                                    🔜 [4]
+├── documents/                                    ✅
 │   ├── documents.module.ts
 │   ├── domain/document.ts                        page tree via parentId, optional spaceId
 │   ├── domain/document.repository.ts
 │   ├── domain/content-sanitizer.port.ts          abstract class ContentSanitizer
 │   ├── domain/document-tree.policy.ts            blocks cycles and limits nesting depth
+│   ├── domain/document-access.policy.ts          doc.manage edits anything; doc.create edits own pages
 │   ├── application/documents.service.ts
 │   ├── application/document.mapper.ts
 │   ├── infrastructure/document.orm-entity.ts
 │   ├── infrastructure/typeorm-document.repository.ts
-│   ├── infrastructure/markdown.sanitizer.ts      adapter for ContentSanitizer
+│   ├── infrastructure/markdown.sanitizer.ts      adapter for ContentSanitizer: control chars, unsafe link schemes
 │   └── presentation/
 │       ├── documents.controller.ts
-│       ├── document-attachments.controller.ts    uses core/storage
-│       └── dto/{create-document,update-document,move-document,document.response,document-tree.response}.dto.ts
+│       ├── document-attachments.controller.ts    🔜 uses core/storage
+│       └── dto/{create-document,update-document,move-document,document-query,document.response}.dto.ts
 │
 ├── hr/                                           🔜 [5] one parent module, three sub-features
 │   ├── hr.module.ts
@@ -479,7 +480,7 @@ packages/shared-types/
     │   ├── task.ts                   ✅ TASK_STATUSES, TASK_PRIORITIES, limits
     │   ├── pagination.ts             ✅ PAGE_SIZE_MAX, Paginated<T>
     │   ├── sprint.ts                 ✅ SPRINT_STATUSES, limits
-    │   ├── document.ts               🔜 [4] limits
+    │   ├── document.ts               ✅ limits
     │   └── hr.ts                     🔜 [5] LEAVE_STATUSES, EMPLOYMENT_TYPES
     └── contracts/                    request and response shapes, one file per feature
         ├── user.contract.ts          ✅
@@ -491,7 +492,7 @@ packages/shared-types/
         ├── task.contract.ts          ✅
         ├── comment.contract.ts       ✅
         ├── sprint.contract.ts        ✅
-        ├── document.contract.ts      🔜 [4]
+        ├── document.contract.ts      ✅
         ├── hr.contract.ts            🔜 [5]
         └── admin.contract.ts         🔜 [6]
 ```

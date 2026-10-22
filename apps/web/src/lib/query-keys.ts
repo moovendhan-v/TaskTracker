@@ -20,4 +20,7 @@ export const queryKeys = {
   sprintsRoot: (workspaceId: string) => ['workspaces', workspaceId, 'sprints'] as const,
   sprints: (workspaceId: string, spaceId: string) => ['workspaces', workspaceId, 'sprints', 'space', spaceId] as const,
   sprint: (workspaceId: string, sprintId: string) => ['workspaces', workspaceId, 'sprints', 'detail', sprintId] as const,
+  documentsRoot: (workspaceId: string) => ['workspaces', workspaceId, 'documents'] as const,
+  documentTree: (workspaceId: string, search = '') => ['workspaces', workspaceId, 'documents', 'tree', search] as const,
+  document: (workspaceId: string, documentId: string) => ['workspaces', workspaceId, 'documents', 'detail', documentId] as const,
 };

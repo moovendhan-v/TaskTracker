@@ -1,5 +1,5 @@
 import { Outlet } from '@tanstack/react-router';
-import { HomeIcon, SettingsIcon, ShieldIcon, UsersIcon } from 'lucide-react';
+import { FileTextIcon, HomeIcon, SettingsIcon, ShieldIcon, UsersIcon } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { SidebarLink } from '@/components/layout/sidebar-link';
 import { SidebarSection } from '@/components/layout/sidebar-section';
@@ -22,6 +22,9 @@ export function WorkspaceLayout({ workspaceId }: { workspaceId: string }) {
         <SidebarSection title="Workspace">
           <SidebarLink to="/w/$workspaceId" params={params} activeOptions={{ exact: true }} icon={<HomeIcon />}>
             Home
+          </SidebarLink>
+          <SidebarLink to="/w/$workspaceId/docs" params={params} icon={<FileTextIcon />}>
+            Docs
           </SidebarLink>
           <SidebarLink to="/w/$workspaceId/members" params={params} icon={<UsersIcon />}>
             Members

@@ -5,6 +5,7 @@ import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { hasSession } from '@/core/auth/session';
 import { queryKeys } from '@/lib/query-keys';
 import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/modules/auth';
+import { DocumentsPage } from '@/modules/documents';
 import { HomePage } from '@/modules/home';
 import { ListPage } from '@/modules/lists';
 import { MembersPage } from '@/modules/members';
@@ -144,6 +145,26 @@ const sprintBoardRoute = createRoute({
   },
 });
 
+const documentsRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/docs',
+  component: function DocumentsRoute() {
+    return <DocumentsPage workspaceId={workspaceRoute.useParams().workspaceId} documentId={undefined} />;
+  },
+});
+
+const documentRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/docs/$documentId',
+  beforeLoad: ({ params }) => {
+    if (!UUID.test(params.documentId)) throw redirect({ to: '/w/$workspaceId/docs', params: { workspaceId: params.workspaceId } });
+  },
+  component: function DocumentRoute() {
+    const { workspaceId, documentId } = documentRoute.useParams();
+    return <DocumentsPage workspaceId={workspaceId} documentId={documentId} />;
+  },
+});
+
 const membersRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: '/members',
@@ -178,6 +199,8 @@ const routeTree = rootRoute.addChildren([
       listRoute,
       sprintsRoute,
       sprintBoardRoute,
+      documentsRoute,
+      documentRoute,
       membersRoute,
       rolesRoute,
       settingsRoute,

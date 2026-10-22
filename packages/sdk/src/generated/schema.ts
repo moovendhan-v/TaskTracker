@@ -388,6 +388,54 @@ export interface paths {
         patch: operations["Comments_update"];
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Documents_list"];
+        put?: never;
+        post: operations["Documents_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/documents/{documentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Documents_get"];
+        put?: never;
+        post?: never;
+        delete: operations["Documents_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["Documents_update"];
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/documents/{documentId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["Documents_move"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -623,6 +671,58 @@ export interface components {
         };
         UpdateCommentDto: {
             body: string;
+        };
+        DocumentSummaryResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parentId: string | null;
+            /** Format: uuid */
+            spaceId: string | null;
+            title: string;
+            position: number;
+            createdById: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CreateDocumentDto: {
+            title: string;
+            /** @description Markdown */
+            content?: string;
+            /** Format: uuid */
+            parentId?: string | null;
+            /** Format: uuid */
+            spaceId?: string | null;
+        };
+        DocumentResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parentId: string | null;
+            /** Format: uuid */
+            spaceId: string | null;
+            title: string;
+            position: number;
+            createdById: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description Markdown; render without raw HTML */
+            content: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        UpdateDocumentDto: {
+            title?: string;
+            /** @description Markdown */
+            content?: string;
+        };
+        MoveDocumentDto: {
+            /**
+             * Format: uuid
+             * @description null moves the page to the top level
+             */
+            parentId: string | null;
+            position?: number;
         };
     };
     responses: never;
@@ -1790,6 +1890,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommentResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Documents_list: {
+        parameters: {
+            query?: {
+                /** @description Matches page titles */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentSummaryResponseDto"][];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Documents_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Documents_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Documents_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocumentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Documents_move: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveDocumentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponseDto"];
                 };
             };
             /** @description Missing workspace permission */
