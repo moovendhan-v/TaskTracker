@@ -4,12 +4,15 @@ import { DomainError } from '../../../core/domain/domain-error.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import type { ListsService } from '../../lists/application/lists.service.js';
 import type { MembersService } from '../../members/application/members.service.js';
+import type { SpacesService } from '../../spaces/application/spaces.service.js';
+import type { SprintsService } from '../../sprints/application/sprints.service.js';
 import { InMemoryTaskRepository } from '../testing/in-memory-task.repository.js';
 import { TasksService } from './tasks.service.js';
 
 const WORKSPACE = '11111111-1111-4111-8111-111111111111';
 const OTHER_WORKSPACE = '22222222-2222-4222-8222-222222222222';
 const LIST = '33333333-3333-4333-8333-333333333333';
+const SPACE = 'space-a';
 const actor: Actor = { userId: 'user-1', platformRole: 'USER', ip: null };
 
 function accessWith(...permissions: Permission[]): WorkspaceAccess {
@@ -24,11 +27,18 @@ describe('TasksService', () => {
   beforeEach(() => {
     repository = new InMemoryTaskRepository();
     members = new Set(['user-1', 'user-2']);
-    const lists = { getInWorkspace: async () => ({ id: LIST }) } as unknown as ListsService;
+    const lists = { getInWorkspace: async () => ({ id: LIST, spaceId: SPACE }) } as unknown as ListsService;
     const membersService = {
       isMember: async (_workspaceId: string, userId: string) => members.has(userId),
     } as unknown as MembersService;
-    service = new TasksService(repository, lists, membersService);
+    const spaces = { getInWorkspace: async () => ({ id: SPACE }) } as unknown as SpacesService;
+    const sprints = {
+      getPlannable: async (_workspaceId: string, sprintId: string) => ({
+        id: sprintId,
+        spaceId: sprintId === 'other-space-sprint' ? 'space-b' : SPACE,
+      }),
+    } as unknown as SprintsService;
+    service = new TasksService(repository, lists, membersService, spaces, sprints);
   });
 
   it('appends new tasks after the last position with sensible defaults', async () => {
@@ -54,6 +64,16 @@ describe('TasksService', () => {
   it('does not find a task through another workspace', async () => {
     const task = await service.create(actor, accessWith('task.create'), LIST, { title: 'Private' });
     await expect(service.get(OTHER_WORKSPACE, task.id)).rejects.toBeInstanceOf(DomainError);
+  });
+
+  it('plans a task into a sprint only with sprint.manage and the same space', async () => {
+    const task = await service.create(actor, accessWith('task.create'), LIST, { title: 'Plan me' });
+    await expect(service.update(accessWith('task.update'), task.id, { sprintId: 'sprint-1' })).rejects.toThrow(/sprint.manage/);
+    await expect(
+      service.update(accessWith('task.update', 'sprint.manage'), task.id, { sprintId: 'other-space-sprint' }),
+    ).rejects.toThrow(/own space/);
+    const planned = await service.update(accessWith('task.update', 'sprint.manage'), task.id, { sprintId: 'sprint-1' });
+    expect(planned.sprintId).toBe('sprint-1');
   });
 
   it('filters and pages tasks in a list', async () => {

@@ -41,6 +41,23 @@ export class TasksController {
     return this.tasksService.create(actor, access, listId, dto);
   }
 
+  @Get('sprints/:sprintId/tasks')
+  @RequirePermissions('task.view')
+  @ApiOkResponse({ type: TaskResponseDto, isArray: true })
+  listInSprint(
+    @CurrentAccess() access: WorkspaceAccess,
+    @Param('sprintId', UUID_PIPE) sprintId: string,
+  ): Promise<TaskResponseDto[]> {
+    return this.tasksService.listInSprint(access.workspaceId, sprintId);
+  }
+
+  @Get('spaces/:spaceId/backlog')
+  @RequirePermissions('task.view')
+  @ApiOkResponse({ type: TaskResponseDto, isArray: true })
+  backlog(@CurrentAccess() access: WorkspaceAccess, @Param('spaceId', UUID_PIPE) spaceId: string): Promise<TaskResponseDto[]> {
+    return this.tasksService.backlog(access.workspaceId, spaceId);
+  }
+
   @Get('tasks/:taskId')
   @RequirePermissions('task.view')
   @ApiOkResponse({ type: TaskResponseDto })

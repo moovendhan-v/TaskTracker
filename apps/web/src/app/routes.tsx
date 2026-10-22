@@ -9,6 +9,7 @@ import { HomePage } from '@/modules/home';
 import { ListPage } from '@/modules/lists';
 import { MembersPage } from '@/modules/members';
 import { RolesPage } from '@/modules/roles';
+import { SprintBoardPage, SprintsPage } from '@/modules/sprints';
 import { OnboardingPage, useWorkspaceUiStore, WorkspaceSettingsPage, workspacesApi } from '@/modules/workspaces';
 import { WorkspaceLayout } from './layouts/workspace-layout';
 
@@ -117,6 +118,32 @@ const listRoute = createRoute({
   },
 });
 
+const taskSearch = (search: Record<string, unknown>): { task?: string } => ({
+  task: typeof search.task === 'string' && UUID.test(search.task) ? search.task : undefined,
+});
+
+const sprintsRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/s/$spaceId/sprints',
+  validateSearch: taskSearch,
+  component: function SprintsRoute() {
+    const { workspaceId, spaceId } = sprintsRoute.useParams();
+    const { task } = sprintsRoute.useSearch();
+    return <SprintsPage key={spaceId} workspaceId={workspaceId} spaceId={spaceId} openTaskId={task} />;
+  },
+});
+
+const sprintBoardRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/sprints/$sprintId',
+  validateSearch: taskSearch,
+  component: function SprintBoardRoute() {
+    const { workspaceId, sprintId } = sprintBoardRoute.useParams();
+    const { task } = sprintBoardRoute.useSearch();
+    return <SprintBoardPage key={sprintId} workspaceId={workspaceId} sprintId={sprintId} openTaskId={task} />;
+  },
+});
+
 const membersRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: '/members',
@@ -146,7 +173,15 @@ const routeTree = rootRoute.addChildren([
   appLayout.addChildren([
     indexRoute,
     onboardingRoute,
-    workspaceRoute.addChildren([workspaceHomeRoute, listRoute, membersRoute, rolesRoute, settingsRoute]),
+    workspaceRoute.addChildren([
+      workspaceHomeRoute,
+      listRoute,
+      sprintsRoute,
+      sprintBoardRoute,
+      membersRoute,
+      rolesRoute,
+      settingsRoute,
+    ]),
   ]),
 ]);
 

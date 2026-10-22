@@ -10,6 +10,7 @@ export interface Task {
   priority: TaskPriority;
   dueDate: Date | null;
   assigneeId: string | null;
+  sprintId: string | null;
   position: number;
   createdById: string;
   createdAt: Date;

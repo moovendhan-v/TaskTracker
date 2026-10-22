@@ -12,6 +12,7 @@ export const TaskMapper = {
       priority: task.priority,
       dueDate: task.dueDate ? task.dueDate.toISOString() : null,
       assigneeId: task.assigneeId,
+      sprintId: task.sprintId,
       position: task.position,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),

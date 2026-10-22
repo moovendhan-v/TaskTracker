@@ -7,6 +7,7 @@ import { AuditModule } from './core/audit/audit.module.js';
 import { AuthModule } from './core/auth/auth.module.js';
 import { SessionGuard } from './core/auth/session.guard.js';
 import { DatabaseModule } from './core/database/database.module.js';
+import { TimeModule } from './core/time/time.module.js';
 import { AllExceptionsFilter } from './core/http/filters/all-exceptions.filter.js';
 import { UserThrottlerGuard } from './core/http/guards/user-throttler.guard.js';
 import { CommentsModule } from './modules/comments/comments.module.js';
@@ -16,6 +17,7 @@ import { TypeOrmMembershipReader } from './modules/members/infrastructure/typeor
 import { MembersModule } from './modules/members/members.module.js';
 import { RolesModule } from './modules/roles/roles.module.js';
 import { SpacesModule } from './modules/spaces/spaces.module.js';
+import { SprintsModule } from './modules/sprints/sprints.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
@@ -25,6 +27,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
   imports: [
     AppConfigModule,
     DatabaseModule,
+    TimeModule,
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     AuthModule,
     AuditModule,
@@ -38,6 +41,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     ListsModule,
     TasksModule,
     CommentsModule,
+    SprintsModule,
   ],
   providers: [
     // Order matters: the session guard sets req.user, which the throttler uses as its key.

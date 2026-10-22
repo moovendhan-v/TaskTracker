@@ -244,6 +244,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/sprints/{sprintId}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Tasks_listInSprint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/spaces/{spaceId}/backlog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Tasks_backlog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspaces/{workspaceId}/tasks/{taskId}": {
         parameters: {
             query?: never;
@@ -258,6 +290,70 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["Tasks_update"];
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/spaces/{spaceId}/sprints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Sprints_list"];
+        put?: never;
+        post: operations["Sprints_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/sprints/{sprintId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Sprints_get"];
+        put?: never;
+        post?: never;
+        delete: operations["Sprints_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["Sprints_update"];
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/sprints/{sprintId}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["Sprints_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/sprints/{sprintId}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["Sprints_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/workspaces/{workspaceId}/tasks/{taskId}/comments": {
@@ -413,6 +509,8 @@ export interface components {
             /** Format: date-time */
             dueDate: string | null;
             assigneeId: string | null;
+            /** Format: uuid */
+            sprintId: string | null;
             position: number;
             /** Format: date-time */
             createdAt: string;
@@ -447,6 +545,64 @@ export interface components {
             dueDate?: string | null;
             assigneeId?: string | null;
             position?: number;
+            /**
+             * Format: uuid
+             * @description null moves the task to the backlog
+             */
+            sprintId?: string | null;
+        };
+        SprintResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            spaceId: string;
+            name: string;
+            goal: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            /** @enum {string} */
+            status: "planned" | "active" | "completed";
+            totalTasks: number;
+            doneTasks: number;
+            /** Format: date-time */
+            completedAt: string | null;
+        };
+        CreateSprintDto: {
+            name: string;
+            goal?: string;
+            /**
+             * Format: date
+             * @example 2026-11-02
+             */
+            startDate: string;
+            /**
+             * Format: date
+             * @example 2026-11-13
+             */
+            endDate: string;
+        };
+        UpdateSprintDto: {
+            name?: string;
+            goal?: string;
+            /**
+             * Format: date
+             * @example 2026-11-02
+             */
+            startDate?: string;
+            /**
+             * Format: date
+             * @example 2026-11-13
+             */
+            endDate?: string;
+        };
+        CompleteSprintDto: {
+            /**
+             * Format: uuid
+             * @description null sends unfinished tasks to the backlog
+             */
+            moveOpenTasksToSprintId: string | null;
         };
         CommentResponseDto: {
             /** Format: uuid */
@@ -1181,6 +1337,64 @@ export interface operations {
             };
         };
     };
+    Tasks_listInSprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sprintId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"][];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Tasks_backlog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spaceId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"][];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     Tasks_get: {
         parameters: {
             query?: never;
@@ -1253,6 +1467,213 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Sprints_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spaceId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SprintResponseDto"][];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Sprints_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spaceId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSprintDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SprintResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Sprints_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sprintId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SprintResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Sprints_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sprintId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Sprints_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sprintId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSprintDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SprintResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Sprints_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sprintId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SprintResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Sprints_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sprintId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteSprintDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SprintResponseDto"];
                 };
             };
             /** @description Missing workspace permission */

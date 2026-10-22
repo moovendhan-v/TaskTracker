@@ -10,7 +10,11 @@ type TaskPage = Paginated<TaskResponse>;
 export function useTaskMutations(workspaceId: string) {
   const queryClient = useQueryClient();
   const tasksRoot = queryKeys.tasksRoot(workspaceId);
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: tasksRoot });
+  const invalidate = () => {
+    // Sprint progress counts depend on task status and sprint membership.
+    void queryClient.invalidateQueries({ queryKey: queryKeys.sprintsRoot(workspaceId) });
+    return queryClient.invalidateQueries({ queryKey: tasksRoot });
+  };
 
   const create = useMutation({
     mutationFn: ({ listId, body }: { listId: string; body: CreateTaskRequest }) => tasksApi.create(workspaceId, listId, body),
@@ -23,9 +27,10 @@ export function useTaskMutations(workspaceId: string) {
     mutationFn: ({ taskId, body }: { taskId: string; body: UpdateTaskRequest }) => tasksApi.update(workspaceId, taskId, body),
     onMutate: async ({ taskId, body }) => {
       await queryClient.cancelQueries({ queryKey: tasksRoot });
-      const snapshot = queryClient.getQueriesData<TaskPage | TaskResponse>({ queryKey: tasksRoot });
-      queryClient.setQueriesData<TaskPage | TaskResponse>({ queryKey: tasksRoot }, (data) => {
+      const snapshot = queryClient.getQueriesData<TaskPage | TaskResponse | TaskResponse[]>({ queryKey: tasksRoot });
+      queryClient.setQueriesData<TaskPage | TaskResponse | TaskResponse[]>({ queryKey: tasksRoot }, (data) => {
         if (!data) return data;
+        if (Array.isArray(data)) return data.map((task) => (task.id === taskId ? applyPatch(task, body) : task));
         if ('items' in data) {
           return { ...data, items: data.items.map((task) => (task.id === taskId ? applyPatch(task, body) : task)) };
         }
@@ -50,7 +55,7 @@ export function useTaskMutations(workspaceId: string) {
 }
 
 function applyPatch(task: TaskResponse, body: UpdateTaskRequest): TaskResponse {
-  const { title, description, status, priority, dueDate, assigneeId, position } = body;
+  const { title, description, status, priority, dueDate, assigneeId, position, sprintId } = body;
   return {
     ...task,
     ...(title !== undefined && { title }),
@@ -60,5 +65,6 @@ function applyPatch(task: TaskResponse, body: UpdateTaskRequest): TaskResponse {
     ...(dueDate !== undefined && { dueDate }),
     ...(assigneeId !== undefined && { assigneeId }),
     ...(position !== undefined && { position }),
+    ...(sprintId !== undefined && { sprintId }),
   };
 }

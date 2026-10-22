@@ -30,6 +30,20 @@ export class InMemoryTaskRepository extends TaskRepository {
     return positions.length > 0 ? Math.max(...positions) : 0;
   }
 
+  async listInSprint(workspaceId: string, sprintId: string, limit: number): Promise<Task[]> {
+    return [...this.rows.values()]
+      .filter((t) => t.workspaceId === workspaceId && t.sprintId === sprintId)
+      .sort((a, b) => a.position - b.position)
+      .slice(0, limit);
+  }
+
+  /** The fake has no list-to-space mapping, so `spaceId` is matched against listId. */
+  async backlogInSpace(workspaceId: string, spaceId: string, limit: number): Promise<Task[]> {
+    return [...this.rows.values()]
+      .filter((t) => t.workspaceId === workspaceId && t.listId === spaceId && t.sprintId === null && t.status !== 'done')
+      .slice(0, limit);
+  }
+
   async create(task: NewTask): Promise<Task> {
     const now = new Date();
     const created: Task = { ...task, id: randomUUID(), createdAt: now, updatedAt: now };

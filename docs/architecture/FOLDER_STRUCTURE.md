@@ -103,6 +103,9 @@ Core code knows nothing about tasks, sprints or HR. Feature modules depend on co
 src/core/
 ├── domain/
 │   └── domain-error.ts               DomainError (not_found | forbidden | invalid | conflict); no HTTP details
+├── time/
+│   ├── clock.port.ts                 abstract class Clock; SystemClock and FixedClock (tests)
+│   └── time.module.ts
 ├── auth/
 │   ├── auth.module.ts
 │   ├── better-auth.factory.ts        builds the Better Auth instance (plugins, rate limits, cookies)
@@ -254,6 +257,7 @@ src/modules/
 │   ├── domain/task.ts
 │   ├── domain/task.repository.ts                 findInWorkspace, pageInList, nextPosition, save, delete
 │   ├── domain/task-assignment.policy.ts          needs task.assign; assignee must be a member
+│   ├── domain/task-planning.policy.ts            sprint changes need sprint.manage and the same space
 │   ├── application/tasks.service.ts
 │   ├── application/task.mapper.ts
 │   ├── infrastructure/task.orm-entity.ts
@@ -263,19 +267,19 @@ src/modules/
 │       ├── tasks.controller.ts
 │       └── dto/{create-task,update-task,task-query,task.response,task-page.response}.dto.ts
 │
-├── comments/                                     🔜 [2]
+├── comments/                                     ✅
 │   ├── domain/{comment.ts,comment.repository.ts}
 │   ├── application/{comments.service.ts,comment.mapper.ts}
 │   ├── infrastructure/{comment.orm-entity.ts,typeorm-comment.repository.ts}
 │   └── presentation/{comments.controller.ts,dto/…}
 │
-├── sprints/                                      🔜 [3]
+├── sprints/                                      ✅
 │   ├── sprints.module.ts
 │   ├── domain/sprint.ts                          name, goal, startDate, endDate, status
 │   ├── domain/sprint.repository.ts
 │   ├── domain/sprint-lifecycle.policy.ts         planned → active → completed; one active sprint per space
 │   ├── domain/sprint-rollover.policy.ts          where unfinished tasks go on completion
-│   ├── application/sprints.service.ts            create, plan tasks, start, complete (one transaction)
+│   ├── application/sprints.service.ts            create, start, complete with rollover (one transaction); uses the Clock port
 │   ├── application/sprint.mapper.ts
 │   ├── infrastructure/sprint.orm-entity.ts
 │   ├── infrastructure/typeorm-sprint.repository.ts
@@ -474,7 +478,7 @@ packages/shared-types/
     │   ├── workspace.ts              ✅ NAME_MAX, COLOR_PATTERN
     │   ├── task.ts                   ✅ TASK_STATUSES, TASK_PRIORITIES, limits
     │   ├── pagination.ts             ✅ PAGE_SIZE_MAX, Paginated<T>
-    │   ├── sprint.ts                 🔜 [3] SPRINT_STATUSES
+    │   ├── sprint.ts                 ✅ SPRINT_STATUSES, limits
     │   ├── document.ts               🔜 [4] limits
     │   └── hr.ts                     🔜 [5] LEAVE_STATUSES, EMPLOYMENT_TYPES
     └── contracts/                    request and response shapes, one file per feature
@@ -485,8 +489,8 @@ packages/shared-types/
         ├── space.contract.ts         ✅
         ├── list.contract.ts          ✅
         ├── task.contract.ts          ✅
-        ├── comment.contract.ts       🔜 [2]
-        ├── sprint.contract.ts        🔜 [3]
+        ├── comment.contract.ts       ✅
+        ├── sprint.contract.ts        ✅
         ├── document.contract.ts      🔜 [4]
         ├── hr.contract.ts            🔜 [5]
         └── admin.contract.ts         🔜 [6]

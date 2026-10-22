@@ -8,7 +8,7 @@ import { TaskCard } from './task-card';
 
 interface BoardColumnProps {
   workspaceId: string;
-  listId: string;
+  listId: string | undefined;
   status: TaskStatus;
   tasks: TaskResponse[];
   canEdit: boolean;
@@ -55,7 +55,7 @@ export function BoardColumn({ workspaceId, listId, status, tasks, canEdit, canCr
             }}
           />
         ))}
-        {canCreate ? <QuickAddTask workspaceId={workspaceId} listId={listId} status={status} /> : null}
+        {canCreate && listId ? <QuickAddTask workspaceId={workspaceId} listId={listId} status={status} /> : null}
       </div>
     </section>
   );

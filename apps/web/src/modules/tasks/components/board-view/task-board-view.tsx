@@ -8,7 +8,8 @@ import { TASK_DRAG_TYPE } from './task-card';
 
 interface TaskBoardViewProps {
   workspaceId: string;
-  listId: string;
+  /** Set when the board shows one list; enables quick-add. Sprint boards span lists and leave it out. */
+  listId?: string;
   tasks: TaskResponse[];
   onOpen: (taskId: string) => void;
 }
@@ -41,7 +42,7 @@ export function TaskBoardView({ workspaceId, listId, tasks, onOpen }: TaskBoardV
           status={status}
           tasks={byStatus(status)}
           canEdit={can('task.update')}
-          canCreate={can('task.create')}
+          canCreate={Boolean(listId) && can('task.create')}
           onOpen={onOpen}
           onDrop={handleDrop}
         />

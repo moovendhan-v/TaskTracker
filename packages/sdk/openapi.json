@@ -1111,6 +1111,104 @@
         ]
       }
     },
+    "/api/workspaces/{workspaceId}/sprints/{sprintId}/tasks": {
+      "get": {
+        "operationId": "Tasks_listInSprint",
+        "parameters": [
+          {
+            "name": "sprintId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace permission"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/workspaces/{workspaceId}/spaces/{spaceId}/backlog": {
+      "get": {
+        "operationId": "Tasks_backlog",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace permission"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
     "/api/workspaces/{workspaceId}/tasks/{taskId}": {
       "get": {
         "operationId": "Tasks_get",
@@ -1242,6 +1340,345 @@
         ],
         "tags": [
           "tasks"
+        ]
+      }
+    },
+    "/api/workspaces/{workspaceId}/spaces/{spaceId}/sprints": {
+      "get": {
+        "operationId": "Sprints_list",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SprintResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace permission"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "sprints"
+        ]
+      },
+      "post": {
+        "operationId": "Sprints_create",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSprintDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace permission"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "sprints"
+        ]
+      }
+    },
+    "/api/workspaces/{workspaceId}/sprints/{sprintId}": {
+      "get": {
+        "operationId": "Sprints_get",
+        "parameters": [
+          {
+            "name": "sprintId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace permission"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "sprints"
+        ]
+      },
+      "patch": {
+        "operationId": "Sprints_update",
+        "parameters": [
+          {
+            "name": "sprintId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSprintDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace permission"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "sprints"
+        ]
+      },
+      "delete": {
+        "operationId": "Sprints_remove",
+        "parameters": [
+          {
+            "name": "sprintId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Missing workspace permission"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "sprints"
+        ]
+      }
+    },
+    "/api/workspaces/{workspaceId}/sprints/{sprintId}/start": {
+      "post": {
+        "operationId": "Sprints_start",
+        "parameters": [
+          {
+            "name": "sprintId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace permission"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "sprints"
+        ]
+      }
+    },
+    "/api/workspaces/{workspaceId}/sprints/{sprintId}/complete": {
+      "post": {
+        "operationId": "Sprints_complete",
+        "parameters": [
+          {
+            "name": "sprintId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteSprintDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace permission"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "sprints"
         ]
       }
     },
@@ -1940,6 +2377,11 @@
             "type": "string",
             "nullable": true
           },
+          "sprintId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "position": {
             "type": "number"
           },
@@ -1961,6 +2403,7 @@
           "priority",
           "dueDate",
           "assigneeId",
+          "sprintId",
           "position",
           "createdAt",
           "updatedAt"
@@ -2077,8 +2520,137 @@
           },
           "position": {
             "type": "number"
+          },
+          "sprintId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "null moves the task to the backlog"
           }
         }
+      },
+      "SprintResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "spaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "active",
+              "completed"
+            ]
+          },
+          "totalTasks": {
+            "type": "number"
+          },
+          "doneTasks": {
+            "type": "number"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "spaceId",
+          "name",
+          "goal",
+          "startDate",
+          "endDate",
+          "status",
+          "totalTasks",
+          "doneTasks",
+          "completedAt"
+        ]
+      },
+      "CreateSprintDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "goal": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-02"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-13"
+          }
+        },
+        "required": [
+          "name",
+          "startDate",
+          "endDate"
+        ]
+      },
+      "UpdateSprintDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "goal": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-02"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-13"
+          }
+        }
+      },
+      "CompleteSprintDto": {
+        "type": "object",
+        "properties": {
+          "moveOpenTasksToSprintId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "null sends unfinished tasks to the backlog"
+          }
+        },
+        "required": [
+          "moveOpenTasksToSprintId"
+        ]
       },
       "CommentResponseDto": {
         "type": "object",

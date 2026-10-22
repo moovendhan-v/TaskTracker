@@ -1,4 +1,4 @@
-import { ChevronRightIcon, ListIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
+import { CalendarRangeIcon, ChevronRightIcon, ListIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { SpaceResponse, TaskListResponse } from '@taskflow/shared-types';
 import { ColorDot } from '@/components/common/color-dot';
@@ -128,6 +128,9 @@ function SpaceNode({ workspaceId, space, lists }: SpaceNodeProps) {
       </div>
       {expanded ? (
         <div className="ml-4 grid gap-0.5 border-l border-sidebar-border pl-2">
+          <SidebarLink to="/w/$workspaceId/s/$spaceId/sprints" params={{ workspaceId, spaceId: space.id }} icon={<CalendarRangeIcon />}>
+            Sprints
+          </SidebarLink>
           {lists.map((list) => (
             <SidebarLink key={list.id} to="/w/$workspaceId/l/$listId" params={{ workspaceId, listId: list.id }} icon={<ListIcon />}>
               {list.name}
