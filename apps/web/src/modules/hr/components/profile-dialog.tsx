@@ -1,5 +1,5 @@
 import { PencilIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { EMPLOYMENT_TYPES, JOB_TITLE_MAX, type DepartmentResponse, type EmployeeResponse, type EmploymentType, type UpsertEmployeeProfileRequest } from '@taskflow/shared-types';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -29,14 +29,17 @@ export function ProfileDialog({ employee, departments, people, onSave }: Profile
   const [startDate, setStartDate] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setJobTitle(employee.jobTitle ?? '');
-    setDepartmentId(toValue(employee.departmentId));
-    setManagerUserId(toValue(employee.managerUserId));
-    setEmploymentType(toValue(employee.employmentType));
-    setStartDate(employee.startDate ?? '');
-  }, [open, employee]);
+  /** Opening the dialog starts from the saved values, so a cancelled edit leaves nothing behind. */
+  function changeOpen(next: boolean) {
+    if (next) {
+      setJobTitle(employee.jobTitle ?? '');
+      setDepartmentId(toValue(employee.departmentId));
+      setManagerUserId(toValue(employee.managerUserId));
+      setEmploymentType(toValue(employee.employmentType));
+      setStartDate(employee.startDate ?? '');
+    }
+    setOpen(next);
+  }
 
   async function save() {
     setSaving(true);
@@ -55,7 +58,7 @@ export function ProfileDialog({ employee, departments, people, onSave }: Profile
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon-sm" aria-label={`Edit ${employee.name}'s profile`}>
           <PencilIcon />

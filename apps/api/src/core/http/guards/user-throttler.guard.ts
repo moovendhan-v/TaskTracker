@@ -7,6 +7,8 @@ import type { AuthenticatedRequest } from '../types/authenticated-request.js';
 /** Rate limits GraphQL operations by user id when signed in, otherwise by client IP. */
 @Injectable()
 export class UserThrottlerGuard extends ThrottlerGuard {
+  // The return type is fixed by ThrottlerGuard's signature.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected override getRequestResponse(context: ExecutionContext): { req: Record<string, any>; res: Record<string, any> } {
     if (context.getType<GqlContextType>() === 'graphql') {
       const { req, res } = GqlExecutionContext.create(context).getContext<{ req: AuthenticatedRequest; res: Response }>();

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronRightIcon, FileTextIcon, MoreHorizontalIcon, PlusIcon, TrashIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/cn';
@@ -30,13 +30,17 @@ export function DocTree(props: DocTreeProps) {
 
 function DocTreeItem({ node, depth, ...props }: DocTreeProps & { node: DocumentNode; depth: number }) {
   const { workspaceId, activeId, expandedPath, canCreate, canEdit, onAddChild, onDelete } = props;
-  const [expanded, setExpanded] = useState(expandedPath.includes(node.id));
+  const inActivePath = expandedPath.includes(node.id);
+  const [expanded, setExpanded] = useState(inActivePath);
+  const [wasInActivePath, setWasInActivePath] = useState(inActivePath);
   const hasChildren = node.children.length > 0;
   const active = node.id === activeId;
 
-  useEffect(() => {
-    if (expandedPath.includes(node.id)) setExpanded(true);
-  }, [expandedPath, node.id]);
+  // When the active page moves under this node, expand it. Adjusted during render, not in an effect.
+  if (inActivePath !== wasInActivePath) {
+    setWasInActivePath(inActivePath);
+    if (inActivePath) setExpanded(true);
+  }
 
   return (
     <li role="treeitem" aria-expanded={hasChildren ? expanded : undefined} aria-selected={active}>

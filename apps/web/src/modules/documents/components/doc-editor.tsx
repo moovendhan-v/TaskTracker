@@ -19,7 +19,7 @@ type SaveState = 'saved' | 'dirty' | 'saving';
 
 /** Title and markdown body with debounced autosave. Read-only for people who can't edit. */
 export function DocEditor({ workspaceId, document, canEdit }: DocEditorProps) {
-  const { update } = useDocumentMutations(workspaceId);
+  const { mutate } = useDocumentMutations(workspaceId).update;
   const memberName = useMemberName(workspaceId);
   const [title, setTitle] = useState(document.title);
   const [content, setContent] = useState(document.content);
@@ -27,8 +27,6 @@ export function DocEditor({ workspaceId, document, canEdit }: DocEditorProps) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Edits not yet sent. Title and content changes merge, so a quick edit to one never drops the other.
   const pending = useRef<{ title?: string; content?: string }>({});
-  const mutate = useRef(update.mutate);
-  mutate.current = update.mutate;
 
   const flush = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -38,8 +36,9 @@ export function DocEditor({ workspaceId, document, canEdit }: DocEditorProps) {
     if (changes.title === undefined && changes.content === undefined) return;
     const body = { ...changes, ...(changes.title !== undefined && { title: changes.title.trim() || 'Untitled' }) };
     setSaveState('saving');
-    mutate.current({ documentId: document.id, body }, { onSettled: () => setSaveState('saved') });
-  }, [document.id]);
+    // TanStack Query keeps `mutate` stable, so flush (and the unmount save below) doesn't change identity.
+    mutate({ documentId: document.id, body }, { onSettled: () => setSaveState('saved') });
+  }, [document.id, mutate]);
 
   function scheduleSave(next: { title?: string; content?: string }) {
     pending.current = { ...pending.current, ...next };

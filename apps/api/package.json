@@ -7,8 +7,9 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput & node --watch --enable-source-maps dist/main.js",
     "start": "node --enable-source-maps dist/main.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
     "test": "vitest run",
+    "test:e2e": "pnpm build && vitest run -c vitest.e2e.config.ts",
     "migration:run": "pnpm build && node dist/cli/run-migrations.js",
     "admin:promote": "pnpm build && node dist/cli/promote-super-admin.js",
     "graphql:export": "pnpm build && node dist/cli/export-graphql-schema.js ../../packages/sdk/schema.graphql"

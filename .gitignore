@@ -11,3 +11,7 @@ coverage/
 *.tfstate.*
 .terraform.lock.hcl.bak
 infra/terraform/terraform.tfvars
+
+# Playwright
+apps/web/playwright-report/
+apps/web/test-results/

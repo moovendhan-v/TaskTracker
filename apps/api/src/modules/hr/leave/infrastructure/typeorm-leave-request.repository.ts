@@ -58,14 +58,13 @@ export class TypeOrmLeaveRequestRepository extends LeaveRequestRepository {
       if (status) query.andWhere('request.status = :status', { status });
       return query;
     };
-    const [rows, total] = await Promise.all([
-      filtered(this.viewQuery())
-        .orderBy('request.created_at', 'ASC')
-        .offset((page.page - 1) * page.pageSize)
-        .limit(page.pageSize)
-        .getRawMany<ViewRow>(),
-      filtered(this.repository.createQueryBuilder('request')).getCount(),
-    ]);
+    // Sequential on purpose: an operation's queries share one transaction connection, which runs one query at a time.
+    const rows = await filtered(this.viewQuery())
+      .orderBy('request.created_at', 'ASC')
+      .offset((page.page - 1) * page.pageSize)
+      .limit(page.pageSize)
+      .getRawMany<ViewRow>();
+    const total = await filtered(this.repository.createQueryBuilder('request')).getCount();
     return { items: rows.map(toView), total };
   }
 

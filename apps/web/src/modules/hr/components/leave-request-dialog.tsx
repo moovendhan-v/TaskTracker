@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarPlusIcon } from 'lucide-react';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { LEAVE_REASON_MAX, type LeaveTypeResponse } from '@taskflow/shared-types';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ export function LeaveRequestDialog({ leaveTypes, onSubmit }: LeaveRequestDialogP
     defaultValues: { leaveTypeId: leaveTypes[0]?.id ?? '', startDate: '', endDate: '', reason: '' },
   });
   const { errors } = form.formState;
-  const [startDate, endDate, leaveTypeId] = form.watch(['startDate', 'endDate', 'leaveTypeId']);
+  const [startDate, endDate, leaveTypeId] = useWatch({ control: form.control, name: ['startDate', 'endDate', 'leaveTypeId'] });
   const days = startDate && endDate ? previewWorkingDays(startDate, endDate) : 0;
   const selectedType = leaveTypes.find((type) => type.id === leaveTypeId);
 

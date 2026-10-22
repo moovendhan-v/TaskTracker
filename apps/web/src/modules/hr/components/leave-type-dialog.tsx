@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { LEAVE_ALLOWANCE_MAX, NAME_MAX, type CreateLeaveTypeRequest, type LeaveTypeResponse } from '@taskflow/shared-types';
 import { ColorPicker, PALETTE } from '@/components/common/color-picker';
 import { Button } from '@/components/ui/button';
@@ -22,14 +22,17 @@ export function LeaveTypeDialog({ trigger, leaveType, onSave }: LeaveTypeDialogP
   const [requiresApproval, setRequiresApproval] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setName(leaveType?.name ?? '');
-    setColor(leaveType?.color ?? (PALETTE[1] as string));
-    setUnlimited(leaveType ? leaveType.annualAllowanceDays === null : false);
-    setAllowance(String(leaveType?.annualAllowanceDays ?? 20));
-    setRequiresApproval(leaveType?.requiresApproval ?? true);
-  }, [open, leaveType]);
+  /** Opening the dialog starts from the saved values, so a cancelled edit leaves nothing behind. */
+  function changeOpen(next: boolean) {
+    if (next) {
+      setName(leaveType?.name ?? '');
+      setColor(leaveType?.color ?? (PALETTE[1] as string));
+      setUnlimited(leaveType ? leaveType.annualAllowanceDays === null : false);
+      setAllowance(String(leaveType?.annualAllowanceDays ?? 20));
+      setRequiresApproval(leaveType?.requiresApproval ?? true);
+    }
+    setOpen(next);
+  }
 
   const allowanceNumber = Number(allowance);
   const allowanceValid = unlimited || (Number.isInteger(allowanceNumber) && allowanceNumber >= 0 && allowanceNumber <= LEAVE_ALLOWANCE_MAX);
@@ -45,7 +48,7 @@ export function LeaveTypeDialog({ trigger, leaveType, onSave }: LeaveTypeDialogP
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>

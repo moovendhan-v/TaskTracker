@@ -125,11 +125,10 @@ export class LeaveRequestsService {
   }
 
   async myBalances(actor: Actor, workspaceId: string, year: number): Promise<LeaveBalanceResponse[]> {
-    const [types, used, pending] = await Promise.all([
-      this.leaveTypesService.list(workspaceId),
-      this.balances.usedDaysByType(workspaceId, actor.userId, year),
-      this.requests.pendingDaysByType(workspaceId, actor.userId, year),
-    ]);
+    // Sequential on purpose: an operation's queries share one transaction connection, which runs one query at a time.
+    const types = await this.leaveTypesService.list(workspaceId);
+    const used = await this.balances.usedDaysByType(workspaceId, actor.userId, year);
+    const pending = await this.requests.pendingDaysByType(workspaceId, actor.userId, year);
     return types.map((type) => LeaveMapper.balance(type, year, used.get(type.id) ?? 0, pending.get(type.id) ?? 0));
   }
 

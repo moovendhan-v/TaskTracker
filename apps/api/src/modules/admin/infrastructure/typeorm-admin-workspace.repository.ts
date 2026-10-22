@@ -24,17 +24,16 @@ export class TypeOrmAdminWorkspaceRepository extends AdminWorkspaceRepository {
     const where = search ? `WHERE w.name ILIKE $1` : '';
     const params = search ? [`%${escapeLike(search)}%`] : [];
     const offset = (page.page - 1) * page.pageSize;
-    const [rows, count] = await Promise.all([
-      this.transactional.manager.query(
-        `SELECT w.id, w.name, w.owner_id, owner.name AS owner_name, w.created_at,
-                (SELECT COUNT(*) FROM workspace_member m WHERE m.workspace_id = w.id) AS member_count
-         FROM workspace w LEFT JOIN "user" owner ON owner.id = w.owner_id
-         ${where}
-         ORDER BY w.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
-        [...params, page.pageSize, offset],
-      ) as Promise<WorkspaceRow[]>,
-      this.transactional.manager.query(`SELECT COUNT(*) AS total FROM workspace w ${where}`, params) as Promise<{ total: string }[]>,
-    ]);
+    // Sequential on purpose: an operation's queries share one transaction connection, which runs one query at a time.
+    const rows: WorkspaceRow[] = await this.transactional.manager.query(
+      `SELECT w.id, w.name, w.owner_id, owner.name AS owner_name, w.created_at,
+              (SELECT COUNT(*) FROM workspace_member m WHERE m.workspace_id = w.id) AS member_count
+       FROM workspace w LEFT JOIN "user" owner ON owner.id = w.owner_id
+       ${where}
+       ORDER BY w.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, page.pageSize, offset],
+    );
+    const count: { total: string }[] = await this.transactional.manager.query(`SELECT COUNT(*) AS total FROM workspace w ${where}`, params);
     return {
       items: rows.map((row) => ({
         id: row.id,

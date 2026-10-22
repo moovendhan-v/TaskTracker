@@ -9,7 +9,8 @@ const INLINE_LINK = new RegExp(String.raw`\]\(\s*<?\s*${UNSAFE_SCHEME}`, 'gi');
 const AUTOLINK = new RegExp(String.raw`<\s*${UNSAFE_SCHEME}`, 'gi');
 // [ref]: javascript:… reference definitions
 const REFERENCE = new RegExp(String.raw`^(\s{0,3}\[[^\]]+\]:\s*<?\s*)${UNSAFE_SCHEME}`, 'gim');
-// C0 controls except tab and newline, plus DEL
+// C0 controls except tab and newline, plus DEL. Matching control characters is the point here.
+// eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 
 /**

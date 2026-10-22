@@ -28,27 +28,26 @@ export class TypeOrmAuditLogRepository extends AuditLogRepository {
 
   async page(filter: AuditFilter, page: PageRequest): Promise<{ items: AuditEntry[]; total: number }> {
     const base = () => this.filtered(this.transactional.repository(AuditLogOrmEntity).createQueryBuilder('log'), filter);
-    const [rows, total] = await Promise.all([
-      base()
-        .leftJoin('user', 'actor', 'actor.id = log.actor_id')
-        .select([
-          'log.id AS id',
-          'log.actor_id AS actor_id',
-          'actor.name AS actor_name',
-          'log.action AS action',
-          'log.target_type AS target_type',
-          'log.target_id AS target_id',
-          'log.workspace_id AS workspace_id',
-          'log.ip AS ip',
-          'log.metadata AS metadata',
-          'log.created_at AS created_at',
-        ])
-        .orderBy('log.id', 'DESC')
-        .offset((page.page - 1) * page.pageSize)
-        .limit(page.pageSize)
-        .getRawMany<AuditRow>(),
-      base().getCount(),
-    ]);
+    // Sequential on purpose: an operation's queries share one transaction connection, which runs one query at a time.
+    const rows = await base()
+      .leftJoin('user', 'actor', 'actor.id = log.actor_id')
+      .select([
+        'log.id AS id',
+        'log.actor_id AS actor_id',
+        'actor.name AS actor_name',
+        'log.action AS action',
+        'log.target_type AS target_type',
+        'log.target_id AS target_id',
+        'log.workspace_id AS workspace_id',
+        'log.ip AS ip',
+        'log.metadata AS metadata',
+        'log.created_at AS created_at',
+      ])
+      .orderBy('log.id', 'DESC')
+      .offset((page.page - 1) * page.pageSize)
+      .limit(page.pageSize)
+      .getRawMany<AuditRow>();
+    const total = await base().getCount();
     return { items: rows.map(toEntry), total };
   }
 

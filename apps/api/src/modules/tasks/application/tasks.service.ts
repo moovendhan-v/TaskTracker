@@ -112,10 +112,9 @@ export class TasksService {
   private async assertPlannable(access: WorkspaceAccess, task: Task, sprintId: string | null): Promise<void> {
     TaskPlanningPolicy.assertCanPlan(access.permissions);
     if (sprintId === null) return;
-    const [sprint, list] = await Promise.all([
-      this.sprintsService.getPlannable(access.workspaceId, sprintId),
-      this.listsService.getInWorkspace(access.workspaceId, task.listId),
-    ]);
+    // Sequential on purpose: an operation's queries share one transaction connection, which runs one query at a time.
+    const sprint = await this.sprintsService.getPlannable(access.workspaceId, sprintId);
+    const list = await this.listsService.getInWorkspace(access.workspaceId, task.listId);
     TaskPlanningPolicy.assertSameSpace(list.spaceId, sprint.spaceId);
   }
 

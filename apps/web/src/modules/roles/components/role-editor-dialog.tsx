@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ROLE_NAME_MAX, type Permission, type RoleResponse } from '@taskflow/shared-types';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,11 +24,14 @@ export function RoleEditorDialog({ trigger, role, grantable, onSave }: RoleEdito
   const [saving, setSaving] = useState(false);
   const readOnly = Boolean(role?.systemKey);
 
-  useEffect(() => {
-    if (!open) return;
-    setName(role?.name ?? '');
-    setSelected(new Set(role?.permissions ?? ['task.view', 'doc.view']));
-  }, [open, role]);
+  /** Opening the dialog starts from the saved values, so a cancelled edit leaves nothing behind. */
+  function changeOpen(next: boolean) {
+    if (next) {
+      setName(role?.name ?? '');
+      setSelected(new Set(role?.permissions ?? ['task.view', 'doc.view']));
+    }
+    setOpen(next);
+  }
 
   function toggle(permission: Permission, checked: boolean) {
     setSelected((current) => {
@@ -50,7 +53,7 @@ export function RoleEditorDialog({ trigger, role, grantable, onSave }: RoleEdito
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>

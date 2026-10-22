@@ -32,13 +32,12 @@ export class TypeOrmAdminUserRepository extends AdminUserRepository {
     const where = search ? `WHERE u.name ILIKE $1 OR u.email ILIKE $1` : '';
     const params = search ? [`%${escapeLike(search)}%`] : [];
     const offset = (page.page - 1) * page.pageSize;
-    const [rows, count] = await Promise.all([
-      this.transactional.manager.query(
-        `${SELECT_USERS} ${where} ORDER BY u."createdAt" DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
-        [...params, page.pageSize, offset],
-      ) as Promise<UserRow[]>,
-      this.transactional.manager.query(`SELECT COUNT(*) AS total FROM "user" u ${where}`, params) as Promise<{ total: string }[]>,
-    ]);
+    // Sequential on purpose: an operation's queries share one transaction connection, which runs one query at a time.
+    const rows: UserRow[] = await this.transactional.manager.query(
+      `${SELECT_USERS} ${where} ORDER BY u."createdAt" DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, page.pageSize, offset],
+    );
+    const count: { total: string }[] = await this.transactional.manager.query(`SELECT COUNT(*) AS total FROM "user" u ${where}`, params);
     return { items: rows.map(toUser), total: Number(count[0]?.total ?? 0) };
   }
 

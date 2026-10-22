@@ -17,7 +17,7 @@ export function DirectoryPage({ workspaceId }: { workspaceId: string }) {
   const { data: departments = [] } = useDepartments(workspaceId);
   const upsert = useUpsertProfile(workspaceId);
   const { can } = usePermissions(workspaceId);
-  const people = employees.data ?? [];
+  const people = useMemo(() => employees.data ?? [], [employees.data]);
   const names = useMemo(() => new Map(people.map((person) => [person.userId, person.name])), [people]);
 
   const filtered = people.filter((person) => {

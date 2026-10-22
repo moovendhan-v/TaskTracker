@@ -1,5 +1,4 @@
 import { TrashIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { TASK_DESCRIPTION_MAX, TASK_TITLE_MAX, type TaskResponse, type UpdateTaskRequest } from '@taskflow/shared-types';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
@@ -8,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
 import { formatLongDate } from '@/lib/dates';
+import { useResettableState } from '@/lib/use-resettable-state';
 import { CommentThread } from '@/modules/comments';
 import { usePermissions } from '@/modules/workspaces';
 import { useTask } from '../../hooks/use-tasks';
@@ -53,11 +53,8 @@ function TaskDetail({ workspaceId, task, onDeleted }: TaskDetailProps) {
   const { update, remove } = useTaskMutations(workspaceId);
   const { can } = usePermissions(workspaceId);
   const canEdit = can('task.update');
-  const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description);
-
-  useEffect(() => setTitle(task.title), [task.title]);
-  useEffect(() => setDescription(task.description), [task.description]);
+  const [title, setTitle] = useResettableState(task.title);
+  const [description, setDescription] = useResettableState(task.description);
 
   const save = (body: UpdateTaskRequest) => update.mutate({ taskId: task.id, body });
 
