@@ -15,6 +15,7 @@
     "dev:api": "pnpm --filter @taskflow/api dev",
     "dev:web": "pnpm --filter @taskflow/web dev",
     "sdk:generate": "pnpm --filter @taskflow/shared-types build && pnpm --filter @taskflow/api graphql:export && pnpm --filter @taskflow/sdk generate && pnpm --filter @taskflow/sdk build",
+    "db:up": "docker compose -f infra/docker/docker-compose.yml --env-file .env up -d postgres",
     "infra:up": "docker compose -f infra/docker/docker-compose.yml --env-file .env up -d --build",
     "infra:down": "docker compose -f infra/docker/docker-compose.yml --env-file .env down"
   },

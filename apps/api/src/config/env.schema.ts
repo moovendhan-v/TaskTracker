@@ -9,6 +9,11 @@ const csv = z
       .filter(Boolean),
   );
 
+/** An optional setting where an empty value (as in .env.example) means unset. */
+function optionalString<T extends z.ZodType<string>>(schema: T) {
+  return z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -25,12 +30,21 @@ const envSchema = z.object({
   CORS_ORIGINS: csv,
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   // An empty value (as in .env.example) means unset.
-  TURNSTILE_SECRET_KEY: z.preprocess((value) => (value === '' ? undefined : value), z.string().trim().min(1).optional()),
+  TURNSTILE_SECRET_KEY: optionalString(z.string().trim().min(1)),
+  /** Outgoing mail for password resets, e.g. smtps://user:pass@smtp.example.com:465 */
+  SMTP_URL: optionalString(z.string().url().refine((url) => /^smtps?:\/\//.test(url), 'SMTP_URL must start with smtp:// or smtps://')),
+  /** Sender address, e.g. "TaskFlow <no-reply@example.com>" */
+  MAIL_FROM: optionalString(z.string().trim().min(3).max(200)),
 })
   // Public forms need a CAPTCHA in production (AGENTS.md rule 11), so a missing secret fails startup.
   .refine((env) => env.NODE_ENV !== 'production' || env.TURNSTILE_SECRET_KEY !== undefined, {
     path: ['TURNSTILE_SECRET_KEY'],
     message: 'TURNSTILE_SECRET_KEY is required when NODE_ENV=production',
+  })
+  // Without mail, password reset silently does nothing, so production needs it configured.
+  .refine((env) => env.NODE_ENV !== 'production' || (env.SMTP_URL !== undefined && env.MAIL_FROM !== undefined), {
+    path: ['SMTP_URL'],
+    message: 'SMTP_URL and MAIL_FROM are required when NODE_ENV=production',
   });
 
 export type Env = z.infer<typeof envSchema>;

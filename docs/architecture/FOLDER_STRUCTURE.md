@@ -12,31 +12,33 @@ Legend: ✅ exists today · 🔜 planned (phase in brackets)
 TaskTracker/
 ├── AGENTS.md                         ✅ rules for every AI agent (security, OWASP, REA, gstack)
 ├── CLAUDE.md                         ✅ points to AGENTS.md
-├── README.MD                         🔜 [8] quick start, scripts, architecture links
+├── README.md                         ✅ quick start, scripts, testing, security overview
 ├── .env.example                      ✅ every env var name, no values
 ├── .gitignore                        ✅
 ├── .nvmrc                            ✅ Node 22
-├── package.json                      ✅ root scripts only (build, typecheck, test, sdk:generate, infra:*)
-├── pnpm-workspace.yaml               ✅ apps/* and packages/*
+├── package.json                      ✅ root scripts only (build, lint, typecheck, test, test:e2e, sdk:generate, db:up, infra:*)
+├── pnpm-workspace.yaml               ✅ apps/* and packages/*, plus security overrides with a reason each
 ├── pnpm-lock.yaml                    ✅ committed lockfile (AGENTS.md rule 15)
 ├── tsconfig.base.json                ✅ strict TS settings every package extends
-├── eslint.config.js                  🔜 [7] shared lint rules, including import boundaries (section 7)
+├── eslint.config.js                  ✅ shared lint rules, including the import boundaries in section 7
 ├── .github/
+│   ├── dependabot.yml                ✅ weekly updates for actions and npm packages
 │   └── workflows/
-│       └── ci.yml                    🔜 [7] install from lockfile, typecheck, test, audit (actions pinned to SHA)
+│       └── ci.yml                    ✅ lockfile install, audit, SDK drift check, lint, typecheck, tests, e2e (actions pinned to SHA)
 ├── .claude/
 │   └── skills/saas-security-audit/   ✅
 ├── apps/
 │   ├── api/                          ✅ NestJS backend (section 2)
-│   └── web/                          🔜 [2] React frontend (section 3)
+│   └── web/                          ✅ React frontend (section 3)
 ├── packages/
 │   ├── shared-types/                 ✅ contracts shared by api and web (section 4)
-│   └── sdk/                          ✅ typed client generated from OpenAPI (section 5)
+│   └── sdk/                          ✅ typed GraphQL operations and client generated from the schema (section 5)
 ├── infra/
-│   ├── docker/                       🔜 [1-8] docker compose for the local stack (section 6)
-│   └── terraform/                    🔜 [1-8] the same stack via the Docker provider (section 6)
+│   ├── docker/                       ✅ docker compose for the local stack (section 6)
+│   └── terraform/                    ✅ the same stack via the Docker provider (section 6)
 ├── scripts/
-│   └── rea-browser.sh                ✅
+│   ├── rea-browser.sh                ✅
+│   └── create-e2e-database.sh        ✅ throwaway taskflow_test database in local Docker Postgres; writes .env.e2e
 └── docs/
     ├── architecture/FOLDER_STRUCTURE.md  ✅ this file
     ├── plan/TASKFLOW_PLAN.md         ✅ phases and scope
@@ -56,45 +58,47 @@ apps/api/
 ├── package.json
 ├── tsconfig.json                     editor and typecheck config (includes specs)
 ├── tsconfig.build.json               build config (excludes specs)
-├── vitest.config.ts                  🔜 [7]
-├── Dockerfile                        🔜 [1] multi-stage build, runs as non-root
+├── vitest.config.ts                  ✅ unit tests (src/**/*.spec.ts)
+├── vitest.e2e.config.ts              ✅ end-to-end tests (test/e2e)
+├── Dockerfile                        ✅ multi-stage build, runs as non-root
 ├── test/
-│   └── e2e/                          🔜 [7] one *.e2e-spec.ts per module, real Postgres
+│   ├── tsconfig.json
+│   └── e2e/                          ✅ black box: migrates a *test* database, starts dist/main.js, talks GraphQL over HTTP
+│       ├── support/                  global setup (API + SMTP catcher), cookie-keeping TestUser, fixtures, mailbox, DB access
+│       └── *.e2e-spec.ts             tenancy, password reset, tasks and sprints, docs and HR, roles and admin, GraphQL hardening, RLS
 └── src/
     ├── main.ts                       starts the app; delegates every concern to bootstrap/*
-    ├── app.module.ts                 imports core and feature modules, registers global guards
+    ├── app.module.ts                 imports core and feature modules; registers global guards, interceptor and filter
     ├── bootstrap/                    one file per startup concern (SRP)
     ├── config/                       env schema and config module
     ├── core/                         cross-cutting building blocks used by every module
     ├── modules/                      one folder per business feature
     ├── graphql-resolvers.ts          single list of every GraphQL resolver (app and schema export share it)
-    ├── cli/                          operator scripts (migrations, OpenAPI and GraphQL schema export, promote admin)
-    └── openapi/                      Swagger document builder
+    └── cli/                          operator scripts (migrations, schema export, promote admin, demo seed)
 ```
 
-### 2.2 `bootstrap/`, `config/`, `cli/`, `openapi/`
+The API is GraphQL only (`/api/graphql`). The only other HTTP routes are Better Auth's handler (`/api/auth/*`) and the `/api/health` liveness probe.
+
+### 2.2 `bootstrap/`, `config/`, `cli/`
 
 ```
 src/bootstrap/
-├── api-prefix.ts                     the global `/api` prefix, shared with the OpenAPI export
+├── api-prefix.ts                     the global `/api` prefix
 ├── security.bootstrap.ts             helmet (CSP, HSTS, frame-ancestors, referrer, permissions policy), CORS
-├── body-parsers.bootstrap.ts         JSON and urlencoded parsers with size limits
+├── body-parsers.bootstrap.ts         JSON parser with a size limit (GraphQL takes JSON only)
 ├── auth-routes.bootstrap.ts          mounts the Better Auth handler before the body parsers
-├── validation.bootstrap.ts           global ValidationPipe (whitelist, forbidNonWhitelisted)
-└── swagger.bootstrap.ts              serves /api/docs outside production only
+└── validation.bootstrap.ts           global ValidationPipe (whitelist, forbidNonWhitelisted)
 
 src/config/
-├── env.schema.ts                     zod schema; fails fast on bad config
+├── env.schema.ts                     zod schema; fails fast on bad config (CAPTCHA secret required in production)
+├── env.schema.spec.ts
 └── config.module.ts                  provides the ENV token
 
 src/cli/
-├── run-migrations.ts                 Better Auth migrations, then TypeORM migrations
-├── export-openapi.ts                 writes packages/sdk/openapi.json without a database
+├── run-migrations.ts                 Better Auth migrations, then TypeORM migrations, as the owner role (MIGRATION_DATABASE_URL)
 ├── export-graphql-schema.ts          writes packages/sdk/schema.graphql from RESOLVERS, without a database
-└── promote-super-admin.ts            operator-only: grants SUPER_ADMIN by email, writes an audit entry
-
-src/openapi/
-└── openapi.document.ts               DocumentBuilder setup and operationId naming
+├── promote-super-admin.ts            operator-only: grants SUPER_ADMIN by email, writes an audit entry
+└── seed-demo.ts                      development only: demo workspace through the real services; needs SEED_PASSWORD
 ```
 
 ### 2.3 `core/`
@@ -104,7 +108,8 @@ Core code knows nothing about tasks, sprints or HR. Feature modules depend on co
 ```
 src/core/
 ├── domain/
-│   └── domain-error.ts               DomainError (not_found | forbidden | invalid | conflict); no HTTP details
+│   ├── domain-error.ts               DomainError (not_found | forbidden | invalid | conflict); no HTTP details
+│   └── page-request.ts               PageRequest and toPageRequest() for repository ports
 ├── time/
 │   ├── clock.port.ts                 abstract class Clock; SystemClock and FixedClock (tests)
 │   └── time.module.ts
@@ -116,13 +121,14 @@ src/core/
 │   └── mailer/
 │       ├── mailer.port.ts            abstract class Mailer { sendPasswordReset(...) }
 │       ├── console.mailer.ts         development adapter (prints links in dev only)
-│       └── smtp.mailer.ts            🔜 [7] production adapter
+│       └── smtp.mailer.ts            ✅ production adapter (nodemailer, SMTP_URL and MAIL_FROM, bounded timeouts)
 ├── access/
 │   ├── access.module.ts              AccessModule.forRoot({ membershipReader }) — the adapter is injected
 │   ├── membership-reader.port.ts     abstract class MembershipReader { findGrant, workspaceExists }
 │   ├── access.service.ts             resolves (user, workspace) → role + permissions
-│   ├── workspace-access.guard.ts     checks membership and permissions for :workspaceId routes
-│   ├── platform-admin.guard.ts       SUPER_ADMIN-only routes; everyone else gets 404
+│   ├── workspace-access.guard.ts     checks membership and permissions for operations with a workspaceId argument
+│   ├── platform-admin.guard.ts       SUPER_ADMIN-only operations; everyone else gets NOT_FOUND
+│   ├── data-scope.interceptor.ts     runs each operation in one transaction with its row-level security scope
 │   ├── require-platform-admin.decorator.ts
 │   ├── require-permissions.decorator.ts
 │   └── current-access.decorator.ts
@@ -132,15 +138,17 @@ src/core/
 │   ├── typeorm-audit-logger.ts       adapter writing to audit_log
 │   └── audit-log.orm-entity.ts
 ├── database/
-│   ├── database.module.ts            TypeORM root config; provides UnitOfWork, TransactionalManager, health
+│   ├── database.module.ts            TypeORM root config; provides UnitOfWork, TransactionalManager, health, RLS check
 │   ├── data-source-options.ts
 │   ├── snake-naming.strategy.ts
 │   ├── base.orm-entity.ts            BaseOrmEntity, TenantOrmEntity (workspaceId)
 │   ├── orm-entities.ts               single list of every ORM entity
 │   ├── pg-pool.provider.ts           pg pool for Better Auth
-│   ├── unit-of-work.port.ts          abstract class UnitOfWork { run(work) }
+│   ├── data-scope.ts                 DataScope (workspace | user | platform) and the SQL that applies it
+│   ├── unit-of-work.port.ts          abstract class UnitOfWork { run(work), runInScope(scope, work) }
 │   ├── typeorm-unit-of-work.ts       adapter; nested calls join the outer transaction
-│   ├── transactional-manager.ts      gives repositories the current transaction's EntityManager (AsyncLocalStorage)
+│   ├── transactional-manager.ts      the current transaction's EntityManager and scope (AsyncLocalStorage)
+│   ├── row-level-security.check.ts   startup check: no superuser/BYPASSRLS role, RLS forced on every tenant table
 │   ├── database-health.indicator.ts  SELECT 1 for /health
 │   └── migrations/
 │       ├── index.ts                  ordered list of migrations
@@ -149,25 +157,25 @@ src/core/
 │   ├── storage.port.ts               abstract class FileStorage { put, signedUrl, delete }
 │   ├── s3.storage.ts                 adapter (MinIO locally), private bucket, short-lived URLs
 │   └── file-type.validator.ts        magic-byte check, size limit, blocks HTML/SVG
-├── graphql/                          code-first GraphQL at /api/graphql; reuses the REST services and guards
-│   ├── graphql-api.module.ts         Apollo driver; no introspection, playground or error hints in production; CSRF prevention on
+├── graphql/                          code-first GraphQL at /api/graphql
+│   ├── graphql-api.module.ts         Apollo driver; token limit, CSRF prevention; no introspection, playground or hints in production
 │   ├── depth-limit.rule.ts           validation rule: rejects queries nested deeper than 8
 │   ├── complexity.plugin.ts          rejects queries above a cost of 5000 (blocks alias amplification)
 │   ├── page.type.ts                  PageOf<T>, PageArgs, WorkspacePageArgs (max 100), complexity estimators
-│   ├── args.ts                       WorkspaceIdArg, UuidArg
+│   ├── args.ts                       WorkspaceIdArg, UuidArg, OptionalUuidArg (null means "none")
+│   ├── validation.ts                 @IsOmittable(): input fields that may be left out but never set to null
 │   ├── enums.ts                      registerEnumType for shared-types enums
 │   └── json-object.scalar.ts         output-only JSONObject scalar (audit metadata)
 └── http/
-    ├── request-context.ts            REST/GraphQL-agnostic request, workspaceId target and write detection for guards
+    ├── request-context.ts            the Express request, workspaceId argument and write detection for guards
     ├── types/authenticated-request.ts    SessionUser, WorkspaceAccess, Actor
     ├── decorators/
     │   ├── public.decorator.ts
     │   ├── current-actor.decorator.ts
     │   └── current-user.decorator.ts
-    ├── filters/all-exceptions.filter.ts  generic client errors (HTTP status or GraphQL error code), details to logs
+    ├── filters/all-exceptions.filter.ts  generic client errors as GraphQL error codes, details to logs
     ├── guards/user-throttler.guard.ts    rate limit by user, falling back to IP
-    ├── pipes/uuid.pipe.ts
-    ├── dto/page-query.dto.ts         shared page/pageSize validation (max 100) and toPageRequest()
+    ├── pipes/uuid.pipe.ts            UUID_PIPE and OPTIONAL_UUID_PIPE
     └── utils/escape-like.ts
 ```
 
@@ -191,30 +199,36 @@ src/modules/<feature>/
 ├── testing/
 │   └── in-memory-<entity>.repository.ts  fake that honours the port's contract, for service specs
 └── presentation/
-    ├── <feature>.controller.ts       HTTP only: route, guards, params, call the service
-    └── dto/
-        ├── create-<entity>.dto.ts    class-validator + Swagger, implements the shared request type
-        ├── update-<entity>.dto.ts
-        ├── <entity>-query.dto.ts     list filters and paging
-        ├── <entity>.response.dto.ts  Swagger schema, implements the shared response type
     └── graphql/
-        ├── <feature>.resolver.ts     GraphQL only: same guards, permissions and service calls as the controller
-        └── <entity>.types.ts         @ObjectType / @InputType / @ArgsType classes with class-validator rules
+        ├── <feature>.resolver.ts     GraphQL only: @RequirePermissions, map arguments, call the service
+        └── <entity>.types.ts         @ObjectType (implements the shared response type), @InputType and @ArgsType
+                                      with class-validator rules (implements the shared request type)
 ```
 
-REST and GraphQL are two presentation adapters over one application layer, so a business rule or permission check is never written twice. Every resolver is listed in `src/graphql-resolvers.ts`; a spec fails if a `*.resolver.ts` file is missing from it.
+Resolvers stay thin: guards check access and services hold the rules, so another transport could be added later without touching either. Every resolver is listed in `src/graphql-resolvers.ts`; a spec fails if a `*.resolver.ts` file is missing from it.
 
-Tests sit next to the code they test: `application/<feature>.service.spec.ts` (using the fake from `testing/`) and `domain/<rule>.policy.spec.ts`. Services and policies throw `DomainError`, never Nest HTTP exceptions; `AllExceptionsFilter` turns the error kind into a status code.
+Tests sit next to the code they test: `application/<feature>.service.spec.ts` (using the fake from `testing/`) and `domain/<rule>.policy.spec.ts`. Services and policies throw `DomainError`, never Nest HTTP exceptions; `AllExceptionsFilter` turns the error kind into a GraphQL error code (`NOT_FOUND`, `FORBIDDEN`, `BAD_USER_INPUT`, `CONFLICT`).
 
-### 2.5 Feature modules, file by file
+### 2.5 Data access and row-level security
+
+Every tenant table has Postgres row-level security, forced even for the table owner (migration `row-level-security`). Policies read three transaction-local settings, which `DataScope` sets:
+
+| Scope | Set by | Can see |
+|-------|--------|---------|
+| `workspace` | `DataScopeInterceptor` after `WorkspaceAccessGuard` allowed the call | that workspace's rows |
+| `user` | the interceptor for signed-in calls outside a workspace; the membership lookup in the guard | the caller's memberships and the workspaces and roles they point to |
+| `platform` | the interceptor, only for SUPER_ADMIN on `@RequirePlatformAdmin` operations; operator CLIs | every row |
+
+No scope means no tenant rows (fail closed). Repositories still filter by `workspaceId`; RLS is the second line of defence. The API connects as a role that owns nothing (`DATABASE_URL`), and migrations run as the schema owner (`MIGRATION_DATABASE_URL`). Within one operation, queries share one connection, so run them one after another, not with `Promise.all`.
+
+### 2.6 Feature modules, file by file
 
 ```
 src/modules/
 ├── health/                                       ✅
 │   ├── health.module.ts
 │   └── presentation/
-│       ├── health.controller.ts                  @Public, used by container health checks
-│       └── dto/health.response.dto.ts
+│       └── health.controller.ts                  GET /api/health, @Public liveness probe for Docker (the only non-GraphQL route)
 │
 ├── users/                                        ✅
 │   ├── users.module.ts
@@ -222,21 +236,17 @@ src/modules/
 │   ├── domain/user.repository.ts                 findByEmail, findById
 │   ├── infrastructure/user.orm-entity.ts         read model over Better Auth's "user" table
 │   ├── infrastructure/typeorm-user.repository.ts
-│   └── presentation/
-│       ├── me.controller.ts                      GET /me
-│       └── dto/current-user.response.dto.ts
+│   └── presentation/graphql/{me.resolver.ts,user.types.ts}     query me
 │
 ├── workspaces/                                   ✅
 │   ├── workspaces.module.ts
 │   ├── domain/workspace.ts
 │   ├── domain/workspace.repository.ts
-│   ├── application/workspaces.service.ts         create (seeds roles + owner in one transaction), update, delete
+│   ├── application/workspaces.service.ts         create (id chosen up front; roles + owner in the new workspace's scope), update, delete
 │   ├── application/workspace.mapper.ts
 │   ├── infrastructure/workspace.orm-entity.ts
 │   ├── infrastructure/typeorm-workspace.repository.ts
-│   └── presentation/
-│       ├── workspaces.controller.ts
-│       └── dto/{create-workspace,update-workspace,workspace.response}.dto.ts
+│   └── presentation/graphql/{workspaces.resolver.ts,workspace.types.ts}
 │
 ├── roles/                                        ✅
 │   ├── roles.module.ts
@@ -248,9 +258,7 @@ src/modules/
 │   ├── application/role.mapper.ts
 │   ├── infrastructure/workspace-role.orm-entity.ts
 │   ├── infrastructure/typeorm-workspace-role.repository.ts
-│   └── presentation/
-│       ├── roles.controller.ts
-│       └── dto/{create-role,update-role,role.response}.dto.ts
+│   └── presentation/graphql/{roles.resolver.ts,role.types.ts}
 │
 ├── members/                                      ✅
 │   ├── members.module.ts
@@ -261,10 +269,8 @@ src/modules/
 │   ├── application/member.mapper.ts
 │   ├── infrastructure/workspace-member.orm-entity.ts
 │   ├── infrastructure/typeorm-workspace-member.repository.ts   joins roles and users by table name
-│   ├── infrastructure/typeorm-membership.reader.ts             adapter for core's MembershipReader port
-│   └── presentation/
-│       ├── members.controller.ts
-│       └── dto/{add-member,update-member-role,member.response,add-member-result.response}.dto.ts
+│   ├── infrastructure/typeorm-membership.reader.ts             adapter for core's MembershipReader port (user/platform scope)
+│   └── presentation/graphql/{members.resolver.ts,member.types.ts}
 │
 ├── spaces/                                       ✅  (same layout: space.ts, space.repository.ts, spaces.service.ts, …)
 ├── lists/                                        ✅  (task-list.ts, task-list.repository.ts, lists.service.ts, …)
@@ -280,15 +286,13 @@ src/modules/
 │   ├── infrastructure/task.orm-entity.ts
 │   ├── infrastructure/typeorm-task.repository.ts
 │   ├── testing/in-memory-task.repository.ts
-│   └── presentation/
-│       ├── tasks.controller.ts
-│       └── dto/{create-task,update-task,task-query,task.response,task-page.response}.dto.ts
+│   └── presentation/graphql/{tasks.resolver.ts,task.types.ts}
 │
 ├── comments/                                     ✅
 │   ├── domain/{comment.ts,comment.repository.ts}
 │   ├── application/{comments.service.ts,comment.mapper.ts}
 │   ├── infrastructure/{comment.orm-entity.ts,typeorm-comment.repository.ts}
-│   └── presentation/{comments.controller.ts,dto/…}
+│   └── presentation/graphql/{comments.resolver.ts,comment.types.ts}
 │
 ├── sprints/                                      ✅
 │   ├── sprints.module.ts
@@ -300,9 +304,7 @@ src/modules/
 │   ├── application/sprint.mapper.ts
 │   ├── infrastructure/sprint.orm-entity.ts
 │   ├── infrastructure/typeorm-sprint.repository.ts
-│   └── presentation/
-│       ├── sprints.controller.ts
-│       └── dto/{create-sprint,update-sprint,complete-sprint,sprint.response}.dto.ts
+│   └── presentation/graphql/{sprints.resolver.ts,sprint.types.ts}
 │
 ├── documents/                                    ✅
 │   ├── documents.module.ts
@@ -316,10 +318,7 @@ src/modules/
 │   ├── infrastructure/document.orm-entity.ts
 │   ├── infrastructure/typeorm-document.repository.ts
 │   ├── infrastructure/markdown.sanitizer.ts      adapter for ContentSanitizer: control chars, unsafe link schemes
-│   └── presentation/
-│       ├── documents.controller.ts
-│       ├── document-attachments.controller.ts    🔜 uses core/storage
-│       └── dto/{create-document,update-document,move-document,document-query,document.response}.dto.ts
+│   └── presentation/graphql/{documents.resolver.ts,document.types.ts}   attachments 🔜 (uploads via signed URLs, core/storage)
 │
 ├── hr/                                           ✅ one parent module, three sub-features
 │   ├── hr.module.ts
@@ -327,12 +326,12 @@ src/modules/
 │   │   ├── domain/{department.ts,department.repository.ts}
 │   │   ├── application/{departments.service.ts,department.mapper.ts}
 │   │   ├── infrastructure/{department.orm-entity.ts,typeorm-department.repository.ts}
-│   │   └── presentation/{departments.controller.ts,dto/…}
+│   │   └── presentation/graphql/{departments.resolver.ts,department.types.ts}
 │   ├── employees/
 │   │   ├── domain/{employee-profile.ts,employee-profile.repository.ts,reporting-line.policy.ts}
 │   │   ├── application/{employees.service.ts,employee-profile.mapper.ts}
 │   │   ├── infrastructure/{employee-profile.orm-entity.ts,typeorm-employee-profile.repository.ts}
-│   │   └── presentation/{employees.controller.ts,dto/…}
+│   │   └── presentation/graphql/{employees.resolver.ts,employee.types.ts}
 │   └── leave/
 │       ├── domain/leave-type.ts
 │       ├── domain/leave-request.ts               pending → approved | rejected | cancelled
@@ -348,16 +347,13 @@ src/modules/
 │       ├── application/leave.mapper.ts
 │       ├── infrastructure/{leave-type,leave-request}.orm-entity.ts
 │       ├── infrastructure/typeorm-leave-{type,request,balance}.repository.ts
-│       └── presentation/
-│           ├── leave-types.controller.ts
-│           ├── leave-requests.controller.ts
-│           └── dto/…
+│       └── presentation/graphql/{leave.resolver.ts,leave.types.ts}
 │
 ├── audit-log/                                    ✅ read side of the audit log
 │   ├── domain/{audit-entry.ts,audit-log.repository.ts}
 │   ├── application/{audit-log.service.ts,audit-log.mapper.ts}   workspace view drops IPs
 │   ├── infrastructure/typeorm-audit-log.repository.ts
-│   └── presentation/{workspace-audit-log.controller.ts,dto/…}   needs audit.view
+│   └── presentation/graphql/{workspace-audit-log.resolver.ts,audit-log.types.ts}   needs audit.view
 │
 └── admin/                                        ✅ SUPER_ADMIN only
     ├── admin.module.ts
@@ -365,16 +361,15 @@ src/modules/
     ├── domain/platform-role.policy.ts            no self-changes; keep one active super admin
     ├── application/{admin-users.service.ts,admin-workspaces.service.ts,admin.mapper.ts}
     ├── infrastructure/typeorm-admin-{user,workspace}.repository.ts
-    └── presentation/
-        ├── admin-users.controller.ts             list, suspend (revokes sessions), promote/demote (audited)
-        ├── admin-workspaces.controller.ts
-        ├── admin-audit.controller.ts             platform-wide audit log with IPs
-        └── dto/…
+    └── presentation/graphql/
+        ├── admin.resolver.ts                     users (suspend revokes sessions; promote/demote audited), workspaces,
+        │                                         platform-wide audit log with IPs; platform scope
+        └── admin.types.ts
 ```
 
 ---
 
-## 3. Frontend: `apps/web` 🔜 [2]
+## 3. Frontend: `apps/web`
 
 The frontend mirrors the backend: one folder per feature, and the same direction of dependencies.
 
@@ -384,7 +379,11 @@ The frontend mirrors the backend: one folder per feature, and the same direction
 apps/web/
 ├── package.json
 ├── tsconfig.json
-├── vite.config.ts                    React plugin, Tailwind, dev proxy for /api
+├── vite.config.ts                    React plugin, Tailwind, dev proxy for /api, unit test config
+├── playwright.config.ts              browser e2e: starts the built API and Vite against a test database
+├── e2e/
+│   ├── support/stack.ts              ports and API env for the e2e stack (refuses non-test databases)
+│   └── workspace-journey.spec.ts     sign-up → tasks → sprints → docs → HR → roles → audit → admin, in Chromium
 ├── components.json                   shadcn/ui config
 ├── index.html
 ├── Dockerfile                        build with Vite, serve with nginx as non-root
@@ -406,18 +405,19 @@ src/app/                              composition root (like app.module.ts on th
 ├── app.tsx                           <Providers><RouterProvider/></Providers>
 ├── providers.tsx                     QueryClientProvider, TooltipProvider, Toaster
 ├── routes.tsx                        the whole typed route tree; session guards; pages come from module index.ts files
-├── query-client.ts                   retries (none on 4xx), stale times, 401 → sign-in
+├── query-client.ts                   retries (none on client error codes), stale times, UNAUTHENTICATED → sign-in
 └── layouts/
     ├── workspace-layout.tsx          builds the sidebar from feature modules and renders <Outlet/>
     └── user-menu.tsx                 account menu, theme toggle, sign out
 
 src/core/
 ├── config/env.ts                     reads VITE_* values (nothing secret)
-├── api/sdk-client.ts                 single createTaskFlowClient() instance
+├── api/graphql-client.ts             the single createGraphQLClient() instance
+├── api/current-user.api.ts           MeDocument, used by route guards and useCurrentUser
 ├── auth/
 │   ├── auth-client.ts                Better Auth React client + captcha header helper
 │   ├── session.ts                    hasSession() for route guards
-│   ├── use-current-user.ts           GET /api/me
+│   ├── use-current-user.ts           query me
 │   └── turnstile-widget.tsx          CAPTCHA widget for public forms (off when no site key)
 └── theme/use-theme.ts                light/dark preference
 
@@ -446,7 +446,8 @@ src/components/
 src/lib/
 ├── cn.ts                             clsx + tailwind-merge
 ├── dates.ts
-├── errors.ts                         safe user-facing error messages
+├── errors.ts                         safe user-facing messages from GraphQL error codes
+├── use-resettable-state.ts           local draft of a value that resets when the source changes
 ├── initials.ts
 └── query-keys.ts                     one factory for every TanStack Query key
 ```
@@ -456,7 +457,7 @@ src/lib/
 ```
 src/modules/<feature>/
 ├── index.ts                          public surface: pages, hooks and components other code may use
-├── api/<feature>.api.ts              thin calls to @taskflow/sdk (the only place that touches the client)
+├── api/<feature>.api.ts              calls the SDK's typed documents and unwraps the field (the only place that touches the SDK)
 ├── hooks/
 │   ├── use-<entities>.ts             TanStack Query read hooks
 │   └── use-<entity>-mutations.ts     create, update and delete with cache updates
@@ -529,25 +530,28 @@ packages/shared-types/
 
 ## 5. `packages/sdk`
 
+The typed contract between the API and its clients. No runtime dependencies.
+
 ```
 packages/sdk/
 ├── package.json
 ├── tsconfig.json
-├── openapi.json                      ✅ written by `pnpm --filter @taskflow/api openapi:export`
 ├── schema.graphql                    ✅ written by `pnpm --filter @taskflow/api graphql:export`
+├── operations/                       ✅ every operation the clients run, one file per feature
+│   ├── fragments.graphql             one fragment per object type, selecting every field
+│   └── <feature>.graphql             queries and mutations (Tasks, CreateTask, …)
 ├── scripts/
-│   └── generate-graphql-types.mjs    ✅ runs @graphql-codegen/core with the typescript plugin
+│   └── generate-graphql-types.mjs    ✅ @graphql-codegen/core: validates operations against the schema, then
+│                                        typescript-operations + typed-document-node (documents as plain strings)
 └── src/
-    ├── index.ts                      ✅ REST client, GraphQL client, `GraphQL` type namespace
-    ├── client.ts                     ✅ createTaskFlowClient, unwrap, ApiError
-    ├── graphql-client.ts             ✅ createGraphQLClient (cookie auth, CSRF-safe content type)
-    ├── graphql-error.ts              ✅ GraphQLRequestError with the server's error `code`
-    └── generated/
-        ├── schema.ts                 ✅ written by openapi-typescript; never edit by hand
-        └── graphql.ts                ✅ written by generate-graphql-types.mjs; never edit by hand
+    ├── index.ts                      ✅ the client plus everything generated
+    ├── graphql-client.ts             ✅ createGraphQLClient(): typed request(document, variables), cookie auth,
+    │                                    JSON only (passes CSRF prevention), GraphQLRequestError with the error code
+    ├── graphql-error.ts              ✅ the error shape, kept local so there's no runtime graphql dependency
+    └── generated/graphql.ts          ✅ enums, inputs, fragment and operation types, typed documents; never edit by hand
 ```
 
-Flow: API DTO classes → `openapi.json` → `schema.ts` → web `*.api.ts`, and resolver types → `schema.graphql` → `graphql.ts`. Run `pnpm sdk:generate` after any API change, and commit all generated outputs.
+Flow: resolver types → `schema.graphql` → `operations/*.graphql` are validated against it → `generated/graphql.ts` → web `*.api.ts`. Run `pnpm sdk:generate` after changing a resolver or an operation, and commit the outputs. CI fails when they're stale.
 
 ---
 
@@ -556,20 +560,22 @@ Flow: API DTO classes → `openapi.json` → `schema.ts` → web `*.api.ts`, and
 ```
 infra/
 ├── docker/
-│   ├── docker-compose.yml            postgres, migrate (one-off), api, web; private network; only web and api ports exposed on localhost
+│   ├── docker-compose.yml            postgres, migrate (one-off, owner role), api (runtime role), web, mailpit (local inbox);
+│   │                                 private network; only web, Mailpit UI and Postgres (for local tools) on 127.0.0.1
 │   └── postgres/
-│       └── init.sql                  creates the app role without superuser rights
+│       └── 01-app-role.sh            schema owner (migrations) and runtime role (data only); neither superuser nor BYPASSRLS
 └── terraform/                        the same local stack, via the kreuzwerker/docker provider
     ├── versions.tf                   pinned provider versions
     ├── providers.tf
-    ├── variables.tf                  secrets marked sensitive, no defaults
+    ├── variables.tf                  secrets marked sensitive, no defaults (Turnstile defaults to Cloudflare's test keys)
     ├── network.tf
     ├── postgres.tf                   container + named volume
     ├── api.tf                        image built from apps/api/Dockerfile
     ├── web.tf                        image built from apps/web/Dockerfile
+    ├── mail.tf                       Mailpit container, the default SMTP target
     ├── outputs.tf                    URLs only, never secrets
-    ├── terraform.tfvars.example
-    └── README.md
+    ├── .terraform.lock.hcl           committed provider checksums
+    └── terraform.tfvars.example
 ```
 
 ---
@@ -578,26 +584,26 @@ infra/
 
 | Principle | Rule in this repo | Example |
 |-----------|-------------------|---------|
-| **S**ingle responsibility | One reason to change per file. Controllers handle HTTP, services hold use cases, repositories handle persistence, mappers shape responses, policies hold one business rule, guards make one check. `main.ts` only calls `bootstrap/*`. Aim for files under ~200 lines. | `role-grant.policy.ts` holds the anti-escalation rule, and both `roles.service.ts` and `members.service.ts` use it. |
+| **S**ingle responsibility | One reason to change per file. Resolvers map GraphQL arguments to service calls, services hold use cases, repositories handle persistence, mappers shape responses, policies hold one business rule, guards make one check. `main.ts` only calls `bootstrap/*`. Aim for files under ~200 lines. | `role-grant.policy.ts` holds the anti-escalation rule, and both `roles.service.ts` and `members.service.ts` use it. |
 | **O**pen/closed | Extend by adding, not editing. New permissions and roles are data. New providers (mail, storage, CAPTCHA, sanitizer) are new adapters behind an existing port. New features are new modules. | Switching `ConsoleMailer` to `SmtpMailer` changes one line in `auth.module.ts`. |
 | **L**iskov substitution | Every adapter honours its port's contract: the same nulls, errors and ordering. Test fakes must behave like the real adapter. | `TaskRepository.findInWorkspace` returns `null` when not found in both `TypeOrmTaskRepository` and the in-memory fake. |
 | **I**nterface segregation | Ports stay small and feature-specific; no generic `BaseRepository<T>` with dozens of methods. React components take only the props they render. | `TaskRepository` exposes the five methods `TasksService` needs; `<TaskCard>` takes a `task` and an `onOpen`. |
 | **D**ependency inversion | Services depend on abstract classes in `domain/` (Nest uses them as DI tokens); modules bind them to adapters. On the web, pages depend on hooks, hooks on `*.api.ts`, and only `*.api.ts` touches the SDK. | `{ provide: TaskRepository, useClass: TypeOrmTaskRepository }` in `tasks.module.ts`. |
 
-### Import boundaries (enforced by ESLint in phase 7)
+### Import boundaries (enforced by `eslint.config.js`)
 
 | From | May import | Must not import |
 |------|------------|-----------------|
 | `modules/*/domain` | `@taskflow/shared-types`, `core/domain`, other files in `domain/` | Nest, TypeORM, `infrastructure/`, `presentation/` |
-| `modules/*/application` | own `domain/`, `core/*` ports, other modules' exported services and domain policies | `infrastructure/`, TypeORM `Repository` |
+| `modules/*/application` | own `domain/`, `core/*` ports, other modules' exported services and domain policies | `infrastructure/`, `presentation/`, TypeORM |
 | `modules/*/infrastructure` | own `domain/`, TypeORM, `core/database` | `presentation/` |
-| `modules/*/presentation` | own `application/`, `core/access`, `core/http` | `infrastructure/` |
-| `core/*` | other `core/*`, `config/` | `modules/*` (`core/access` may read member and role ORM entities) |
-| web `components/*` | `lib/`, other `components/*` | `modules/*`, `core/api` |
-| web `modules/<a>` | `components/`, `core/`, `lib/`, `modules/<b>/index.ts` | another module's internal files |
+| `modules/*/presentation` | own `application/`, `core/access`, `core/graphql`, `core/http` | `infrastructure/`, TypeORM |
+| `core/*` | other `core/*`, `config/` | `modules/*` (except `core/database/orm-entities.ts`) |
+| web `components/*`, `lib/*` | `lib/`, other `components/*` | `modules/*`, `core/api` |
+| web `modules/<a>` | `components/`, `core/`, `lib/`, `modules/<b>` (its `index.ts`) | another module's internal files; `@taskflow/sdk` outside `api/` |
 
 ### Naming
 
-- File names are kebab-case and end with their role: `.module.ts`, `.controller.ts`, `.service.ts`, `.repository.ts` (port), `typeorm-*.repository.ts` (adapter), `.orm-entity.ts`, `.policy.ts`, `.mapper.ts`, `.dto.ts`, `.port.ts`, `.spec.ts`. On the web: `.api.ts`, `use-*.ts`, `.store.ts`, `.page.tsx`.
+- File names are kebab-case and end with their role: `.module.ts`, `.resolver.ts`, `.types.ts` (GraphQL types), `.service.ts`, `.repository.ts` (port), `typeorm-*.repository.ts` (adapter), `.orm-entity.ts`, `.policy.ts`, `.mapper.ts`, `.port.ts`, `.spec.ts`, `.e2e-spec.ts`. On the web: `.api.ts`, `use-*.ts`, `.store.ts`, `.page.tsx`. SDK operations: `operations/<feature>.graphql`.
 - Classes are PascalCase and match the file: `typeorm-task.repository.ts` → `TypeOrmTaskRepository`.
 - Ports are abstract classes, not TypeScript interfaces, because Nest needs a runtime token.

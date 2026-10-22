@@ -11,6 +11,8 @@ locals {
     "CORS_ORIGINS=${var.public_url}",
     "TRUST_PROXY=1",
     "TURNSTILE_SECRET_KEY=${var.turnstile_secret_key}",
+    "SMTP_URL=${var.smtp_url}",
+    "MAIL_FROM=${var.mail_from}",
   ]
 }
 
@@ -75,5 +77,5 @@ resource "docker_container" "api" {
     aliases = ["api"]
   }
 
-  depends_on = [docker_container.migrate]
+  depends_on = [docker_container.migrate, docker_container.mailpit]
 }

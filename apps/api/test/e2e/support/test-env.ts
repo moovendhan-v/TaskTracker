@@ -1,4 +1,10 @@
 import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+// Written by scripts/create-e2e-database.sh for local runs. Variables already set (as in CI) win.
+const LOCAL_E2E_ENV = resolve(import.meta.dirname, '../../../../../.env.e2e');
+if (existsSync(LOCAL_E2E_ENV)) process.loadEnvFile(LOCAL_E2E_ENV);
 
 /** The origin the API trusts for browser calls during the tests. */
 export const TEST_ORIGIN = 'http://localhost:5173';

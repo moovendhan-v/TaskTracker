@@ -34,7 +34,7 @@ hr.view    hr.manage    leave.request  leave.approve
 audit.view
 ```
 
-The API uses `@RequirePermissions(...)` plus a `WorkspaceAccessGuard`. The guard loads the caller's membership from `(workspaceId, userId)`, and every query is scoped by `workspace_id`, which blocks IDOR.
+The API uses `@RequirePermissions(...)` plus a `WorkspaceAccessGuard`. The guard loads the caller's membership from `(workspaceId, userId)`, and every query is scoped by `workspace_id`, which blocks IDOR. Postgres row-level security enforces the same boundary in the database.
 
 ## Architecture
 
@@ -42,46 +42,46 @@ The file-by-file layout and SOLID rules are in [`docs/architecture/FOLDER_STRUCT
 
 ```
 apps/
-  api/          NestJS + TypeORM + Better Auth, one module per feature
+  api/          NestJS + GraphQL + TypeORM + Better Auth, one module per feature
   web/          React + Vite + TanStack Router/Query + Zustand + shadcn/ui
 packages/
   shared-types/ domain constants, permission keys, request/response contracts
-  sdk/          typed clients generated from the API's OpenAPI (Swagger) file and GraphQL schema
+  sdk/          typed GraphQL operations and client generated from the API's schema
 infra/
-  docker/       docker-compose for postgres, api and web
+  docker/       docker-compose for postgres, api, web and a local mail inbox
   terraform/    the same local stack described with the Docker provider
 ```
 
-- **REST and GraphQL:** both are served by the API (`/api/...` and `/api/graphql`). Each module's `presentation/` has a controller and a `graphql/` resolver that call the same services and use the same guards, so permissions and business rules live in one place.
-- **Backend modules** (NestJS style): `auth`, `users`, `workspaces`, `members`, `roles`, `spaces`, `lists`, `tasks`, `comments`, `sprints`, `documents`, `hr`, `audit`, `admin`, `health`. Each module has four layers: `presentation` (controller, DTOs) → `application` (service, mapper) → `domain` (types, repository port, policies) ← `infrastructure` (TypeORM entity and repository adapter).
+- **GraphQL only:** the API is `POST /api/graphql`. The only other routes are Better Auth's handler (`/api/auth/*`) and a `/api/health` liveness probe. Each module's `presentation/graphql/` holds thin resolvers; guards check access and services hold the rules.
+- **Backend modules** (NestJS style): `auth`, `users`, `workspaces`, `members`, `roles`, `spaces`, `lists`, `tasks`, `comments`, `sprints`, `documents`, `hr`, `audit`, `admin`, `health`. Each module has four layers: `presentation` (GraphQL resolver and types) → `application` (service, mapper) → `domain` (types, repository port, policies) ← `infrastructure` (TypeORM entity and repository adapter).
 - **Frontend modules** mirror the backend: `src/modules/<feature>/{api,hooks,components,pages,store}`. Shared UI lives in `src/components/ui` (shadcn) and `src/components/common`.
-- **SOLID:** controllers only handle HTTP, services hold the business rules, repositories handle persistence. Permission checks live in one place (guard + `AccessService`). Features depend on interfaces such as `AuditLogger` and `Clock` instead of on concrete classes.
-- **SDK flow:** `pnpm sdk:generate` → API writes `packages/sdk/openapi.json` and `schema.graphql` → `openapi-typescript` generates `schema.ts` and GraphQL codegen generates `graphql.ts` → `openapi-fetch` client (used by the web app today) and a small GraphQL client.
+- **SOLID:** resolvers only map arguments to service calls, services hold the business rules, repositories handle persistence. Permission checks live in one place (guard + `AccessService`). Features depend on interfaces such as `AuditLogger` and `Clock` instead of on concrete classes.
+- **SDK flow:** `pnpm sdk:generate` → API writes `packages/sdk/schema.graphql` → codegen validates `packages/sdk/operations/*.graphql` against it and generates typed documents → the web app's `*.api.ts` files call them through the SDK's GraphQL client.
 
 ## Security baseline (from AGENTS.md)
 
-- Better Auth email and password with a CAPTCHA plugin (Turnstile) on signup, login and reset. Secure `HttpOnly` `SameSite` cookies, sessions rotated and revoked.
-- Global session guard; public routes are opt-in with `@Public()` plus a reason comment.
+- Better Auth email and password with a CAPTCHA plugin (Turnstile) on signup, login and reset, required in production. Secure `HttpOnly` `SameSite` cookies, sessions rotated and revoked. Password reset emails over SMTP, required in production.
+- Global session guard; public operations are opt-in with `@Public()` plus a reason comment.
 - `class-validator` whitelist plus `forbidNonWhitelisted` on every DTO, so fields are allowlisted (no mass assignment).
 - `@nestjs/throttler` on all routes, with tighter limits on auth.
 - helmet (CSP, HSTS, nosniff, frame-ancestors, Referrer-Policy), CORS from `CORS_ORIGINS`, generic error filter in production.
 - Append-only `audit_log` for admin, role and HR actions.
 - Max page size 100; body size limit.
 - GraphQL: depth limit 8, query cost limit 5000, CSRF prevention, no batching; introspection, playground and "did you mean" hints are off in production.
-- Postgres RLS on tenant tables is a follow-up (phase 7). Until then, tenant isolation is enforced in the repository layer.
+- Postgres row-level security, forced on every tenant table. Each GraphQL operation runs in one transaction scoped to its workspace, so a missing `workspace_id` filter still can't cross tenants. The API's database role owns nothing and can't bypass RLS. Migrations run as a separate owner role.
 
 ## Phases
 
 | # | Phase | Deliverable |
 |---|-------|-------------|
 | 0 | Foundation | pnpm monorepo, shared types, tsconfig, lint |
-| 1 | API core | Better Auth, session guard, workspaces, members, roles/permissions, spaces, lists, tasks, audit log, Swagger + SDK |
+| 1 | API core | Better Auth, session guard, workspaces, members, roles/permissions, spaces, lists, tasks, audit log, typed SDK |
 | 2 | Web shell | Auth pages, app layout with sidebar tree, list and board views, task detail drawer |
 | 3 | Sprints | Sprint CRUD, backlog planning, start/complete flow, sprint board |
 | 4 | Documents | Page tree, markdown editor with sanitised preview |
 | 5 | HR | Departments, employee profiles, leave types, leave requests and approvals, balances |
 | 6 | Platform admin | Super admin console for users, workspaces and the audit log |
-| 7 | Hardening | Postgres RLS, CAPTCHA wiring end to end, `/security-review`, e2e tests |
-| 8 | Infra | docker-compose and Terraform for the full stack, seed data, README |
+| 7 | Hardening ✅ | GraphQL-only API, Postgres RLS with split DB roles, CAPTCHA and SMTP required in production, ESLint boundaries, API and browser e2e tests, CI with SHA-pinned actions, `/security-review` |
+| 8 | Infra ✅ | docker-compose and Terraform for the full stack (with a local mail inbox), demo seed, README |
 
 Infra files are added in phase 1 so the stack runs from the start. Phase 8 polishes them.

@@ -16,10 +16,19 @@ describe('loadEnv', () => {
     expect(env.TURNSTILE_SECRET_KEY).toBeUndefined();
   });
 
+  const production = { ...base, NODE_ENV: 'production', SMTP_URL: 'smtps://user:pw@smtp.example.com:465', MAIL_FROM: 'TaskFlow <no-reply@example.com>' };
+
   it('requires a CAPTCHA secret in production', () => {
-    expect(() => loadEnv({ ...base, NODE_ENV: 'production' })).toThrow(/TURNSTILE_SECRET_KEY is required/);
-    expect(() => loadEnv({ ...base, NODE_ENV: 'production', TURNSTILE_SECRET_KEY: '' })).toThrow(/TURNSTILE_SECRET_KEY/);
-    expect(loadEnv({ ...base, NODE_ENV: 'production', TURNSTILE_SECRET_KEY: 'secret' }).TURNSTILE_SECRET_KEY).toBe('secret');
+    expect(() => loadEnv(production)).toThrow(/TURNSTILE_SECRET_KEY is required/);
+    expect(() => loadEnv({ ...production, TURNSTILE_SECRET_KEY: '' })).toThrow(/TURNSTILE_SECRET_KEY/);
+    expect(loadEnv({ ...production, TURNSTILE_SECRET_KEY: 'secret' }).TURNSTILE_SECRET_KEY).toBe('secret');
+  });
+
+  it('requires outgoing mail in production', () => {
+    const withCaptcha = { ...production, TURNSTILE_SECRET_KEY: 'secret' };
+    expect(() => loadEnv({ ...withCaptcha, SMTP_URL: '' })).toThrow(/SMTP_URL and MAIL_FROM are required/);
+    expect(() => loadEnv({ ...withCaptcha, SMTP_URL: 'https://mail.example.com' })).toThrow(/smtp:\/\/ or smtps:\/\//);
+    expect(loadEnv({ ...withCaptcha }).MAIL_FROM).toBe('TaskFlow <no-reply@example.com>');
   });
 
   it('rejects a short auth secret', () => {

@@ -87,6 +87,25 @@ variable "turnstile_secret_key" {
   sensitive   = true
 }
 
+variable "smtp_url" {
+  description = "Outgoing mail for password resets. The default sends to the local Mailpit inbox."
+  type        = string
+  default     = "smtp://mailpit:1025"
+  sensitive   = true
+}
+
+variable "mail_from" {
+  description = "Sender address for account emails."
+  type        = string
+  default     = "TaskFlow <no-reply@taskflow.localhost>"
+}
+
+variable "mailpit_ui_port" {
+  description = "Port on 127.0.0.1 for the Mailpit inbox UI."
+  type        = number
+  default     = 8025
+}
+
 variable "turnstile_site_key" {
   description = "Cloudflare Turnstile site key, baked into the web build. The default is Cloudflare's public test key."
   type        = string
