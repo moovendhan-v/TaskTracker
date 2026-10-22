@@ -89,7 +89,7 @@ src/config/
 src/cli/
 ├── run-migrations.ts                 Better Auth migrations, then TypeORM migrations
 ├── export-openapi.ts                 writes packages/sdk/openapi.json without a database
-└── promote-super-admin.ts            🔜 [6] operator-only: grants SUPER_ADMIN by email, writes an audit entry
+└── promote-super-admin.ts            operator-only: grants SUPER_ADMIN by email, writes an audit entry
 
 src/openapi/
 └── openapi.document.ts               DocumentBuilder setup and operationId naming
@@ -120,7 +120,8 @@ src/core/
 │   ├── membership-reader.port.ts     abstract class MembershipReader { findGrant, workspaceExists }
 │   ├── access.service.ts             resolves (user, workspace) → role + permissions
 │   ├── workspace-access.guard.ts     checks membership and permissions for :workspaceId routes
-│   ├── platform-admin.guard.ts       🔜 [6] SUPER_ADMIN-only routes
+│   ├── platform-admin.guard.ts       SUPER_ADMIN-only routes; everyone else gets 404
+│   ├── require-platform-admin.decorator.ts
 │   ├── require-permissions.decorator.ts
 │   └── current-access.decorator.ts
 ├── audit/
@@ -336,13 +337,22 @@ src/modules/
 │           ├── leave-requests.controller.ts
 │           └── dto/…
 │
-└── admin/                                        🔜 [6] SUPER_ADMIN only
+├── audit-log/                                    ✅ read side of the audit log
+│   ├── domain/{audit-entry.ts,audit-log.repository.ts}
+│   ├── application/{audit-log.service.ts,audit-log.mapper.ts}   workspace view drops IPs
+│   ├── infrastructure/typeorm-audit-log.repository.ts
+│   └── presentation/{workspace-audit-log.controller.ts,dto/…}   needs audit.view
+│
+└── admin/                                        ✅ SUPER_ADMIN only
     ├── admin.module.ts
-    ├── application/{admin-users.service.ts,admin-workspaces.service.ts,admin-audit.service.ts}
+    ├── domain/{admin-user.ts,admin-user.repository.ts,admin-workspace.repository.ts}
+    ├── domain/platform-role.policy.ts            no self-changes; keep one active super admin
+    ├── application/{admin-users.service.ts,admin-workspaces.service.ts,admin.mapper.ts}
+    ├── infrastructure/typeorm-admin-{user,workspace}.repository.ts
     └── presentation/
-        ├── admin-users.controller.ts             list, suspend, promote (audited)
+        ├── admin-users.controller.ts             list, suspend (revokes sessions), promote/demote (audited)
         ├── admin-workspaces.controller.ts
-        ├── admin-audit.controller.ts             paged audit log
+        ├── admin-audit.controller.ts             platform-wide audit log with IPs
         └── dto/…
 ```
 
@@ -498,7 +508,7 @@ packages/shared-types/
         ├── sprint.contract.ts        ✅
         ├── document.contract.ts      ✅
         ├── hr.contract.ts            ✅
-        └── admin.contract.ts         🔜 [6]
+        └── admin.contract.ts         ✅
 ```
 
 ## 5. `packages/sdk`

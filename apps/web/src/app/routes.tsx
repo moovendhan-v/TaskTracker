@@ -2,8 +2,12 @@ import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, createRouter, Outlet, redirect } from '@tanstack/react-router';
 import { ErrorState } from '@/components/common/error-state';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
+import { unwrap } from '@taskflow/sdk';
+import { api } from '@/core/api/sdk-client';
 import { hasSession } from '@/core/auth/session';
 import { queryKeys } from '@/lib/query-keys';
+import { AdminAuditLogPage, AdminLayout, AdminUsersPage, AdminWorkspacesPage } from '@/modules/admin';
+import { WorkspaceAuditLogPage } from '@/modules/audit-log';
 import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/modules/auth';
 import { DocumentsPage } from '@/modules/documents';
 import { HomePage } from '@/modules/home';
@@ -31,8 +35,8 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
 const publicLayout = createRoute({
   getParentRoute: () => rootRoute,
   id: 'public',
-  beforeLoad: async ({ location }) => {
-    if (location.pathname !== '/reset-password' && (await hasSession())) throw redirect({ to: '/' });
+  beforeLoad: async ({ location, context }) => {
+    if (location.pathname !== '/reset-password' && (await hasSession(context.queryClient))) throw redirect({ to: '/' });
   },
   component: Outlet,
 });
@@ -56,8 +60,8 @@ const resetPasswordRoute = createRoute({
 const appLayout = createRoute({
   getParentRoute: () => rootRoute,
   id: 'app',
-  beforeLoad: async () => {
-    if (!(await hasSession())) throw redirect({ to: '/sign-in' });
+  beforeLoad: async ({ context }) => {
+    if (!(await hasSession(context.queryClient))) throw redirect({ to: '/sign-in' });
   },
   component: Outlet,
 });
@@ -75,6 +79,27 @@ const indexRoute = createRoute({
 });
 
 const onboardingRoute = createRoute({ getParentRoute: () => appLayout, path: '/onboarding', component: OnboardingPage });
+
+/* Platform admin console. Hidden from other users here; enforced by the API (404 for non-admins). */
+const adminRoute = createRoute({
+  getParentRoute: () => appLayout,
+  path: '/admin',
+  beforeLoad: async ({ context }) => {
+    const me = await context.queryClient.ensureQueryData({ queryKey: queryKeys.me, queryFn: () => unwrap(api.GET('/api/me')) });
+    if (me.platformRole !== 'SUPER_ADMIN') throw redirect({ to: '/' });
+  },
+  component: AdminLayout,
+});
+const adminIndexRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/',
+  beforeLoad: () => {
+    throw redirect({ to: '/admin/users' });
+  },
+});
+const adminUsersRoute = createRoute({ getParentRoute: () => adminRoute, path: '/users', component: AdminUsersPage });
+const adminWorkspacesRoute = createRoute({ getParentRoute: () => adminRoute, path: '/workspaces', component: AdminWorkspacesPage });
+const adminAuditRoute = createRoute({ getParentRoute: () => adminRoute, path: '/audit-log', component: AdminAuditLogPage });
 
 const workspaceRoute = createRoute({
   getParentRoute: () => appLayout,
@@ -182,6 +207,7 @@ const departmentsRoute = workspacePage('/people/departments', DepartmentsPage);
 const timeOffRoute = workspacePage('/people/time-off', TimeOffPage);
 const approvalsRoute = workspacePage('/people/approvals', ApprovalsPage);
 const leaveTypesRoute = workspacePage('/people/leave-types', LeaveTypesPage);
+const auditLogRoute = workspacePage('/audit-log', WorkspaceAuditLogPage);
 
 const membersRoute = createRoute({
   getParentRoute: () => workspaceRoute,
@@ -212,6 +238,7 @@ const routeTree = rootRoute.addChildren([
   appLayout.addChildren([
     indexRoute,
     onboardingRoute,
+    adminRoute.addChildren([adminIndexRoute, adminUsersRoute, adminWorkspacesRoute, adminAuditRoute]),
     workspaceRoute.addChildren([
       workspaceHomeRoute,
       listRoute,
@@ -224,6 +251,7 @@ const routeTree = rootRoute.addChildren([
       timeOffRoute,
       approvalsRoute,
       leaveTypesRoute,
+      auditLogRoute,
       membersRoute,
       rolesRoute,
       settingsRoute,

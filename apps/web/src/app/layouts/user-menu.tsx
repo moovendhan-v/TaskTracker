@@ -1,4 +1,5 @@
-import { LogOutIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { LogOutIcon, MoonIcon, ShieldAlertIcon, SunIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useCurrentUser } from '@/core/auth/use-current-user';
@@ -21,6 +22,13 @@ export function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-56">
         <DropdownMenuLabel>{me?.platformRole === 'SUPER_ADMIN' ? 'Platform admin' : 'Account'}</DropdownMenuLabel>
+        {me?.platformRole === 'SUPER_ADMIN' ? (
+          <DropdownMenuItem asChild>
+            <Link to="/admin/users">
+              <ShieldAlertIcon /> Platform admin
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem onSelect={toggleTheme}>
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />} {theme === 'dark' ? 'Light mode' : 'Dark mode'}
         </DropdownMenuItem>

@@ -612,6 +612,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspaceAuditLog_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AdminUsers_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AdminUsers_update"];
+        trace?: never;
+    };
+    "/api/admin/workspaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AdminWorkspaces_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AdminAudit_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1022,6 +1102,66 @@ export interface components {
             usedDays: number;
             pendingDays: number;
             remainingDays: number | null;
+        };
+        AuditLogEntryResponseDto: {
+            id: string;
+            actorId: string;
+            actorName: string;
+            action: string;
+            targetType: string;
+            targetId: string | null;
+            /** Format: uuid */
+            workspaceId: string | null;
+            ip: string | null;
+            metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AuditLogPageResponseDto: {
+            items: components["schemas"]["AuditLogEntryResponseDto"][];
+            page: number;
+            pageSize: number;
+            total: number;
+        };
+        AdminUserResponseDto: {
+            id: string;
+            name: string;
+            email: string;
+            /** @enum {string} */
+            platformRole: "SUPER_ADMIN" | "USER";
+            suspended: boolean;
+            workspaceCount: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminUserPageResponseDto: {
+            items: components["schemas"]["AdminUserResponseDto"][];
+            page: number;
+            pageSize: number;
+            total: number;
+        };
+        UpdateAdminUserDto: {
+            suspended?: boolean;
+            /** @enum {string} */
+            platformRole?: "SUPER_ADMIN" | "USER";
+        };
+        AdminWorkspaceResponseDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            ownerId: string;
+            ownerName: string;
+            memberCount: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminWorkspacePageResponseDto: {
+            items: components["schemas"]["AdminWorkspaceResponseDto"][];
+            page: number;
+            pageSize: number;
+            total: number;
         };
     };
     responses: never;
@@ -2875,6 +3015,168 @@ export interface operations {
             };
             /** @description Missing workspace permission */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspaceAuditLog_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                /** @description Prefix of the action name, e.g. "hr." */
+                action?: string;
+                actorId?: string;
+                /** @description Platform admins only */
+                workspaceId?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogPageResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminUsers_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserPageResponseDto"];
+                };
+            };
+            /** @description Not a platform admin */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminUsers_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAdminUserDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserResponseDto"];
+                };
+            };
+            /** @description Not a platform admin */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminWorkspaces_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWorkspacePageResponseDto"];
+                };
+            };
+            /** @description Not a platform admin */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminAudit_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                /** @description Prefix of the action name, e.g. "hr." */
+                action?: string;
+                actorId?: string;
+                /** @description Platform admins only */
+                workspaceId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogPageResponseDto"];
+                };
+            };
+            /** @description Not a platform admin */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

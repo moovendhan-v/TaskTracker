@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "openapi:export": "pnpm build && node dist/cli/export-openapi.js ../../packages/sdk/openapi.json",
-    "migration:run": "pnpm build && node dist/cli/run-migrations.js"
+    "migration:run": "pnpm build && node dist/cli/run-migrations.js",
+    "admin:promote": "pnpm build && node dist/cli/promote-super-admin.js"
   },
   "dependencies": {
     "@nestjs/common": "12.2.0",

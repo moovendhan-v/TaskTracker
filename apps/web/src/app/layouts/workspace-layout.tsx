@@ -5,6 +5,7 @@ import {
   HomeIcon,
   InboxIcon,
   PalmtreeIcon,
+  ScrollTextIcon,
   SettingsIcon,
   ShieldIcon,
   TagsIcon,
@@ -44,6 +45,11 @@ export function WorkspaceLayout({ workspaceId }: { workspaceId: string }) {
           <SidebarLink to="/w/$workspaceId/roles" params={params} icon={<ShieldIcon />}>
             Roles
           </SidebarLink>
+          {can('audit.view') ? (
+            <SidebarLink to="/w/$workspaceId/audit-log" params={params} icon={<ScrollTextIcon />}>
+              Audit log
+            </SidebarLink>
+          ) : null}
           <SidebarLink to="/w/$workspaceId/settings" params={params} icon={<SettingsIcon />}>
             Settings
           </SidebarLink>

@@ -45,11 +45,11 @@ export function DirectoryPage({ workspaceId }: { workspaceId: string }) {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
               <tr>
-                <th className="px-4 py-2 font-medium">Person</th>
-                <th className="px-4 py-2 font-medium">Role</th>
-                <th className="hidden px-4 py-2 font-medium md:table-cell">Manager</th>
-                <th className="hidden px-4 py-2 font-medium lg:table-cell">Started</th>
-                <th className="w-12 px-4 py-2" aria-label="Actions" />
+                <th scope="col" className="px-4 py-2 font-medium">Person</th>
+                <th scope="col" className="px-4 py-2 font-medium">Role</th>
+                <th scope="col" className="hidden px-4 py-2 font-medium md:table-cell">Manager</th>
+                <th scope="col" className="hidden px-4 py-2 font-medium lg:table-cell">Started</th>
+                <th scope="col" className="w-12 px-4 py-2" aria-label="Actions" />
               </tr>
             </thead>
             <tbody className="divide-y">

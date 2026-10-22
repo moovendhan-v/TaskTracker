@@ -10,6 +10,8 @@ import { DatabaseModule } from './core/database/database.module.js';
 import { TimeModule } from './core/time/time.module.js';
 import { AllExceptionsFilter } from './core/http/filters/all-exceptions.filter.js';
 import { UserThrottlerGuard } from './core/http/guards/user-throttler.guard.js';
+import { AdminModule } from './modules/admin/admin.module.js';
+import { AuditLogModule } from './modules/audit-log/audit-log.module.js';
 import { CommentsModule } from './modules/comments/comments.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
 import { HealthModule } from './modules/health/health.module.js';
@@ -46,6 +48,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     SprintsModule,
     DocumentsModule,
     HrModule,
+    AuditLogModule,
+    AdminModule,
   ],
   providers: [
     // Order matters: the session guard sets req.user, which the throttler uses as its key.

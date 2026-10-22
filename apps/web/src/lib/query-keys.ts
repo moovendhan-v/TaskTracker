@@ -30,4 +30,9 @@ export const queryKeys = {
   myLeave: (workspaceId: string) => ['workspaces', workspaceId, 'hr', 'leave', 'mine'] as const,
   leaveQueue: (workspaceId: string, status: string) => ['workspaces', workspaceId, 'hr', 'leave', 'queue', status] as const,
   myBalances: (workspaceId: string, year: number) => ['workspaces', workspaceId, 'hr', 'leave', 'balances', year] as const,
+  workspaceAudit: (workspaceId: string, query: object) => ['workspaces', workspaceId, 'audit-log', query] as const,
+  adminRoot: ['admin'] as const,
+  adminUsers: (query: object) => ['admin', 'users', query] as const,
+  adminWorkspaces: (query: object) => ['admin', 'workspaces', query] as const,
+  adminAudit: (query: object) => ['admin', 'audit-log', query] as const,
 };
