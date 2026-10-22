@@ -7,15 +7,11 @@ import { AdminUserRepository } from './domain/admin-user.repository.js';
 import { AdminWorkspaceRepository } from './domain/admin-workspace.repository.js';
 import { TypeOrmAdminUserRepository } from './infrastructure/typeorm-admin-user.repository.js';
 import { TypeOrmAdminWorkspaceRepository } from './infrastructure/typeorm-admin-workspace.repository.js';
-import { AdminAuditController } from './presentation/admin-audit.controller.js';
 import { AdminResolver } from './presentation/graphql/admin.resolver.js';
-import { AdminUsersController } from './presentation/admin-users.controller.js';
-import { AdminWorkspacesController } from './presentation/admin-workspaces.controller.js';
 
 /** SUPER_ADMIN console. Every route is behind PlatformAdminGuard. */
 @Module({
   imports: [AuditLogModule],
-  controllers: [AdminUsersController, AdminWorkspacesController, AdminAuditController],
   providers: [
     PlatformAdminGuard,
     AdminUsersService,

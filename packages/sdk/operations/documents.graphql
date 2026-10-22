@@ -1,0 +1,23 @@
+query Documents($workspaceId: ID!, $search: String) {
+  documents(workspaceId: $workspaceId, search: $search) { ...DocumentSummaryFields }
+}
+
+query Document($workspaceId: ID!, $documentId: ID!) {
+  document(workspaceId: $workspaceId, documentId: $documentId) { ...DocumentFields }
+}
+
+mutation CreateDocument($workspaceId: ID!, $input: CreateDocumentInput!) {
+  createDocument(workspaceId: $workspaceId, input: $input) { ...DocumentFields }
+}
+
+mutation UpdateDocument($workspaceId: ID!, $documentId: ID!, $input: UpdateDocumentInput!) {
+  updateDocument(workspaceId: $workspaceId, documentId: $documentId, input: $input) { ...DocumentFields }
+}
+
+mutation MoveDocument($workspaceId: ID!, $documentId: ID!, $parentId: ID, $position: Float) {
+  moveDocument(workspaceId: $workspaceId, documentId: $documentId, parentId: $parentId, position: $position) {
+    ...DocumentFields
+  }
+}
+
+mutation DeleteDocument($workspaceId: ID!, $documentId: ID!) { deleteDocument(workspaceId: $workspaceId, documentId: $documentId) }

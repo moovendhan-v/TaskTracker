@@ -16,7 +16,7 @@ export function PageOf<T>(item: Type<T>) {
   return Page;
 }
 
-/** Paging arguments for list queries, with the same limits as the REST API. */
+/** Paging arguments for list queries, capped at PAGE_SIZE_MAX. */
 @ArgsType()
 export class PageArgs {
   @Field(() => Int, { nullable: true })

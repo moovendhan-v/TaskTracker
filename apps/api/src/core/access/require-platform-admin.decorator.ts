@@ -1,7 +1,8 @@
-import { applyDecorators, UseGuards } from '@nestjs/common';
-import { ApiNotFoundResponse } from '@nestjs/swagger';
+import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
 import { PlatformAdminGuard } from './platform-admin.guard.js';
 
-/** Limits a controller or route to SUPER_ADMIN users. */
+export const REQUIRES_PLATFORM_ADMIN_KEY = 'requiresPlatformAdmin';
+
+/** Limits a resolver or operation to SUPER_ADMIN users. Its database work runs with cross-workspace access. */
 export const RequirePlatformAdmin = (): MethodDecorator & ClassDecorator =>
-  applyDecorators(UseGuards(PlatformAdminGuard), ApiNotFoundResponse({ description: 'Not a platform admin' }));
+  applyDecorators(SetMetadata(REQUIRES_PLATFORM_ADMIN_KEY, true), UseGuards(PlatformAdminGuard));

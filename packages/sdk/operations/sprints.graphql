@@ -1,0 +1,21 @@
+query Sprints($workspaceId: ID!, $spaceId: ID!) { sprints(workspaceId: $workspaceId, spaceId: $spaceId) { ...SprintFields } }
+
+query Sprint($workspaceId: ID!, $sprintId: ID!) { sprint(workspaceId: $workspaceId, sprintId: $sprintId) { ...SprintFields } }
+
+mutation CreateSprint($workspaceId: ID!, $spaceId: ID!, $input: CreateSprintInput!) {
+  createSprint(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) { ...SprintFields }
+}
+
+mutation UpdateSprint($workspaceId: ID!, $sprintId: ID!, $input: UpdateSprintInput!) {
+  updateSprint(workspaceId: $workspaceId, sprintId: $sprintId, input: $input) { ...SprintFields }
+}
+
+mutation DeleteSprint($workspaceId: ID!, $sprintId: ID!) { deleteSprint(workspaceId: $workspaceId, sprintId: $sprintId) }
+
+mutation StartSprint($workspaceId: ID!, $sprintId: ID!) { startSprint(workspaceId: $workspaceId, sprintId: $sprintId) { ...SprintFields } }
+
+mutation CompleteSprint($workspaceId: ID!, $sprintId: ID!, $moveOpenTasksToSprintId: ID) {
+  completeSprint(workspaceId: $workspaceId, sprintId: $sprintId, moveOpenTasksToSprintId: $moveOpenTasksToSprintId) {
+    ...SprintFields
+  }
+}

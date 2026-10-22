@@ -1,9 +1,8 @@
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentAccess } from '../../../../core/access/current-access.decorator.js';
 import { RequirePermissions } from '../../../../core/access/require-permissions.decorator.js';
-import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
+import { OptionalUuidArg, UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
-import { UUID_PIPE } from '../../../../core/http/pipes/uuid.pipe.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { SprintsService } from '../../application/sprints.service.js';
 import { CreateSprintInput, SprintGql, UpdateSprintInput } from './sprint.types.js';
@@ -76,7 +75,7 @@ export class SprintsResolver {
   completeSprint(
     @WorkspaceIdArg() _workspaceId: string,
     @UuidArg('sprintId') sprintId: string,
-    @Args('moveOpenTasksToSprintId', { type: () => ID, nullable: true }, UUID_PIPE) target: string | null,
+    @OptionalUuidArg('moveOpenTasksToSprintId') target: string | null | undefined,
     @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<SprintGql> {

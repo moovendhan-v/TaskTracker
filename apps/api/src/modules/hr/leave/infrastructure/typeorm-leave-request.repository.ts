@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { LeaveStatus } from '@taskflow/shared-types';
 import type { SelectQueryBuilder } from 'typeorm';
 import { TransactionalManager } from '../../../../core/database/transactional-manager.js';
-import type { PageRequest } from '../../../../core/http/dto/page-query.dto.js';
+import type { PageRequest } from '../../../../core/domain/page-request.js';
 import type { LeaveRequest, LeaveRequestView, NewLeaveRequest } from '../domain/leave-request.js';
 import { LeaveRequestRepository } from '../domain/leave-request.repository.js';
 import { LeaveRequestOrmEntity } from './leave-request.orm-entity.js';

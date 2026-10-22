@@ -19,6 +19,7 @@ import {
 } from '@taskflow/shared-types';
 import { LeaveDecisionEnum, LeaveStatusEnum } from '../../../../../core/graphql/enums.js';
 import { PageOf, WorkspacePageArgs } from '../../../../../core/graphql/page.type.js';
+import { IsOmittable } from '../../../../../core/graphql/validation.js';
 
 @ObjectType('LeaveType')
 export class LeaveTypeGql implements LeaveTypeResponse {
@@ -38,7 +39,7 @@ export class CreateLeaveTypeInput implements CreateLeaveTypeRequest {
   name: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @Matches(new RegExp(COLOR_PATTERN))
   color?: string;
 
@@ -50,7 +51,7 @@ export class CreateLeaveTypeInput implements CreateLeaveTypeRequest {
   annualAllowanceDays: number | null;
 
   @Field({ nullable: true, description: 'Defaults to true' })
-  @IsOptional()
+  @IsOmittable()
   @IsBoolean()
   requiresApproval?: boolean;
 }
@@ -58,14 +59,14 @@ export class CreateLeaveTypeInput implements CreateLeaveTypeRequest {
 @InputType()
 export class UpdateLeaveTypeInput implements UpdateLeaveTypeRequest {
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @IsNotEmpty()
   @MaxLength(NAME_MAX)
   name?: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @Matches(new RegExp(COLOR_PATTERN))
   color?: string;
 
@@ -78,7 +79,7 @@ export class UpdateLeaveTypeInput implements UpdateLeaveTypeRequest {
   annualAllowanceDays?: number | null;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsBoolean()
   requiresApproval?: boolean;
 }
@@ -129,7 +130,7 @@ export class RequestLeaveInput implements CreateLeaveRequestRequest {
   endDate: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @MaxLength(LEAVE_REASON_MAX)
   reason?: string;
@@ -142,7 +143,7 @@ export class DecideLeaveInput implements DecideLeaveRequestRequest {
   decision: LeaveDecision;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @MaxLength(LEAVE_REASON_MAX)
   note?: string;

@@ -1,6 +1,7 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { IsNotEmpty, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 import { NAME_MAX, type CreateDepartmentRequest, type DepartmentResponse, type UpdateDepartmentRequest } from '@taskflow/shared-types';
+import { IsOmittable } from '../../../../../core/graphql/validation.js';
 
 @ObjectType('Department')
 export class DepartmentGql implements DepartmentResponse {
@@ -29,7 +30,7 @@ export class CreateDepartmentInput implements CreateDepartmentRequest {
 @InputType()
 export class UpdateDepartmentInput implements UpdateDepartmentRequest {
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @IsNotEmpty()
   @MaxLength(NAME_MAX)

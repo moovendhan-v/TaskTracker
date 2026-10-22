@@ -7,7 +7,6 @@ import { API_PREFIX } from './bootstrap/api-prefix.js';
 import { mountAuthRoutes } from './bootstrap/auth-routes.bootstrap.js';
 import { applyBodyParsers } from './bootstrap/body-parsers.bootstrap.js';
 import { applySecurity } from './bootstrap/security.bootstrap.js';
-import { setupSwagger } from './bootstrap/swagger.bootstrap.js';
 import { applyValidation } from './bootstrap/validation.bootstrap.js';
 import { ENV } from './config/config.module.js';
 import type { Env } from './config/env.schema.js';
@@ -24,7 +23,6 @@ async function bootstrap(): Promise<void> {
   applyBodyParsers(app);
   app.setGlobalPrefix(API_PREFIX);
   applyValidation(app, env);
-  setupSwagger(app, env);
   app.enableShutdownHooks();
 
   await app.listen(env.PORT);

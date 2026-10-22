@@ -10,7 +10,7 @@ import type {
 import { AuditLogger } from '../../../../core/audit/audit-logger.port.js';
 import { UnitOfWork } from '../../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../../core/domain/domain-error.js';
-import { toPageRequest } from '../../../../core/http/dto/page-query.dto.js';
+import { toPageRequest } from '../../../../core/domain/page-request.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { Clock } from '../../../../core/time/clock.port.js';
 import { LeaveApprovalPolicy } from '../domain/leave-approval.policy.js';

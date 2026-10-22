@@ -9,4 +9,5 @@ export interface CreateTaskListRequest {
   name: string;
 }
 
-export type UpdateTaskListRequest = Partial<CreateTaskListRequest>;
+/** A list's only editable field is its name, so renaming sends the full request. */
+export type UpdateTaskListRequest = CreateTaskListRequest;

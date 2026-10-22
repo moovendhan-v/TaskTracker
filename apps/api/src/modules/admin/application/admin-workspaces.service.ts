@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { AdminWorkspaceQuery, AdminWorkspaceResponse, Paginated } from '@taskflow/shared-types';
-import { toPageRequest } from '../../../core/http/dto/page-query.dto.js';
+import { toPageRequest } from '../../../core/domain/page-request.js';
 import { AdminWorkspaceRepository } from '../domain/admin-workspace.repository.js';
 import { AdminMapper } from './admin.mapper.js';
 

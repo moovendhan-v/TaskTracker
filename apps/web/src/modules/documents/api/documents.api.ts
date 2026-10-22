@@ -1,18 +1,23 @@
 import type { CreateDocumentRequest, MoveDocumentRequest, UpdateDocumentRequest } from '@taskflow/shared-types';
-import { unwrap } from '@taskflow/sdk';
-import { api } from '@/core/api/sdk-client';
+import {
+  CreateDocumentDocument,
+  DeleteDocumentDocument,
+  DocumentDocument,
+  DocumentsDocument,
+  MoveDocumentDocument,
+  UpdateDocumentDocument,
+} from '@taskflow/sdk';
+import { graphql } from '@/core/api/graphql-client';
 
 type DocPath = { workspaceId: string; documentId: string };
 
 export const documentsApi = {
-  tree: (workspaceId: string, search?: string) =>
-    unwrap(api.GET('/api/workspaces/{workspaceId}/documents', { params: { path: { workspaceId }, query: search ? { search } : {} } })),
-  get: (path: DocPath) => unwrap(api.GET('/api/workspaces/{workspaceId}/documents/{documentId}', { params: { path } })),
-  create: (workspaceId: string, body: CreateDocumentRequest) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/documents', { params: { path: { workspaceId } }, body })),
-  update: (path: DocPath, body: UpdateDocumentRequest) =>
-    unwrap(api.PATCH('/api/workspaces/{workspaceId}/documents/{documentId}', { params: { path }, body })),
-  move: (path: DocPath, body: MoveDocumentRequest) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/documents/{documentId}/move', { params: { path }, body })),
-  remove: (path: DocPath) => unwrap(api.DELETE('/api/workspaces/{workspaceId}/documents/{documentId}', { params: { path } })),
+  tree: async (workspaceId: string, search?: string) =>
+    (await graphql(DocumentsDocument, { workspaceId, search: search || undefined })).documents,
+  get: async (path: DocPath) => (await graphql(DocumentDocument, path)).document,
+  create: async (workspaceId: string, input: CreateDocumentRequest) =>
+    (await graphql(CreateDocumentDocument, { workspaceId, input })).createDocument,
+  update: async (path: DocPath, input: UpdateDocumentRequest) => (await graphql(UpdateDocumentDocument, { ...path, input })).updateDocument,
+  move: async (path: DocPath, move: MoveDocumentRequest) => (await graphql(MoveDocumentDocument, { ...path, ...move })).moveDocument,
+  remove: async (path: DocPath) => (await graphql(DeleteDocumentDocument, path)).deleteDocument,
 };

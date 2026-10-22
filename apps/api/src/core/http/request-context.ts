@@ -1,41 +1,32 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { GqlExecutionContext, type GqlContextType } from '@nestjs/graphql';
-import type { OperationTypeNode } from 'graphql';
+import type { GraphQLResolveInfo } from 'graphql';
 import type { AuthenticatedRequest } from './types/authenticated-request.js';
 
-/** The Express request for both REST and GraphQL calls, so guards and decorators serve both. */
-export function getRequest(context: ExecutionContext): AuthenticatedRequest {
-  if (context.getType<GqlContextType>() === 'graphql') {
-    return GqlExecutionContext.create(context).getContext<{ req: AuthenticatedRequest }>().req;
-  }
-  return context.switchToHttp().getRequest<AuthenticatedRequest>();
+function isGraphql(context: ExecutionContext): boolean {
+  return context.getType<GqlContextType>() === 'graphql';
 }
 
 /**
- * The workspace a call targets: the `:workspaceId` route param for REST,
- * or the top-level `workspaceId` argument for GraphQL.
+ * The Express request behind a call. GraphQL operations are the API; plain HTTP
+ * only reaches the health probe, which global guards also see.
  */
+export function getRequest(context: ExecutionContext): AuthenticatedRequest {
+  if (isGraphql(context)) return GqlExecutionContext.create(context).getContext<{ req: AuthenticatedRequest }>().req;
+  return context.switchToHttp().getRequest<AuthenticatedRequest>();
+}
+
+/** The top-level `workspaceId` argument of a GraphQL operation, unchecked. */
 export function getWorkspaceIdTarget(context: ExecutionContext): unknown {
-  if (context.getType<GqlContextType>() === 'graphql') {
-    return GqlExecutionContext.create(context).getArgs<{ workspaceId?: unknown }>().workspaceId;
-  }
-  return context.switchToHttp().getRequest<AuthenticatedRequest>().params['workspaceId'];
+  return isGraphql(context) ? GqlExecutionContext.create(context).getArgs<{ workspaceId?: unknown }>().workspaceId : undefined;
 }
 
-/** True for REST methods that change data and for GraphQL mutations. */
+/** True for GraphQL mutations (and, defensively, anything that isn't a query). */
 export function isWriteOperation(context: ExecutionContext): boolean {
-  if (context.getType<GqlContextType>() === 'graphql') {
-    const operation = GqlExecutionContext.create(context).getInfo<{ operation: { operation: OperationTypeNode } }>().operation;
-    return operation.operation !== 'query';
-  }
-  return !['GET', 'HEAD', 'OPTIONS'].includes(context.switchToHttp().getRequest<AuthenticatedRequest>().method);
+  return !isGraphql(context) || GqlExecutionContext.create(context).getInfo<GraphQLResolveInfo>().operation.operation !== 'query';
 }
 
-/** A short label for audit entries: the REST route or the GraphQL field name. */
+/** A short label for audit entries: the GraphQL field name. */
 export function describeOperation(context: ExecutionContext): string {
-  if (context.getType<GqlContextType>() === 'graphql') {
-    return `graphql:${GqlExecutionContext.create(context).getInfo<{ fieldName: string }>().fieldName}`;
-  }
-  const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-  return `${request.method} ${request.route?.path ?? ''}`;
+  return isGraphql(context) ? `graphql:${GqlExecutionContext.create(context).getInfo<GraphQLResolveInfo>().fieldName}` : 'http';
 }

@@ -3,7 +3,7 @@ import type { AdminUserQuery, AdminUserResponse, Paginated, UpdateAdminUserReque
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
-import { toPageRequest } from '../../../core/http/dto/page-query.dto.js';
+import { toPageRequest } from '../../../core/domain/page-request.js';
 import type { Actor } from '../../../core/http/types/authenticated-request.js';
 import { AdminUserRepository } from '../domain/admin-user.repository.js';
 import { PlatformRolePolicy } from '../domain/platform-role.policy.js';

@@ -22,7 +22,7 @@ export interface AuthenticatedRequest extends Request {
   workspaceAccess?: WorkspaceAccess;
 }
 
-/** Who did something and from where, passed from controllers into services for auditing. */
+/** Who did something and from where, passed from resolvers into services for auditing. */
 export interface Actor {
   userId: string;
   platformRole: PlatformRole;

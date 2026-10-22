@@ -1,5 +1,5 @@
 import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, Matches, MaxLength } from 'class-validator';
 import {
   COLOR_PATTERN,
   NAME_MAX,
@@ -8,6 +8,7 @@ import {
   type UpdateWorkspaceRequest,
   type WorkspaceResponse,
 } from '@taskflow/shared-types';
+import { IsOmittable } from '../../../../core/graphql/validation.js';
 
 @ObjectType('Workspace')
 export class WorkspaceGql implements WorkspaceResponse {
@@ -28,7 +29,7 @@ export class CreateWorkspaceInput implements CreateWorkspaceRequest {
   name: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @Matches(new RegExp(COLOR_PATTERN))
   color?: string;
 }
@@ -36,14 +37,14 @@ export class CreateWorkspaceInput implements CreateWorkspaceRequest {
 @InputType()
 export class UpdateWorkspaceInput implements UpdateWorkspaceRequest {
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @IsNotEmpty()
   @MaxLength(NAME_MAX)
   name?: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @Matches(new RegExp(COLOR_PATTERN))
   color?: string;
 }

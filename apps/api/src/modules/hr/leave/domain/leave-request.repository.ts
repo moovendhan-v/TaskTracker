@@ -1,5 +1,5 @@
 import type { LeaveStatus } from '@taskflow/shared-types';
-import type { PageRequest } from '../../../../core/http/dto/page-query.dto.js';
+import type { PageRequest } from '../../../../core/domain/page-request.js';
 import type { LeaveRequest, LeaveRequestView, NewLeaveRequest } from './leave-request.js';
 
 export abstract class LeaveRequestRepository {

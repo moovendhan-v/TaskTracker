@@ -1,13 +1,15 @@
-import type { CreateRoleRequest, UpdateRoleRequest } from '@taskflow/shared-types';
-import { unwrap } from '@taskflow/sdk';
-import { api } from '@/core/api/sdk-client';
+import { parsePermissions, type CreateRoleRequest, type UpdateRoleRequest } from '@taskflow/shared-types';
+import { CreateRoleDocument, DeleteRoleDocument, RolesDocument, UpdateRoleDocument, type RoleFieldsFragment } from '@taskflow/sdk';
+import { graphql } from '@/core/api/graphql-client';
+
+/** Permission keys arrive as strings; unknown keys are dropped rather than trusted. */
+const toRole = (role: RoleFieldsFragment) => ({ ...role, permissions: parsePermissions(role.permissions) });
 
 export const rolesApi = {
-  list: (workspaceId: string) => unwrap(api.GET('/api/workspaces/{workspaceId}/roles', { params: { path: { workspaceId } } })),
-  create: (workspaceId: string, body: CreateRoleRequest) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/roles', { params: { path: { workspaceId } }, body })),
-  update: (workspaceId: string, roleId: string, body: UpdateRoleRequest) =>
-    unwrap(api.PATCH('/api/workspaces/{workspaceId}/roles/{roleId}', { params: { path: { workspaceId, roleId } }, body })),
-  remove: (workspaceId: string, roleId: string) =>
-    unwrap(api.DELETE('/api/workspaces/{workspaceId}/roles/{roleId}', { params: { path: { workspaceId, roleId } } })),
+  list: async (workspaceId: string) => (await graphql(RolesDocument, { workspaceId })).roles.map(toRole),
+  create: async (workspaceId: string, input: CreateRoleRequest) =>
+    toRole((await graphql(CreateRoleDocument, { workspaceId, input })).createRole),
+  update: async (workspaceId: string, roleId: string, input: UpdateRoleRequest) =>
+    toRole((await graphql(UpdateRoleDocument, { workspaceId, roleId, input })).updateRole),
+  remove: async (workspaceId: string, roleId: string) => (await graphql(DeleteRoleDocument, { workspaceId, roleId })).deleteRole,
 };

@@ -1,13 +1,11 @@
 import type { CreateSpaceRequest, UpdateSpaceRequest } from '@taskflow/shared-types';
-import { unwrap } from '@taskflow/sdk';
-import { api } from '@/core/api/sdk-client';
+import { CreateSpaceDocument, DeleteSpaceDocument, SpacesDocument, UpdateSpaceDocument } from '@taskflow/sdk';
+import { graphql } from '@/core/api/graphql-client';
 
 export const spacesApi = {
-  list: (workspaceId: string) => unwrap(api.GET('/api/workspaces/{workspaceId}/spaces', { params: { path: { workspaceId } } })),
-  create: (workspaceId: string, body: CreateSpaceRequest) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/spaces', { params: { path: { workspaceId } }, body })),
-  update: (workspaceId: string, spaceId: string, body: UpdateSpaceRequest) =>
-    unwrap(api.PATCH('/api/workspaces/{workspaceId}/spaces/{spaceId}', { params: { path: { workspaceId, spaceId } }, body })),
-  remove: (workspaceId: string, spaceId: string) =>
-    unwrap(api.DELETE('/api/workspaces/{workspaceId}/spaces/{spaceId}', { params: { path: { workspaceId, spaceId } } })),
+  list: async (workspaceId: string) => (await graphql(SpacesDocument, { workspaceId })).spaces,
+  create: async (workspaceId: string, input: CreateSpaceRequest) => (await graphql(CreateSpaceDocument, { workspaceId, input })).createSpace,
+  update: async (workspaceId: string, spaceId: string, input: UpdateSpaceRequest) =>
+    (await graphql(UpdateSpaceDocument, { workspaceId, spaceId, input })).updateSpace,
+  remove: async (workspaceId: string, spaceId: string) => (await graphql(DeleteSpaceDocument, { workspaceId, spaceId })).deleteSpace,
 };

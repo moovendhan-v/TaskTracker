@@ -4,7 +4,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../types/authenticated-request.js';
 
-/** Rate limits REST and GraphQL calls by user id when signed in, otherwise by client IP. */
+/** Rate limits GraphQL operations by user id when signed in, otherwise by client IP. */
 @Injectable()
 export class UserThrottlerGuard extends ThrottlerGuard {
   protected override getRequestResponse(context: ExecutionContext): { req: Record<string, any>; res: Record<string, any> } {

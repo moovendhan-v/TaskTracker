@@ -1,5 +1,5 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { IsISO8601, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsISO8601, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import {
   NAME_MAX,
   SPRINT_GOAL_MAX,
@@ -9,6 +9,7 @@ import {
   type UpdateSprintRequest,
 } from '@taskflow/shared-types';
 import { SprintStatusEnum } from '../../../../core/graphql/enums.js';
+import { IsOmittable } from '../../../../core/graphql/validation.js';
 
 @ObjectType('Sprint')
 export class SprintGql implements SprintResponse {
@@ -33,7 +34,7 @@ export class CreateSprintInput implements CreateSprintRequest {
   name: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @MaxLength(SPRINT_GOAL_MAX)
   goal?: string;
@@ -50,25 +51,25 @@ export class CreateSprintInput implements CreateSprintRequest {
 @InputType()
 export class UpdateSprintInput implements UpdateSprintRequest {
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @IsNotEmpty()
   @MaxLength(NAME_MAX)
   name?: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @MaxLength(SPRINT_GOAL_MAX)
   goal?: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsISO8601({ strict: true })
   startDate?: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsISO8601({ strict: true })
   endDate?: string;
 }

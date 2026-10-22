@@ -2,10 +2,9 @@ import { Args, Float, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { DOC_TREE_LIMIT } from '@taskflow/shared-types';
 import { CurrentAccess } from '../../../../core/access/current-access.decorator.js';
 import { RequirePermissions } from '../../../../core/access/require-permissions.decorator.js';
-import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
+import { OptionalUuidArg, UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { cappedListComplexity } from '../../../../core/graphql/page.type.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
-import { UUID_PIPE } from '../../../../core/http/pipes/uuid.pipe.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { DocumentsService } from '../../application/documents.service.js';
 import { CreateDocumentInput, DocumentGql, DocumentSummaryGql, DocumentTreeArgs, UpdateDocumentInput } from './document.types.js';
@@ -55,7 +54,7 @@ export class DocumentsResolver {
   moveDocument(
     @WorkspaceIdArg() _workspaceId: string,
     @UuidArg('documentId') documentId: string,
-    @Args('parentId', { type: () => ID, nullable: true }, UUID_PIPE) parentId: string | null,
+    @OptionalUuidArg('parentId') parentId: string | null | undefined,
     @Args('position', { type: () => Float, nullable: true }) position: number | undefined,
     @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,

@@ -13,6 +13,7 @@ import {
 } from '@taskflow/shared-types';
 import { TaskPriorityEnum, TaskStatusEnum } from '../../../../core/graphql/enums.js';
 import { PageOf, WorkspacePageArgs } from '../../../../core/graphql/page.type.js';
+import { IsOmittable } from '../../../../core/graphql/validation.js';
 
 @ObjectType('Task')
 export class TaskGql implements TaskResponse {
@@ -60,18 +61,18 @@ export class CreateTaskInput implements CreateTaskRequest {
   title: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @MaxLength(TASK_DESCRIPTION_MAX)
   description?: string;
 
   @Field(() => TaskStatusEnum, { nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsIn(TASK_STATUSES)
   status?: TaskStatus;
 
   @Field(() => TaskPriorityEnum, { nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsIn(TASK_PRIORITIES)
   priority?: TaskPriority;
 
@@ -92,25 +93,25 @@ export class CreateTaskInput implements CreateTaskRequest {
 @InputType()
 export class UpdateTaskInput implements UpdateTaskRequest {
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @IsNotEmpty()
   @MaxLength(TASK_TITLE_MAX)
   title?: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @MaxLength(TASK_DESCRIPTION_MAX)
   description?: string;
 
   @Field(() => TaskStatusEnum, { nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsIn(TASK_STATUSES)
   status?: TaskStatus;
 
   @Field(() => TaskPriorityEnum, { nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsIn(TASK_PRIORITIES)
   priority?: TaskPriority;
 
@@ -128,7 +129,7 @@ export class UpdateTaskInput implements UpdateTaskRequest {
   assigneeId?: string | null;
 
   @Field(() => Float, { nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsNumber({ allowNaN: false, allowInfinity: false })
   position?: number;
 

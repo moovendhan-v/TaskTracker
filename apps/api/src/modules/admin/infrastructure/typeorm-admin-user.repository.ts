@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { PlatformRole } from '@taskflow/shared-types';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
-import type { PageRequest } from '../../../core/http/dto/page-query.dto.js';
+import type { PageRequest } from '../../../core/domain/page-request.js';
 import { escapeLike } from '../../../core/http/utils/escape-like.js';
 import type { AdminUser } from '../domain/admin-user.js';
 import { AdminUserRepository } from '../domain/admin-user.repository.js';

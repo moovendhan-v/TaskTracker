@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { AuditLogEntryResponse, AuditLogQuery, Paginated } from '@taskflow/shared-types';
-import { toPageRequest } from '../../../core/http/dto/page-query.dto.js';
+import { toPageRequest } from '../../../core/domain/page-request.js';
 import type { AuditEntry } from '../domain/audit-entry.js';
 import { AuditLogRepository } from '../domain/audit-log.repository.js';
 import { AuditLogMapper } from './audit-log.mapper.js';

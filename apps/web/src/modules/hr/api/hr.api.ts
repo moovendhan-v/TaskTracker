@@ -8,47 +8,65 @@ import type {
   UpdateLeaveTypeRequest,
   UpsertEmployeeProfileRequest,
 } from '@taskflow/shared-types';
-import { unwrap } from '@taskflow/sdk';
-import { api } from '@/core/api/sdk-client';
+import {
+  CancelLeaveRequestDocument,
+  CreateDepartmentDocument,
+  CreateLeaveTypeDocument,
+  DecideLeaveRequestDocument,
+  DeleteDepartmentDocument,
+  DeleteLeaveTypeDocument,
+  DepartmentsDocument,
+  EmployeesDocument,
+  LeaveRequestsDocument,
+  LeaveTypesDocument,
+  MyLeaveBalancesDocument,
+  MyLeaveRequestsDocument,
+  RequestLeaveDocument,
+  UpdateDepartmentDocument,
+  UpdateLeaveTypeDocument,
+  UpsertEmployeeProfileDocument,
+} from '@taskflow/sdk';
+import { graphql } from '@/core/api/graphql-client';
 
-const ws = (workspaceId: string) => ({ params: { path: { workspaceId } } });
+/** The approver queue shows one page of this size. */
+const LEAVE_QUEUE_PAGE_SIZE = 100;
 
 export const departmentsApi = {
-  list: (workspaceId: string) => unwrap(api.GET('/api/workspaces/{workspaceId}/hr/departments', ws(workspaceId))),
-  create: (workspaceId: string, body: CreateDepartmentRequest) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/hr/departments', { ...ws(workspaceId), body })),
-  update: (workspaceId: string, departmentId: string, body: UpdateDepartmentRequest) =>
-    unwrap(api.PATCH('/api/workspaces/{workspaceId}/hr/departments/{departmentId}', { params: { path: { workspaceId, departmentId } }, body })),
-  remove: (workspaceId: string, departmentId: string) =>
-    unwrap(api.DELETE('/api/workspaces/{workspaceId}/hr/departments/{departmentId}', { params: { path: { workspaceId, departmentId } } })),
+  list: async (workspaceId: string) => (await graphql(DepartmentsDocument, { workspaceId })).departments,
+  create: async (workspaceId: string, input: CreateDepartmentRequest) =>
+    (await graphql(CreateDepartmentDocument, { workspaceId, input })).createDepartment,
+  update: async (workspaceId: string, departmentId: string, input: UpdateDepartmentRequest) =>
+    (await graphql(UpdateDepartmentDocument, { workspaceId, departmentId, input })).updateDepartment,
+  remove: async (workspaceId: string, departmentId: string) =>
+    (await graphql(DeleteDepartmentDocument, { workspaceId, departmentId })).deleteDepartment,
 };
 
 export const employeesApi = {
-  directory: (workspaceId: string) => unwrap(api.GET('/api/workspaces/{workspaceId}/hr/employees', ws(workspaceId))),
-  upsert: (workspaceId: string, userId: string, body: UpsertEmployeeProfileRequest) =>
-    unwrap(api.PUT('/api/workspaces/{workspaceId}/hr/employees/{userId}', { params: { path: { workspaceId, userId } }, body })),
+  directory: async (workspaceId: string) => (await graphql(EmployeesDocument, { workspaceId })).employees,
+  upsert: async (workspaceId: string, userId: string, input: UpsertEmployeeProfileRequest) =>
+    (await graphql(UpsertEmployeeProfileDocument, { workspaceId, userId, input })).upsertEmployeeProfile,
 };
 
 export const leaveTypesApi = {
-  list: (workspaceId: string) => unwrap(api.GET('/api/workspaces/{workspaceId}/hr/leave-types', ws(workspaceId))),
-  create: (workspaceId: string, body: CreateLeaveTypeRequest) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/hr/leave-types', { ...ws(workspaceId), body })),
-  update: (workspaceId: string, leaveTypeId: string, body: UpdateLeaveTypeRequest) =>
-    unwrap(api.PATCH('/api/workspaces/{workspaceId}/hr/leave-types/{leaveTypeId}', { params: { path: { workspaceId, leaveTypeId } }, body })),
-  remove: (workspaceId: string, leaveTypeId: string) =>
-    unwrap(api.DELETE('/api/workspaces/{workspaceId}/hr/leave-types/{leaveTypeId}', { params: { path: { workspaceId, leaveTypeId } } })),
+  list: async (workspaceId: string) => (await graphql(LeaveTypesDocument, { workspaceId })).leaveTypes,
+  create: async (workspaceId: string, input: CreateLeaveTypeRequest) =>
+    (await graphql(CreateLeaveTypeDocument, { workspaceId, input })).createLeaveType,
+  update: async (workspaceId: string, leaveTypeId: string, input: UpdateLeaveTypeRequest) =>
+    (await graphql(UpdateLeaveTypeDocument, { workspaceId, leaveTypeId, input })).updateLeaveType,
+  remove: async (workspaceId: string, leaveTypeId: string) =>
+    (await graphql(DeleteLeaveTypeDocument, { workspaceId, leaveTypeId })).deleteLeaveType,
 };
 
 export const leaveRequestsApi = {
-  mine: (workspaceId: string) => unwrap(api.GET('/api/workspaces/{workspaceId}/hr/leave-requests/mine', ws(workspaceId))),
-  queue: (workspaceId: string, status: LeaveStatus | undefined) =>
-    unwrap(api.GET('/api/workspaces/{workspaceId}/hr/leave-requests', { params: { path: { workspaceId }, query: { status, pageSize: 100 } } })),
-  create: (workspaceId: string, body: CreateLeaveRequestRequest) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/hr/leave-requests', { ...ws(workspaceId), body })),
-  decide: (workspaceId: string, requestId: string, body: DecideLeaveRequestRequest) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/hr/leave-requests/{requestId}/decide', { params: { path: { workspaceId, requestId } }, body })),
-  cancel: (workspaceId: string, requestId: string) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/hr/leave-requests/{requestId}/cancel', { params: { path: { workspaceId, requestId } } })),
-  myBalances: (workspaceId: string, year: number) =>
-    unwrap(api.GET('/api/workspaces/{workspaceId}/hr/leave-balances/mine', { params: { path: { workspaceId }, query: { year } } })),
+  mine: async (workspaceId: string) => (await graphql(MyLeaveRequestsDocument, { workspaceId })).myLeaveRequests,
+  queue: async (workspaceId: string, status: LeaveStatus | undefined) =>
+    (await graphql(LeaveRequestsDocument, { workspaceId, status, pageSize: LEAVE_QUEUE_PAGE_SIZE })).leaveRequests,
+  create: async (workspaceId: string, input: CreateLeaveRequestRequest) =>
+    (await graphql(RequestLeaveDocument, { workspaceId, input })).requestLeave,
+  decide: async (workspaceId: string, requestId: string, input: DecideLeaveRequestRequest) =>
+    (await graphql(DecideLeaveRequestDocument, { workspaceId, requestId, input })).decideLeaveRequest,
+  cancel: async (workspaceId: string, requestId: string) =>
+    (await graphql(CancelLeaveRequestDocument, { workspaceId, requestId })).cancelLeaveRequest,
+  myBalances: async (workspaceId: string, year: number) =>
+    (await graphql(MyLeaveBalancesDocument, { workspaceId, year })).myLeaveBalances,
 };

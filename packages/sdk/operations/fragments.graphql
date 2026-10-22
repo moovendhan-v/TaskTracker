@@ -1,0 +1,55 @@
+# One fragment per object type, selecting every field, so each operation
+# returns the same shape as the matching @taskflow/shared-types response.
+
+fragment CurrentUserFields on CurrentUser { id email name image platformRole }
+
+fragment WorkspaceFields on Workspace { id name color roleName permissions createdAt }
+
+fragment MemberFields on Member { userId name email roleId roleName joinedAt }
+
+fragment RoleFields on Role { id name systemKey permissions }
+
+fragment SpaceFields on Space { id workspaceId name color createdAt }
+
+fragment TaskListFields on TaskList { id spaceId name createdAt }
+
+fragment TaskFields on Task {
+  id listId title description status priority dueDate assigneeId sprintId position createdAt updatedAt
+}
+
+fragment CommentFields on Comment { id taskId authorId authorName body createdAt updatedAt }
+
+fragment SprintFields on Sprint {
+  id spaceId name goal status startDate endDate completedAt totalTasks doneTasks
+}
+
+fragment DocumentSummaryFields on DocumentSummary { id spaceId parentId title position createdById updatedAt }
+
+fragment DocumentFields on Document {
+  id spaceId parentId title content position createdById createdAt updatedAt
+}
+
+fragment DepartmentFields on Department { id name headUserId memberCount }
+
+fragment EmployeeFields on Employee {
+  userId name email jobTitle departmentId departmentName managerUserId startDate employmentType
+}
+
+fragment LeaveTypeFields on LeaveType { id name color annualAllowanceDays requiresApproval }
+
+fragment LeaveRequestFields on LeaveRequest {
+  id userId userName leaveTypeId leaveTypeName startDate endDate days reason status
+  decidedById decidedAt decisionNote createdAt
+}
+
+fragment LeaveBalanceFields on LeaveBalance {
+  leaveTypeId leaveTypeName color year allowanceDays usedDays pendingDays remainingDays
+}
+
+fragment AuditLogEntryFields on AuditLogEntry {
+  id actorId actorName action targetType targetId workspaceId ip metadata createdAt
+}
+
+fragment AdminUserFields on AdminUser { id name email platformRole suspended workspaceCount createdAt }
+
+fragment AdminWorkspaceFields on AdminWorkspace { id name ownerId ownerName memberCount createdAt }

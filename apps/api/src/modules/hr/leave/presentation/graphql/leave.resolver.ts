@@ -22,7 +22,7 @@ import {
 
 const MY_REQUESTS_LIMIT = 100;
 
-/** Time off over GraphQL: the same services, permissions, row locks and rules as REST. */
+/** Time off: leave requests, decisions and balances. Decisions take row locks on the balance. */
 @Resolver()
 export class LeaveResolver {
   constructor(

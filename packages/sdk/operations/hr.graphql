@@ -1,0 +1,62 @@
+query Departments($workspaceId: ID!) { departments(workspaceId: $workspaceId) { ...DepartmentFields } }
+
+mutation CreateDepartment($workspaceId: ID!, $input: CreateDepartmentInput!) {
+  createDepartment(workspaceId: $workspaceId, input: $input) { ...DepartmentFields }
+}
+
+mutation UpdateDepartment($workspaceId: ID!, $departmentId: ID!, $input: UpdateDepartmentInput!) {
+  updateDepartment(workspaceId: $workspaceId, departmentId: $departmentId, input: $input) { ...DepartmentFields }
+}
+
+mutation DeleteDepartment($workspaceId: ID!, $departmentId: ID!) {
+  deleteDepartment(workspaceId: $workspaceId, departmentId: $departmentId)
+}
+
+query Employees($workspaceId: ID!) { employees(workspaceId: $workspaceId) { ...EmployeeFields } }
+
+query Employee($workspaceId: ID!, $userId: ID!) { employee(workspaceId: $workspaceId, userId: $userId) { ...EmployeeFields } }
+
+mutation UpsertEmployeeProfile($workspaceId: ID!, $userId: ID!, $input: EmployeeProfileInput!) {
+  upsertEmployeeProfile(workspaceId: $workspaceId, userId: $userId, input: $input) { ...EmployeeFields }
+}
+
+query LeaveTypes($workspaceId: ID!) { leaveTypes(workspaceId: $workspaceId) { ...LeaveTypeFields } }
+
+mutation CreateLeaveType($workspaceId: ID!, $input: CreateLeaveTypeInput!) {
+  createLeaveType(workspaceId: $workspaceId, input: $input) { ...LeaveTypeFields }
+}
+
+mutation UpdateLeaveType($workspaceId: ID!, $leaveTypeId: ID!, $input: UpdateLeaveTypeInput!) {
+  updateLeaveType(workspaceId: $workspaceId, leaveTypeId: $leaveTypeId, input: $input) { ...LeaveTypeFields }
+}
+
+mutation DeleteLeaveType($workspaceId: ID!, $leaveTypeId: ID!) {
+  deleteLeaveType(workspaceId: $workspaceId, leaveTypeId: $leaveTypeId)
+}
+
+query MyLeaveRequests($workspaceId: ID!) { myLeaveRequests(workspaceId: $workspaceId) { ...LeaveRequestFields } }
+
+query LeaveRequests($workspaceId: ID!, $status: LeaveStatus, $page: Int, $pageSize: Int) {
+  leaveRequests(workspaceId: $workspaceId, status: $status, page: $page, pageSize: $pageSize) {
+    items { ...LeaveRequestFields }
+    page
+    pageSize
+    total
+  }
+}
+
+mutation RequestLeave($workspaceId: ID!, $input: RequestLeaveInput!) {
+  requestLeave(workspaceId: $workspaceId, input: $input) { ...LeaveRequestFields }
+}
+
+mutation DecideLeaveRequest($workspaceId: ID!, $requestId: ID!, $input: DecideLeaveInput!) {
+  decideLeaveRequest(workspaceId: $workspaceId, requestId: $requestId, input: $input) { ...LeaveRequestFields }
+}
+
+mutation CancelLeaveRequest($workspaceId: ID!, $requestId: ID!) {
+  cancelLeaveRequest(workspaceId: $workspaceId, requestId: $requestId) { ...LeaveRequestFields }
+}
+
+query MyLeaveBalances($workspaceId: ID!, $year: Int) {
+  myLeaveBalances(workspaceId: $workspaceId, year: $year) { ...LeaveBalanceFields }
+}

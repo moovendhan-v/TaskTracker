@@ -1,14 +1,22 @@
-import type { CreateWorkspaceRequest, UpdateWorkspaceRequest } from '@taskflow/shared-types';
-import { unwrap } from '@taskflow/sdk';
-import { api } from '@/core/api/sdk-client';
+import { parsePermissions, type CreateWorkspaceRequest, type UpdateWorkspaceRequest } from '@taskflow/shared-types';
+import {
+  CreateWorkspaceDocument,
+  DeleteWorkspaceDocument,
+  UpdateWorkspaceDocument,
+  WorkspaceDocument,
+  WorkspacesDocument,
+  type WorkspaceFieldsFragment,
+} from '@taskflow/sdk';
+import { graphql } from '@/core/api/graphql-client';
 
-const path = (workspaceId: string) => ({ params: { path: { workspaceId } } });
+/** Permission keys arrive as strings; unknown keys are dropped rather than trusted. */
+const toWorkspace = (workspace: WorkspaceFieldsFragment) => ({ ...workspace, permissions: parsePermissions(workspace.permissions) });
 
 export const workspacesApi = {
-  list: () => unwrap(api.GET('/api/workspaces')),
-  get: (workspaceId: string) => unwrap(api.GET('/api/workspaces/{workspaceId}', path(workspaceId))),
-  create: (body: CreateWorkspaceRequest) => unwrap(api.POST('/api/workspaces', { body })),
-  update: (workspaceId: string, body: UpdateWorkspaceRequest) =>
-    unwrap(api.PATCH('/api/workspaces/{workspaceId}', { ...path(workspaceId), body })),
-  remove: (workspaceId: string) => unwrap(api.DELETE('/api/workspaces/{workspaceId}', path(workspaceId))),
+  list: async () => (await graphql(WorkspacesDocument, {})).workspaces.map(toWorkspace),
+  get: async (workspaceId: string) => toWorkspace((await graphql(WorkspaceDocument, { workspaceId })).workspace),
+  create: async (input: CreateWorkspaceRequest) => toWorkspace((await graphql(CreateWorkspaceDocument, { input })).createWorkspace),
+  update: async (workspaceId: string, input: UpdateWorkspaceRequest) =>
+    toWorkspace((await graphql(UpdateWorkspaceDocument, { workspaceId, input })).updateWorkspace),
+  remove: async (workspaceId: string) => (await graphql(DeleteWorkspaceDocument, { workspaceId })).deleteWorkspace,
 };

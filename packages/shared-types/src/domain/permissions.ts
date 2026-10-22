@@ -21,6 +21,17 @@ export const PERMISSIONS = [
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
+const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS);
+
+export function isPermission(value: string): value is Permission {
+  return PERMISSION_SET.has(value);
+}
+
+/** Keeps only known permission keys, e.g. when reading them from an API response. */
+export function parsePermissions(values: readonly string[]): Permission[] {
+  return values.filter(isPermission);
+}
+
 export const PLATFORM_ROLES = ['SUPER_ADMIN', 'USER'] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];
 

@@ -1,0 +1,11 @@
+query Spaces($workspaceId: ID!) { spaces(workspaceId: $workspaceId) { ...SpaceFields } }
+
+mutation CreateSpace($workspaceId: ID!, $input: CreateSpaceInput!) {
+  createSpace(workspaceId: $workspaceId, input: $input) { ...SpaceFields }
+}
+
+mutation UpdateSpace($workspaceId: ID!, $spaceId: ID!, $input: UpdateSpaceInput!) {
+  updateSpace(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) { ...SpaceFields }
+}
+
+mutation DeleteSpace($workspaceId: ID!, $spaceId: ID!) { deleteSpace(workspaceId: $workspaceId, spaceId: $spaceId) }

@@ -7,7 +7,7 @@ import type {
   UpdateTaskRequest,
 } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
-import { toPageRequest } from '../../../core/http/dto/page-query.dto.js';
+import { toPageRequest } from '../../../core/domain/page-request.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { ListsService } from '../../lists/application/lists.service.js';
 import { MembersService } from '../../members/application/members.service.js';

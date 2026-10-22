@@ -13,7 +13,7 @@ import { describeOperation, getRequest, getWorkspaceIdTarget, isWriteOperation }
 import { AccessService } from './access.service.js';
 import { REQUIRED_PERMISSIONS_KEY } from './require-permissions.decorator.js';
 
-/** Works for REST (`:workspaceId` param) and GraphQL (`workspaceId` argument). */
+/** Checks membership and permissions for operations that take a `workspaceId` argument. */
 @Injectable()
 export class WorkspaceAccessGuard implements CanActivate {
   constructor(

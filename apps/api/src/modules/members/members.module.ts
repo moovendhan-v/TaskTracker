@@ -6,11 +6,9 @@ import { WorkspaceMemberRepository } from './domain/workspace-member.repository.
 import { TypeOrmMembershipReader } from './infrastructure/typeorm-membership.reader.js';
 import { TypeOrmWorkspaceMemberRepository } from './infrastructure/typeorm-workspace-member.repository.js';
 import { MembersResolver } from './presentation/graphql/members.resolver.js';
-import { MembersController } from './presentation/members.controller.js';
 
 @Module({
   imports: [RolesModule, UsersModule],
-  controllers: [MembersController],
   providers: [
     MembersService,
     MembersResolver,

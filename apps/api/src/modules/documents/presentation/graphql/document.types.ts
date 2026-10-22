@@ -8,6 +8,7 @@ import {
   type DocumentSummaryResponse,
   type UpdateDocumentRequest,
 } from '@taskflow/shared-types';
+import { IsOmittable } from '../../../../core/graphql/validation.js';
 
 @ObjectType('DocumentSummary')
 export class DocumentSummaryGql implements DocumentSummaryResponse {
@@ -35,7 +36,7 @@ export class CreateDocumentInput implements CreateDocumentRequest {
   title: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @MaxLength(DOC_CONTENT_MAX)
   content?: string;
@@ -56,14 +57,14 @@ export class CreateDocumentInput implements CreateDocumentRequest {
 @InputType()
 export class UpdateDocumentInput implements UpdateDocumentRequest {
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @IsNotEmpty()
   @MaxLength(DOC_TITLE_MAX)
   title?: string;
 
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @MaxLength(DOC_CONTENT_MAX)
   content?: string;

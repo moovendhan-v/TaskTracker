@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { SelectQueryBuilder } from 'typeorm';
 import { AuditLogOrmEntity } from '../../../core/audit/audit-log.orm-entity.js';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
-import type { PageRequest } from '../../../core/http/dto/page-query.dto.js';
+import type { PageRequest } from '../../../core/domain/page-request.js';
 import { escapeLike } from '../../../core/http/utils/escape-like.js';
 import type { AuditEntry, AuditFilter } from '../domain/audit-entry.js';
 import { AuditLogRepository } from '../domain/audit-log.repository.js';

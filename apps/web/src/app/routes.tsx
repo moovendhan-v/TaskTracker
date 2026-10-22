@@ -2,8 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, createRouter, Outlet, redirect } from '@tanstack/react-router';
 import { ErrorState } from '@/components/common/error-state';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
-import { unwrap } from '@taskflow/sdk';
-import { api } from '@/core/api/sdk-client';
+import { fetchCurrentUser } from '@/core/api/current-user.api';
 import { hasSession } from '@/core/auth/session';
 import { queryKeys } from '@/lib/query-keys';
 import { AdminAuditLogPage, AdminLayout, AdminUsersPage, AdminWorkspacesPage } from '@/modules/admin';
@@ -85,7 +84,7 @@ const adminRoute = createRoute({
   getParentRoute: () => appLayout,
   path: '/admin',
   beforeLoad: async ({ context }) => {
-    const me = await context.queryClient.ensureQueryData({ queryKey: queryKeys.me, queryFn: () => unwrap(api.GET('/api/me')) });
+    const me = await context.queryClient.ensureQueryData({ queryKey: queryKeys.me, queryFn: fetchCurrentUser });
     if (me.platformRole !== 'SUPER_ADMIN') throw redirect({ to: '/' });
   },
   component: AdminLayout,

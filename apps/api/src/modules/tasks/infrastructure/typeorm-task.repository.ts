@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
-import type { PageRequest } from '../../../core/http/dto/page-query.dto.js';
+import type { PageRequest } from '../../../core/domain/page-request.js';
 import { escapeLike } from '../../../core/http/utils/escape-like.js';
 import type { NewTask, Task, TaskFilter } from '../domain/task.js';
 import { TaskRepository, type TaskPage } from '../domain/task.repository.js';

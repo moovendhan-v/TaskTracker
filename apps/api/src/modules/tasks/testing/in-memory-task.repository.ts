@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { PageRequest } from '../../../core/http/dto/page-query.dto.js';
+import type { PageRequest } from '../../../core/domain/page-request.js';
 import type { NewTask, Task, TaskFilter } from '../domain/task.js';
 import { TaskRepository, type TaskPage } from '../domain/task.repository.js';
 

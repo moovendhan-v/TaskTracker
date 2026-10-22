@@ -19,19 +19,17 @@ function withoutSchemaHints(error: GraphQLFormattedError): GraphQLFormattedError
 }
 
 /**
- * Code-first GraphQL at /api/graphql. Resolvers sit next to REST controllers in
- * each module's presentation layer and call the same services, so every
- * permission and business rule applies to both.
+ * Code-first GraphQL at /api/graphql: the whole TaskFlow API. Each module's
+ * presentation layer holds its resolvers, which only map arguments to service
+ * calls; permissions are checked by guards and business rules live in services.
  */
 @Module({
   imports: [
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       inject: [ENV],
-      // `env` is null when the app is built in preview mode (the OpenAPI export), so fall back to
-      // the production settings rather than the more open development ones.
-      useFactory: (env: Env | null): ApolloDriverConfig => {
-        const production = env?.NODE_ENV !== 'development' && env?.NODE_ENV !== 'test';
+      useFactory: (env: Env): ApolloDriverConfig => {
+        const production = env.NODE_ENV === 'production';
         return {
           path: GRAPHQL_PATH,
           useGlobalPrefix: true,

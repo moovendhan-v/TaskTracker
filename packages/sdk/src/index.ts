@@ -1,6 +1,4 @@
-export * from './client.js';
 export * from './graphql-client.js';
 export type { GraphQLFormattedError } from './graphql-error.js';
-export type { components, operations, paths } from './generated/schema.js';
-/** GraphQL schema types, e.g. `import type { GraphQL } from '@taskflow/sdk'` then `GraphQL.Task`. */
-export type * as GraphQL from './generated/graphql.js';
+/** Schema types, operation result/variables types and typed documents, e.g. `TasksDocument`, `TasksQuery`. */
+export * from './generated/graphql.js';

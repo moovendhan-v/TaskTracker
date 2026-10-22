@@ -1,0 +1,30 @@
+query AdminUsers($search: String, $page: Int, $pageSize: Int) {
+  adminUsers(search: $search, page: $page, pageSize: $pageSize) {
+    items { ...AdminUserFields }
+    page
+    pageSize
+    total
+  }
+}
+
+mutation UpdateAdminUser($userId: ID!, $input: UpdateAdminUserInput!) {
+  updateAdminUser(userId: $userId, input: $input) { ...AdminUserFields }
+}
+
+query AdminWorkspaces($search: String, $page: Int, $pageSize: Int) {
+  adminWorkspaces(search: $search, page: $page, pageSize: $pageSize) {
+    items { ...AdminWorkspaceFields }
+    page
+    pageSize
+    total
+  }
+}
+
+query AdminAuditLog($workspaceId: ID, $action: String, $actorId: ID, $page: Int, $pageSize: Int) {
+  adminAuditLog(workspaceId: $workspaceId, action: $action, actorId: $actorId, page: $page, pageSize: $pageSize) {
+    items { ...AuditLogEntryFields }
+    page
+    pageSize
+    total
+  }
+}

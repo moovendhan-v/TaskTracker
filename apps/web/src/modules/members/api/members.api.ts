@@ -1,14 +1,12 @@
 import type { AddMemberRequest, UpdateMemberRoleRequest } from '@taskflow/shared-types';
-import { unwrap } from '@taskflow/sdk';
-import { api } from '@/core/api/sdk-client';
+import { AddMemberDocument, LeaveWorkspaceDocument, MembersDocument, RemoveMemberDocument, UpdateMemberRoleDocument } from '@taskflow/sdk';
+import { graphql } from '@/core/api/graphql-client';
 
 export const membersApi = {
-  list: (workspaceId: string) => unwrap(api.GET('/api/workspaces/{workspaceId}/members', { params: { path: { workspaceId } } })),
-  add: (workspaceId: string, body: AddMemberRequest) =>
-    unwrap(api.POST('/api/workspaces/{workspaceId}/members', { params: { path: { workspaceId } }, body })),
-  updateRole: (workspaceId: string, userId: string, body: UpdateMemberRoleRequest) =>
-    unwrap(api.PATCH('/api/workspaces/{workspaceId}/members/{userId}', { params: { path: { workspaceId, userId } }, body })),
-  remove: (workspaceId: string, userId: string) =>
-    unwrap(api.DELETE('/api/workspaces/{workspaceId}/members/{userId}', { params: { path: { workspaceId, userId } } })),
-  leave: (workspaceId: string) => unwrap(api.POST('/api/workspaces/{workspaceId}/members/leave', { params: { path: { workspaceId } } })),
+  list: async (workspaceId: string) => (await graphql(MembersDocument, { workspaceId })).members,
+  add: async (workspaceId: string, input: AddMemberRequest) => (await graphql(AddMemberDocument, { workspaceId, input })).addMember,
+  updateRole: async (workspaceId: string, userId: string, { roleId }: UpdateMemberRoleRequest) =>
+    (await graphql(UpdateMemberRoleDocument, { workspaceId, userId, roleId })).updateMemberRole,
+  remove: async (workspaceId: string, userId: string) => (await graphql(RemoveMemberDocument, { workspaceId, userId })).removeMember,
+  leave: async (workspaceId: string) => (await graphql(LeaveWorkspaceDocument, { workspaceId })).leaveWorkspace,
 };

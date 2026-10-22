@@ -4,7 +4,7 @@ import { IS_PUBLIC_KEY } from '../http/decorators/public.decorator.js';
 import { getRequest } from '../http/request-context.js';
 import { AuthService } from './auth.service.js';
 
-/** Global guard: every REST route and GraphQL operation needs a valid session unless marked @Public(). Fails closed. */
+/** Global guard: every GraphQL operation (and the health probe) needs a valid session unless marked @Public(). Fails closed. */
 @Injectable()
 export class SessionGuard implements CanActivate {
   constructor(

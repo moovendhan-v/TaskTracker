@@ -1,5 +1,5 @@
 import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { ArrayMaxSize, ArrayUnique, IsArray, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ArrayMaxSize, ArrayUnique, IsArray, IsIn, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import {
   PERMISSIONS,
   ROLE_NAME_MAX,
@@ -8,6 +8,7 @@ import {
   type RoleResponse,
   type UpdateRoleRequest,
 } from '@taskflow/shared-types';
+import { IsOmittable } from '../../../../core/graphql/validation.js';
 
 @ObjectType('Role')
 export class RoleGql implements RoleResponse {
@@ -36,14 +37,14 @@ export class CreateRoleInput implements CreateRoleRequest {
 @InputType()
 export class UpdateRoleInput implements UpdateRoleRequest {
   @Field({ nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsString()
   @IsNotEmpty()
   @MaxLength(ROLE_NAME_MAX)
   name?: string;
 
   @Field(() => [String], { nullable: true })
-  @IsOptional()
+  @IsOmittable()
   @IsArray()
   @ArrayUnique()
   @ArrayMaxSize(PERMISSIONS.length)

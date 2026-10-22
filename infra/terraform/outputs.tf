@@ -3,7 +3,7 @@ output "web_url" {
   value       = "http://localhost:${var.web_host_port}"
 }
 
-output "api_docs_url" {
-  description = "Swagger UI is off in production builds; run the API with NODE_ENV=development to use it."
-  value       = "http://localhost:${var.web_host_port}/api/health"
+output "graphql_url" {
+  description = "GraphQL endpoint. Introspection is off in production builds; the schema is in packages/sdk/schema.graphql."
+  value       = "http://localhost:${var.web_host_port}/api/graphql"
 }

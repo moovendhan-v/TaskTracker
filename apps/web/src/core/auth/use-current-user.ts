@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { unwrap } from '@taskflow/sdk';
-import { api } from '@/core/api/sdk-client';
+import { fetchCurrentUser } from '@/core/api/current-user.api';
 import { queryKeys } from '@/lib/query-keys';
 
 export function useCurrentUser() {
   return useQuery({
     queryKey: queryKeys.me,
-    queryFn: () => unwrap(api.GET('/api/me')),
+    queryFn: fetchCurrentUser,
     staleTime: 5 * 60_000,
   });
 }

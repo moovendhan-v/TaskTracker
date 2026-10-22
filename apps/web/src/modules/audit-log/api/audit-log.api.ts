@@ -1,8 +1,8 @@
 import type { AuditLogQuery } from '@taskflow/shared-types';
-import { unwrap } from '@taskflow/sdk';
-import { api } from '@/core/api/sdk-client';
+import { WorkspaceAuditLogDocument } from '@taskflow/sdk';
+import { graphql } from '@/core/api/graphql-client';
 
 export const auditLogApi = {
-  forWorkspace: (workspaceId: string, query: AuditLogQuery) =>
-    unwrap(api.GET('/api/workspaces/{workspaceId}/audit-log', { params: { path: { workspaceId }, query } })),
+  forWorkspace: async (workspaceId: string, query: AuditLogQuery) =>
+    (await graphql(WorkspaceAuditLogDocument, { ...query, workspaceId })).workspaceAuditLog,
 };

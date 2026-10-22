@@ -1,4 +1,4 @@
-import type { PageRequest } from '../../../core/http/dto/page-query.dto.js';
+import type { PageRequest } from '../../../core/domain/page-request.js';
 import type { AdminWorkspace } from './admin-user.js';
 
 export abstract class AdminWorkspaceRepository {
