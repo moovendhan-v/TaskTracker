@@ -19,7 +19,7 @@ TaskFlow is an original work-management app: tasks, sprints, documents and HR in
 
 There are two layers. Both are checked on the server on every request.
 
-1. **Platform role**, stored on the user: `SUPER_ADMIN` or `USER`. It's set only by the `SUPER_ADMIN_EMAILS` env bootstrap or by another super admin, never by the request body. Super admin actions are audit-logged.
+1. **Platform role**, stored on the user: `SUPER_ADMIN` or `USER`. It's set only by the operator CLI (`pnpm --filter @taskflow/api admin:promote <email>`, which needs database access) or by another super admin, never by the request body. There's no env-based bootstrap, because an unverified sign-up could claim a listed email first. Super admin actions are audit-logged.
 2. **Workspace role**, stored on the membership: a role row that holds a set of permission keys. System roles are seeded per workspace and can't be deleted. Custom roles are created by anyone with `roles.manage`.
 
 Permission keys live in `@taskflow/shared-types` so the API guard and the UI read the same list:

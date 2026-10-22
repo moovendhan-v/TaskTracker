@@ -367,23 +367,24 @@ apps/web/
 ### 3.2 `app/`, `core/`, `components/`, `lib/`
 
 ```
-src/app/
+src/app/                              composition root (like app.module.ts on the API)
 ├── app.tsx                           <Providers><RouterProvider/></Providers>
-├── providers.tsx                     QueryClientProvider, ThemeProvider, Toaster
-├── router.tsx                        builds the route tree from each module's routes.tsx
-└── query-client.ts                   retries, stale times, 401 → sign-in
+├── providers.tsx                     QueryClientProvider, TooltipProvider, Toaster
+├── routes.tsx                        the whole typed route tree; session guards; pages come from module index.ts files
+├── query-client.ts                   retries (none on 4xx), stale times, 401 → sign-in
+└── layouts/
+    ├── workspace-layout.tsx          builds the sidebar from feature modules and renders <Outlet/>
+    └── user-menu.tsx                 account menu, theme toggle, sign out
 
 src/core/
-├── config/env.ts                     reads and validates VITE_* values
+├── config/env.ts                     reads VITE_* values (nothing secret)
 ├── api/sdk-client.ts                 single createTaskFlowClient() instance
 ├── auth/
-│   ├── auth-client.ts                Better Auth React client
-│   ├── use-session.ts
-│   ├── require-auth.tsx              route guard component
-│   └── turnstile-widget.tsx          CAPTCHA widget for public forms
-└── permissions/
-    ├── use-permissions.ts            reads permissions from the current workspace
-    └── can.tsx                       <Can permission="task.delete">…</Can> (UI only; the server still checks)
+│   ├── auth-client.ts                Better Auth React client + captcha header helper
+│   ├── session.ts                    hasSession() for route guards
+│   ├── use-current-user.ts           GET /api/me
+│   └── turnstile-widget.tsx          CAPTCHA widget for public forms (off when no site key)
+└── theme/use-theme.ts                light/dark preference
 
 src/components/
 ├── ui/                               shadcn primitives, restyled with TaskFlow tokens
@@ -410,6 +411,8 @@ src/components/
 src/lib/
 ├── cn.ts                             clsx + tailwind-merge
 ├── dates.ts
+├── errors.ts                         safe user-facing error messages
+├── initials.ts
 └── query-keys.ts                     one factory for every TanStack Query key
 ```
 
@@ -417,8 +420,7 @@ src/lib/
 
 ```
 src/modules/<feature>/
-├── index.ts                          public surface: routes and any components other modules may use
-├── routes.tsx                        TanStack Router route definitions for this feature
+├── index.ts                          public surface: pages, hooks and components other code may use
 ├── api/<feature>.api.ts              thin calls to @taskflow/sdk (the only place that touches the client)
 ├── hooks/
 │   ├── use-<entities>.ts             TanStack Query read hooks
@@ -453,7 +455,7 @@ src/modules/
 └── admin/           pages/{admin-users,admin-workspaces,admin-audit}.page.tsx
 ```
 
-Each module above also has its own `index.ts`, `routes.tsx`, `api/`, `hooks/` and `store/` as in the template.
+Each module above also has its own `index.ts`, `api/` and `hooks/` (and `store/` where it keeps UI state). `workspaces/` also owns `usePermissions` and `<Can>`, since permissions are per workspace. `home/` holds the workspace overview page. Route paths live in `app/routes.tsx`, not in modules, so TanStack Router can type-check every link.
 
 ---
 

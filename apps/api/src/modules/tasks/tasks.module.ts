@@ -10,5 +10,6 @@ import { TasksController } from './presentation/tasks.controller.js';
   imports: [ListsModule, MembersModule],
   controllers: [TasksController],
   providers: [TasksService, { provide: TaskRepository, useClass: TypeOrmTaskRepository }],
+  exports: [TasksService],
 })
 export class TasksModule {}

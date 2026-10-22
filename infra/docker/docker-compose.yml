@@ -1,0 +1,88 @@
+# Local TaskFlow stack. Run from the repo root:
+#   cp .env.example .env   # then fill in the secrets
+#   pnpm infra:up          # http://localhost:8080
+name: taskflow
+
+x-api-env: &api-env
+  NODE_ENV: production
+  PORT: "3000"
+  DATABASE_URL: postgres://${APP_DB_USER:-taskflow}:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-taskflow}
+  DATABASE_SSL: "false"
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env}
+  # The browser reaches the API through the web container's /api proxy, so both share one origin.
+  BETTER_AUTH_URL: ${PUBLIC_URL:-http://localhost:8080}
+  CORS_ORIGINS: ${PUBLIC_URL:-http://localhost:8080}
+  TRUST_PROXY: "1"
+  TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+
+services:
+  postgres:
+    image: postgres:16.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+      APP_DB_USER: ${APP_DB_USER:-taskflow}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/01-app-role.sh:/docker-entrypoint-initdb.d/01-app-role.sh:ro
+    # Bound to loopback only, for local tools such as psql. Remove to keep the database fully private.
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [backend]
+
+  migrate:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    image: taskflow-api:local
+    command: ["node", "dist/cli/run-migrations.js"]
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks: [backend]
+
+  api:
+    image: taskflow-api:local
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    networks: [backend]
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
+    image: taskflow-web:local
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_HOST_PORT:-8080}:8080"
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    networks: [backend]
+
+volumes:
+  pgdata:
+
+networks:
+  backend:

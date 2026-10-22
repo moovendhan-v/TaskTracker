@@ -1,4 +1,5 @@
 import { AuditLogOrmEntity } from '../audit/audit-log.orm-entity.js';
+import { CommentOrmEntity } from '../../modules/comments/infrastructure/comment.orm-entity.js';
 import { TaskListOrmEntity } from '../../modules/lists/infrastructure/task-list.orm-entity.js';
 import { WorkspaceMemberOrmEntity } from '../../modules/members/infrastructure/workspace-member.orm-entity.js';
 import { WorkspaceRoleOrmEntity } from '../../modules/roles/infrastructure/workspace-role.orm-entity.js';
@@ -19,5 +20,6 @@ export const ORM_ENTITIES = [
   SpaceOrmEntity,
   TaskListOrmEntity,
   TaskOrmEntity,
+  CommentOrmEntity,
   AuditLogOrmEntity,
 ];

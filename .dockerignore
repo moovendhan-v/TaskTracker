@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/coverage
+**/*.tsbuildinfo
+.git
+.env
+.env.*
+!.env.example
+research-data
+infra/terraform/.terraform
+infra/terraform/*.tfstate*

@@ -9,6 +9,7 @@ import { SessionGuard } from './core/auth/session.guard.js';
 import { DatabaseModule } from './core/database/database.module.js';
 import { AllExceptionsFilter } from './core/http/filters/all-exceptions.filter.js';
 import { UserThrottlerGuard } from './core/http/guards/user-throttler.guard.js';
+import { CommentsModule } from './modules/comments/comments.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { ListsModule } from './modules/lists/lists.module.js';
 import { TypeOrmMembershipReader } from './modules/members/infrastructure/typeorm-membership.reader.js';
@@ -36,6 +37,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     SpacesModule,
     ListsModule,
     TasksModule,
+    CommentsModule,
   ],
   providers: [
     // Order matters: the session guard sets req.user, which the throttler uses as its key.

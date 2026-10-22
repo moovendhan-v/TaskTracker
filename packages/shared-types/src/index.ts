@@ -9,3 +9,4 @@ export * from './contracts/space.contract.js';
 export * from './contracts/list.contract.js';
 export * from './contracts/task.contract.js';
 export * from './contracts/user.contract.js';
+export * from './contracts/comment.contract.js';

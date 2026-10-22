@@ -260,6 +260,38 @@ export interface paths {
         patch: operations["Tasks_update"];
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/tasks/{taskId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Comments_list"];
+        put?: never;
+        post: operations["Comments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["Comments_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["Comments_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -415,6 +447,26 @@ export interface components {
             dueDate?: string | null;
             assigneeId?: string | null;
             position?: number;
+        };
+        CommentResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            taskId: string;
+            authorId: string;
+            authorName: string;
+            /** @description Plain text; render as text, never HTML. */
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CreateCommentDto: {
+            body: string;
+        };
+        UpdateCommentDto: {
+            body: string;
         };
     };
     responses: never;
@@ -1201,6 +1253,122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Comments_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponseDto"][];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Comments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponseDto"];
+                };
+            };
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Comments_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commentId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Missing workspace permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Comments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commentId: string;
+                workspaceId: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCommentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponseDto"];
                 };
             };
             /** @description Missing workspace permission */

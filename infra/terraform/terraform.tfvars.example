@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars (git-ignored) and fill in. Never commit real values.
+postgres_password  = ""
+app_db_password    = ""
+better_auth_secret = ""
+
+# Optional
+# public_url           = "http://localhost:8080"
+# web_host_port        = 8080
+# postgres_host_port   = 5432   # null keeps the database private
+# turnstile_secret_key = ""
+# turnstile_site_key   = ""
