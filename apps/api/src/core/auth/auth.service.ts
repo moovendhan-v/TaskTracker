@@ -30,6 +30,7 @@ export class AuthService {
       name: user.name,
       image: user.image ?? null,
       platformRole: toPlatformRole(user.platformRole),
+      emailVerified: user.emailVerified === true,
     };
   }
 }

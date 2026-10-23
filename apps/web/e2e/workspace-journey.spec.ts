@@ -49,6 +49,8 @@ test('creates a workspace, a space and a list', async () => {
   await page.getByRole('button', { name: 'Create workspace' }).click();
   await expect(page).toHaveURL(/\/w\/[0-9a-f-]+$/);
   await expect(page.getByText('Create your first space')).toBeVisible();
+  // New accounts are asked to confirm their email; invites only reach confirmed addresses.
+  await expect(page.getByRole('status').filter({ hasText: 'Confirm your email' })).toBeVisible();
 
   await page.getByRole('button', { name: 'New space' }).click();
   await page.getByRole('dialog').getByLabel('Name').fill('Product');

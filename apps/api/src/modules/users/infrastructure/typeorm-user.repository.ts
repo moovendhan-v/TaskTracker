@@ -14,11 +14,12 @@ export class TypeOrmUserRepository extends UserRepository {
     return this.transactional.repository(UserOrmEntity).findOneBy({ id });
   }
 
-  findByEmail(email: string): Promise<User | null> {
+  findVerifiedByEmail(email: string): Promise<User | null> {
     return this.transactional
       .repository(UserOrmEntity)
       .createQueryBuilder('user')
       .where('LOWER(user.email) = LOWER(:email)', { email })
+      .andWhere('user.emailVerified = true')
       .getOne();
   }
 }

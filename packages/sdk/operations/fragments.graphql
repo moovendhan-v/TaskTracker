@@ -1,7 +1,7 @@
 # One fragment per object type, selecting every field, so each operation
 # returns the same shape as the matching @taskflow/shared-types response.
 
-fragment CurrentUserFields on CurrentUser { id email name image platformRole }
+fragment CurrentUserFields on CurrentUser { id email name image platformRole emailVerified }
 
 fragment WorkspaceFields on Workspace { id name color roleName permissions createdAt }
 

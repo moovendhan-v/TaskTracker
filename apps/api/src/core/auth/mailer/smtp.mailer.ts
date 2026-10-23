@@ -16,23 +16,32 @@ export class SmtpMailer extends Mailer {
     this.transport = createTransport({ url: smtpUrl, connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 20_000 });
   }
 
-  async sendPasswordReset(to: string, url: string): Promise<void> {
+  sendPasswordReset(to: string, url: string): Promise<void> {
+    return this.send(to, 'Reset your TaskFlow password', [
+      'Someone asked to reset the password for your TaskFlow account.',
+      '',
+      `Choose a new password here (the link works once, for 30 minutes): ${url}`,
+      '',
+      "If this wasn't you, ignore this email. Your password stays the same.",
+    ]);
+  }
+
+  sendEmailVerification(to: string, url: string): Promise<void> {
+    return this.send(to, 'Confirm your TaskFlow email', [
+      'Confirm this address so teammates can add you to their workspaces:',
+      '',
+      url,
+      '',
+      "If you didn't create a TaskFlow account, ignore this email.",
+    ]);
+  }
+
+  private async send(to: string, subject: string, lines: string[]): Promise<void> {
     try {
-      await this.transport.sendMail({
-        from: this.from,
-        to,
-        subject: 'Reset your TaskFlow password',
-        text: [
-          'Someone asked to reset the password for your TaskFlow account.',
-          '',
-          `Choose a new password here (the link works once, for 30 minutes): ${url}`,
-          '',
-          "If this wasn't you, ignore this email. Your password stays the same.",
-        ].join('\n'),
-      });
+      await this.transport.sendMail({ from: this.from, to, subject, text: lines.join('\n') });
     } catch (error) {
-      // The caller always answers the same way (no account enumeration), so log and carry on.
-      this.logger.error(`Password reset email could not be sent: ${error instanceof Error ? error.message : 'unknown error'}`);
+      // Callers answer the same way either way (no account enumeration), so log and carry on.
+      this.logger.error(`"${subject}" email could not be sent: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
   }
 }

@@ -6,4 +6,6 @@ export interface CurrentUserResponse {
   email: string;
   image: string | null;
   platformRole: PlatformRole;
+  /** Teammates can only add you to a workspace once this is true. */
+  emailVerified: boolean;
 }

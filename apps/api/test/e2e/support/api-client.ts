@@ -1,5 +1,6 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { inject } from 'vitest';
+import { CONFIRM_EMAIL_SUBJECT, waitForMessageTo } from './mailbox.js';
 import { TEST_ORIGIN } from './test-env.js';
 
 export const PASSWORD = 'correct-horse-42';
@@ -37,12 +38,23 @@ export class TestUser {
     readonly ip = randomIp(),
   ) {}
 
-  static async signUp(name: string): Promise<TestUser> {
+  /** Signs up and, unless told otherwise, confirms the email through the link in the sign-up email. */
+  static async signUp(name: string, { confirmEmail = true } = {}): Promise<TestUser> {
     const user = new TestUser(name);
-    const response = await user.auth('sign-up/email', { name, email: user.email, password: PASSWORD });
+    const response = await user.auth('sign-up/email', { name, email: user.email, password: PASSWORD, callbackURL: '/' });
     if (!response.ok) throw new Error(`Sign-up failed with ${response.status}: ${await response.text()}`);
     user.id = (await user.data<{ me: { id: string } }>('{ me { id } }')).me.id;
+    if (confirmEmail) await user.confirmEmail();
     return user;
+  }
+
+  /** Follows the confirmation link from the sign-up email, as the person would from their inbox. */
+  async confirmEmail(): Promise<void> {
+    const message = await waitForMessageTo(this.email, CONFIRM_EMAIL_SUBJECT);
+    const link = /https?:\/\/\S+\/api\/auth\/verify-email\S+/.exec(message)?.[0];
+    if (!link) throw new Error(`No confirmation link in the email to ${this.email}`);
+    const response = await fetch(link, { redirect: 'manual', headers: { 'X-Forwarded-For': this.ip } });
+    if (response.status !== 302) throw new Error(`Confirming ${this.email} failed with ${response.status}`);
   }
 
   /** Calls a Better Auth endpoint the way the web app does (same-origin JSON with an Origin header). */

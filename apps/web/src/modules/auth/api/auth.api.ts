@@ -16,7 +16,8 @@ export const authApi = {
   },
 
   async signUp(input: { name: string; email: string; password: string }, captcha: string | null) {
-    return throwOnError(await authClient.signUp.email({ ...input, fetchOptions: { headers: captchaHeaders(captcha) } }));
+    // The confirmation link in the sign-up email brings the user back to the app.
+    return throwOnError(await authClient.signUp.email({ ...input, callbackURL: '/', fetchOptions: { headers: captchaHeaders(captcha) } }));
   },
 
   async requestPasswordReset(email: string, captcha: string | null) {

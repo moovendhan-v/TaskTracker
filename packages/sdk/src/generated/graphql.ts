@@ -326,7 +326,7 @@ export type DeleteDocumentMutationVariables = Exact<{
 
 export type DeleteDocumentMutation = { deleteDocument: boolean };
 
-export type CurrentUserFieldsFragment = { id: string, email: string, name: string, image: string | null, platformRole: PlatformRole };
+export type CurrentUserFieldsFragment = { id: string, email: string, name: string, image: string | null, platformRole: PlatformRole, emailVerified: boolean };
 
 export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string };
 
@@ -762,7 +762,7 @@ export type DeleteTaskMutation = { deleteTask: boolean };
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MeQuery = { me: { id: string, email: string, name: string, image: string | null, platformRole: PlatformRole } };
+export type MeQuery = { me: { id: string, email: string, name: string, image: string | null, platformRole: PlatformRole, emailVerified: boolean } };
 
 export type WorkspacesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -823,6 +823,7 @@ export const CurrentUserFieldsFragmentDoc = new TypedDocumentString(`
   name
   image
   platformRole
+  emailVerified
 }
     `, {"fragmentName":"CurrentUserFields"}) as unknown as TypedDocumentString<CurrentUserFieldsFragment, unknown>;
 export const WorkspaceFieldsFragmentDoc = new TypedDocumentString(`
@@ -2010,6 +2011,7 @@ export const MeDocument = new TypedDocumentString(`
   name
   image
   platformRole
+  emailVerified
 }`) as unknown as TypedDocumentString<MeQuery, MeQueryVariables>;
 export const WorkspacesDocument = new TypedDocumentString(`
     query Workspaces {

@@ -7,6 +7,7 @@ export interface SessionUser {
   name: string;
   image: string | null;
   platformRole: PlatformRole;
+  emailVerified: boolean;
 }
 
 export interface WorkspaceAccess {

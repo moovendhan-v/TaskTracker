@@ -26,6 +26,9 @@ export class UserOrmEntity implements User {
   @Column({ name: 'suspended', type: 'boolean' })
   suspended: boolean;
 
+  @Column({ name: 'emailVerified', type: 'boolean' })
+  emailVerified: boolean;
+
   @Column({ name: 'createdAt', type: 'timestamptz' })
   createdAt: Date;
 }

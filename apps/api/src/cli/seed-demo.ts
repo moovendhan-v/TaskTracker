@@ -175,7 +175,10 @@ async function userExists(app: INestApplicationContext, email: string): Promise<
 
 async function signUp(app: INestApplicationContext, user: { name: string; email: string }, password: string): Promise<SessionUser> {
   const { user: created } = await app.get(AuthService).auth.api.signUpEmail({ body: { ...user, password } });
-  return { id: created.id, email: created.email, name: created.name, image: null, platformRole: 'USER' };
+  // Demo addresses can't receive mail, so mark them confirmed directly (development only, see the
+  // production check above). Better Auth's "user" table has no row-level security.
+  await app.get(TransactionalManager).manager.query('UPDATE "user" SET "emailVerified" = true WHERE id = $1', [created.id]);
+  return { id: created.id, email: created.email, name: created.name, image: null, platformRole: 'USER', emailVerified: true };
 }
 
 async function resolveAccess(app: INestApplicationContext, user: SessionUser, workspaceId: string): Promise<WorkspaceAccess> {

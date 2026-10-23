@@ -141,6 +141,9 @@ input CreateWorkspaceInput {
 
 type CurrentUser {
   email: String!
+
+  """Teammates can only add you to a workspace once your email is confirmed"""
+  emailVerified: Boolean!
   id: ID!
   image: String
   name: String!

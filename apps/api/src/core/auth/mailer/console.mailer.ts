@@ -13,10 +13,15 @@ export class ConsoleMailer extends Mailer {
   }
 
   async sendPasswordReset(to: string, url: string): Promise<void> {
-    if (this.printLinks) {
-      this.logger.log(`Password reset for ${to}: ${url}`);
-      return;
-    }
-    this.logger.warn('Password reset requested but no mail provider is configured');
+    this.print('Password reset', to, url);
+  }
+
+  async sendEmailVerification(to: string, url: string): Promise<void> {
+    this.print('Email confirmation', to, url);
+  }
+
+  private print(kind: string, to: string, url: string): void {
+    if (this.printLinks) this.logger.log(`${kind} for ${to}: ${url}`);
+    else this.logger.warn(`${kind} requested but no mail provider is configured`);
   }
 }

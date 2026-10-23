@@ -9,4 +9,5 @@ export class CurrentUserGql implements CurrentUserResponse {
   @Field() email: string;
   @Field(() => String, { nullable: true }) image: string | null;
   @Field(() => PlatformRoleEnum) platformRole: PlatformRole;
+  @Field({ description: 'Teammates can only add you to a workspace once your email is confirmed' }) emailVerified: boolean;
 }

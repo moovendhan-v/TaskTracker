@@ -34,6 +34,25 @@ describe('custom roles and membership', () => {
     expect(unknown.addMember.message).toBe(known.addMember.message);
   });
 
+  it("only adds accounts whose email is confirmed, so nobody can claim a colleague's address first", async () => {
+    const squatter = await TestUser.signUp('Squatter', { confirmEmail: false });
+    const { me } = await squatter.data<{ me: { emailVerified: boolean } }>('{ me { emailVerified } }');
+    expect(me.emailVerified).toBe(false);
+
+    const add = 'mutation($w: ID!, $input: AddMemberInput!) { addMember(workspaceId: $w, input: $input) { message } }';
+    const members = async () =>
+      (await ws.owner.data<{ members: { userId: string }[] }>('query($w: ID!) { members(workspaceId: $w) { userId } }', vars())).members.map((m) => m.userId);
+
+    await ws.owner.data(add, vars({ input: { email: squatter.email, roleId: ws.roles.Member } }));
+    expect(await members()).not.toContain(squatter.id);
+    expect((await squatter.error('query($w: ID!) { workspace(workspaceId: $w) { id } }', vars())).code).toBe('NOT_FOUND');
+
+    await squatter.confirmEmail();
+    await ws.owner.data(add, vars({ input: { email: squatter.email, roleId: ws.roles.Member } }));
+    expect(await members()).toContain(squatter.id);
+    await ws.owner.data('mutation($w: ID!, $u: ID!) { removeMember(workspaceId: $w, userId: $u) }', vars({ u: squatter.id }));
+  });
+
   it('creates custom roles but reserves owner-only permissions and locks built-in roles', async () => {
     const qa = await ws.owner.data<{ createRole: { id: string; systemKey: string | null } }>(
       createRole,

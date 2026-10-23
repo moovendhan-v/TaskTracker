@@ -23,6 +23,14 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
       resetPasswordTokenExpiresIn: 60 * 30,
       sendResetPassword: async ({ user, url }) => mailer.sendPasswordReset(user.email, url),
     },
+    // Sign-in works before confirmation, but invites only reach confirmed emails (MembersService.add),
+    // so nobody can claim someone else's address and inherit their workspace access.
+    emailVerification: {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+      expiresIn: 60 * 60 * 24,
+      sendVerificationEmail: async ({ user, url }) => mailer.sendEmailVerification(user.email, url),
+    },
     user: {
       additionalFields: {
         // input: false keeps both fields out of the sign-up and update-user payloads.
@@ -42,6 +50,7 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
         '/sign-in/email': { window: 60, max: 5 },
         '/sign-up/email': { window: 60, max: 3 },
         '/request-password-reset': { window: 300, max: 3 },
+        '/send-verification-email': { window: 300, max: 3 },
       },
     },
     advanced: {

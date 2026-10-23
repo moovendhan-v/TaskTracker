@@ -106,7 +106,7 @@ CI (`.github/workflows/ci.yml`) runs all of the above, plus `pnpm audit`, a chec
 - **Access checks on the server.** A session guard runs on every operation. A workspace guard checks membership and the permission keys of the member's role. Custom roles can't grant permissions their creator doesn't have. Super admins are audited when they write inside someone else's workspace.
 - **GraphQL limits.** Query depth, cost (which stops alias amplification) and token limits; page sizes capped at 100; no batching; CSRF prevention; introspection and "did you mean" hints off in production; generic error messages.
 - **Input.** Every argument is validated on the server, and unknown fields are rejected. Markdown is sanitised on the server and rendered without raw HTML.
-- **Auth.** Better Auth with secure cookies and rate limits on sign-up, sign-in and password reset. Reset links are single use, expire after 30 minutes and sign out every other session. Turnstile CAPTCHA on public forms, required in production.
+- **Auth.** Better Auth with secure cookies and rate limits on sign-up, sign-in and password reset. Reset links are single use, expire after 30 minutes and sign out every other session. New accounts get a confirmation email, and workspace invites only reach confirmed addresses, so nobody can sign up with a colleague's email and inherit their access. Turnstile CAPTCHA on public forms, required in production.
 - **Audit.** Admin, role and HR actions go to an append-only audit log (a trigger blocks changes).
 
 Operator tasks: `pnpm --filter @taskflow/api admin:promote <email>` makes an existing account a super admin. It needs database access, so it can't be triggered from the web.

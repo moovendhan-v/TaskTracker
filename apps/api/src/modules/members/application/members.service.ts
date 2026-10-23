@@ -12,7 +12,8 @@ import type { MembershipWithRole } from '../domain/workspace-member.js';
 import { WorkspaceMemberRepository } from '../domain/workspace-member.repository.js';
 import { MemberMapper } from './member.mapper.js';
 
-export const ADD_MEMBER_MESSAGE = 'If that person has a TaskFlow account, they now have access to this workspace.';
+export const ADD_MEMBER_MESSAGE =
+  'If that person has a TaskFlow account with a confirmed email, they now have access to this workspace.';
 
 @Injectable()
 export class MembersService {
@@ -29,13 +30,16 @@ export class MembersService {
     return members.map(MemberMapper.toResponse);
   }
 
-  /** Answers the same way whether or not the email has an account, so it can't be used to find users. */
+  /**
+   * Answers the same way whether or not the email has an account, so it can't be used to find users.
+   * Only confirmed emails count: otherwise anyone could sign up with a colleague's address first.
+   */
   async add(actor: Actor, access: WorkspaceAccess, request: AddMemberRequest): Promise<{ message: string }> {
     await this.unitOfWork.run(async () => {
       const role = await this.rolesService.getInWorkspace(access.workspaceId, request.roleId);
       RoleGrantPolicy.assertCanHandOut(access.permissions, role.permissions);
 
-      const user = await this.usersService.findByEmail(request.email);
+      const user = await this.usersService.findVerifiedByEmail(request.email);
       if (!user) return;
 
       const added = await this.members.addIfAbsent({ workspaceId: access.workspaceId, userId: user.id, roleId: role.id });

@@ -16,6 +16,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { SidebarLink } from '@/components/layout/sidebar-link';
 import { SidebarSection } from '@/components/layout/sidebar-section';
 import { Topbar } from '@/components/layout/topbar';
+import { VerifyEmailBanner } from '@/core/auth/verify-email-banner';
 import { SpaceTree } from '@/modules/spaces';
 import { usePermissions, useWorkspace, useWorkspaceUiStore, WorkspaceSwitcher } from '@/modules/workspaces';
 import { UserMenu } from './user-menu';
@@ -92,6 +93,7 @@ export function WorkspaceLayout({ workspaceId }: { workspaceId: string }) {
   return (
     <AppShell sidebar={sidebar} sidebarOpen={sidebarOpen}>
       <Topbar onToggleSidebar={toggleSidebar} breadcrumbs={workspace?.name} />
+      <VerifyEmailBanner />
       <Outlet />
     </AppShell>
   );

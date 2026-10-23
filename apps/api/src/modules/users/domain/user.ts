@@ -7,5 +7,6 @@ export interface User {
   image: string | null;
   platformRole: PlatformRole;
   suspended: boolean;
+  emailVerified: boolean;
   createdAt: Date;
 }

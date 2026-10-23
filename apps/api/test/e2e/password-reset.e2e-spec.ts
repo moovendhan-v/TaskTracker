@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PASSWORD, TestUser } from './support/api-client.js';
-import { decodeQuotedPrintable, messagesTo, waitForMessageTo } from './support/mailbox.js';
+import { messagesTo, RESET_PASSWORD_SUBJECT, waitForMessageTo } from './support/mailbox.js';
 import { TEST_ORIGIN } from './support/test-env.js';
 
 const NEW_PASSWORD = 'battery-staple-77';
@@ -15,8 +15,7 @@ describe('password reset by email', () => {
     const request = await user.auth('request-password-reset', { email: user.email, redirectTo: `${TEST_ORIGIN}/reset-password` });
     expect(request.status).toBe(200);
 
-    const message = decodeQuotedPrintable(await waitForMessageTo(user.email));
-    expect(message).toMatch(/Subject: Reset your TaskFlow password/);
+    const message = await waitForMessageTo(user.email, RESET_PASSWORD_SUBJECT);
     const link = /https?:\/\/\S+\/api\/auth\/reset-password\/\S+/.exec(message)?.[0];
     expect(link).toBeDefined();
 
@@ -39,6 +38,6 @@ describe('password reset by email', () => {
     const response = await stranger.auth('request-password-reset', { email: stranger.email, redirectTo: `${TEST_ORIGIN}/reset-password` });
     expect(response.status).toBe(200);
     await new Promise((done) => setTimeout(done, 500));
-    expect(messagesTo(stranger.email)).toEqual([]);
+    expect(messagesTo(stranger.email, RESET_PASSWORD_SUBJECT)).toEqual([]);
   });
 });
