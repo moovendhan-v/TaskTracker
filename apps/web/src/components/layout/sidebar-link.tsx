@@ -4,12 +4,14 @@ import { cn } from '@/lib/cn';
 
 type SidebarLinkProps = LinkProps & {
   icon?: ReactNode;
+  /** A short count shown on the right, e.g. unread items. */
+  badge?: string;
   children: ReactNode;
   className?: string;
 };
 
 /** Navigation row in the dark sidebar; highlights itself when its route is active. */
-export function SidebarLink({ icon, children, className, activeOptions, ...linkProps }: SidebarLinkProps) {
+export function SidebarLink({ icon, badge, children, className, activeOptions, ...linkProps }: SidebarLinkProps) {
   return (
     <Link
       {...linkProps}
@@ -22,6 +24,11 @@ export function SidebarLink({ icon, children, className, activeOptions, ...linkP
     >
       {icon}
       <span className="truncate">{children}</span>
+      {badge ? (
+        <span className="ml-auto rounded-full bg-highlight px-1.5 text-[11px] font-semibold leading-5 text-[oklch(0.25_0.05_70)]" aria-label={`${badge} unread`}>
+          {badge}
+        </span>
+      ) : null}
     </Link>
   );
 }

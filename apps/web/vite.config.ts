@@ -13,7 +13,8 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      '/api': { target: process.env.API_PROXY_TARGET ?? 'http://localhost:3000', changeOrigin: false },
+      // ws: live updates (GraphQL subscriptions) use a WebSocket on /api/graphql.
+      '/api': { target: process.env.API_PROXY_TARGET ?? 'http://localhost:3000', changeOrigin: false, ws: true },
     },
   },
   build: {
