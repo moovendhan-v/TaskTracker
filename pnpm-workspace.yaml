@@ -1,0 +1,8 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Security overrides. Remove each one once the parent package ships the fix.
+overrides:
+  # @nestjs/graphql 14.0.3 pins 12.0.1 (GHSA-c4qx-w738-7hr3, patched in 12.0.2).
+  '@graphql-tools/utils@12.0.1': 12.1.0

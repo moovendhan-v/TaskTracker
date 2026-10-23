@@ -1,0 +1,53 @@
+{
+  "name": "@taskflow/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput & node --env-file-if-exists=../../.env --watch --enable-source-maps dist/main.js",
+    "start": "node --enable-source-maps dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:e2e": "pnpm build && vitest run -c vitest.e2e.config.ts",
+    "migration:run": "pnpm build && node --env-file-if-exists=../../.env dist/cli/run-migrations.js",
+    "admin:promote": "pnpm build && node --env-file-if-exists=../../.env dist/cli/promote-super-admin.js",
+    "graphql:export": "pnpm build && node dist/cli/export-graphql-schema.js ../../packages/sdk/schema.graphql",
+    "seed": "pnpm build && node --env-file-if-exists=../../.env dist/cli/seed-demo.js"
+  },
+  "dependencies": {
+    "@apollo/server": "5.5.1",
+    "@as-integrations/express5": "1.1.2",
+    "@nestjs/apollo": "14.0.3",
+    "@nestjs/common": "12.2.0",
+    "@nestjs/config": "12.0.1",
+    "@nestjs/core": "12.2.0",
+    "@nestjs/graphql": "14.0.3",
+    "@nestjs/platform-express": "12.2.0",
+    "@nestjs/throttler": "6.7.1",
+    "@nestjs/typeorm": "12.0.2",
+    "@taskflow/shared-types": "workspace:*",
+    "better-auth": "1.7.12",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.15.1",
+    "graphql": "16.14.2",
+    "graphql-query-complexity": "2.0.0",
+    "helmet": "8.3.0",
+    "nodemailer": "10.0.16",
+    "pg": "8.23.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "typeorm": "1.1.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "12.2.0",
+    "@types/express": "5.0.6",
+    "@types/node": "22.20.5",
+    "@types/pg": "8.23.1",
+    "@types/smtp-server": "3.5.13",
+    "smtp-server": "3.19.17",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

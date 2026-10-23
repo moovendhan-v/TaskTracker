@@ -1,0 +1,11 @@
+query Workspaces { workspaces { ...WorkspaceFields } }
+
+query Workspace($workspaceId: ID!) { workspace(workspaceId: $workspaceId) { ...WorkspaceFields } }
+
+mutation CreateWorkspace($input: CreateWorkspaceInput!) { createWorkspace(input: $input) { ...WorkspaceFields } }
+
+mutation UpdateWorkspace($workspaceId: ID!, $input: UpdateWorkspaceInput!) {
+  updateWorkspace(workspaceId: $workspaceId, input: $input) { ...WorkspaceFields }
+}
+
+mutation DeleteWorkspace($workspaceId: ID!) { deleteWorkspace(workspaceId: $workspaceId) }

@@ -1,0 +1,17 @@
+import { PERMISSIONS, type Permission, type WorkspaceResponse } from '@taskflow/shared-types';
+import type { Workspace } from '../domain/workspace.js';
+
+export const WorkspaceMapper = {
+  /** Includes the caller's role and permissions so the UI can show or hide actions. */
+  toResponse(workspace: Workspace, roleName: string, permissions: Iterable<Permission>): WorkspaceResponse {
+    const granted = new Set(permissions);
+    return {
+      id: workspace.id,
+      name: workspace.name,
+      color: workspace.color,
+      roleName,
+      permissions: PERMISSIONS.filter((permission) => granted.has(permission)),
+      createdAt: workspace.createdAt.toISOString(),
+    };
+  },
+};

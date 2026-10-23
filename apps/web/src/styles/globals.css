@@ -1,0 +1,184 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * TaskFlow design tokens. Teal primary, amber accent, slate neutrals.
+ * Components use the semantic names (bg-primary, text-muted-foreground, …), never raw colours.
+ */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.985 0.003 247);
+  --foreground: oklch(0.22 0.03 257);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.51 0.09 186);
+  --primary-foreground: oklch(0.99 0.01 186);
+  --secondary: oklch(0.955 0.01 250);
+  --secondary-foreground: oklch(0.3 0.03 257);
+  --muted: oklch(0.955 0.008 250);
+  --muted-foreground: oklch(0.52 0.025 257);
+  --accent: oklch(0.94 0.035 186);
+  --accent-foreground: oklch(0.3 0.06 186);
+  --highlight: oklch(0.82 0.15 80);
+  --destructive: oklch(0.58 0.21 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.91 0.01 250);
+  --input: oklch(0.89 0.012 250);
+  --ring: oklch(0.6 0.1 186);
+  --sidebar: oklch(0.21 0.03 230);
+  --sidebar-foreground: oklch(0.9 0.015 230);
+  --sidebar-muted: oklch(0.68 0.025 230);
+  --sidebar-accent: oklch(0.29 0.035 230);
+  --sidebar-border: oklch(0.3 0.03 230);
+
+  --status-todo: oklch(0.62 0.02 257);
+  --status-in-progress: oklch(0.58 0.15 245);
+  --status-in-review: oklch(0.72 0.15 70);
+  --status-done: oklch(0.6 0.13 160);
+
+  --priority-urgent: oklch(0.58 0.21 27);
+  --priority-high: oklch(0.68 0.17 50);
+  --priority-normal: oklch(0.62 0.12 230);
+  --priority-low: oklch(0.65 0.03 257);
+}
+
+.dark {
+  --background: oklch(0.18 0.02 250);
+  --foreground: oklch(0.93 0.01 250);
+  --card: oklch(0.22 0.022 250);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.23 0.022 250);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.7 0.11 186);
+  --primary-foreground: oklch(0.18 0.03 186);
+  --secondary: oklch(0.27 0.02 250);
+  --secondary-foreground: oklch(0.9 0.01 250);
+  --muted: oklch(0.26 0.02 250);
+  --muted-foreground: oklch(0.7 0.02 250);
+  --accent: oklch(0.3 0.04 186);
+  --accent-foreground: oklch(0.92 0.03 186);
+  --border: oklch(0.31 0.02 250);
+  --input: oklch(0.34 0.02 250);
+  --ring: oklch(0.7 0.11 186);
+  --sidebar: oklch(0.15 0.02 235);
+  --sidebar-accent: oklch(0.24 0.03 230);
+  --sidebar-border: oklch(0.25 0.025 230);
+}
+
+@theme inline {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-highlight: var(--highlight);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-status-todo: var(--status-todo);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-in-review: var(--status-in-review);
+  --color-status-done: var(--status-done);
+  --color-priority-urgent: var(--priority-urgent);
+  --color-priority-high: var(--priority-high);
+  --color-priority-normal: var(--priority-normal);
+  --color-priority-low: var(--priority-low);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+/* Rendered markdown pages: readable defaults in TaskFlow's palette. */
+@layer components {
+  .markdown {
+    @apply text-[15px] leading-7 text-foreground;
+  }
+  .markdown > * + * {
+    @apply mt-4;
+  }
+  .markdown h1 {
+    @apply text-2xl font-bold tracking-tight;
+  }
+  .markdown h2 {
+    @apply mt-8 border-b pb-1 text-xl font-semibold;
+  }
+  .markdown h3 {
+    @apply mt-6 text-lg font-semibold;
+  }
+  .markdown a {
+    @apply text-primary underline underline-offset-2;
+  }
+  .markdown ul {
+    @apply list-disc pl-6;
+  }
+  .markdown ol {
+    @apply list-decimal pl-6;
+  }
+  .markdown li + li {
+    @apply mt-1;
+  }
+  .markdown blockquote {
+    @apply border-l-4 border-primary/40 pl-4 text-muted-foreground;
+  }
+  .markdown code {
+    @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[13px];
+  }
+  .markdown pre {
+    @apply overflow-x-auto rounded-lg bg-sidebar p-4 text-sidebar-foreground;
+  }
+  .markdown pre code {
+    @apply bg-transparent p-0 text-inherit;
+  }
+  .markdown table {
+    @apply w-full border-collapse text-sm;
+  }
+  .markdown th,
+  .markdown td {
+    @apply border px-3 py-1.5 text-left;
+  }
+  .markdown th {
+    @apply bg-muted font-semibold;
+  }
+  .markdown hr {
+    @apply my-8;
+  }
+  .markdown input[type='checkbox'] {
+    @apply mr-2 align-middle;
+  }
+}

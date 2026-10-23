@@ -1,0 +1,11 @@
+query Roles($workspaceId: ID!) { roles(workspaceId: $workspaceId) { ...RoleFields } }
+
+mutation CreateRole($workspaceId: ID!, $input: CreateRoleInput!) {
+  createRole(workspaceId: $workspaceId, input: $input) { ...RoleFields }
+}
+
+mutation UpdateRole($workspaceId: ID!, $roleId: ID!, $input: UpdateRoleInput!) {
+  updateRole(workspaceId: $workspaceId, roleId: $roleId, input: $input) { ...RoleFields }
+}
+
+mutation DeleteRole($workspaceId: ID!, $roleId: ID!) { deleteRole(workspaceId: $workspaceId, roleId: $roleId) }

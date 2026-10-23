@@ -1,0 +1,32 @@
+import type { ExecutionContext } from '@nestjs/common';
+import { GqlExecutionContext, type GqlContextType } from '@nestjs/graphql';
+import type { GraphQLResolveInfo } from 'graphql';
+import type { AuthenticatedRequest } from './types/authenticated-request.js';
+
+function isGraphql(context: ExecutionContext): boolean {
+  return context.getType<GqlContextType>() === 'graphql';
+}
+
+/**
+ * The Express request behind a call. GraphQL operations are the API; plain HTTP
+ * only reaches the health probe, which global guards also see.
+ */
+export function getRequest(context: ExecutionContext): AuthenticatedRequest {
+  if (isGraphql(context)) return GqlExecutionContext.create(context).getContext<{ req: AuthenticatedRequest }>().req;
+  return context.switchToHttp().getRequest<AuthenticatedRequest>();
+}
+
+/** The top-level `workspaceId` argument of a GraphQL operation, unchecked. */
+export function getWorkspaceIdTarget(context: ExecutionContext): unknown {
+  return isGraphql(context) ? GqlExecutionContext.create(context).getArgs<{ workspaceId?: unknown }>().workspaceId : undefined;
+}
+
+/** True for GraphQL mutations (and, defensively, anything that isn't a query). */
+export function isWriteOperation(context: ExecutionContext): boolean {
+  return !isGraphql(context) || GqlExecutionContext.create(context).getInfo<GraphQLResolveInfo>().operation.operation !== 'query';
+}
+
+/** A short label for audit entries: the GraphQL field name. */
+export function describeOperation(context: ExecutionContext): string {
+  return isGraphql(context) ? `graphql:${GqlExecutionContext.create(context).getInfo<GraphQLResolveInfo>().fieldName}` : 'http';
+}

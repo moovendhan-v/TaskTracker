@@ -1,0 +1,13 @@
+query Members($workspaceId: ID!) { members(workspaceId: $workspaceId) { ...MemberFields } }
+
+mutation AddMember($workspaceId: ID!, $input: AddMemberInput!) {
+  addMember(workspaceId: $workspaceId, input: $input) { message }
+}
+
+mutation UpdateMemberRole($workspaceId: ID!, $userId: ID!, $roleId: ID!) {
+  updateMemberRole(workspaceId: $workspaceId, userId: $userId, roleId: $roleId) { ...MemberFields }
+}
+
+mutation RemoveMember($workspaceId: ID!, $userId: ID!) { removeMember(workspaceId: $workspaceId, userId: $userId) }
+
+mutation LeaveWorkspace($workspaceId: ID!) { leaveWorkspace(workspaceId: $workspaceId) }

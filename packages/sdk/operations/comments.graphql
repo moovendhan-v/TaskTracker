@@ -1,0 +1,11 @@
+query Comments($workspaceId: ID!, $taskId: ID!) { comments(workspaceId: $workspaceId, taskId: $taskId) { ...CommentFields } }
+
+mutation CreateComment($workspaceId: ID!, $taskId: ID!, $input: CommentInput!) {
+  createComment(workspaceId: $workspaceId, taskId: $taskId, input: $input) { ...CommentFields }
+}
+
+mutation UpdateComment($workspaceId: ID!, $commentId: ID!, $input: CommentInput!) {
+  updateComment(workspaceId: $workspaceId, commentId: $commentId, input: $input) { ...CommentFields }
+}
+
+mutation DeleteComment($workspaceId: ID!, $commentId: ID!) { deleteComment(workspaceId: $workspaceId, commentId: $commentId) }

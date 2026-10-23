@@ -1,0 +1,8 @@
+query WorkspaceAuditLog($workspaceId: ID!, $action: String, $actorId: ID, $page: Int, $pageSize: Int) {
+  workspaceAuditLog(workspaceId: $workspaceId, action: $action, actorId: $actorId, page: $page, pageSize: $pageSize) {
+    items { ...AuditLogEntryFields }
+    page
+    pageSize
+    total
+  }
+}

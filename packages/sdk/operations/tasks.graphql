@@ -1,0 +1,26 @@
+query Tasks($workspaceId: ID!, $listId: ID!, $status: TaskStatus, $search: String, $page: Int, $pageSize: Int) {
+  tasks(workspaceId: $workspaceId, listId: $listId, status: $status, search: $search, page: $page, pageSize: $pageSize) {
+    items { ...TaskFields }
+    page
+    pageSize
+    total
+  }
+}
+
+query Task($workspaceId: ID!, $taskId: ID!) { task(workspaceId: $workspaceId, taskId: $taskId) { ...TaskFields } }
+
+query SprintTasks($workspaceId: ID!, $sprintId: ID!) {
+  sprintTasks(workspaceId: $workspaceId, sprintId: $sprintId) { ...TaskFields }
+}
+
+query Backlog($workspaceId: ID!, $spaceId: ID!) { backlog(workspaceId: $workspaceId, spaceId: $spaceId) { ...TaskFields } }
+
+mutation CreateTask($workspaceId: ID!, $listId: ID!, $input: CreateTaskInput!) {
+  createTask(workspaceId: $workspaceId, listId: $listId, input: $input) { ...TaskFields }
+}
+
+mutation UpdateTask($workspaceId: ID!, $taskId: ID!, $input: UpdateTaskInput!) {
+  updateTask(workspaceId: $workspaceId, taskId: $taskId, input: $input) { ...TaskFields }
+}
+
+mutation DeleteTask($workspaceId: ID!, $taskId: ID!) { deleteTask(workspaceId: $workspaceId, taskId: $taskId) }

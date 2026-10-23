@@ -1,0 +1,11 @@
+query Lists($workspaceId: ID!) { lists(workspaceId: $workspaceId) { ...TaskListFields } }
+
+mutation CreateList($workspaceId: ID!, $spaceId: ID!, $input: TaskListInput!) {
+  createList(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) { ...TaskListFields }
+}
+
+mutation UpdateList($workspaceId: ID!, $listId: ID!, $input: TaskListInput!) {
+  updateList(workspaceId: $workspaceId, listId: $listId, input: $input) { ...TaskListFields }
+}
+
+mutation DeleteList($workspaceId: ID!, $listId: ID!) { deleteList(workspaceId: $workspaceId, listId: $listId) }

@@ -1,0 +1,55 @@
+import { Link, useNavigate } from '@tanstack/react-router';
+import { ArrowLeftIcon, KanbanIcon } from 'lucide-react';
+import { ErrorState } from '@/components/common/error-state';
+import { FullPageSpinner } from '@/components/common/full-page-spinner';
+import { PageHeader } from '@/components/common/page-header';
+import { Button } from '@/components/ui/button';
+import { TaskBoardView, TaskDetailSheet } from '@/modules/tasks';
+import { SprintProgress } from '../components/sprint-progress';
+import { useSprint, useSprintTasks } from '../hooks/use-sprints';
+import { formatSprintRange } from '../lib/sprint-dates';
+
+interface SprintBoardPageProps {
+  workspaceId: string;
+  sprintId: string;
+  openTaskId: string | undefined;
+}
+
+export function SprintBoardPage({ workspaceId, sprintId, openTaskId }: SprintBoardPageProps) {
+  const navigate = useNavigate();
+  const sprint = useSprint(workspaceId, sprintId);
+  const tasks = useSprintTasks(workspaceId, sprintId);
+  const openTask = (taskId: string | undefined) =>
+    void navigate({ to: '/w/$workspaceId/sprints/$sprintId', params: { workspaceId, sprintId }, search: { task: taskId } });
+
+  if (sprint.isLoading) return <FullPageSpinner />;
+  if (sprint.isError || !sprint.data) return <ErrorState error={sprint.error} />;
+  const { data } = sprint;
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <PageHeader
+        title={data.name}
+        description={`${formatSprintRange(data.startDate, data.endDate)}${data.goal ? ` · ${data.goal}` : ''}`}
+        icon={<KanbanIcon className="size-5 text-muted-foreground" />}
+        actions={
+          <>
+            <div className="w-48">
+              <SprintProgress done={data.doneTasks} total={data.totalTasks} />
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/w/$workspaceId/s/$spaceId/sprints" params={{ workspaceId, spaceId: data.spaceId }}>
+                <ArrowLeftIcon /> All sprints
+              </Link>
+            </Button>
+          </>
+        }
+      />
+      <div className="min-h-0 flex-1 overflow-auto p-6">
+        {tasks.isLoading ? <FullPageSpinner /> : null}
+        {tasks.data ? <TaskBoardView workspaceId={workspaceId} tasks={tasks.data} onOpen={openTask} /> : null}
+      </div>
+      <TaskDetailSheet workspaceId={workspaceId} taskId={openTaskId} onClose={() => openTask(undefined)} />
+    </div>
+  );
+}
