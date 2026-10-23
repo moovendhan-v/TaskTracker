@@ -1,7 +1,9 @@
-import { Outlet } from '@tanstack/react-router';
+import { Outlet, useNavigate } from '@tanstack/react-router';
 import {
   Building2Icon,
+  ClipboardCheckIcon,
   FileTextIcon,
+  BellIcon,
   HomeIcon,
   InboxIcon,
   PalmtreeIcon,
@@ -17,6 +19,10 @@ import { SidebarLink } from '@/components/layout/sidebar-link';
 import { SidebarSection } from '@/components/layout/sidebar-section';
 import { Topbar } from '@/components/layout/topbar';
 import { VerifyEmailBanner } from '@/core/auth/verify-email-banner';
+import { RealtimeIndicator } from '@/core/realtime/realtime-indicator';
+import { useWorkspaceEvents } from '@/core/realtime/use-workspace-events';
+import { toast } from '@/components/ui/sonner';
+import { describeNotification, inboxApi, useUnreadCount } from '@/modules/inbox';
 import { SpaceTree } from '@/modules/spaces';
 import { usePermissions, useWorkspace, useWorkspaceUiStore, WorkspaceSwitcher } from '@/modules/workspaces';
 import { UserMenu } from './user-menu';
@@ -27,7 +33,20 @@ export function WorkspaceLayout({ workspaceId }: { workspaceId: string }) {
   const toggleSidebar = useWorkspaceUiStore((state) => state.toggleSidebar);
   const { data: workspace } = useWorkspace(workspaceId);
   const { can } = usePermissions(workspaceId);
+  const { data: unread = 0 } = useUnreadCount(workspaceId);
+  const navigate = useNavigate();
   const params = { workspaceId };
+
+  // Live updates for this workspace, and a toast when something new lands in your inbox.
+  const showLatestNotification = async () => {
+    const latest = (await inboxApi.list(workspaceId, true).catch(() => null))?.items[0];
+    if (!latest) return;
+    toast(describeNotification(latest), {
+      icon: <BellIcon className="size-4" />,
+      action: { label: 'Open inbox', onClick: () => void navigate({ to: '/w/$workspaceId/inbox', params }) },
+    });
+  };
+  useWorkspaceEvents(workspaceId, () => void showLatestNotification());
 
   const sidebar = (
     <>
@@ -36,6 +55,9 @@ export function WorkspaceLayout({ workspaceId }: { workspaceId: string }) {
         <SidebarSection title="Workspace">
           <SidebarLink to="/w/$workspaceId" params={params} activeOptions={{ exact: true }} icon={<HomeIcon />}>
             Home
+          </SidebarLink>
+          <SidebarLink to="/w/$workspaceId/inbox" params={params} icon={<InboxIcon />} badge={unread > 0 ? (unread > 99 ? '99+' : String(unread)) : undefined}>
+            Inbox
           </SidebarLink>
           <SidebarLink to="/w/$workspaceId/docs" params={params} icon={<FileTextIcon />}>
             Docs
@@ -68,7 +90,7 @@ export function WorkspaceLayout({ workspaceId }: { workspaceId: string }) {
             </SidebarLink>
           ) : null}
           {can('leave.approve') ? (
-            <SidebarLink to="/w/$workspaceId/people/approvals" params={params} icon={<InboxIcon />}>
+            <SidebarLink to="/w/$workspaceId/people/approvals" params={params} icon={<ClipboardCheckIcon />}>
               Approvals
             </SidebarLink>
           ) : null}
@@ -92,7 +114,7 @@ export function WorkspaceLayout({ workspaceId }: { workspaceId: string }) {
 
   return (
     <AppShell sidebar={sidebar} sidebarOpen={sidebarOpen}>
-      <Topbar onToggleSidebar={toggleSidebar} breadcrumbs={workspace?.name} />
+      <Topbar onToggleSidebar={toggleSidebar} breadcrumbs={workspace?.name} actions={<RealtimeIndicator />} />
       <VerifyEmailBanner />
       <Outlet />
     </AppShell>

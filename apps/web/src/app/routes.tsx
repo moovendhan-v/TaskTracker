@@ -12,6 +12,8 @@ import { DocumentsPage } from '@/modules/documents';
 import { HomePage } from '@/modules/home';
 import { ApprovalsPage, DepartmentsPage, DirectoryPage, LeaveTypesPage, TimeOffPage } from '@/modules/hr';
 import { ListPage } from '@/modules/lists';
+import { InboxPage } from '@/modules/inbox';
+import { tasksApi } from '@/modules/tasks';
 import { MembersPage } from '@/modules/members';
 import { RolesPage } from '@/modules/roles';
 import { SprintBoardPage, SprintsPage } from '@/modules/sprints';
@@ -144,6 +146,21 @@ const listRoute = createRoute({
   },
 });
 
+/** A stable link to one task (used by notifications): opens it in its list. */
+const taskLinkRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/t/$taskId',
+  beforeLoad: async ({ context, params }) => {
+    const home = redirect({ to: '/w/$workspaceId', params: { workspaceId: params.workspaceId } });
+    if (!UUID.test(params.taskId)) throw home;
+    const task = await context.queryClient
+      .ensureQueryData({ queryKey: queryKeys.task(params.workspaceId, params.taskId), queryFn: () => tasksApi.get(params.workspaceId, params.taskId) })
+      .catch(() => null);
+    if (!task) throw home;
+    throw redirect({ to: '/w/$workspaceId/l/$listId', params: { workspaceId: params.workspaceId, listId: task.listId }, search: { task: task.id } });
+  },
+});
+
 const taskSearch = (search: Record<string, unknown>): { task?: string } => ({
   task: typeof search.task === 'string' && UUID.test(search.task) ? search.task : undefined,
 });
@@ -207,6 +224,7 @@ const timeOffRoute = workspacePage('/people/time-off', TimeOffPage);
 const approvalsRoute = workspacePage('/people/approvals', ApprovalsPage);
 const leaveTypesRoute = workspacePage('/people/leave-types', LeaveTypesPage);
 const auditLogRoute = workspacePage('/audit-log', WorkspaceAuditLogPage);
+const inboxRoute = workspacePage('/inbox', InboxPage);
 
 const membersRoute = createRoute({
   getParentRoute: () => workspaceRoute,
@@ -240,6 +258,8 @@ const routeTree = rootRoute.addChildren([
     adminRoute.addChildren([adminIndexRoute, adminUsersRoute, adminWorkspacesRoute, adminAuditRoute]),
     workspaceRoute.addChildren([
       workspaceHomeRoute,
+      inboxRoute,
+      taskLinkRoute,
       listRoute,
       sprintsRoute,
       sprintBoardRoute,

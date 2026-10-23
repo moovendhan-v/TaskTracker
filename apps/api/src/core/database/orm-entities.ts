@@ -7,6 +7,7 @@ import { LeaveRequestOrmEntity } from '../../modules/hr/leave/infrastructure/lea
 import { LeaveTypeOrmEntity } from '../../modules/hr/leave/infrastructure/leave-type.orm-entity.js';
 import { TaskListOrmEntity } from '../../modules/lists/infrastructure/task-list.orm-entity.js';
 import { WorkspaceMemberOrmEntity } from '../../modules/members/infrastructure/workspace-member.orm-entity.js';
+import { NotificationOrmEntity } from '../../modules/notifications/infrastructure/notification.orm-entity.js';
 import { WorkspaceRoleOrmEntity } from '../../modules/roles/infrastructure/workspace-role.orm-entity.js';
 import { SpaceOrmEntity } from '../../modules/spaces/infrastructure/space.orm-entity.js';
 import { SprintOrmEntity } from '../../modules/sprints/infrastructure/sprint.orm-entity.js';
@@ -34,4 +35,5 @@ export const ORM_ENTITIES = [
   LeaveTypeOrmEntity,
   LeaveRequestOrmEntity,
   AuditLogOrmEntity,
+  NotificationOrmEntity,
 ];

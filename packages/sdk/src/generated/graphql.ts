@@ -102,9 +102,27 @@ export type LeaveStatus =
   | 'pending'
   | 'rejected';
 
+export type NotificationKind =
+  | 'leave_decided'
+  | 'leave_requested'
+  | 'member_added'
+  | 'task_assigned'
+  | 'task_commented';
+
 export type PlatformRole =
   | 'SUPER_ADMIN'
   | 'USER';
+
+export type RealtimeEntityType =
+  | 'comment'
+  | 'document'
+  | 'leave_request'
+  | 'list'
+  | 'member'
+  | 'notification'
+  | 'space'
+  | 'sprint'
+  | 'task';
 
 export type RequestLeaveInput = {
   /** yyyy-mm-dd */
@@ -364,6 +382,8 @@ export type AdminUserFieldsFragment = { id: string, name: string, email: string,
 
 export type AdminWorkspaceFieldsFragment = { id: string, name: string, ownerId: string, ownerName: string, memberCount: number, createdAt: string };
 
+export type NotificationFieldsFragment = { id: string, kind: NotificationKind, actorId: string | null, actorName: string | null, entityType: string, entityId: string, taskId: string | null, subject: string, excerpt: string, readAt: string | null, createdAt: string };
+
 export type DepartmentsQueryVariables = Exact<{
   workspaceId: string;
 }>;
@@ -573,6 +593,45 @@ export type LeaveWorkspaceMutationVariables = Exact<{
 
 
 export type LeaveWorkspaceMutation = { leaveWorkspace: boolean };
+
+export type NotificationsQueryVariables = Exact<{
+  workspaceId: string;
+  unreadOnly?: boolean | null | undefined;
+  page?: number | null | undefined;
+  pageSize?: number | null | undefined;
+}>;
+
+
+export type NotificationsQuery = { notifications: { page: number, pageSize: number, total: number, items: Array<{ id: string, kind: NotificationKind, actorId: string | null, actorName: string | null, entityType: string, entityId: string, taskId: string | null, subject: string, excerpt: string, readAt: string | null, createdAt: string }> } };
+
+export type UnreadNotificationCountQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type UnreadNotificationCountQuery = { unreadNotificationCount: number };
+
+export type MarkNotificationsReadMutationVariables = Exact<{
+  workspaceId: string;
+  ids: Array<string> | string;
+}>;
+
+
+export type MarkNotificationsReadMutation = { markNotificationsRead: number };
+
+export type MarkAllNotificationsReadMutationVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type MarkAllNotificationsReadMutation = { markAllNotificationsRead: number };
+
+export type WorkspaceEventsSubscriptionVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type WorkspaceEventsSubscription = { workspaceEvents: { type: string, entityType: RealtimeEntityType, entityId: string, actorId: string, occurredAt: string } };
 
 export type RolesQueryVariables = Exact<{
   workspaceId: string;
@@ -1031,6 +1090,21 @@ export const AdminWorkspaceFieldsFragmentDoc = new TypedDocumentString(`
   createdAt
 }
     `, {"fragmentName":"AdminWorkspaceFields"}) as unknown as TypedDocumentString<AdminWorkspaceFieldsFragment, unknown>;
+export const NotificationFieldsFragmentDoc = new TypedDocumentString(`
+    fragment NotificationFields on Notification {
+  id
+  kind
+  actorId
+  actorName
+  entityType
+  entityId
+  taskId
+  subject
+  excerpt
+  readAt
+  createdAt
+}
+    `, {"fragmentName":"NotificationFields"}) as unknown as TypedDocumentString<NotificationFieldsFragment, unknown>;
 export const AdminUsersDocument = new TypedDocumentString(`
     query AdminUsers($search: String, $page: Int, $pageSize: Int) {
   adminUsers(search: $search, page: $page, pageSize: $pageSize) {
@@ -1660,6 +1734,61 @@ export const LeaveWorkspaceDocument = new TypedDocumentString(`
   leaveWorkspace(workspaceId: $workspaceId)
 }
     `) as unknown as TypedDocumentString<LeaveWorkspaceMutation, LeaveWorkspaceMutationVariables>;
+export const NotificationsDocument = new TypedDocumentString(`
+    query Notifications($workspaceId: ID!, $unreadOnly: Boolean, $page: Int, $pageSize: Int) {
+  notifications(
+    workspaceId: $workspaceId
+    unreadOnly: $unreadOnly
+    page: $page
+    pageSize: $pageSize
+  ) {
+    items {
+      ...NotificationFields
+    }
+    page
+    pageSize
+    total
+  }
+}
+    fragment NotificationFields on Notification {
+  id
+  kind
+  actorId
+  actorName
+  entityType
+  entityId
+  taskId
+  subject
+  excerpt
+  readAt
+  createdAt
+}`) as unknown as TypedDocumentString<NotificationsQuery, NotificationsQueryVariables>;
+export const UnreadNotificationCountDocument = new TypedDocumentString(`
+    query UnreadNotificationCount($workspaceId: ID!) {
+  unreadNotificationCount(workspaceId: $workspaceId)
+}
+    `) as unknown as TypedDocumentString<UnreadNotificationCountQuery, UnreadNotificationCountQueryVariables>;
+export const MarkNotificationsReadDocument = new TypedDocumentString(`
+    mutation MarkNotificationsRead($workspaceId: ID!, $ids: [ID!]!) {
+  markNotificationsRead(workspaceId: $workspaceId, ids: $ids)
+}
+    `) as unknown as TypedDocumentString<MarkNotificationsReadMutation, MarkNotificationsReadMutationVariables>;
+export const MarkAllNotificationsReadDocument = new TypedDocumentString(`
+    mutation MarkAllNotificationsRead($workspaceId: ID!) {
+  markAllNotificationsRead(workspaceId: $workspaceId)
+}
+    `) as unknown as TypedDocumentString<MarkAllNotificationsReadMutation, MarkAllNotificationsReadMutationVariables>;
+export const WorkspaceEventsDocument = new TypedDocumentString(`
+    subscription WorkspaceEvents($workspaceId: ID!) {
+  workspaceEvents(workspaceId: $workspaceId) {
+    type
+    entityType
+    entityId
+    actorId
+    occurredAt
+  }
+}
+    `) as unknown as TypedDocumentString<WorkspaceEventsSubscription, WorkspaceEventsSubscriptionVariables>;
 export const RolesDocument = new TypedDocumentString(`
     query Roles($workspaceId: ID!) {
   roles(workspaceId: $workspaceId) {

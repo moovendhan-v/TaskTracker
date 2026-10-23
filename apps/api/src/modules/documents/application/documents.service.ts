@@ -8,6 +8,8 @@ import {
   type UpdateDocumentRequest,
 } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
+import { domainEvent } from '../../../core/events/domain-event.js';
+import { EventBus } from '../../../core/events/event-bus.port.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
@@ -27,6 +29,7 @@ export class DocumentsService {
     private readonly spacesService: SpacesService,
     private readonly unitOfWork: UnitOfWork,
     private readonly auditLogger: AuditLogger,
+    private readonly eventBus: EventBus,
   ) {}
 
   async listTree(workspaceId: string, search?: string): Promise<DocumentSummaryResponse[]> {
@@ -60,6 +63,7 @@ export class DocumentsService {
         updatedById: actor.userId,
       });
     });
+    await this.announce('created', actor, document);
     return DocumentMapper.toResponse(document);
   }
 
@@ -70,7 +74,9 @@ export class DocumentsService {
     if (request.title !== undefined) document.title = request.title.trim();
     if (request.content !== undefined) document.content = this.sanitizer.sanitize(request.content);
     document.updatedById = actor.userId;
-    return DocumentMapper.toResponse(await this.documents.save(document));
+    const saved = await this.documents.save(document);
+    await this.announce('updated', actor, saved);
+    return DocumentMapper.toResponse(saved);
   }
 
   async move(actor: Actor, access: WorkspaceAccess, documentId: string, request: MoveDocumentRequest): Promise<DocumentResponse> {
@@ -93,6 +99,7 @@ export class DocumentsService {
       document.updatedById = actor.userId;
       return this.documents.save(document);
     });
+    await this.announce('updated', actor, moved);
     return DocumentMapper.toResponse(moved);
   }
 
@@ -108,7 +115,13 @@ export class DocumentsService {
         workspaceId: access.workspaceId,
         metadata: { title: document.title },
       });
+      await this.announce('deleted', actor, document);
     });
+  }
+
+  /** Live updates for everyone looking at this workspace's docs. */
+  private announce(change: 'created' | 'updated' | 'deleted', actor: Actor, document: Document): Promise<void> {
+    return this.eventBus.publish(domainEvent('document', change, { workspaceId: document.workspaceId, entityId: document.id, actorId: actor.userId }));
   }
 
   private async getInWorkspace(workspaceId: string, documentId: string): Promise<Document> {

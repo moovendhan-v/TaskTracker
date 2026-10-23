@@ -5,6 +5,7 @@ import { Sprints1729570000000 } from './1729570000000-sprints.js';
 import { Documents1729580000000 } from './1729580000000-documents.js';
 import { Hr1729590000000 } from './1729590000000-hr.js';
 import { RowLevelSecurity1729600000000 } from './1729600000000-row-level-security.js';
+import { Notifications1729610000000 } from './1729610000000-notifications.js';
 
 /** Registered in order. Add new migrations to the end. */
 export const MIGRATIONS = [
@@ -15,4 +16,5 @@ export const MIGRATIONS = [
   Documents1729580000000,
   Hr1729590000000,
   RowLevelSecurity1729600000000,
+  Notifications1729610000000,
 ];

@@ -69,6 +69,16 @@ export class TypeOrmWorkspaceMemberRepository extends WorkspaceMemberRepository 
     return this.repository.exists({ where: { workspaceId, userId } });
   }
 
+  async listUserIdsWithPermission(workspaceId: string, permission: Permission): Promise<string[]> {
+    const rows: { user_id: string }[] = await this.transactional.manager.query(
+      `SELECT member.user_id FROM workspace_member member
+       JOIN workspace_role role ON role.id = member.role_id AND role.workspace_id = member.workspace_id
+       WHERE member.workspace_id = $1 AND $2 = ANY(role.permissions)`,
+      [workspaceId, permission],
+    );
+    return rows.map((row) => row.user_id);
+  }
+
   async addIfAbsent(member: NewWorkspaceMember): Promise<boolean> {
     const result = await this.repository
       .createQueryBuilder()

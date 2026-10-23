@@ -1,28 +1,30 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { API_DIR, apiEnv } from './support/stack';
 
 /**
  * One person's first day in TaskFlow, end to end in a real browser: sign-up,
- * workspace setup, tasks, sprints, docs, HR, roles, the audit log and the
- * platform admin console. Steps share one page and run in order.
+ * workspace setup, tasks, live updates, sprints, docs, HR, roles, the audit
+ * log, the platform admin console and the inbox. Steps share one page and run in order.
  */
 test.describe.configure({ mode: 'serial' });
 
 const run = randomUUID().slice(0, 8);
 const email = `dana+${run}@example.com`;
+let context: BrowserContext;
 let page: Page;
 const consoleErrors: string[] = [];
 
 test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage();
+  context = await browser.newContext();
+  page = await context.newPage();
   page.on('console', (message) => message.type() === 'error' && consoleErrors.push(message.text()));
   page.on('pageerror', (error) => consoleErrors.push(error.message));
 });
 
 test.afterAll(async () => {
-  await page.close();
+  await context.close();
 });
 
 test('redirects to sign-in when signed out', async () => {
@@ -88,6 +90,18 @@ test('filters tasks by search', async () => {
   await expect(page.getByRole('button', { name: 'Design onboarding emails' })).toBeHidden();
   await page.getByLabel('Search tasks').fill('');
   await expect(page.getByRole('button', { name: 'Design onboarding emails' })).toBeVisible();
+});
+
+test('shows changes made in another tab without reloading', async () => {
+  await expect(page.getByRole('status').filter({ hasText: 'Live' })).toBeVisible();
+  const otherTab = await context.newPage();
+  await otherTab.goto(page.url());
+  await otherTab.getByRole('button', { name: 'Add task' }).first().click();
+  await otherTab.getByLabel('New task name').fill('Book the launch venue');
+  await otherTab.keyboard.press('Enter');
+  await expect(otherTab.getByRole('button', { name: 'Book the launch venue' })).toBeVisible();
+  await otherTab.close();
+  await expect(page.getByRole('button', { name: 'Book the launch venue' })).toBeVisible();
 });
 
 test('edits a task and renders comments as text, never HTML', async () => {
@@ -277,6 +291,12 @@ test('opens the platform admin console after promotion by the operator CLI', asy
   await expect(page.getByRole('cell', { name: 'admin.user.promote' }).first()).toBeVisible();
   await page.getByRole('link', { name: 'Back to workspaces' }).click();
   await expect(page).toHaveURL(/\/w\//);
+});
+
+test('opens an empty inbox', async () => {
+  await page.getByRole('navigation').getByRole('link', { name: 'Inbox' }).click();
+  await expect(page).toHaveURL(/\/inbox$/);
+  await expect(page.getByText('You’re all caught up')).toBeVisible();
 });
 
 test('signs out', async () => {

@@ -28,5 +28,8 @@
     "@graphql-codegen/typescript-operations": "6.1.10",
     "graphql": "16.14.2",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "graphql-ws": "6.3.0"
   }
 }

@@ -5,6 +5,9 @@ import { GraphQLModule } from '@nestjs/graphql';
 import type { GraphQLFormattedError } from 'graphql';
 import { ENV } from '../../config/config.module.js';
 import type { Env } from '../../config/env.schema.js';
+import { AuthModule } from '../auth/auth.module.js';
+import { AuthService } from '../auth/auth.service.js';
+import { isAllowedOrigin, type SocketExtra } from '../realtime/websocket-auth.js';
 import { complexityPlugin } from './complexity.plugin.js';
 import { depthLimitRule } from './depth-limit.rule.js';
 import './enums.js';
@@ -29,8 +32,9 @@ function withoutSchemaHints(error: GraphQLFormattedError): GraphQLFormattedError
   imports: [
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      inject: [ENV],
-      useFactory: (env: Env): ApolloDriverConfig => {
+      imports: [AuthModule],
+      inject: [ENV, AuthService],
+      useFactory: (env: Env, authService: AuthService): ApolloDriverConfig => {
         const production = env.NODE_ENV === 'production';
         return {
           path: GRAPHQL_PATH,
@@ -42,7 +46,30 @@ function withoutSchemaHints(error: GraphQLFormattedError): GraphQLFormattedError
           // Requests must be JSON or carry a preflight header, so plain HTML forms can't send them.
           csrfPrevention: true,
           includeStacktraceInErrorResponses: false,
-          context: ({ req, res }: { req: unknown; res: unknown }) => ({ req, res }),
+          // HTTP operations get the Express request; subscriptions get a request-like object built
+          // from the WebSocket handshake, so the same guards and decorators work for both.
+          context: ({ req, res, extra }: { req?: unknown; res?: unknown; extra?: SocketExtra }) =>
+            extra
+              ? { req: { headers: extra.request.headers, ip: extra.request.socket.remoteAddress ?? null, user: extra.user } }
+              : { req, res },
+          subscriptions: {
+            'graphql-ws': {
+              // The driver adds the global prefix, so this serves /api/graphql like HTTP.
+              path: GRAPHQL_PATH,
+              // Clients must send connection_init within 3 seconds or the socket is closed.
+              connectionInitWaitTimeout: 3_000,
+              // Refuse the socket unless it comes from an allowed origin with a valid session.
+              onConnect: async (context: { extra: unknown }) => {
+                const extra = context.extra as SocketExtra;
+                const { request } = extra;
+                if (!isAllowedOrigin(request.headers, env.CORS_ORIGINS)) return false;
+                const user = await authService.getSessionUser(request.headers).catch(() => null);
+                if (!user) return false;
+                extra.user = user;
+                return true;
+              },
+            },
+          },
           parseOptions: { maxTokens: MAX_QUERY_TOKENS },
           validationRules: [depthLimitRule(MAX_QUERY_DEPTH)],
           plugins: [ApolloServerPluginLandingPageDisabled(), complexityPlugin(MAX_QUERY_COMPLEXITY)],

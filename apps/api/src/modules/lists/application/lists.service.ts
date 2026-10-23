@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import type { CreateTaskListRequest, TaskListResponse, UpdateTaskListRequest } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
+import { changeOfAction, domainEvent } from '../../../core/events/domain-event.js';
+import { EventBus } from '../../../core/events/event-bus.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import type { Actor } from '../../../core/http/types/authenticated-request.js';
 import { SpacesService } from '../../spaces/application/spaces.service.js';
@@ -14,6 +16,7 @@ export class ListsService {
     private readonly lists: TaskListRepository,
     private readonly spacesService: SpacesService,
     private readonly auditLogger: AuditLogger,
+    private readonly eventBus: EventBus,
   ) {}
 
   /** All lists in the workspace, so the sidebar tree loads in one call. */
@@ -54,13 +57,15 @@ export class ListsService {
     return list;
   }
 
-  private audit(actor: Actor, action: string, list: TaskList) {
-    return this.auditLogger.record(actor, {
+  private async audit(actor: Actor, action: string, list: TaskList): Promise<void> {
+    await this.auditLogger.record(actor, {
       action,
       targetType: 'list',
       targetId: list.id,
       workspaceId: list.workspaceId,
       metadata: { name: list.name, spaceId: list.spaceId },
     });
+    // Live updates for everyone looking at this workspace.
+    await this.eventBus.publish(domainEvent('list', changeOfAction(action), { workspaceId: list.workspaceId, entityId: list.id, actorId: actor.userId }));
   }
 }

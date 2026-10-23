@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Permission } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
+import type { DomainEvent } from '../../../core/events/domain-event.js';
+import { InProcessEventBus } from '../../../core/events/in-process-event-bus.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import type { ListsService } from '../../lists/application/lists.service.js';
 import type { MembersService } from '../../members/application/members.service.js';
@@ -23,6 +25,7 @@ describe('TasksService', () => {
   let repository: InMemoryTaskRepository;
   let members: Set<string>;
   let service: TasksService;
+  let events: DomainEvent[];
 
   beforeEach(() => {
     repository = new InMemoryTaskRepository();
@@ -38,7 +41,12 @@ describe('TasksService', () => {
         spaceId: sprintId === 'other-space-sprint' ? 'space-b' : SPACE,
       }),
     } as unknown as SprintsService;
-    service = new TasksService(repository, lists, membersService, spaces, sprints);
+    events = [];
+    const eventBus = new InProcessEventBus();
+    eventBus.subscribe(async (event) => {
+      events.push(event);
+    });
+    service = new TasksService(repository, lists, membersService, spaces, sprints, eventBus);
   });
 
   it('appends new tasks after the last position with sensible defaults', async () => {
@@ -68,11 +76,11 @@ describe('TasksService', () => {
 
   it('plans a task into a sprint only with sprint.manage and the same space', async () => {
     const task = await service.create(actor, accessWith('task.create'), LIST, { title: 'Plan me' });
-    await expect(service.update(accessWith('task.update'), task.id, { sprintId: 'sprint-1' })).rejects.toThrow(/sprint.manage/);
+    await expect(service.update(actor, accessWith('task.update'), task.id, { sprintId: 'sprint-1' })).rejects.toThrow(/sprint.manage/);
     await expect(
-      service.update(accessWith('task.update', 'sprint.manage'), task.id, { sprintId: 'other-space-sprint' }),
+      service.update(actor, accessWith('task.update', 'sprint.manage'), task.id, { sprintId: 'other-space-sprint' }),
     ).rejects.toThrow(/own space/);
-    const planned = await service.update(accessWith('task.update', 'sprint.manage'), task.id, { sprintId: 'sprint-1' });
+    const planned = await service.update(actor, accessWith('task.update', 'sprint.manage'), task.id, { sprintId: 'sprint-1' });
     expect(planned.sprintId).toBe('sprint-1');
   });
 
@@ -83,5 +91,14 @@ describe('TasksService', () => {
     const page = await service.listInList(WORKSPACE, LIST, { search: 'alpha', pageSize: 1 });
     expect(page).toMatchObject({ total: 2, page: 1, pageSize: 1 });
     expect(page.items[0]?.title).toBe('Alpha');
+  });
+
+  it('publishes what changed, including who the task moved from and to', async () => {
+    const task = await service.create(actor, accessWith('task.create', 'task.assign'), LIST, { title: 'Hand over', assigneeId: 'user-1' });
+    await service.update(actor, accessWith('task.update', 'task.assign'), task.id, { assigneeId: 'user-2' });
+    await service.remove(actor, WORKSPACE, task.id);
+
+    expect(events.map((event) => event.type)).toEqual(['task.created', 'task.updated', 'task.deleted']);
+    expect(events[1]).toMatchObject({ entityId: task.id, actorId: 'user-1', facts: { assigneeId: 'user-2', previousAssigneeId: 'user-1' } });
   });
 });

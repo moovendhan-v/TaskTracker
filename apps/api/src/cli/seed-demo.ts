@@ -118,7 +118,7 @@ async function seed(app: INestApplicationContext): Promise<void> {
       startDate: daysFromNow(-3).slice(0, 10),
       endDate: daysFromNow(11).slice(0, 10),
     });
-    for (const planned of [onboarding, sharing, exportCsv]) await tasks.update(access, planned.id, { sprintId: sprint.id });
+    for (const planned of [onboarding, sharing, exportCsv]) await tasks.update(ownerActor, access, planned.id, { sprintId: sprint.id });
     await sprints.start(ownerActor, workspaceId, sprint.id);
 
     const documents = app.get(DocumentsService);

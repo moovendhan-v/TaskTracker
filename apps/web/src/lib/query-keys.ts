@@ -13,6 +13,7 @@ export const queryKeys = {
   tasks: (workspaceId: string, listId: string, query: TaskQuery = {}) =>
     ['workspaces', workspaceId, 'tasks', 'list', listId, query] as const,
   task: (workspaceId: string, taskId: string) => ['workspaces', workspaceId, 'tasks', 'detail', taskId] as const,
+  commentsRoot: (workspaceId: string) => ['workspaces', workspaceId, 'comments'] as const,
   comments: (workspaceId: string, taskId: string) => ['workspaces', workspaceId, 'comments', taskId] as const,
   // Sprint task lists and the backlog live under tasksRoot, so any task change refreshes them.
   sprintTasks: (workspaceId: string, sprintId: string) => ['workspaces', workspaceId, 'tasks', 'sprint', sprintId] as const,
@@ -31,6 +32,9 @@ export const queryKeys = {
   leaveQueue: (workspaceId: string, status: string) => ['workspaces', workspaceId, 'hr', 'leave', 'queue', status] as const,
   myBalances: (workspaceId: string, year: number) => ['workspaces', workspaceId, 'hr', 'leave', 'balances', year] as const,
   workspaceAudit: (workspaceId: string, query: object) => ['workspaces', workspaceId, 'audit-log', query] as const,
+  notificationsRoot: (workspaceId: string) => ['workspaces', workspaceId, 'notifications'] as const,
+  notifications: (workspaceId: string, unreadOnly: boolean) => ['workspaces', workspaceId, 'notifications', 'list', unreadOnly] as const,
+  unreadNotifications: (workspaceId: string) => ['workspaces', workspaceId, 'notifications', 'unread-count'] as const,
   adminRoot: ['admin'] as const,
   adminUsers: (query: object) => ['admin', 'users', query] as const,
   adminWorkspaces: (query: object) => ['admin', 'workspaces', query] as const,

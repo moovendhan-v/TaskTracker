@@ -21,9 +21,19 @@ export function getWorkspaceIdTarget(context: ExecutionContext): unknown {
   return isGraphql(context) ? GqlExecutionContext.create(context).getArgs<{ workspaceId?: unknown }>().workspaceId : undefined;
 }
 
-/** True for GraphQL mutations (and, defensively, anything that isn't a query). */
+function operationType(context: ExecutionContext): string | null {
+  return isGraphql(context) ? GqlExecutionContext.create(context).getInfo<GraphQLResolveInfo>().operation.operation : null;
+}
+
+/** True for GraphQL mutations (and, defensively, anything that isn't GraphQL). Queries and subscriptions only read. */
 export function isWriteOperation(context: ExecutionContext): boolean {
-  return !isGraphql(context) || GqlExecutionContext.create(context).getInfo<GraphQLResolveInfo>().operation.operation !== 'query';
+  const type = operationType(context);
+  return type === null || type === 'mutation';
+}
+
+/** True for a GraphQL subscription, which runs over a WebSocket rather than one HTTP request. */
+export function isSubscription(context: ExecutionContext): boolean {
+  return operationType(context) === 'subscription';
 }
 
 /** A short label for audit entries: the GraphQL field name. */

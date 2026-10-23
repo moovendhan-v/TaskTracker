@@ -1,6 +1,6 @@
 # TaskFlow
 
-TaskFlow is a work-management app: tasks and boards, sprints, docs, and HR (people directory and time off) in one workspace, with built-in and custom roles and a platform admin console. It's built in our own visual style; see [the plan](docs/plan/TASKFLOW_PLAN.md) for scope.
+TaskFlow is a work-management app: tasks and boards, sprints, docs, and HR (people directory and time off) in one workspace, with built-in and custom roles, live updates, an inbox and a platform admin console. It's built in our own visual style; see [the plan](docs/plan/TASKFLOW_PLAN.md) for scope.
 
 | Part | Stack |
 |------|-------|
@@ -77,6 +77,14 @@ The seed creates "Northwind Studio" with three accounts (avery@, jordan@ and sam
 Everything is GraphQL at `POST /api/graphql`. The only other routes are Better Auth's own handler at `/api/auth/*` (sign-up, sign-in, sessions, password reset) and the `GET /api/health` liveness probe for Docker. Outside production, introspection is on, so any GraphQL client can browse the schema; the schema is also committed at `packages/sdk/schema.graphql`.
 
 Every workspace-scoped operation takes a `workspaceId` argument. A guard checks membership and permissions before the resolver runs, and callers outside the workspace get `NOT_FOUND`.
+
+### Live updates and the inbox
+
+The same path also takes GraphQL subscriptions over WebSocket (`graphql-ws`). `subscription workspaceEvents(workspaceId)` streams what changes in a workspace (`task.updated`, `comment.created`, `notification.created` and so on). Events carry ids only: the web app refreshes the affected queries, so every read still goes through the normal permission checks. Notification events only reach their recipient.
+
+Services publish domain events inside their transaction, and `pg_notify` sends them on commit, so nothing is announced for a change that rolled back, and every API instance receives every event. The inbox (`query notifications`, `mutation markNotificationsRead`) is filled from the same events: assignments, comments on your tasks, time-off requests and decisions, and being added to a workspace. You never get notified about your own actions.
+
+Sockets check the `Origin` header against `CORS_ORIGINS` and the session cookie before the connection is accepted. Subscribing needs workspace membership, and the server rechecks the session and membership every 30 seconds and ends the stream when either is gone. Reverse proxies need to pass the WebSocket upgrade for `/api/graphql` (the bundled nginx config and the Vite dev proxy do).
 
 ### Typed client (SDK)
 

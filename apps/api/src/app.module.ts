@@ -8,6 +8,8 @@ import { AuditModule } from './core/audit/audit.module.js';
 import { AuthModule } from './core/auth/auth.module.js';
 import { SessionGuard } from './core/auth/session.guard.js';
 import { DatabaseModule } from './core/database/database.module.js';
+import { EventsModule } from './core/events/events.module.js';
+import { RealtimeModule } from './core/realtime/realtime.module.js';
 import { GraphqlApiModule } from './core/graphql/graphql-api.module.js';
 import { TimeModule } from './core/time/time.module.js';
 import { AllExceptionsFilter } from './core/http/filters/all-exceptions.filter.js';
@@ -21,6 +23,8 @@ import { HrModule } from './modules/hr/hr.module.js';
 import { ListsModule } from './modules/lists/lists.module.js';
 import { TypeOrmMembershipReader } from './modules/members/infrastructure/typeorm-membership.reader.js';
 import { MembersModule } from './modules/members/members.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { RealtimeFeatureModule } from './modules/realtime/realtime.module.js';
 import { RolesModule } from './modules/roles/roles.module.js';
 import { SpacesModule } from './modules/spaces/spaces.module.js';
 import { SprintsModule } from './modules/sprints/sprints.module.js';
@@ -34,6 +38,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     AppConfigModule,
     DatabaseModule,
     TimeModule,
+    EventsModule,
+    RealtimeModule,
     GraphqlApiModule,
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     AuthModule,
@@ -53,6 +59,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     HrModule,
     AuditLogModule,
     AdminModule,
+    NotificationsModule,
+    RealtimeFeatureModule,
   ],
   providers: [
     // Order matters: the session guard sets req.user, which the throttler uses as its key.

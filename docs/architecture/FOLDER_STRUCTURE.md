@@ -153,12 +153,26 @@ src/core/
 │   └── migrations/
 │       ├── index.ts                  ordered list of migrations
 │       └── <timestamp>-<name>.ts     one file per migration, never edited after merge
+├── events/                           ✅ domain events inside one process
+│   ├── domain-event.ts               { type, workspaceId, actorId, entityType, entityId, subject? }; ids only, no data
+│   ├── event-bus.port.ts             abstract class EventBus { publish(event) }; handlers register themselves
+│   ├── in-process-event-bus.ts       runs handlers in order inside the caller's transaction
+│   └── events.module.ts
+├── realtime/                         ✅ fan-out of events to every API instance (Postgres LISTEN/NOTIFY)
+│   ├── realtime-event.ts             what goes on the wire, and its parser (untrusted input)
+│   ├── realtime-channel.ts           channel name taskflow_events
+│   ├── realtime-publisher.ts         pg_notify in the current transaction, so events go out only on commit
+│   ├── realtime-listener.ts          one dedicated LISTEN connection per instance, reconnects with backoff
+│   ├── event-stream.ts               per-subscriber async iterators with a bounded queue
+│   ├── websocket-auth.ts             origin allowlist and session check for graphql-ws connections
+│   └── realtime.module.ts
 ├── storage/                          🔜 [4] document attachments and HR files
 │   ├── storage.port.ts               abstract class FileStorage { put, signedUrl, delete }
 │   ├── s3.storage.ts                 adapter (MinIO locally), private bucket, short-lived URLs
 │   └── file-type.validator.ts        magic-byte check, size limit, blocks HTML/SVG
 ├── graphql/                          code-first GraphQL at /api/graphql
-│   ├── graphql-api.module.ts         Apollo driver; token limit, CSRF prevention; no introspection, playground or hints in production
+│   ├── graphql-api.module.ts         Apollo driver; token limit, CSRF prevention; no introspection, playground or hints in production;
+│   │                                 graphql-ws subscriptions on the same path (origin and session checked in onConnect)
 │   ├── depth-limit.rule.ts           validation rule: rejects queries nested deeper than 8
 │   ├── complexity.plugin.ts          rejects queries above a cost of 5000 (blocks alias amplification)
 │   ├── page.type.ts                  PageOf<T>, PageArgs, WorkspacePageArgs (max 100), complexity estimators
@@ -170,6 +184,7 @@ src/core/
     ├── request-context.ts            the Express request, workspaceId argument and write detection for guards
     ├── types/authenticated-request.ts    SessionUser, WorkspaceAccess, Actor
     ├── decorators/
+    │   ├── current-request.decorator.ts
     │   ├── public.decorator.ts
     │   ├── current-actor.decorator.ts
     │   └── current-user.decorator.ts
@@ -349,6 +364,20 @@ src/modules/
 │       ├── infrastructure/typeorm-leave-{type,request,balance}.repository.ts
 │       └── presentation/graphql/{leave.resolver.ts,leave.types.ts}
 │
+├── notifications/                                ✅ inbox
+│   ├── domain/notification.ts                    kind, recipient, actor, subject (entity type and id), readAt
+│   ├── domain/notification-rules.ts              pure: which events notify whom (never about your own actions)
+│   ├── domain/notification.repository.ts
+│   ├── application/notification-event-handler.ts subscribes to the EventBus, writes notifications, announces them
+│   ├── application/{notifications.service.ts,notification.mapper.ts}
+│   ├── infrastructure/{notification.orm-entity.ts,typeorm-notification.repository.ts}
+│   └── presentation/graphql/{notifications.resolver.ts,notification.types.ts}   own notifications only; mark read
+│
+├── realtime/                                     ✅ subscription workspaceEvents(workspaceId)
+│   ├── application/workspace-events.service.ts   filters the stream by workspace and recipient; rechecks the session
+│   │                                             and membership every 30 s and ends the stream when either is gone
+│   └── presentation/graphql/{workspace-events.resolver.ts,workspace-event.types.ts}
+│
 ├── audit-log/                                    ✅ read side of the audit log
 │   ├── domain/{audit-entry.ts,audit-log.repository.ts}
 │   ├── application/{audit-log.service.ts,audit-log.mapper.ts}   workspace view drops IPs
@@ -383,11 +412,11 @@ apps/web/
 ├── playwright.config.ts              browser e2e: starts the built API and Vite against a test database
 ├── e2e/
 │   ├── support/stack.ts              ports and API env for the e2e stack (refuses non-test databases)
-│   └── workspace-journey.spec.ts     sign-up → tasks → sprints → docs → HR → roles → audit → admin, in Chromium
+│   └── workspace-journey.spec.ts     sign-up → tasks → live updates → sprints → docs → HR → roles → audit → admin → inbox
 ├── components.json                   shadcn/ui config
 ├── index.html
 ├── Dockerfile                        build with Vite, serve with nginx as non-root
-├── nginx.conf                        SPA fallback, security headers, no server tokens
+├── nginx.conf                        SPA fallback, security headers, no server tokens; WebSocket upgrade for /api/graphql
 └── src/
     ├── main.tsx                      mounts <App />
     ├── app/                          composition root
@@ -413,12 +442,18 @@ src/app/                              composition root (like app.module.ts on th
 src/core/
 ├── config/env.ts                     reads VITE_* values (nothing secret)
 ├── api/graphql-client.ts             the single createGraphQLClient() instance
+├── api/realtime-client.ts            the single createRealtimeClient() instance (lazy WebSocket, reconnects)
 ├── api/current-user.api.ts           MeDocument, used by route guards and useCurrentUser
 ├── auth/
 │   ├── auth-client.ts                Better Auth React client + captcha header helper
 │   ├── session.ts                    hasSession() for route guards
 │   ├── use-current-user.ts           query me
 │   └── turnstile-widget.tsx          CAPTCHA widget for public forms (off when no site key)
+├── realtime/
+│   ├── use-workspace-events.ts       subscribes while a workspace is open and refreshes the affected queries
+│   ├── invalidations.ts              entity type → query keys to refresh
+│   ├── realtime-status.store.ts      Zustand: live | connecting | offline
+│   └── realtime-indicator.tsx        status dot in the top bar
 └── theme/use-theme.ts                light/dark preference
 
 src/components/
@@ -488,6 +523,7 @@ src/modules/
 ├── documents/       pages/document.page.tsx, components/{doc-tree,doc-editor,markdown-preview}.tsx
 ├── hr/              pages/{directory,departments,leave,leave-approvals}.page.tsx
 │                    components/{employee-card,department-form,leave-request-form,leave-balance-card,approval-queue}.tsx
+├── inbox/           pages/inbox.page.tsx, components/notification-item.tsx, lib/describe-notification.ts
 └── admin/           pages/{admin-users,admin-workspaces,admin-audit}.page.tsx
 ```
 

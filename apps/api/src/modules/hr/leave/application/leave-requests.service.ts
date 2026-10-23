@@ -8,6 +8,8 @@ import type {
   Paginated,
 } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../../core/audit/audit-logger.port.js';
+import { domainEvent, type DomainEventFacts } from '../../../../core/events/domain-event.js';
+import { EventBus } from '../../../../core/events/event-bus.port.js';
 import { UnitOfWork } from '../../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../../core/domain/domain-error.js';
 import { toPageRequest } from '../../../../core/domain/page-request.js';
@@ -33,6 +35,7 @@ export class LeaveRequestsService {
     private readonly unitOfWork: UnitOfWork,
     private readonly auditLogger: AuditLogger,
     private readonly clock: Clock,
+    private readonly eventBus: EventBus,
   ) {}
 
   async mine(actor: Actor, workspaceId: string): Promise<LeaveRequestResponse[]> {
@@ -71,6 +74,11 @@ export class LeaveRequestsService {
         ...(autoApprove && { decidedAt: this.clock.now(), decisionNote: 'Approved automatically' }),
       });
       if (autoApprove) await this.balances.addUsedDays(key, days);
+      await this.announce('created', actor, request.workspaceId, request.id, {
+        status: request.status,
+        userId: actor.userId,
+        title: leaveSubject(leaveType.name, body.startDate, body.endDate),
+      });
       return request;
     });
     return LeaveMapper.request(await this.getView(workspaceId, created.id));
@@ -99,6 +107,11 @@ export class LeaveRequestsService {
         workspaceId: access.workspaceId,
         metadata: { employee: request.userId, days: request.days, leaveType: request.leaveTypeName },
       });
+      await this.announce('updated', actor, access.workspaceId, request.id, {
+        status: body.decision,
+        userId: request.userId,
+        title: leaveSubject(request.leaveTypeName, request.startDate, request.endDate),
+      });
     });
     return LeaveMapper.request(await this.getView(access.workspaceId, requestId));
   }
@@ -120,6 +133,7 @@ export class LeaveRequestsService {
         });
       }
       await this.requests.save({ ...toRequest(request), status: 'cancelled' });
+      await this.announce('updated', actor, workspaceId, request.id, { status: 'cancelled', userId: request.userId });
     });
     return LeaveMapper.request(await this.getView(workspaceId, requestId));
   }
@@ -153,8 +167,17 @@ export class LeaveRequestsService {
     if (!request) throw DomainError.notFound('Leave request');
     return request;
   }
+
+  private announce(change: 'created' | 'updated', actor: Actor, workspaceId: string, requestId: string, facts: DomainEventFacts): Promise<void> {
+    return this.eventBus.publish(domainEvent('leave_request', change, { workspaceId, entityId: requestId, actorId: actor.userId, facts }));
+  }
 }
 
 function toRequest({ userName: _userName, leaveTypeName: _typeName, ...request }: LeaveRequestView): LeaveRequest {
   return request;
+}
+
+/** e.g. "Annual leave · 2026-11-13 to 2026-11-14", the subject of leave notifications. */
+function leaveSubject(leaveTypeName: string, startDate: string, endDate: string): string {
+  return startDate === endDate ? `${leaveTypeName} · ${startDate}` : `${leaveTypeName} · ${startDate} to ${endDate}`;
 }
