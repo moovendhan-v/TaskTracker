@@ -9,6 +9,17 @@ TaskFlow is a work-management app: tasks and boards, sprints, docs, and HR (peop
 | Shared | `@taskflow/shared-types` (domain constants and contracts), `@taskflow/sdk` (typed GraphQL operations generated from the schema) |
 | Infra | Docker Compose and Terraform (Docker provider) for the local stack, GitHub Actions CI |
 
+## Screenshots
+
+Captured from the demo workspace (`pnpm --filter @taskflow/api seed`). All of them are in [docs/screenshots](docs/screenshots).
+
+| | |
+|---|---|
+| ![Board view](docs/screenshots/04-board-view.png) | ![Task detail](docs/screenshots/05-task-detail.png) |
+| ![Sprints](docs/screenshots/06-sprints.png) | ![Docs](docs/screenshots/08-docs.png) |
+| ![People directory](docs/screenshots/09-people-directory.png) | ![Leave approvals](docs/screenshots/10-leave-approvals.png) |
+| ![Roles](docs/screenshots/11-roles.png) | ![Board in dark mode](docs/screenshots/15-board-dark.png) |
+
 ## Repository layout
 
 ```
