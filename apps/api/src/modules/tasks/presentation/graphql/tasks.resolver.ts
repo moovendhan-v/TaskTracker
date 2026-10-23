@@ -62,15 +62,21 @@ export class TasksResolver {
     @WorkspaceIdArg() _workspaceId: string,
     @UuidArg('taskId') taskId: string,
     @Args('input') input: UpdateTaskInput,
+    @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<TaskGql> {
-    return this.tasksService.update(access, taskId, input);
+    return this.tasksService.update(actor, access, taskId, input);
   }
 
   @Mutation(() => Boolean)
   @RequirePermissions('task.delete')
-  async deleteTask(@WorkspaceIdArg() _workspaceId: string, @UuidArg('taskId') taskId: string, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
-    await this.tasksService.remove(access.workspaceId, taskId);
+  async deleteTask(
+    @WorkspaceIdArg() _workspaceId: string,
+    @UuidArg('taskId') taskId: string,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<boolean> {
+    await this.tasksService.remove(actor, access.workspaceId, taskId);
     return true;
   }
 }

@@ -95,6 +95,9 @@ importers:
       typeorm:
         specifier: 1.1.2
         version: 1.1.2(pg@8.23.1)
+      ws:
+        specifier: 8.22.0
+        version: 8.22.0
       zod:
         specifier: 4.6.7
         version: 4.6.7
@@ -114,6 +117,12 @@ importers:
       '@types/smtp-server':
         specifier: 3.5.13
         version: 3.5.13
+      '@types/ws':
+        specifier: 8.18.2
+        version: 8.18.2
+      graphql-ws:
+        specifier: 6.3.0
+        version: 6.3.0(graphql@16.14.2)(ws@8.22.0)
       smtp-server:
         specifier: 3.19.17
         version: 3.19.17
@@ -228,6 +237,10 @@ importers:
         version: 4.1.12(@types/node@22.20.5)(jsdom@30.1.3(@noble/hashes@2.4.0))(vite@8.3.5(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/sdk:
+    dependencies:
+      graphql-ws:
+        specifier: 6.3.0
+        version: 6.3.0(graphql@16.14.2)(ws@8.22.0)
     devDependencies:
       '@graphql-codegen/core':
         specifier: 6.2.2
@@ -2047,6 +2060,9 @@ packages:
 
   '@types/validator@13.15.10':
     resolution: {integrity: sha512-T8L6i7wCuyoK8A/ZeLYt1+q0ty3Zb9+qbSSvrIVitzT3YjZqkTZ40IbRsPanlB4h1QB3JVL1SYCdR6ngtFYcuA==}
+
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@typescript-eslint/eslint-plugin@8.71.1':
     resolution: {integrity: sha512-nNlBf6HuotqMgZvSkWD5hNdemiBIxQ2NmrlgfcUIeZRs+BbakjscCQRq/Hb74EFVnFiSWWdL12JruqwBy3ERDw==}
@@ -6050,6 +6066,10 @@ snapshots:
   '@types/unist@3.0.3': {}
 
   '@types/validator@13.15.10': {}
+
+  '@types/ws@8.18.2':
+    dependencies:
+      '@types/node': 22.20.5
 
   '@typescript-eslint/eslint-plugin@8.71.1(@typescript-eslint/parser@8.71.1(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:

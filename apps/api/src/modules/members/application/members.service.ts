@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { AddMemberRequest, MemberResponse, UpdateMemberRoleRequest } from '@taskflow/shared-types';
+import type { AddMemberRequest, MemberResponse, Permission, UpdateMemberRoleRequest } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
+import { domainEvent } from '../../../core/events/domain-event.js';
+import { EventBus } from '../../../core/events/event-bus.port.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { RolesService } from '../../roles/application/roles.service.js';
 import { RoleGrantPolicy } from '../../roles/domain/role-grant.policy.js';
@@ -23,6 +25,7 @@ export class MembersService {
     private readonly usersService: UsersService,
     private readonly unitOfWork: UnitOfWork,
     private readonly auditLogger: AuditLogger,
+    private readonly eventBus: EventBus,
   ) {}
 
   async list(workspaceId: string): Promise<MemberResponse[]> {
@@ -51,6 +54,7 @@ export class MembersService {
         workspaceId: access.workspaceId,
         metadata: { roleId: role.id, roleName: role.name },
       });
+      await this.announce('created', actor, access.workspaceId, user.id, role.name);
     });
     return { message: ADD_MEMBER_MESSAGE };
   }
@@ -80,6 +84,7 @@ export class MembersService {
         workspaceId: access.workspaceId,
         metadata: { from: membership.roleName, to: role.name },
       });
+      await this.announce('updated', actor, access.workspaceId, userId, role.name);
     });
 
     const details = await this.members.findDetails(access.workspaceId, userId);
@@ -101,7 +106,14 @@ export class MembersService {
         targetId: userId,
         workspaceId: access.workspaceId,
       });
+      await this.announce('deleted', actor, access.workspaceId, userId);
     });
+  }
+
+  private announce(change: 'created' | 'updated' | 'deleted', actor: Actor, workspaceId: string, userId: string, roleName?: string): Promise<void> {
+    return this.eventBus.publish(
+      domainEvent('member', change, { workspaceId, entityId: userId, actorId: actor.userId, facts: { userId, roleName } }),
+    );
   }
 
   /** Adds the creator as owner of a new workspace. Call inside the workspace's transaction. */
@@ -115,6 +127,10 @@ export class MembersService {
 
   isMember(workspaceId: string, userId: string): Promise<boolean> {
     return this.members.isMember(workspaceId, userId);
+  }
+
+  listUserIdsWithPermission(workspaceId: string, permission: Permission): Promise<string[]> {
+    return this.members.listUserIdsWithPermission(workspaceId, permission);
   }
 
   private async getMembership(workspaceId: string, userId: string): Promise<MembershipWithRole> {

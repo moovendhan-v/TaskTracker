@@ -7,6 +7,8 @@ import type {
   UpdateTaskRequest,
 } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
+import { domainEvent } from '../../../core/events/domain-event.js';
+import { EventBus } from '../../../core/events/event-bus.port.js';
 import { toPageRequest } from '../../../core/domain/page-request.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { ListsService } from '../../lists/application/lists.service.js';
@@ -30,6 +32,7 @@ export class TasksService {
     private readonly membersService: MembersService,
     private readonly spacesService: SpacesService,
     private readonly sprintsService: SprintsService,
+    private readonly eventBus: EventBus,
   ) {}
 
   async listInList(workspaceId: string, listId: string, query: TaskQuery): Promise<Paginated<TaskResponse>> {
@@ -73,11 +76,13 @@ export class TasksService {
       position: (await this.tasks.maxPosition(workspaceId, listId)) + TASK_POSITION_STEP,
       createdById: actor.userId,
     });
+    await this.publish('created', actor, task);
     return TaskMapper.toResponse(task);
   }
 
-  async update(access: WorkspaceAccess, taskId: string, request: UpdateTaskRequest): Promise<TaskResponse> {
+  async update(actor: Actor, access: WorkspaceAccess, taskId: string, request: UpdateTaskRequest): Promise<TaskResponse> {
     const task = await this.getInWorkspace(access.workspaceId, taskId);
+    const previousAssigneeId = task.assigneeId;
 
     if (request.assigneeId !== undefined && request.assigneeId !== task.assigneeId) {
       if (request.assigneeId === null) TaskAssignmentPolicy.assertCanChangeAssignee(access.permissions);
@@ -95,12 +100,32 @@ export class TasksService {
     if (request.dueDate !== undefined) task.dueDate = request.dueDate ? new Date(request.dueDate) : null;
     if (request.position !== undefined) task.position = request.position;
 
-    return TaskMapper.toResponse(await this.tasks.save(task));
+    const saved = await this.tasks.save(task);
+    await this.publish('updated', actor, saved, previousAssigneeId);
+    return TaskMapper.toResponse(saved);
   }
 
-  async remove(workspaceId: string, taskId: string): Promise<void> {
-    await this.getInWorkspace(workspaceId, taskId);
+  async remove(actor: Actor, workspaceId: string, taskId: string): Promise<void> {
+    const task = await this.getInWorkspace(workspaceId, taskId);
     await this.tasks.delete(workspaceId, taskId);
+    await this.publish('deleted', actor, task);
+  }
+
+  /** Who cares about a task: for notifying people about comments on it. */
+  async participants(workspaceId: string, taskId: string): Promise<{ title: string; assigneeId: string | null; createdById: string }> {
+    const { title, assigneeId, createdById } = await this.getInWorkspace(workspaceId, taskId);
+    return { title, assigneeId, createdById };
+  }
+
+  private publish(change: 'created' | 'updated' | 'deleted', actor: Actor, task: Task, previousAssigneeId?: string | null): Promise<void> {
+    return this.eventBus.publish(
+      domainEvent('task', change, {
+        workspaceId: task.workspaceId,
+        entityId: task.id,
+        actorId: actor.userId,
+        facts: { title: task.title, assigneeId: task.assigneeId, previousAssigneeId, createdById: task.createdById },
+      }),
+    );
   }
 
   private async getInWorkspace(workspaceId: string, taskId: string): Promise<Task> {

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import type { CreateSpaceRequest, SpaceResponse, UpdateSpaceRequest } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
+import { changeOfAction, domainEvent } from '../../../core/events/domain-event.js';
+import { EventBus } from '../../../core/events/event-bus.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import type { Actor } from '../../../core/http/types/authenticated-request.js';
 import { DEFAULT_SPACE_COLOR, type Space } from '../domain/space.js';
@@ -12,6 +14,7 @@ export class SpacesService {
   constructor(
     private readonly spaces: SpaceRepository,
     private readonly auditLogger: AuditLogger,
+    private readonly eventBus: EventBus,
   ) {}
 
   async list(workspaceId: string): Promise<SpaceResponse[]> {
@@ -50,13 +53,15 @@ export class SpacesService {
     return space;
   }
 
-  private audit(actor: Actor, action: string, space: Space) {
-    return this.auditLogger.record(actor, {
+  private async audit(actor: Actor, action: string, space: Space): Promise<void> {
+    await this.auditLogger.record(actor, {
       action,
       targetType: 'space',
       targetId: space.id,
       workspaceId: space.workspaceId,
       metadata: { name: space.name },
     });
+    // Live updates for everyone looking at this workspace.
+    await this.eventBus.publish(domainEvent('space', changeOfAction(action), { workspaceId: space.workspaceId, entityId: space.id, actorId: actor.userId }));
   }
 }

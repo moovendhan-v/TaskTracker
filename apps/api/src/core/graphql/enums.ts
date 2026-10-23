@@ -3,7 +3,9 @@ import {
   EMPLOYMENT_TYPES,
   LEAVE_DECISIONS,
   LEAVE_STATUSES,
+  NOTIFICATION_KINDS,
   PLATFORM_ROLES,
+  REALTIME_ENTITY_TYPES,
   SPRINT_STATUSES,
   TASK_PRIORITIES,
   TASK_STATUSES,
@@ -21,6 +23,8 @@ export const LeaveStatusEnum = enumOf(LEAVE_STATUSES);
 export const LeaveDecisionEnum = enumOf(LEAVE_DECISIONS);
 export const EmploymentTypeEnum = enumOf(EMPLOYMENT_TYPES);
 export const PlatformRoleEnum = enumOf(PLATFORM_ROLES);
+export const NotificationKindEnum = enumOf(NOTIFICATION_KINDS);
+export const RealtimeEntityTypeEnum = enumOf(REALTIME_ENTITY_TYPES);
 
 registerEnumType(TaskStatusEnum, { name: 'TaskStatus' });
 registerEnumType(TaskPriorityEnum, { name: 'TaskPriority' });
@@ -29,3 +33,5 @@ registerEnumType(LeaveStatusEnum, { name: 'LeaveStatus' });
 registerEnumType(LeaveDecisionEnum, { name: 'LeaveDecision' });
 registerEnumType(EmploymentTypeEnum, { name: 'EmploymentType' });
 registerEnumType(PlatformRoleEnum, { name: 'PlatformRole' });
+registerEnumType(NotificationKindEnum, { name: 'NotificationKind' });
+registerEnumType(RealtimeEntityTypeEnum, { name: 'RealtimeEntityType' });

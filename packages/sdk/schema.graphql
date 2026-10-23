@@ -328,6 +328,12 @@ type Mutation {
   """Leave a workspace. The last owner cannot leave."""
   leaveWorkspace(workspaceId: ID!): Boolean!
 
+  """Returns how many were unread"""
+  markAllNotificationsRead(workspaceId: ID!): Int!
+
+  """Returns how many were unread"""
+  markNotificationsRead(ids: [ID!]!, workspaceId: ID!): Int!
+
   """parentId null moves the page to the top level"""
   moveDocument(documentId: ID!, parentId: ID, position: Float, workspaceId: ID!): Document!
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
@@ -352,6 +358,41 @@ type Mutation {
   updateTask(input: UpdateTaskInput!, taskId: ID!, workspaceId: ID!): Task!
   updateWorkspace(input: UpdateWorkspaceInput!, workspaceId: ID!): Workspace!
   upsertEmployeeProfile(input: EmployeeProfileInput!, userId: ID!, workspaceId: ID!): Employee!
+}
+
+type Notification {
+  actorId: ID
+  actorName: String
+  createdAt: String!
+  entityId: ID!
+  entityType: String!
+
+  """Plain text; render as text, never HTML"""
+  excerpt: String!
+  id: ID!
+  kind: NotificationKind!
+  readAt: String
+
+  """What it is about, e.g. the task title"""
+  subject: String!
+
+  """The task to open, when the notification is about one"""
+  taskId: ID
+}
+
+enum NotificationKind {
+  leave_decided
+  leave_requested
+  member_added
+  task_assigned
+  task_commented
+}
+
+type NotificationPage {
+  items: [Notification!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
 }
 
 enum PlatformRole {
@@ -426,6 +467,16 @@ type Query {
     year: Int
   ): [LeaveBalance!]!
   myLeaveRequests(workspaceId: ID!): [LeaveRequest!]!
+
+  """Your notifications in this workspace, newest first"""
+  notifications(
+    page: Int
+
+    """1 to 100"""
+    pageSize: Int
+    unreadOnly: Boolean
+    workspaceId: ID!
+  ): NotificationPage!
   roles(workspaceId: ID!): [Role!]!
   spaces(workspaceId: ID!): [Space!]!
   sprint(sprintId: ID!, workspaceId: ID!): Sprint!
@@ -442,6 +493,7 @@ type Query {
     status: TaskStatus
     workspaceId: ID!
   ): TaskPage!
+  unreadNotificationCount(workspaceId: ID!): Int!
   workspace(workspaceId: ID!): Workspace!
 
   """This workspace’s audit log, newest first, without IP addresses"""
@@ -460,6 +512,18 @@ type Query {
 
   """Workspaces the caller belongs to"""
   workspaces: [Workspace!]!
+}
+
+enum RealtimeEntityType {
+  comment
+  document
+  leave_request
+  list
+  member
+  notification
+  space
+  sprint
+  task
 }
 
 input RequestLeaveInput {
@@ -510,6 +574,11 @@ enum SprintStatus {
   active
   completed
   planned
+}
+
+type Subscription {
+  """Live changes in a workspace, including your own new notifications"""
+  workspaceEvents(workspaceId: ID!): WorkspaceEvent!
 }
 
 type Task {
@@ -628,4 +697,15 @@ type Workspace {
 
   """The caller's role in this workspace"""
   roleName: String!
+}
+
+"""Something changed. Ids only: refetch the affected views to see it."""
+type WorkspaceEvent {
+  actorId: ID!
+  entityId: ID!
+  entityType: RealtimeEntityType!
+  occurredAt: String!
+
+  """e.g. task.updated"""
+  type: String!
 }

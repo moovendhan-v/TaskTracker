@@ -93,6 +93,11 @@ export class TestUser {
     return { code: error.extensions?.code, message: error.message };
   }
 
+  /** The Cookie header this user's browser would send, e.g. on a WebSocket handshake. */
+  cookieHeader(): string {
+    return [...this.cookies].map(([name, value]) => `${name}=${value}`).join('; ');
+  }
+
   signOut(): void {
     this.cookies.clear();
   }

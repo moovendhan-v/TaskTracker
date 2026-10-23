@@ -4,7 +4,7 @@ import type { GqlContextType } from '@nestjs/graphql';
 import { from, lastValueFrom, type Observable } from 'rxjs';
 import type { DataScope } from '../database/data-scope.js';
 import { TransactionalManager } from '../database/transactional-manager.js';
-import { getRequest } from '../http/request-context.js';
+import { getRequest, isSubscription } from '../http/request-context.js';
 import type { AuthenticatedRequest } from '../http/types/authenticated-request.js';
 import { REQUIRES_PLATFORM_ADMIN_KEY } from './require-platform-admin.decorator.js';
 
@@ -34,7 +34,8 @@ export class DataScopeInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    if (context.getType<GqlContextType>() !== 'graphql') return next.handle();
+    // A subscription lives as long as its socket, so it can't hold a transaction; it reads no tenant rows itself.
+    if (context.getType<GqlContextType>() !== 'graphql' || isSubscription(context)) return next.handle();
 
     const requiresPlatformAdmin =
       this.reflector.getAllAndOverride<boolean>(REQUIRES_PLATFORM_ADMIN_KEY, [context.getHandler(), context.getClass()]) ?? false;

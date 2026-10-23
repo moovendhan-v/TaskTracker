@@ -8,6 +8,7 @@ import { mountAuthRoutes } from './bootstrap/auth-routes.bootstrap.js';
 import { applyBodyParsers } from './bootstrap/body-parsers.bootstrap.js';
 import { applySecurity } from './bootstrap/security.bootstrap.js';
 import { applyValidation } from './bootstrap/validation.bootstrap.js';
+import { rejectStrayUpgrades } from './bootstrap/websocket.bootstrap.js';
 import { ENV } from './config/config.module.js';
 import type { Env } from './config/env.schema.js';
 
@@ -23,6 +24,7 @@ async function bootstrap(): Promise<void> {
   applyBodyParsers(app);
   app.setGlobalPrefix(API_PREFIX);
   applyValidation(app, env);
+  rejectStrayUpgrades(app);
   app.enableShutdownHooks();
 
   await app.listen(env.PORT);

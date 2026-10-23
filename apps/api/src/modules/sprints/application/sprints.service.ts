@@ -6,6 +6,8 @@ import type {
   UpdateSprintRequest,
 } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
+import { changeOfAction, domainEvent } from '../../../core/events/domain-event.js';
+import { EventBus } from '../../../core/events/event-bus.port.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import type { Actor } from '../../../core/http/types/authenticated-request.js';
@@ -24,6 +26,7 @@ export class SprintsService {
     private readonly spacesService: SpacesService,
     private readonly unitOfWork: UnitOfWork,
     private readonly auditLogger: AuditLogger,
+    private readonly eventBus: EventBus,
     private readonly clock: Clock,
   ) {}
 
@@ -118,14 +121,16 @@ export class SprintsService {
     return sprint;
   }
 
-  private audit(actor: Actor, action: string, sprint: Sprint, metadata?: Record<string, unknown>) {
-    return this.auditLogger.record(actor, {
+  private async audit(actor: Actor, action: string, sprint: Sprint, metadata?: Record<string, unknown>): Promise<void> {
+    await this.auditLogger.record(actor, {
       action,
       targetType: 'sprint',
       targetId: sprint.id,
       workspaceId: sprint.workspaceId,
       metadata: { name: sprint.name, spaceId: sprint.spaceId, ...metadata },
     });
+    // Live updates for everyone looking at this workspace.
+    await this.eventBus.publish(domainEvent('sprint', changeOfAction(action), { workspaceId: sprint.workspaceId, entityId: sprint.id, actorId: actor.userId }));
   }
 }
 
