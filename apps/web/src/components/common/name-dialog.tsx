@@ -1,22 +1,24 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { NAME_MAX } from '@taskflow/shared-types';
+import { Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { useServerForm } from '@/core/forms/use-server-form';
 import { ColorPicker, PALETTE } from './color-picker';
 
-const schema = z.object({ name: z.string().trim().min(1, 'Enter a name').max(NAME_MAX), color: z.string() });
-export type NameDialogValues = z.infer<typeof schema>;
+export interface NameDialogValues {
+  name: string;
+  color: string;
+}
 
 interface NameDialogProps {
   trigger: ReactNode;
   title: string;
   description?: string;
   submitLabel: string;
+  /** The API form whose rules apply, e.g. `space.create`. */
+  formName: string;
   placeholder?: string;
   withColor?: boolean;
   defaultValues?: Partial<NameDialogValues>;
@@ -24,10 +26,9 @@ interface NameDialogProps {
 }
 
 /** Reusable "name this thing" dialog for spaces, lists, departments and similar. */
-export function NameDialog({ trigger, title, description, submitLabel, placeholder, withColor = false, defaultValues, onSubmit }: NameDialogProps) {
+export function NameDialog({ trigger, title, description, submitLabel, formName, placeholder, withColor = false, defaultValues, onSubmit }: NameDialogProps) {
   const [open, setOpen] = useState(false);
-  const form = useForm<NameDialogValues>({
-    resolver: zodResolver(schema),
+  const { form, applyServerErrors, hints } = useServerForm<NameDialogValues>(formName, {
     defaultValues: { name: '', color: PALETTE[1], ...defaultValues },
   });
 
@@ -36,8 +37,12 @@ export function NameDialog({ trigger, title, description, submitLabel, placehold
   }, [open, defaultValues, form]);
 
   const submit = form.handleSubmit(async (values) => {
-    await onSubmit(values);
-    setOpen(false);
+    try {
+      await onSubmit(values);
+      setOpen(false);
+    } catch (error) {
+      if (!applyServerErrors(error)) throw error;
+    }
   });
 
   return (
@@ -50,7 +55,7 @@ export function NameDialog({ trigger, title, description, submitLabel, placehold
         </DialogHeader>
         <form onSubmit={submit} className="grid gap-4" noValidate>
           <FormField id="name-dialog-name" label="Name" error={form.formState.errors.name?.message}>
-            <Input id="name-dialog-name" placeholder={placeholder} autoFocus {...form.register('name')} />
+            <Input id="name-dialog-name" placeholder={placeholder} autoFocus maxLength={hints('name').maxLength} {...form.register('name')} />
           </FormField>
           {withColor ? (
             <div className="grid gap-1.5">

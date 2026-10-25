@@ -28,6 +28,7 @@ import { MembersModule } from './modules/members/members.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { RealtimeFeatureModule } from './modules/realtime/realtime.module.js';
 import { ResourcesModule } from './modules/resources/resources.module.js';
+import { FormsModule } from './modules/forms/forms.module.js';
 import { RolesModule } from './modules/roles/roles.module.js';
 import { SpacesModule } from './modules/spaces/spaces.module.js';
 import { SprintsModule } from './modules/sprints/sprints.module.js';
@@ -67,6 +68,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     NotificationsModule,
     RealtimeFeatureModule,
     ResourcesModule,
+    FormsModule,
   ],
   providers: [
     // Order matters: the session guard sets req.user, which the throttler uses as its key.

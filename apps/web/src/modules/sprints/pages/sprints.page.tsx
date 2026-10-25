@@ -57,6 +57,7 @@ export function SprintsPage({ workspaceId, spaceId, openTaskId }: SprintsPagePro
         actions={
           canManage ? (
             <SprintFormDialog
+              formName="sprint.create"
               trigger={
                 <Button size="sm">
                   <PlusIcon /> New sprint

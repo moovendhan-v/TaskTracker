@@ -1,5 +1,6 @@
 import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { IsIn, IsISO8601, IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
+import { IsIn, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsCalendarDate, IsClearable } from '../../../../../core/graphql/validation.js';
 import {
   EMPLOYMENT_TYPES,
   JOB_TITLE_MAX,
@@ -8,6 +9,7 @@ import {
   type UpsertEmployeeProfileRequest,
 } from '@taskflow/shared-types';
 import { EmploymentTypeEnum } from '../../../../../core/graphql/enums.js';
+import { FormSchema } from '../../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('Employee')
 export class EmployeeGql implements EmployeeResponse {
@@ -23,37 +25,33 @@ export class EmployeeGql implements EmployeeResponse {
 }
 
 /** Omit a field to keep it; send null to clear it. */
+@FormSchema('hr.employee.update')
 @InputType()
 export class EmployeeProfileInput implements UpsertEmployeeProfileRequest {
   @Field(() => String, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsString()
   @MaxLength(JOB_TITLE_MAX)
   jobTitle?: string | null;
 
   @Field(() => ID, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsUUID('4')
   departmentId?: string | null;
 
   @Field(() => ID, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsString()
   @MaxLength(64)
   managerUserId?: string | null;
 
   @Field(() => EmploymentTypeEnum, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsIn(EMPLOYMENT_TYPES)
   employmentType?: EmploymentType | null;
 
   @Field(() => String, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
-  @IsISO8601({ strict: true })
+  @IsClearable()
+  @IsCalendarDate()
   startDate?: string | null;
 }

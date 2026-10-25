@@ -25,6 +25,7 @@ export function DepartmentsPage({ workspaceId }: { workspaceId: string }) {
         actions={
           canManage ? (
             <NameDialog
+              formName="hr.department.create"
               trigger={
                 <Button size="sm">
                   <PlusIcon /> New department
@@ -49,6 +50,7 @@ export function DepartmentsPage({ workspaceId }: { workspaceId: string }) {
               {canManage ? (
                 <>
                   <NameDialog
+                    formName="hr.department.update"
                     trigger={
                       <Button variant="ghost" size="icon-sm" aria-label={`Rename ${department.name}`}>
                         <PencilIcon />

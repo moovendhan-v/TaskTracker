@@ -1,26 +1,27 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { UserPlusIcon } from 'lucide-react';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { Controller } from 'react-hook-form';
 import type { RoleResponse } from '@taskflow/shared-types';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
+import { useServerForm } from '@/core/forms/use-server-form';
 import { getErrorMessage } from '@/lib/errors';
 import { useMemberMutations } from '../hooks/use-members';
 import { RoleSelect } from './role-select';
 
-const schema = z.object({ email: z.email('Enter a valid email').max(254), roleId: z.string().min(1, 'Choose a role') });
-type Values = z.infer<typeof schema>;
+interface Values {
+  email: string;
+  roleId: string;
+}
 
 export function AddMemberDialog({ workspaceId, roles }: { workspaceId: string; roles: RoleResponse[] }) {
   const [open, setOpen] = useState(false);
   const { add } = useMemberMutations(workspaceId);
   const defaultRole = roles.find((role) => role.systemKey === 'member')?.id ?? '';
-  const form = useForm<Values>({ resolver: zodResolver(schema), values: { email: '', roleId: defaultRole } });
+  const { form, applyServerErrors } = useServerForm<Values>('member.add', { values: { email: '', roleId: defaultRole } });
 
   const submit = form.handleSubmit((values) =>
     add.mutate(values, {
@@ -29,7 +30,9 @@ export function AddMemberDialog({ workspaceId, roles }: { workspaceId: string; r
         form.reset();
         setOpen(false);
       },
-      onError: (error) => toast.error(getErrorMessage(error)),
+      onError: (error) => {
+        if (!applyServerErrors(error)) toast.error(getErrorMessage(error));
+      },
     }),
   );
 

@@ -163,6 +163,11 @@ src/core/
 │   ├── cached.decorator.ts           @Cached({ entities, shared?, ttlSeconds? }) for read methods; mutations always bypass it
 │   ├── cache-invalidator.ts          drops tags on every domain event, in the transaction and again after commit on every instance
 │   └── cache.module.ts
+├── forms/                            ✅ validation rules published to clients
+│   ├── form-field.decorators.ts      IsOmittable, IsClearable, IsNullable, IsNotBlank, IsCalendarDate, OnOrAfter, WithinDaysOf, SameAs, Label
+│   ├── describe-rules.ts             class-validator metadata → rules with readable messages; per-field errors
+│   ├── form-schema.decorators.ts     @FormSchema('task.create') registry and schema builder
+│   └── field-validation.exception.ts BAD_USER_INPUT with extensions.fields
 ├── query/                            ✅ filter language for list endpoints
 │   ├── query-resource.decorators.ts  @QueryResource and @QueryField: fields, SQL columns, operators, sorting, paging, permissions
 │   ├── normalize-query.ts            checks a client query against a resource (fields, operators, values, @me, limits)
@@ -403,6 +408,8 @@ src/modules/
 │   │                                             and membership every 30 s and ends the stream when either is gone
 │   └── presentation/graphql/{workspace-events.resolver.ts,workspace-event.types.ts}
 │
+├── forms/                                        ✅ public formSchemas query (rules only, no data)
+│
 ├── resources/                                    ✅ resourceSchema and resourceNames queries
 │   ├── application/resource-schema.service.ts    unknown and forbidden resources both answer NOT_FOUND
 │   └── presentation/graphql/resource-schema.resolver.ts
@@ -478,6 +485,10 @@ src/core/
 │   ├── session.ts                    hasSession() for route guards
 │   ├── use-current-user.ts           query me
 │   └── turnstile-widget.tsx          CAPTCHA widget for public forms (off when no site key)
+├── forms/
+│   ├── use-form-schema.ts            all form rules, loaded once
+│   ├── schema-resolver.ts            react-hook-form resolver from the API's rules (shared validateForm)
+│   └── use-server-form.ts            useServerForm(name): resolver, server field errors, input hints
 ├── realtime/
 │   ├── use-workspace-events.ts       subscribes while a workspace is open and refreshes the affected queries
 │   ├── invalidations.ts              entity type → query keys to refresh

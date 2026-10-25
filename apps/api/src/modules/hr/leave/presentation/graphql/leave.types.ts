@@ -1,5 +1,5 @@
 import { ArgsType, Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { IsBoolean, IsIn, IsInt, IsISO8601, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from 'class-validator';
 import {
   COLOR_PATTERN,
   LEAVE_ALLOWANCE_MAX,
@@ -19,7 +19,8 @@ import {
 } from '@taskflow/shared-types';
 import { LeaveDecisionEnum, LeaveStatusEnum } from '../../../../../core/graphql/enums.js';
 import { PageOf, WorkspacePageArgs } from '../../../../../core/graphql/page.type.js';
-import { IsOmittable } from '../../../../../core/graphql/validation.js';
+import { IsCalendarDate, IsClearable, IsNotBlank, IsNullable, IsOmittable, OnOrAfter } from '../../../../../core/graphql/validation.js';
+import { FormSchema } from '../../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('LeaveType')
 export class LeaveTypeGql implements LeaveTypeResponse {
@@ -30,11 +31,12 @@ export class LeaveTypeGql implements LeaveTypeResponse {
   @Field() requiresApproval: boolean;
 }
 
+@FormSchema('hr.leaveType.create')
 @InputType()
 export class CreateLeaveTypeInput implements CreateLeaveTypeRequest {
   @Field()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(NAME_MAX)
   name: string;
 
@@ -44,7 +46,7 @@ export class CreateLeaveTypeInput implements CreateLeaveTypeRequest {
   color?: string;
 
   @Field(() => Int, { nullable: true, description: 'null means unlimited' })
-  @ValidateIf((_, value) => value !== null)
+  @IsNullable()
   @IsInt()
   @Min(0)
   @Max(LEAVE_ALLOWANCE_MAX)
@@ -56,12 +58,13 @@ export class CreateLeaveTypeInput implements CreateLeaveTypeRequest {
   requiresApproval?: boolean;
 }
 
+@FormSchema('hr.leaveType.update')
 @InputType()
 export class UpdateLeaveTypeInput implements UpdateLeaveTypeRequest {
   @Field({ nullable: true })
   @IsOmittable()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(NAME_MAX)
   name?: string;
 
@@ -71,8 +74,7 @@ export class UpdateLeaveTypeInput implements UpdateLeaveTypeRequest {
   color?: string;
 
   @Field(() => Int, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsInt()
   @Min(0)
   @Max(LEAVE_ALLOWANCE_MAX)
@@ -115,6 +117,7 @@ export class LeaveQueueArgs extends WorkspacePageArgs {
   status?: LeaveStatus;
 }
 
+@FormSchema('hr.leave.request')
 @InputType()
 export class RequestLeaveInput implements CreateLeaveRequestRequest {
   @Field(() => ID)
@@ -122,11 +125,12 @@ export class RequestLeaveInput implements CreateLeaveRequestRequest {
   leaveTypeId: string;
 
   @Field({ description: 'yyyy-mm-dd' })
-  @IsISO8601({ strict: true })
+  @IsCalendarDate()
   startDate: string;
 
   @Field({ description: 'yyyy-mm-dd' })
-  @IsISO8601({ strict: true })
+  @IsCalendarDate()
+  @OnOrAfter('startDate')
   endDate: string;
 
   @Field({ nullable: true })
@@ -136,6 +140,7 @@ export class RequestLeaveInput implements CreateLeaveRequestRequest {
   reason?: string;
 }
 
+@FormSchema('hr.leave.decide')
 @InputType()
 export class DecideLeaveInput implements DecideLeaveRequestRequest {
   @Field(() => LeaveDecisionEnum)

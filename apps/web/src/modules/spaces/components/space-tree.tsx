@@ -30,6 +30,7 @@ export function SpaceTree({ workspaceId }: { workspaceId: string }) {
       action={
         can('space.manage') ? (
           <NameDialog
+            formName="space.create"
             trigger={
               <button type="button" className="rounded p-0.5 text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground" aria-label="New space">
                 <PlusIcon className="size-4" />
@@ -81,6 +82,7 @@ function SpaceNode({ workspaceId, space, lists }: SpaceNodeProps) {
         </button>
         {can('list.manage') ? (
           <NameDialog
+            formName="list.save"
             trigger={
               <button type="button" className={iconButton} aria-label={`New list in ${space.name}`}>
                 <PlusIcon className="size-3.5" />
@@ -99,6 +101,7 @@ function SpaceNode({ workspaceId, space, lists }: SpaceNodeProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <NameDialog
+                formName="space.update"
                 trigger={
                   <DropdownMenuItem onSelect={(event) => event.preventDefault()}>
                     <PencilIcon /> Rename

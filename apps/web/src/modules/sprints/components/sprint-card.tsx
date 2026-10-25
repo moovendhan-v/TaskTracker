@@ -56,6 +56,7 @@ export function SprintCard({ workspaceId, sprint, plannedSprints, canManage, onS
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <SprintFormDialog
+                formName="sprint.update"
                 trigger={
                   <DropdownMenuItem onSelect={(event) => event.preventDefault()}>
                     <PencilIcon /> Edit

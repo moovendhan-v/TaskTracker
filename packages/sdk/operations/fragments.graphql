@@ -69,3 +69,8 @@ fragment ResourceSchemaFields on ResourceSchema {
   limits { maxDepth maxConditions maxListValues maxSortFields }
   fields { name label type operators sortable defaultVisible keyed display width options { value label color } }
 }
+
+fragment FormSchemaFields on FormSchema {
+  name
+  fields { name label type required nullable rules { kind value values field message } }
+}

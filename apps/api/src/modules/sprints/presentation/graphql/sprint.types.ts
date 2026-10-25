@@ -1,15 +1,17 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { IsISO8601, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsString, MaxLength } from 'class-validator';
 import {
   NAME_MAX,
   SPRINT_GOAL_MAX,
+  SPRINT_MAX_DAYS,
   type CreateSprintRequest,
   type SprintResponse,
   type SprintStatus,
   type UpdateSprintRequest,
 } from '@taskflow/shared-types';
 import { SprintStatusEnum } from '../../../../core/graphql/enums.js';
-import { IsOmittable } from '../../../../core/graphql/validation.js';
+import { IsCalendarDate, IsNotBlank, IsOmittable, OnOrAfter, WithinDaysOf } from '../../../../core/graphql/validation.js';
+import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('Sprint')
 export class SprintGql implements SprintResponse {
@@ -25,11 +27,12 @@ export class SprintGql implements SprintResponse {
   @Field(() => String, { nullable: true }) completedAt: string | null;
 }
 
+@FormSchema('sprint.create')
 @InputType()
 export class CreateSprintInput implements CreateSprintRequest {
   @Field()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(NAME_MAX)
   name: string;
 
@@ -40,20 +43,23 @@ export class CreateSprintInput implements CreateSprintRequest {
   goal?: string;
 
   @Field({ description: 'yyyy-mm-dd' })
-  @IsISO8601({ strict: true })
+  @IsCalendarDate()
   startDate: string;
 
   @Field({ description: 'yyyy-mm-dd' })
-  @IsISO8601({ strict: true })
+  @IsCalendarDate()
+  @OnOrAfter('startDate')
+  @WithinDaysOf('startDate', SPRINT_MAX_DAYS)
   endDate: string;
 }
 
+@FormSchema('sprint.update')
 @InputType()
 export class UpdateSprintInput implements UpdateSprintRequest {
   @Field({ nullable: true })
   @IsOmittable()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(NAME_MAX)
   name?: string;
 
@@ -65,11 +71,13 @@ export class UpdateSprintInput implements UpdateSprintRequest {
 
   @Field({ nullable: true })
   @IsOmittable()
-  @IsISO8601({ strict: true })
+  @IsCalendarDate()
   startDate?: string;
 
   @Field({ nullable: true })
   @IsOmittable()
-  @IsISO8601({ strict: true })
+  @IsCalendarDate()
+  @OnOrAfter('startDate')
+  @WithinDaysOf('startDate', SPRINT_MAX_DAYS)
   endDate?: string;
 }

@@ -418,6 +418,13 @@ export type DeleteDocumentMutationVariables = Exact<{
 
 export type DeleteDocumentMutation = { deleteDocument: boolean };
 
+export type FormSchemasQueryVariables = Exact<{
+  names?: Array<string> | string | null | undefined;
+}>;
+
+
+export type FormSchemasQuery = { formSchemas: Array<{ name: string, fields: Array<{ name: string, label: string | null, type: string, required: boolean, nullable: boolean, rules: Array<{ kind: string, value: string | null, values: Array<string> | null, field: string | null, message: string }> }> }> };
+
 export type CurrentUserFieldsFragment = { id: string, email: string, name: string, image: string | null, platformRole: PlatformRole, emailVerified: boolean };
 
 export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string };
@@ -459,6 +466,8 @@ export type AdminWorkspaceFieldsFragment = { id: string, name: string, ownerId: 
 export type NotificationFieldsFragment = { id: string, kind: NotificationKind, actorId: string | null, actorName: string | null, entityType: string, entityId: string, taskId: string | null, subject: string, excerpt: string, readAt: string | null, createdAt: string };
 
 export type ResourceSchemaFieldsFragment = { resource: string, label: string, logic: Array<LogicOperator>, searchable: boolean, defaultPageSize: number, maxPageSize: number, defaultSort: Array<{ field: string, direction: SortDirection }>, limits: { maxDepth: number, maxConditions: number, maxListValues: number, maxSortFields: number }, fields: Array<{ name: string, label: string, type: FieldType, operators: Array<FilterOperator>, sortable: boolean, defaultVisible: boolean, keyed: boolean, display: string | null, width: number | null, options: Array<{ value: string, label: string, color: string | null }> | null }> };
+
+export type FormSchemaFieldsFragment = { name: string, fields: Array<{ name: string, label: string | null, type: string, required: boolean, nullable: boolean, rules: Array<{ kind: string, value: string | null, values: Array<string> | null, field: string | null, message: string }> }> };
 
 export type DepartmentsQueryVariables = Exact<{
   workspaceId: string;
@@ -1259,6 +1268,25 @@ export const ResourceSchemaFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"ResourceSchemaFields"}) as unknown as TypedDocumentString<ResourceSchemaFieldsFragment, unknown>;
+export const FormSchemaFieldsFragmentDoc = new TypedDocumentString(`
+    fragment FormSchemaFields on FormSchema {
+  name
+  fields {
+    name
+    label
+    type
+    required
+    nullable
+    rules {
+      kind
+      value
+      values
+      field
+      message
+    }
+  }
+}
+    `, {"fragmentName":"FormSchemaFields"}) as unknown as TypedDocumentString<FormSchemaFieldsFragment, unknown>;
 export const AdminUsersDocument = new TypedDocumentString(`
     query AdminUsers($search: String, $page: Int, $pageSize: Int) {
   adminUsers(search: $search, page: $page, pageSize: $pageSize) {
@@ -1518,6 +1546,29 @@ export const DeleteDocumentDocument = new TypedDocumentString(`
   deleteDocument(workspaceId: $workspaceId, documentId: $documentId)
 }
     `) as unknown as TypedDocumentString<DeleteDocumentMutation, DeleteDocumentMutationVariables>;
+export const FormSchemasDocument = new TypedDocumentString(`
+    query FormSchemas($names: [String!]) {
+  formSchemas(names: $names) {
+    ...FormSchemaFields
+  }
+}
+    fragment FormSchemaFields on FormSchema {
+  name
+  fields {
+    name
+    label
+    type
+    required
+    nullable
+    rules {
+      kind
+      value
+      values
+      field
+      message
+    }
+  }
+}`) as unknown as TypedDocumentString<FormSchemasQuery, FormSchemasQueryVariables>;
 export const DepartmentsDocument = new TypedDocumentString(`
     query Departments($workspaceId: ID!) {
   departments(workspaceId: $workspaceId) {

@@ -1,24 +1,23 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { hasFieldErrors, useServerForm } from '@/core/forms/use-server-form';
 import { captchaSatisfied, TurnstileWidget } from '@/core/auth/turnstile-widget';
 import { getErrorMessage } from '@/lib/errors';
 import { AuthLayout } from '../components/auth-layout';
-import { signInSchema, type SignInValues } from '../components/auth-schemas';
+import type { SignInValues } from '../components/auth-schemas';
 import { FormError } from '../components/form-error';
 import { useSignIn } from '../hooks/use-auth-actions';
 
 export function SignInPage() {
   const [captcha, setCaptcha] = useState<string | null>(null);
   const signIn = useSignIn();
-  const form = useForm<SignInValues>({ resolver: zodResolver(signInSchema), defaultValues: { email: '', password: '' } });
+  const { form, applyServerErrors } = useServerForm<SignInValues>('auth.signIn', { defaultValues: { email: '', password: '' } });
   const { errors } = form.formState;
 
-  const onSubmit = form.handleSubmit((values) => signIn.mutate({ ...values, captcha }));
+  const onSubmit = form.handleSubmit((values) => signIn.mutate({ ...values, captcha }, { onError: applyServerErrors }));
 
   return (
     <AuthLayout
@@ -34,7 +33,7 @@ export function SignInPage() {
       }
     >
       <form onSubmit={onSubmit} className="grid gap-4" noValidate>
-        <FormError message={signIn.error ? getErrorMessage(signIn.error) : null} />
+        <FormError message={signIn.error && !hasFieldErrors(signIn.error) ? getErrorMessage(signIn.error) : null} />
         <FormField id="email" label="Email" error={errors.email?.message}>
           <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...form.register('email')} />
         </FormField>

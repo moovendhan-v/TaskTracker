@@ -1,5 +1,5 @@
 import { ArgsType, Field, Float, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
+import { IsDateString, IsIn, IsNumber, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import {
   TASK_DESCRIPTION_MAX,
   TASK_PRIORITIES,
@@ -15,7 +15,8 @@ import {
 import { TaskPriorityEnum, TaskStatusEnum } from '../../../../core/graphql/enums.js';
 import { MetadataScalar } from '../../../../core/graphql/metadata.scalar.js';
 import { PageOf, WorkspacePageArgs } from '../../../../core/graphql/page.type.js';
-import { IsOmittable } from '../../../../core/graphql/validation.js';
+import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
+import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('Task')
 export class TaskGql implements TaskResponse {
@@ -55,11 +56,12 @@ export class TaskListArgs extends WorkspacePageArgs {
   search?: string;
 }
 
+@FormSchema('task.create')
 @InputType()
 export class CreateTaskInput implements CreateTaskRequest {
   @Field()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(TASK_TITLE_MAX)
   title: string;
 
@@ -80,14 +82,12 @@ export class CreateTaskInput implements CreateTaskRequest {
   priority?: TaskPriority;
 
   @Field(() => String, { nullable: true, description: 'ISO date-time; null clears it' })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsDateString()
   dueDate?: string | null;
 
   @Field(() => ID, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsString()
   @MaxLength(64)
   assigneeId?: string | null;
@@ -97,12 +97,13 @@ export class CreateTaskInput implements CreateTaskRequest {
   metadata?: TaskMetadata;
 }
 
+@FormSchema('task.update')
 @InputType()
 export class UpdateTaskInput implements UpdateTaskRequest {
   @Field({ nullable: true })
   @IsOmittable()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(TASK_TITLE_MAX)
   title?: string;
 
@@ -123,14 +124,12 @@ export class UpdateTaskInput implements UpdateTaskRequest {
   priority?: TaskPriority;
 
   @Field(() => String, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsDateString()
   dueDate?: string | null;
 
   @Field(() => ID, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsString()
   @MaxLength(64)
   assigneeId?: string | null;
@@ -141,8 +140,7 @@ export class UpdateTaskInput implements UpdateTaskRequest {
   position?: number;
 
   @Field(() => ID, { nullable: true, description: 'null moves the task to the backlog; needs sprint.manage' })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsUUID('4')
   sprintId?: string | null;
 

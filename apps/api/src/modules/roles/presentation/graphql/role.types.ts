@@ -1,5 +1,5 @@
 import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { ArrayMaxSize, ArrayUnique, IsArray, IsIn, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { ArrayMaxSize, ArrayUnique, IsArray, IsIn, IsString, MaxLength } from 'class-validator';
 import {
   PERMISSIONS,
   ROLE_NAME_MAX,
@@ -8,7 +8,8 @@ import {
   type RoleResponse,
   type UpdateRoleRequest,
 } from '@taskflow/shared-types';
-import { IsOmittable } from '../../../../core/graphql/validation.js';
+import { IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
+import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('Role')
 export class RoleGql implements RoleResponse {
@@ -18,11 +19,12 @@ export class RoleGql implements RoleResponse {
   @Field(() => [String]) permissions: Permission[];
 }
 
+@FormSchema('role.create')
 @InputType()
 export class CreateRoleInput implements CreateRoleRequest {
   @Field()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(ROLE_NAME_MAX)
   name: string;
 
@@ -34,12 +36,13 @@ export class CreateRoleInput implements CreateRoleRequest {
   permissions: Permission[];
 }
 
+@FormSchema('role.update')
 @InputType()
 export class UpdateRoleInput implements UpdateRoleRequest {
   @Field({ nullable: true })
   @IsOmittable()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(ROLE_NAME_MAX)
   name?: string;
 

@@ -86,6 +86,10 @@ Services publish domain events inside their transaction, and `pg_notify` sends t
 
 Sockets check the `Origin` header against `CORS_ORIGINS` and the session cookie before the connection is accepted. Subscribing needs workspace membership, and the server rechecks the session and membership every 30 seconds and ends the stream when either is gone. Reverse proxies need to pass the WebSocket upgrade for `/api/graphql` (the bundled nginx config and the Vite dev proxy do).
 
+### Validation: one set of rules
+
+Input rules live only on the API's input classes (class-validator), and `@FormSchema('task.create')` publishes them. The public `formSchemas` query returns every form's fields and rules (required, lengths, ranges, patterns, enums, dates, and cross-field rules such as "end on or after start"), each with the message the API itself uses. The web app has no validation library of its own: `useServerForm('task.create')` checks input in the browser with those rules, and when the API rejects a submit anyway, its per-field messages (`extensions.fields`) land next to the same inputs. The sign-in, sign-up and password forms work the same way; Better Auth checks them in a `before` hook.
+
 ### Filters, sorting and paging
 
 Every list that grows (tasks, members, the audit log) is a *query resource*: a class in the feature's `infrastructure/` folder that declares which fields exist and how each can be filtered and sorted.

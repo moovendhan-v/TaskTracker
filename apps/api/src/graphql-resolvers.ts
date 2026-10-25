@@ -13,6 +13,7 @@ import { ListsResolver } from './modules/lists/presentation/graphql/lists.resolv
 import { MembersResolver } from './modules/members/presentation/graphql/members.resolver.js';
 import { NotificationsResolver } from './modules/notifications/presentation/graphql/notifications.resolver.js';
 import { WorkspaceEventsResolver } from './modules/realtime/presentation/graphql/workspace-events.resolver.js';
+import { FormSchemaResolver } from './modules/forms/presentation/graphql/form-schema.resolver.js';
 import { ResourceSchemaResolver } from './modules/resources/presentation/graphql/resource-schema.resolver.js';
 import { RolesResolver } from './modules/roles/presentation/graphql/roles.resolver.js';
 import { SpacesResolver } from './modules/spaces/presentation/graphql/spaces.resolver.js';
@@ -40,4 +41,5 @@ export const RESOLVERS = [
   NotificationsResolver,
   WorkspaceEventsResolver,
   ResourceSchemaResolver,
+  FormSchemaResolver,
 ];

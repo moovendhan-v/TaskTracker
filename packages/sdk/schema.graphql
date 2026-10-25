@@ -264,6 +264,29 @@ enum FilterOperator {
   starts_with
 }
 
+type FormFieldSchema {
+  label: String
+  name: String!
+  nullable: Boolean!
+  required: Boolean!
+  rules: [FormRule!]!
+  type: String!
+}
+
+type FormRule {
+  field: String
+  kind: String!
+  message: String!
+  value: String
+  values: [String!]
+}
+
+"""Validation rules for a form, the same ones the API enforces"""
+type FormSchema {
+  fields: [FormFieldSchema!]!
+  name: String!
+}
+
 """A JSON object (read-only)"""
 scalar JSONObject
 
@@ -510,6 +533,9 @@ type Query {
 
   """Current members with their HR profiles"""
   employees(workspaceId: ID!): [Employee!]!
+
+  """Validation rules for the named forms, or all of them"""
+  formSchemas(names: [String!]): [FormSchema!]!
 
   """Approver queue, oldest first"""
   leaveRequests(

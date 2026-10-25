@@ -22,3 +22,5 @@ export * from './contracts/notification.contract.js';
 export * from './query/filter.js';
 export * from './query/query-string.js';
 export * from './query/resource-schema.js';
+export * from './forms/form-schema.js';
+export * from './forms/validate-form.js';

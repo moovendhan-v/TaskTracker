@@ -2,6 +2,7 @@ import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
 import { IsEmail, IsUUID, MaxLength } from 'class-validator';
 import type { AddMemberRequest, MemberResponse } from '@taskflow/shared-types';
 import { PageOf } from '../../../../core/graphql/page.type.js';
+import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('Member')
 export class MemberGql implements MemberResponse {
@@ -21,6 +22,7 @@ export class AddMemberResultGql {
   @Field({ description: 'Same answer whether or not the email has an account' }) message: string;
 }
 
+@FormSchema('member.add')
 @InputType()
 export class AddMemberInput implements AddMemberRequest {
   @Field()

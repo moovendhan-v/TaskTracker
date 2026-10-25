@@ -1,6 +1,8 @@
 import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsString, MaxLength } from 'class-validator';
+import { IsNotBlank } from '../../../../core/graphql/validation.js';
 import { COMMENT_BODY_MAX, type CommentResponse, type CreateCommentRequest } from '@taskflow/shared-types';
+import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('Comment')
 export class CommentGql implements CommentResponse {
@@ -13,11 +15,12 @@ export class CommentGql implements CommentResponse {
   @Field() updatedAt: string;
 }
 
+@FormSchema('comment.save')
 @InputType()
 export class CommentInput implements CreateCommentRequest {
   @Field()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(COMMENT_BODY_MAX)
   body: string;
 }
