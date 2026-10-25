@@ -113,6 +113,10 @@ searchTasks(workspaceId: $w, query: { where: "status[in]=todo,in_progress&metada
 
 The API checks every field, operator and value against the resource, enforces limits (depth 4, 30 conditions, 100 values per list, page size per resource) and compiles the rest to SQL with bound parameters only. `resourceSchema(workspaceId, resource)` describes each resource (fields, types, operators, enum options, sortable fields, page sizes, which of and/or/not are allowed), trimmed to the fields the caller may see, so the web app builds its tables and filter UI from it instead of hard-coding them.
 
+### Preferences
+
+Each user's settings live on the server (`myPreferences`) and load with the session, so they follow the user to every device: theme (system, light, dark), accent palette, density, sidebar, default task view, where tasks open, date and time formats, the first day of the week, table layouts (column order, hidden columns, widths, paging, sort), saved views (named filter sets, optionally pinned) and the open tabs of the multi-tab workspace. Inputs are validated like every other form, tabs only ever point inside the app, and the row is protected by row-level security so only its owner can read or write it.
+
 ### Caching
 
 Reads are cached in Redis (`REDIS_URL`, required in production; without it each instance caches in memory). Service methods opt in with a decorator:

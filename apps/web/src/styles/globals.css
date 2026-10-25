@@ -182,3 +182,28 @@
     @apply mr-2 align-middle;
   }
 }
+
+/*
+ * Accent palettes (Settings → Appearance). Each sets the primary colour and the focus ring
+ * for light and dark. The default palette above applies when no accent is set.
+ */
+:root[data-accent='violet'] { --primary: oklch(0.55 0.2 290); --primary-foreground: oklch(0.99 0.01 290); --ring: oklch(0.62 0.18 290); }
+:root[data-accent='blue'] { --primary: oklch(0.55 0.17 255); --primary-foreground: oklch(0.99 0.01 255); --ring: oklch(0.62 0.15 255); }
+:root[data-accent='teal'] { --primary: oklch(0.51 0.09 186); --primary-foreground: oklch(0.99 0.01 186); --ring: oklch(0.6 0.1 186); }
+:root[data-accent='green'] { --primary: oklch(0.55 0.14 150); --primary-foreground: oklch(0.99 0.01 150); --ring: oklch(0.62 0.13 150); }
+:root[data-accent='amber'] { --primary: oklch(0.7 0.15 75); --primary-foreground: oklch(0.22 0.04 75); --ring: oklch(0.72 0.14 75); }
+:root[data-accent='orange'] { --primary: oklch(0.62 0.18 45); --primary-foreground: oklch(0.99 0.01 45); --ring: oklch(0.66 0.16 45); }
+:root[data-accent='rose'] { --primary: oklch(0.58 0.2 15); --primary-foreground: oklch(0.99 0.01 15); --ring: oklch(0.64 0.18 15); }
+:root[data-accent='slate'] { --primary: oklch(0.42 0.03 260); --primary-foreground: oklch(0.99 0 0); --ring: oklch(0.55 0.03 260); }
+:root.dark[data-accent='violet'] { --primary: oklch(0.68 0.17 290); --primary-foreground: oklch(0.16 0.03 290); --ring: oklch(0.68 0.17 290); }
+:root.dark[data-accent='blue'] { --primary: oklch(0.68 0.15 255); --primary-foreground: oklch(0.16 0.03 255); --ring: oklch(0.68 0.15 255); }
+:root.dark[data-accent='teal'] { --primary: oklch(0.7 0.11 186); --primary-foreground: oklch(0.18 0.03 186); --ring: oklch(0.7 0.11 186); }
+:root.dark[data-accent='green'] { --primary: oklch(0.7 0.15 150); --primary-foreground: oklch(0.17 0.03 150); --ring: oklch(0.7 0.15 150); }
+:root.dark[data-accent='amber'] { --primary: oklch(0.78 0.14 75); --primary-foreground: oklch(0.2 0.04 75); --ring: oklch(0.78 0.14 75); }
+:root.dark[data-accent='orange'] { --primary: oklch(0.72 0.16 45); --primary-foreground: oklch(0.18 0.03 45); --ring: oklch(0.72 0.16 45); }
+:root.dark[data-accent='rose'] { --primary: oklch(0.7 0.17 15); --primary-foreground: oklch(0.17 0.03 15); --ring: oklch(0.7 0.17 15); }
+:root.dark[data-accent='slate'] { --primary: oklch(0.78 0.02 260); --primary-foreground: oklch(0.18 0.01 260); --ring: oklch(0.7 0.02 260); }
+
+/* Compact density tightens text and spacing everywhere a component uses the density tokens. */
+:root { --row-height: 2.5rem; --density-gap: 0.75rem; }
+:root[data-density='compact'] { --row-height: 2rem; --density-gap: 0.5rem; font-size: 15px; }

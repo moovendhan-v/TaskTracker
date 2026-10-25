@@ -92,3 +92,30 @@ fragment PolicyFields on Policy {
   attachedRoleCount
   document { statements { effect permissions fields } }
 }
+
+fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables { key columns hidden widths { column width } pageSize sort { field direction } }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort { field direction }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs { id path title pinned }
+}

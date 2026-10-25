@@ -1,7 +1,7 @@
 import { TransactionalManager } from '../database/transactional-manager.js';
 import { lookupProvider } from '../runtime/decorator-runtime.js';
 import { wrapMethod } from '../runtime/method-decorator.js';
-import { cacheKey, entityTag, type CacheTopic } from './cache-keys.js';
+import { cacheKey, entityTag, userTag, type CacheTopic } from './cache-keys.js';
 import { CacheStore } from './cache-store.port.js';
 
 const DEFAULT_TTL_SECONDS = 300;
@@ -10,6 +10,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export interface CachedOptions {
   /** Entity types the result is built from. Any change to one of them in the workspace drops the entry. */
   entities: readonly CacheTopic[];
+  /**
+   * For data that belongs to one user rather than a workspace (preferences):
+   * picks the user id from the arguments. The entry is filed under that user's
+   * tag; methods that change it use @EvictsUserCache.
+   */
+  user?: (...args: never[]) => unknown;
   /** Picks the workspace id from the arguments. Defaults to the first argument. */
   workspace?: (...args: never[]) => unknown;
   /**
@@ -36,6 +42,18 @@ export function Cached(options: CachedOptions): MethodDecorator {
     async function cached(this: unknown, ...args: unknown[]) {
       const cache = lookupProvider(CacheStore);
       const transactional = lookupProvider(TransactionalManager);
+
+      if (options.user) {
+        const userId = (options.user as (...values: unknown[]) => unknown)(...args);
+        if (!cache || !transactional?.cacheable || typeof userId !== 'string' || !userId) return original.apply(this, args);
+        const key = cacheKey(`user:${userId}`, name, args);
+        const hit = await cache.get<unknown>(key);
+        if (hit !== undefined) return hit;
+        const value: unknown = await original.apply(this, args);
+        await cache.set(key, value, { ttlSeconds, tags: [userTag(userId)] });
+        return value;
+      }
+
       const workspaceId = pickWorkspace(...args);
       if (!cache || !transactional?.cacheable || typeof workspaceId !== 'string' || !UUID.test(workspaceId)) {
         return original.apply(this, args);

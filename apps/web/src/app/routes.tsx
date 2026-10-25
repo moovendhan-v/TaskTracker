@@ -1,5 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, createRouter, Outlet, redirect } from '@tanstack/react-router';
+import { PreferencesEffects } from '@/core/preferences/preferences-effects';
+import { preferencesQuery } from '@/core/preferences/use-preferences';
 import { ErrorState } from '@/components/common/error-state';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { fetchCurrentUser } from '@/core/api/current-user.api';
@@ -63,8 +65,17 @@ const appLayout = createRoute({
   id: 'app',
   beforeLoad: async ({ context }) => {
     if (!(await hasSession(context.queryClient))) throw redirect({ to: '/sign-in' });
+    // Preferences shape the whole layout, so load them with the session rather than after first paint.
+    await context.queryClient.prefetchQuery(preferencesQuery);
   },
-  component: Outlet,
+  component: function AppLayout() {
+    return (
+      <>
+        <PreferencesEffects />
+        <Outlet />
+      </>
+    );
+  },
 });
 
 const indexRoute = createRoute({

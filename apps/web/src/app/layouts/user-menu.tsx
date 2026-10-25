@@ -3,13 +3,16 @@ import { LogOutIcon, MoonIcon, ShieldAlertIcon, SunIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useCurrentUser } from '@/core/auth/use-current-user';
-import { useTheme } from '@/core/theme/use-theme';
+import { resolvedTheme } from '@/core/preferences/appearance';
+import { usePreferenceMutations, usePreferences } from '@/core/preferences/use-preferences';
 import { useSignOut } from '@/modules/auth';
 
 export function UserMenu() {
   const { data: me } = useCurrentUser();
   const signOut = useSignOut();
-  const { theme, toggleTheme } = useTheme();
+  const theme = resolvedTheme(usePreferences().theme);
+  const { update } = usePreferenceMutations();
+  const toggleTheme = () => update.mutate({ theme: theme === 'dark' ? 'light' : 'dark' });
 
   return (
     <DropdownMenu>

@@ -13,6 +13,11 @@ export type AddMemberInput = {
   roleId: string;
 };
 
+export type ColumnWidthInput = {
+  column: string;
+  width: number;
+};
+
 export type CommentInput = {
   body: string;
 };
@@ -216,6 +221,24 @@ export type SavePolicyInput = {
   name: string;
 };
 
+export type SaveViewInput = {
+  color?: string | null | undefined;
+  columns?: Array<string> | null | undefined;
+  filter?: FilterInput | null | undefined;
+  /** Leave out to create a view */
+  id?: string | null | undefined;
+  name: string;
+  pinned?: boolean;
+  resource: string;
+  scope?: string | null | undefined;
+  sort?: Array<SortInput> | null | undefined;
+  where?: string | null | undefined;
+};
+
+export type SetTabsInput = {
+  tabs: Array<WorkspaceTabInput>;
+};
+
 export type SortDirection =
   | 'asc'
   | 'desc';
@@ -229,6 +252,15 @@ export type SprintStatus =
   | 'active'
   | 'completed'
   | 'planned';
+
+export type TableLayoutInput = {
+  columns: Array<string>;
+  hidden: Array<string>;
+  key: string;
+  pageSize?: number | null | undefined;
+  sort?: Array<SortInput> | null | undefined;
+  widths: Array<ColumnWidthInput>;
+};
 
 export type TaskListInput = {
   name: string;
@@ -269,6 +301,19 @@ export type UpdateLeaveTypeInput = {
   requiresApproval?: boolean | null | undefined;
 };
 
+export type UpdatePreferencesInput = {
+  accent?: string | null | undefined;
+  dateFormat?: string | null | undefined;
+  defaultTaskView?: string | null | undefined;
+  density?: string | null | undefined;
+  sidebarCollapsed?: boolean | null | undefined;
+  sidebarWidth?: number | null | undefined;
+  taskDetailMode?: string | null | undefined;
+  theme?: string | null | undefined;
+  timeFormat?: string | null | undefined;
+  weekStart?: number | null | undefined;
+};
+
 export type UpdateRoleInput = {
   name?: string | null | undefined;
   permissions?: Array<string> | null | undefined;
@@ -303,6 +348,13 @@ export type UpdateTaskInput = {
 export type UpdateWorkspaceInput = {
   color?: string | null | undefined;
   name?: string | null | undefined;
+};
+
+export type WorkspaceTabInput = {
+  id: string;
+  path: string;
+  pinned?: boolean;
+  title: string;
 };
 
 export type AdminUsersQueryVariables = Exact<{
@@ -490,6 +542,8 @@ export type ResourceSchemaFieldsFragment = { resource: string, label: string, lo
 export type FormSchemaFieldsFragment = { name: string, fields: Array<{ name: string, label: string | null, type: string, required: boolean, nullable: boolean, rules: Array<{ kind: string, value: string | null, values: Array<string> | null, field: string | null, message: string }> }> };
 
 export type PolicyFieldsFragment = { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } };
+
+export type PreferencesFieldsFragment = { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> };
 
 export type DepartmentsQueryVariables = Exact<{
   workspaceId: string;
@@ -812,6 +866,58 @@ export type SetRoleInlinePolicyMutationVariables = Exact<{
 
 
 export type SetRoleInlinePolicyMutation = { setRoleInlinePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+
+export type MyPreferencesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MyPreferencesQuery = { myPreferences: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+
+export type UpdatePreferencesMutationVariables = Exact<{
+  input: UpdatePreferencesInput;
+}>;
+
+
+export type UpdatePreferencesMutation = { updatePreferences: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+
+export type SaveTableLayoutMutationVariables = Exact<{
+  input: TableLayoutInput;
+}>;
+
+
+export type SaveTableLayoutMutation = { saveTableLayout: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+
+export type ResetTableLayoutMutationVariables = Exact<{
+  key: string;
+}>;
+
+
+export type ResetTableLayoutMutation = { resetTableLayout: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+
+export type SaveViewMutationVariables = Exact<{
+  input: SaveViewInput;
+}>;
+
+
+export type SaveViewMutation = { saveView: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+
+export type DeleteViewMutationVariables = Exact<{
+  viewId: string;
+}>;
+
+
+export type DeleteViewMutation = { deleteView: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+
+export type SetTabsMutationVariables = Exact<{
+  input: SetTabsInput;
+}>;
+
+
+export type SetTabsMutation = { setTabs: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+
+export type ResetPreferencesMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ResetPreferencesMutation = { resetPreferences: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type ResourceSchemaQueryVariables = Exact<{
   workspaceId: string;
@@ -1412,6 +1518,55 @@ export const PolicyFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"PolicyFields"}) as unknown as TypedDocumentString<PolicyFieldsFragment, unknown>;
+export const PreferencesFieldsFragmentDoc = new TypedDocumentString(`
+    fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables {
+    key
+    columns
+    hidden
+    widths {
+      column
+      width
+    }
+    pageSize
+    sort {
+      field
+      direction
+    }
+  }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort {
+      field
+      direction
+    }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs {
+    id
+    path
+    title
+    pinned
+  }
+}
+    `, {"fragmentName":"PreferencesFields"}) as unknown as TypedDocumentString<PreferencesFieldsFragment, unknown>;
 export const AdminUsersDocument = new TypedDocumentString(`
     query AdminUsers($search: String, $page: Int, $pageSize: Int) {
   adminUsers(search: $search, page: $page, pageSize: $pageSize) {
@@ -2284,6 +2439,430 @@ export const SetRoleInlinePolicyDocument = new TypedDocumentString(`
     }
   }
 }`) as unknown as TypedDocumentString<SetRoleInlinePolicyMutation, SetRoleInlinePolicyMutationVariables>;
+export const MyPreferencesDocument = new TypedDocumentString(`
+    query MyPreferences {
+  myPreferences {
+    ...PreferencesFields
+  }
+}
+    fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables {
+    key
+    columns
+    hidden
+    widths {
+      column
+      width
+    }
+    pageSize
+    sort {
+      field
+      direction
+    }
+  }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort {
+      field
+      direction
+    }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs {
+    id
+    path
+    title
+    pinned
+  }
+}`) as unknown as TypedDocumentString<MyPreferencesQuery, MyPreferencesQueryVariables>;
+export const UpdatePreferencesDocument = new TypedDocumentString(`
+    mutation UpdatePreferences($input: UpdatePreferencesInput!) {
+  updatePreferences(input: $input) {
+    ...PreferencesFields
+  }
+}
+    fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables {
+    key
+    columns
+    hidden
+    widths {
+      column
+      width
+    }
+    pageSize
+    sort {
+      field
+      direction
+    }
+  }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort {
+      field
+      direction
+    }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs {
+    id
+    path
+    title
+    pinned
+  }
+}`) as unknown as TypedDocumentString<UpdatePreferencesMutation, UpdatePreferencesMutationVariables>;
+export const SaveTableLayoutDocument = new TypedDocumentString(`
+    mutation SaveTableLayout($input: TableLayoutInput!) {
+  saveTableLayout(input: $input) {
+    ...PreferencesFields
+  }
+}
+    fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables {
+    key
+    columns
+    hidden
+    widths {
+      column
+      width
+    }
+    pageSize
+    sort {
+      field
+      direction
+    }
+  }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort {
+      field
+      direction
+    }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs {
+    id
+    path
+    title
+    pinned
+  }
+}`) as unknown as TypedDocumentString<SaveTableLayoutMutation, SaveTableLayoutMutationVariables>;
+export const ResetTableLayoutDocument = new TypedDocumentString(`
+    mutation ResetTableLayout($key: String!) {
+  resetTableLayout(key: $key) {
+    ...PreferencesFields
+  }
+}
+    fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables {
+    key
+    columns
+    hidden
+    widths {
+      column
+      width
+    }
+    pageSize
+    sort {
+      field
+      direction
+    }
+  }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort {
+      field
+      direction
+    }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs {
+    id
+    path
+    title
+    pinned
+  }
+}`) as unknown as TypedDocumentString<ResetTableLayoutMutation, ResetTableLayoutMutationVariables>;
+export const SaveViewDocument = new TypedDocumentString(`
+    mutation SaveView($input: SaveViewInput!) {
+  saveView(input: $input) {
+    ...PreferencesFields
+  }
+}
+    fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables {
+    key
+    columns
+    hidden
+    widths {
+      column
+      width
+    }
+    pageSize
+    sort {
+      field
+      direction
+    }
+  }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort {
+      field
+      direction
+    }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs {
+    id
+    path
+    title
+    pinned
+  }
+}`) as unknown as TypedDocumentString<SaveViewMutation, SaveViewMutationVariables>;
+export const DeleteViewDocument = new TypedDocumentString(`
+    mutation DeleteView($viewId: ID!) {
+  deleteView(viewId: $viewId) {
+    ...PreferencesFields
+  }
+}
+    fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables {
+    key
+    columns
+    hidden
+    widths {
+      column
+      width
+    }
+    pageSize
+    sort {
+      field
+      direction
+    }
+  }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort {
+      field
+      direction
+    }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs {
+    id
+    path
+    title
+    pinned
+  }
+}`) as unknown as TypedDocumentString<DeleteViewMutation, DeleteViewMutationVariables>;
+export const SetTabsDocument = new TypedDocumentString(`
+    mutation SetTabs($input: SetTabsInput!) {
+  setTabs(input: $input) {
+    ...PreferencesFields
+  }
+}
+    fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables {
+    key
+    columns
+    hidden
+    widths {
+      column
+      width
+    }
+    pageSize
+    sort {
+      field
+      direction
+    }
+  }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort {
+      field
+      direction
+    }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs {
+    id
+    path
+    title
+    pinned
+  }
+}`) as unknown as TypedDocumentString<SetTabsMutation, SetTabsMutationVariables>;
+export const ResetPreferencesDocument = new TypedDocumentString(`
+    mutation ResetPreferences {
+  resetPreferences {
+    ...PreferencesFields
+  }
+}
+    fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables {
+    key
+    columns
+    hidden
+    widths {
+      column
+      width
+    }
+    pageSize
+    sort {
+      field
+      direction
+    }
+  }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort {
+      field
+      direction
+    }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs {
+    id
+    path
+    title
+    pinned
+  }
+}`) as unknown as TypedDocumentString<ResetPreferencesMutation, ResetPreferencesMutationVariables>;
 export const ResourceSchemaDocument = new TypedDocumentString(`
     query ResourceSchema($workspaceId: ID!, $resource: String!) {
   resourceSchema(workspaceId: $workspaceId, resource: $resource) {

@@ -137,6 +137,18 @@ export function resourceQueryComplexity({ args, childComplexity }: ComplexityEst
   return 1 + pageSize * childComplexity;
 }
 
+/** A filter tree as stored in saved views: the output twin of FilterInput. */
+@ObjectType('FilterNode')
+export class FilterNodeGql {
+  @Field(() => [FilterNodeGql], { nullable: true }) and?: FilterNodeGql[] | null;
+  @Field(() => [FilterNodeGql], { nullable: true }) or?: FilterNodeGql[] | null;
+  @Field(() => FilterNodeGql, { nullable: true }) not?: FilterNodeGql | null;
+  @Field(() => String, { nullable: true }) field?: string;
+  @Field(() => FilterOperatorEnum, { nullable: true }) op?: FilterOperator;
+  @Field(() => String, { nullable: true }) value?: string | null;
+  @Field(() => [String], { nullable: true }) values?: string[] | null;
+}
+
 @ObjectType('EnumOption')
 export class EnumOptionGql implements EnumOption {
   @Field() value: string;

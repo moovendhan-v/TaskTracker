@@ -1,0 +1,15 @@
+query MyPreferences { myPreferences { ...PreferencesFields } }
+
+mutation UpdatePreferences($input: UpdatePreferencesInput!) { updatePreferences(input: $input) { ...PreferencesFields } }
+
+mutation SaveTableLayout($input: TableLayoutInput!) { saveTableLayout(input: $input) { ...PreferencesFields } }
+
+mutation ResetTableLayout($key: String!) { resetTableLayout(key: $key) { ...PreferencesFields } }
+
+mutation SaveView($input: SaveViewInput!) { saveView(input: $input) { ...PreferencesFields } }
+
+mutation DeleteView($viewId: ID!) { deleteView(viewId: $viewId) { ...PreferencesFields } }
+
+mutation SetTabs($input: SetTabsInput!) { setTabs(input: $input) { ...PreferencesFields } }
+
+mutation ResetPreferences { resetPreferences { ...PreferencesFields } }

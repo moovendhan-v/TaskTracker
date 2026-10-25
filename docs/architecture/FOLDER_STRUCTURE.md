@@ -416,6 +416,8 @@ src/modules/
 │
 ├── forms/                                        ✅ public formSchemas query (rules only, no data)
 │
+├── preferences/                                  ✅ personal settings, table layouts, saved views, tabs (own row only, RLS)
+│
 ├── resources/                                    ✅ resourceSchema and resourceNames queries
 │   ├── application/resource-schema.service.ts    unknown and forbidden resources both answer NOT_FOUND
 │   └── presentation/graphql/resource-schema.resolver.ts
@@ -495,6 +497,10 @@ src/core/
 │   ├── use-form-schema.ts            all form rules, loaded once
 │   ├── schema-resolver.ts            react-hook-form resolver from the API's rules (shared validateForm)
 │   └── use-server-form.ts            useServerForm(name): resolver, server field errors, input hints
+├── preferences/
+│   ├── appearance.ts                 applies theme, accent and density to <html>; first-paint snapshot
+│   ├── use-preferences.ts            server preferences with optimistic updates
+│   └── preferences-effects.tsx       keeps <html> in sync with the signed-in user's choices
 ├── realtime/
 │   ├── use-workspace-events.ts       subscribes while a workspace is open and refreshes the affected queries
 │   ├── invalidations.ts              entity type → query keys to refresh

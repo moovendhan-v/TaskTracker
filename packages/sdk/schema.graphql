@@ -73,6 +73,16 @@ type AuditLogPage {
   total: Int!
 }
 
+type ColumnWidth {
+  column: String!
+  width: Int!
+}
+
+input ColumnWidthInput {
+  column: String!
+  width: Int!
+}
+
 type Comment {
   authorId: ID!
   authorName: String!
@@ -276,6 +286,16 @@ input FilterInput {
   values: [String!]
 }
 
+type FilterNode {
+  and: [FilterNode!]
+  field: String
+  not: FilterNode
+  op: FilterOperator
+  or: [FilterNode!]
+  value: String
+  values: [String!]
+}
+
 enum FilterOperator {
   between
   contains
@@ -455,6 +475,7 @@ type Mutation {
   deleteSpace(spaceId: ID!, workspaceId: ID!): Boolean!
   deleteSprint(sprintId: ID!, workspaceId: ID!): Boolean!
   deleteTask(taskId: ID!, workspaceId: ID!): Boolean!
+  deleteView(viewId: ID!): Preferences!
   deleteWorkspace(workspaceId: ID!): Boolean!
   detachRolePolicy(
     """managed:<key> or a custom policy id"""
@@ -477,10 +498,23 @@ type Mutation {
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
   requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
 
+  """Back to the default settings"""
+  resetPreferences: Preferences!
+  resetTableLayout(key: String!): Preferences!
+
+  """Saves how a table is arranged (columns, widths, paging)"""
+  saveTableLayout(input: TableLayoutInput!): Preferences!
+
+  """Creates or updates a saved view (a named set of filters)"""
+  saveView(input: SaveViewInput!): Preferences!
+
   """
   Replaces a role's inline policy (statements that belong to that role only)
   """
   setRoleInlinePolicy(document: PolicyDocumentInput!, roleId: ID!, workspaceId: ID!): Role!
+
+  """Replaces the open tabs of the multi-tab workspace"""
+  setTabs(input: SetTabsInput!): Preferences!
   startSprint(sprintId: ID!, workspaceId: ID!): Sprint!
 
   """
@@ -496,6 +530,7 @@ type Mutation {
   updateList(input: TaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
   updateMemberRole(roleId: ID!, userId: ID!, workspaceId: ID!): Member!
   updatePolicy(input: SavePolicyInput!, policyId: ID!, workspaceId: ID!): Policy!
+  updatePreferences(input: UpdatePreferencesInput!): Preferences!
   updateRole(input: UpdateRoleInput!, roleId: ID!, workspaceId: ID!): Role!
   updateSpace(input: UpdateSpaceInput!, spaceId: ID!, workspaceId: ID!): Space!
   updateSprint(input: UpdateSprintInput!, sprintId: ID!, workspaceId: ID!): Sprint!
@@ -589,6 +624,23 @@ input PolicyStatementInput {
   permissions: [String!]
 }
 
+"""Personal settings; they follow the user to every device"""
+type Preferences {
+  accent: String!
+  dateFormat: String!
+  defaultTaskView: String!
+  density: String!
+  savedViews: [SavedView!]!
+  sidebarCollapsed: Boolean!
+  sidebarWidth: Int!
+  tables: [TableLayout!]!
+  tabs: [WorkspaceTab!]!
+  taskDetailMode: String!
+  theme: String!
+  timeFormat: String!
+  weekStart: Int!
+}
+
 type Query {
   """Platform-wide audit log with IP addresses"""
   adminAuditLog(
@@ -664,6 +716,11 @@ type Query {
     year: Int
   ): [LeaveBalance!]!
   myLeaveRequests(workspaceId: ID!): [LeaveRequest!]!
+
+  """
+  The signed-in user's settings, with defaults for anything never changed
+  """
+  myPreferences: Preferences!
 
   """Your notifications in this workspace, newest first"""
   notifications(
@@ -843,6 +900,41 @@ input SavePolicyInput {
   name: String!
 }
 
+input SaveViewInput {
+  color: String
+  columns: [String!]
+  filter: FilterInput
+
+  """Leave out to create a view"""
+  id: ID
+  name: String!
+  pinned: Boolean! = false
+  resource: String!
+  scope: String
+  sort: [SortInput!]
+  where: String
+}
+
+type SavedView {
+  color: String
+  columns: [String!]
+  filter: FilterNode
+
+  """The filter tree as JSON, whatever its depth"""
+  filterJson: String
+  id: ID!
+  name: String!
+  pinned: Boolean!
+  resource: String!
+  scope: String
+  sort: [SortSpec!]
+  where: String
+}
+
+input SetTabsInput {
+  tabs: [WorkspaceTabInput!]!
+}
+
 enum SortDirection {
   asc
   desc
@@ -892,6 +984,24 @@ enum SprintStatus {
 type Subscription {
   """Live changes in a workspace, including your own new notifications"""
   workspaceEvents(workspaceId: ID!): WorkspaceEvent!
+}
+
+type TableLayout {
+  columns: [String!]!
+  hidden: [String!]!
+  key: String!
+  pageSize: Int
+  sort: [SortSpec!]
+  widths: [ColumnWidth!]!
+}
+
+input TableLayoutInput {
+  columns: [String!]!
+  hidden: [String!]!
+  key: String!
+  pageSize: Int
+  sort: [SortInput!]
+  widths: [ColumnWidthInput!]!
 }
 
 type Task {
@@ -969,6 +1079,19 @@ input UpdateLeaveTypeInput {
   requiresApproval: Boolean
 }
 
+input UpdatePreferencesInput {
+  accent: String
+  dateFormat: String
+  defaultTaskView: String
+  density: String
+  sidebarCollapsed: Boolean
+  sidebarWidth: Int
+  taskDetailMode: String
+  theme: String
+  timeFormat: String
+  weekStart: Int
+}
+
 input UpdateRoleInput {
   name: String
   permissions: [String!]
@@ -1029,4 +1152,18 @@ type WorkspaceEvent {
 
   """e.g. task.updated"""
   type: String!
+}
+
+type WorkspaceTab {
+  id: String!
+  path: String!
+  pinned: Boolean!
+  title: String!
+}
+
+input WorkspaceTabInput {
+  id: String!
+  path: String!
+  pinned: Boolean! = false
+  title: String!
 }

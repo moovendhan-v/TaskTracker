@@ -14,6 +14,7 @@ import { MembersResolver } from './modules/members/presentation/graphql/members.
 import { NotificationsResolver } from './modules/notifications/presentation/graphql/notifications.resolver.js';
 import { WorkspaceEventsResolver } from './modules/realtime/presentation/graphql/workspace-events.resolver.js';
 import { FormSchemaResolver } from './modules/forms/presentation/graphql/form-schema.resolver.js';
+import { PreferencesResolver, SavedViewFieldsResolver } from './modules/preferences/presentation/graphql/preferences.resolver.js';
 import { ResourceSchemaResolver } from './modules/resources/presentation/graphql/resource-schema.resolver.js';
 import { PoliciesResolver } from './modules/roles/presentation/graphql/policies.resolver.js';
 import { RolesResolver } from './modules/roles/presentation/graphql/roles.resolver.js';
@@ -44,4 +45,6 @@ export const RESOLVERS = [
   WorkspaceEventsResolver,
   ResourceSchemaResolver,
   FormSchemaResolver,
+  PreferencesResolver,
+  SavedViewFieldsResolver,
 ];
