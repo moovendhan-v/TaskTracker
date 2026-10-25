@@ -15,3 +15,6 @@ infra/terraform/terraform.tfvars
 # Playwright
 apps/web/playwright-report/
 apps/web/test-results/
+
+# Local Redis snapshots
+dump.rdb
