@@ -7,7 +7,16 @@ fragment WorkspaceFields on Workspace { id name color roleName permissions creat
 
 fragment MemberFields on Member { userId name email roleId roleName joinedAt }
 
-fragment RoleFields on Role { id name systemKey permissions }
+fragment RoleFields on Role {
+  id
+  name
+  systemKey
+  permissions
+  effectivePermissions
+  readableFields
+  policies { ref name managed }
+  inlinePolicy { statements { effect permissions fields } }
+}
 
 fragment SpaceFields on Space { id workspaceId name color createdAt }
 
@@ -73,4 +82,13 @@ fragment ResourceSchemaFields on ResourceSchema {
 fragment FormSchemaFields on FormSchema {
   name
   fields { name label type required nullable rules { kind value values field message } }
+}
+
+fragment PolicyFields on Policy {
+  id
+  name
+  description
+  managed
+  attachedRoleCount
+  document { statements { effect permissions fields } }
 }

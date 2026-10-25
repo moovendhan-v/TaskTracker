@@ -18,7 +18,7 @@ export class ResourceSchemaService {
     const definition = findQueryResource(resource);
     // Unknown and forbidden look the same, so the list of resources isn't revealed.
     if (!definition || !canList(access, definition.permission)) throw DomainError.notFound('Resource');
-    return describeResource(definition, access.permissions, await this.enumOptions.optionsFor(resource, access.workspaceId));
+    return describeResource(definition, access, await this.enumOptions.optionsFor(resource, access.workspaceId));
   }
 
   /** Names of the resources the caller may list. */

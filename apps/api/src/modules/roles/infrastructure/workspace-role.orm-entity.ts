@@ -1,5 +1,5 @@
 import { Column, Entity, Unique } from 'typeorm';
-import type { Permission, SystemRoleKey } from '@taskflow/shared-types';
+import type { Permission, PolicyDocument, SystemRoleKey } from '@taskflow/shared-types';
 import { TenantOrmEntity } from '../../../core/database/base.orm-entity.js';
 import type { WorkspaceRole } from '../domain/workspace-role.js';
 
@@ -14,4 +14,7 @@ export class WorkspaceRoleOrmEntity extends TenantOrmEntity implements Workspace
 
   @Column({ type: 'text', array: true, default: () => "'{}'" })
   permissions: Permission[];
+
+  @Column({ type: 'jsonb', default: () => `'{"statements": []}'::jsonb` })
+  inlinePolicy: PolicyDocument;
 }

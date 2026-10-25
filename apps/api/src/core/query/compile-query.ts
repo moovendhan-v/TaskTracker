@@ -87,11 +87,11 @@ function condition(column: string, op: FilterOperator, values: FilterValue[], pa
   }
 }
 
-/** Free-text search across the resource's search columns. */
-export function compileSearch(definition: QueryResourceDefinition, search: string, prefix = 'qs'): CompiledSql {
+/** Free-text search across the columns the caller may search. */
+export function compileSearch(columns: readonly string[], search: string, prefix = 'qs'): CompiledSql {
   const name = `${prefix}0`;
   return {
-    sql: `(${definition.search.map((column) => `${column} ILIKE :${name}`).join(' OR ')})`,
+    sql: `(${columns.map((column) => `${column} ILIKE :${name}`).join(' OR ')})`,
     params: { [name]: `%${escapeLike(search)}%` },
   };
 }

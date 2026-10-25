@@ -28,7 +28,8 @@ export function RoleEditorDialog({ trigger, role, grantable, onSave }: RoleEdito
   function changeOpen(next: boolean) {
     if (next) {
       setName(role?.name ?? '');
-      setSelected(new Set(role?.permissions ?? ['task.view', 'doc.view']));
+      // Built-in roles get their rights from managed policies, so show what they add up to.
+      setSelected(new Set(role ? (role.systemKey ? role.effectivePermissions : role.permissions) : ['task.view', 'doc.view']));
     }
     setOpen(next);
   }

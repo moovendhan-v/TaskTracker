@@ -8,13 +8,13 @@ export const MEMBER_RESOURCE = 'members';
   label: 'Members',
   idColumn: 'member.user_id',
   defaultSort: [{ field: 'name', direction: 'asc' }],
-  search: ['account.name', 'account.email'],
+  search: ['account.name', { column: 'account.email', field: 'member.email' }],
 })
 export class MemberQueryResource {
   @QueryField({ type: 'string', column: 'account.name', sortable: true, display: 'avatar', width: 240 })
   name: string;
 
-  @QueryField({ type: 'string', column: 'account.email', sortable: true, width: 260 })
+  @QueryField({ type: 'string', column: 'account.email', field: 'member.email', sortable: true, width: 260 })
   email: string;
 
   @QueryField({ type: 'uuid', column: 'member.role_id', label: 'Role', display: 'enum', width: 160 })

@@ -30,10 +30,15 @@ export class WorkspacesService {
     const workspaces = await this.workspaces.findByIds(memberships.map((m) => m.workspaceId));
     const byId = new Map(workspaces.map((workspace) => [workspace.id, workspace]));
 
-    return memberships.flatMap((membership) => {
+    const result: WorkspaceResponse[] = [];
+    for (const membership of memberships) {
       const workspace = byId.get(membership.workspaceId);
-      return workspace ? [WorkspaceMapper.toResponse(workspace, membership.roleName, membership.permissions)] : [];
-    });
+      if (!workspace) continue;
+      // Sequential on purpose: one transaction connection. Each lookup is cached per role.
+      const access = await this.membersService.roleAccessFor(membership.workspaceId, membership.roleId);
+      result.push(WorkspaceMapper.toResponse(workspace, membership.roleName, access?.permissions ?? []));
+    }
+    return result;
   }
 
   /**

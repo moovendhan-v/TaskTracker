@@ -10,18 +10,19 @@ import {
 } from '@taskflow/shared-types';
 import { EmploymentTypeEnum } from '../../../../../core/graphql/enums.js';
 import { FormSchema } from '../../../../../core/forms/form-schema.decorators.js';
+import { SensitiveField } from '../../../../../core/access/sensitive-field.decorator.js';
 
 @ObjectType('Employee')
 export class EmployeeGql implements EmployeeResponse {
   @Field(() => ID) userId: string;
   @Field() name: string;
-  @Field() email: string;
+  @SensitiveField('member.email', () => String) email: string | null;
   @Field(() => String, { nullable: true }) jobTitle: string | null;
   @Field(() => ID, { nullable: true }) departmentId: string | null;
   @Field(() => String, { nullable: true }) departmentName: string | null;
   @Field(() => ID, { nullable: true }) managerUserId: string | null;
-  @Field(() => EmploymentTypeEnum, { nullable: true }) employmentType: EmploymentType | null;
-  @Field(() => String, { nullable: true, description: 'yyyy-mm-dd' }) startDate: string | null;
+  @SensitiveField('employee.employmentType', () => EmploymentTypeEnum) employmentType: EmploymentType | null;
+  @SensitiveField('employee.startDate', () => String, { description: 'yyyy-mm-dd' }) startDate: string | null;
 }
 
 /** Omit a field to keep it; send null to clear it. */

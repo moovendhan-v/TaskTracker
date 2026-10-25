@@ -7,6 +7,7 @@ import {
   LEAVE_DECISIONS,
   LEAVE_STATUSES,
   NOTIFICATION_KINDS,
+  POLICY_EFFECTS,
   PLATFORM_ROLES,
   REALTIME_ENTITY_TYPES,
   SPRINT_STATUSES,
@@ -32,6 +33,7 @@ export const FilterOperatorEnum = enumOf(FILTER_OPERATORS);
 export const FieldTypeEnum = enumOf(FIELD_TYPES);
 export const LogicOperatorEnum = enumOf(LOGIC_OPERATORS);
 export const SortDirectionEnum = enumOf(['asc', 'desc'] as const);
+export const PolicyEffectEnum = enumOf(POLICY_EFFECTS);
 
 registerEnumType(TaskStatusEnum, { name: 'TaskStatus' });
 registerEnumType(TaskPriorityEnum, { name: 'TaskPriority' });
@@ -46,3 +48,4 @@ registerEnumType(FilterOperatorEnum, { name: 'FilterOperator' });
 registerEnumType(FieldTypeEnum, { name: 'FieldType' });
 registerEnumType(LogicOperatorEnum, { name: 'LogicOperator' });
 registerEnumType(SortDirectionEnum, { name: 'SortDirection' });
+registerEnumType(PolicyEffectEnum, { name: 'PolicyEffect' });

@@ -17,6 +17,7 @@ import { MetadataScalar } from '../../../../core/graphql/metadata.scalar.js';
 import { PageOf, WorkspacePageArgs } from '../../../../core/graphql/page.type.js';
 import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
 import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
+import { SensitiveField } from '../../../../core/access/sensitive-field.decorator.js';
 
 @ObjectType('Task')
 export class TaskGql implements TaskResponse {
@@ -30,7 +31,7 @@ export class TaskGql implements TaskResponse {
   @Field(() => ID, { nullable: true }) assigneeId: string | null;
   @Field(() => ID, { nullable: true }) sprintId: string | null;
   @Field(() => Float) position: number;
-  @Field(() => MetadataScalar) metadata: TaskMetadata;
+  @SensitiveField('task.metadata', () => MetadataScalar) metadata: TaskMetadata | null;
   @Field() createdAt: string;
   @Field() updatedAt: string;
 }

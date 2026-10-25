@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PERMISSIONS, type Permission } from '@taskflow/shared-types';
+import { PERMISSIONS, PROTECTED_FIELDS, type Permission } from '@taskflow/shared-types';
 import type { SessionUser, WorkspaceAccess } from '../http/types/authenticated-request.js';
 import { MembershipReader } from './membership-reader.port.js';
 
@@ -12,10 +12,22 @@ export class AccessService {
   async resolve(user: SessionUser, workspaceId: string): Promise<WorkspaceAccess | null> {
     const grant = await this.memberships.findGrant(workspaceId, user.id);
     if (grant) {
-      return { workspaceId, roleId: grant.roleId, permissions: new Set(grant.permissions), viaPlatformRole: false };
+      return {
+        workspaceId,
+        roleId: grant.roleId,
+        permissions: new Set(grant.permissions),
+        readableFields: new Set(grant.readableFields),
+        viaPlatformRole: false,
+      };
     }
     if (user.platformRole === 'SUPER_ADMIN' && (await this.memberships.workspaceExists(workspaceId))) {
-      return { workspaceId, roleId: null, permissions: new Set(PERMISSIONS), viaPlatformRole: true };
+      return {
+        workspaceId,
+        roleId: null,
+        permissions: new Set(PERMISSIONS),
+        readableFields: new Set(PROTECTED_FIELDS.map((field) => field.key)),
+        viaPlatformRole: true,
+      };
     }
     return null;
   }

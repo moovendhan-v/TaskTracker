@@ -57,7 +57,10 @@ export function RolesPage({ workspaceId }: { workspaceId: string }) {
                   </Badge>
                 ) : null}
               </p>
-              <p className="text-xs text-muted-foreground">{role.permissions.length} permissions</p>
+              <p className="text-xs text-muted-foreground">
+                {role.effectivePermissions.length} permissions
+                {role.policies.length > 0 ? ` · ${role.policies.map((policy) => policy.name).join(', ')}` : ''}
+              </p>
             </div>
             <RoleEditorDialog
               trigger={

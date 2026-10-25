@@ -8,7 +8,7 @@ import { queryResource } from './query-resource.decorators.js';
 import './query.spec-fixtures.js';
 
 const things = queryResource('spec_things');
-const context: QueryContext = { userId: 'user_1', permissions: new Set(['task.view']) };
+const context: QueryContext = { userId: 'user_1', permissions: new Set(['task.view']), readableFields: new Set() };
 
 function invalid(run: () => unknown): string {
   try {

@@ -3,12 +3,13 @@ import { IsEmail, IsUUID, MaxLength } from 'class-validator';
 import type { AddMemberRequest, MemberResponse } from '@taskflow/shared-types';
 import { PageOf } from '../../../../core/graphql/page.type.js';
 import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
+import { SensitiveField } from '../../../../core/access/sensitive-field.decorator.js';
 
 @ObjectType('Member')
 export class MemberGql implements MemberResponse {
   @Field(() => ID) userId: string;
   @Field() name: string;
-  @Field() email: string;
+  @SensitiveField('member.email', () => String) email: string | null;
   @Field(() => ID) roleId: string;
   @Field() roleName: string;
   @Field() joinedAt: string;

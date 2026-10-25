@@ -130,6 +130,7 @@ src/core/
 │   ├── workspace-access.guard.ts     checks membership and permissions for operations with a workspaceId argument
 │   ├── platform-admin.guard.ts       SUPER_ADMIN-only operations; everyone else gets NOT_FOUND
 │   ├── data-scope.interceptor.ts     runs each operation in one transaction with its row-level security scope
+│   ├── sensitive-field.decorator.ts  @SensitiveField('member.email', ...): null unless the caller's policies allow it
 │   ├── require-platform-admin.decorator.ts
 │   ├── require-permissions.decorator.ts
 │   └── current-access.decorator.ts
@@ -293,17 +294,22 @@ src/modules/
 │   ├── infrastructure/typeorm-workspace.repository.ts
 │   └── presentation/graphql/{workspaces.resolver.ts,workspace.types.ts}
 │
-├── roles/                                        ✅
+├── roles/                                        ✅ roles and IAM policies
 │   ├── roles.module.ts
-│   ├── domain/workspace-role.ts
+│   ├── domain/workspace-role.ts                  direct permissions + inline policy
 │   ├── domain/workspace-role.repository.ts
-│   ├── domain/system-roles.ts                    built-in roles seeded per workspace
-│   ├── domain/role-grant.policy.ts               no granting permissions you don't hold; owner-only permission
-│   ├── application/roles.service.ts
+│   ├── domain/system-roles.ts                    built-in roles seeded per workspace (rights from managed policies)
+│   ├── domain/role-grant.policy.ts               no granting permissions or fields you don't hold; owner-only permission
+│   ├── domain/policy.ts                          custom policies, attachments, PolicyRef, effective access of a role
+│   ├── domain/policy-document.policy.ts          validates documents; no granting more than you have
+│   ├── domain/policy.repository.ts
+│   ├── application/roles.service.ts              roles with their policies and effective access
+│   ├── application/role-access.service.ts        effective access per role (cached; used by access checks)
+│   ├── application/policies.service.ts           custom policy CRUD, attach/detach, inline; changes stay within the actor's access
 │   ├── application/role.mapper.ts
-│   ├── infrastructure/workspace-role.orm-entity.ts
-│   ├── infrastructure/typeorm-workspace-role.repository.ts
-│   └── presentation/graphql/{roles.resolver.ts,role.types.ts}
+│   ├── infrastructure/{workspace-role,policy,role-policy}.orm-entity.ts
+│   ├── infrastructure/typeorm-{workspace-role,policy}.repository.ts
+│   └── presentation/graphql/{roles.resolver.ts,role.types.ts,policies.resolver.ts,policy.types.ts}
 │
 ├── members/                                      ✅
 │   ├── members.module.ts

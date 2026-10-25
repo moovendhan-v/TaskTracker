@@ -18,7 +18,7 @@ const SPACE = 'space-a';
 const actor: Actor = { userId: 'user-1', platformRole: 'USER', ip: null };
 
 function accessWith(...permissions: Permission[]): WorkspaceAccess {
-  return { workspaceId: WORKSPACE, roleId: 'role', permissions: new Set(permissions), viaPlatformRole: false };
+  return { workspaceId: WORKSPACE, roleId: 'role', permissions: new Set(permissions), readableFields: new Set(), viaPlatformRole: false };
 }
 
 describe('TasksService', () => {

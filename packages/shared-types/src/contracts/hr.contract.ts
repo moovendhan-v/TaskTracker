@@ -18,7 +18,8 @@ export type UpdateDepartmentRequest = Partial<CreateDepartmentRequest>;
 export interface EmployeeResponse {
   userId: string;
   name: string;
-  email: string;
+  /** Null unless a policy lets the caller read `member.email`. */
+  email: string | null;
   jobTitle: string | null;
   departmentId: string | null;
   departmentName: string | null;

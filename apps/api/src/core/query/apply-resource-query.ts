@@ -27,7 +27,7 @@ export function applyResourceQuery<T extends ObjectLiteral>(builder: SelectQuery
     builder.andWhere(sql, params);
   }
   if (query.search) {
-    const { sql, params } = compileSearch(definition, query.search);
+    const { sql, params } = compileSearch(query.searchColumns, query.search);
     builder.andWhere(sql, params);
   }
   compileOrder(definition, query).forEach((term, index) => {

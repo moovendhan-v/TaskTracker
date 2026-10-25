@@ -3,6 +3,7 @@ import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import type { AuditLogEntryResponse } from '@taskflow/shared-types';
 import { JSONObjectScalar } from '../../../../core/graphql/json-object.scalar.js';
 import { PageOf, WorkspacePageArgs } from '../../../../core/graphql/page.type.js';
+import { SensitiveField } from '../../../../core/access/sensitive-field.decorator.js';
 
 @ObjectType('AuditLogEntry')
 export class AuditLogEntryGql implements AuditLogEntryResponse {
@@ -14,7 +15,7 @@ export class AuditLogEntryGql implements AuditLogEntryResponse {
   @Field(() => String, { nullable: true }) targetId: string | null;
   @Field(() => ID, { nullable: true }) workspaceId: string | null;
   @Field(() => String, { nullable: true, description: 'Only shown to platform admins' }) ip: string | null;
-  @Field(() => JSONObjectScalar) metadata: Record<string, unknown>;
+  @SensitiveField('audit.metadata', () => JSONObjectScalar) metadata: Record<string, unknown> | null;
   @Field() createdAt: string;
 }
 

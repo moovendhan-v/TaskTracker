@@ -15,6 +15,7 @@ import { NotificationsResolver } from './modules/notifications/presentation/grap
 import { WorkspaceEventsResolver } from './modules/realtime/presentation/graphql/workspace-events.resolver.js';
 import { FormSchemaResolver } from './modules/forms/presentation/graphql/form-schema.resolver.js';
 import { ResourceSchemaResolver } from './modules/resources/presentation/graphql/resource-schema.resolver.js';
+import { PoliciesResolver } from './modules/roles/presentation/graphql/policies.resolver.js';
 import { RolesResolver } from './modules/roles/presentation/graphql/roles.resolver.js';
 import { SpacesResolver } from './modules/spaces/presentation/graphql/spaces.resolver.js';
 import { SprintsResolver } from './modules/sprints/presentation/graphql/sprints.resolver.js';
@@ -27,6 +28,7 @@ export const RESOLVERS = [
   WorkspacesResolver,
   MembersResolver,
   RolesResolver,
+  PoliciesResolver,
   SpacesResolver,
   ListsResolver,
   TasksResolver,

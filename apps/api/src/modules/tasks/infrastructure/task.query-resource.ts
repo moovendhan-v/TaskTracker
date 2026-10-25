@@ -54,6 +54,6 @@ export class TaskQueryResource {
   @QueryField({ type: 'number', column: 'task.position', label: 'Manual order', sortable: true, filterable: false, defaultVisible: false })
   position: number;
 
-  @QueryField({ type: 'json', column: 'task.metadata', label: 'Metadata', defaultVisible: false, display: 'code' })
+  @QueryField({ type: 'json', column: 'task.metadata', field: 'task.metadata', label: 'Metadata', defaultVisible: false, display: 'code' })
   metadata: string;
 }

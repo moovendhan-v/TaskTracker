@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MembershipReader, type MembershipGrant } from '../../../core/access/membership-reader.port.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
+import { RoleAccessService } from '../../roles/application/role-access.service.js';
 import { WorkspaceMemberRepository } from '../domain/workspace-member.repository.js';
 
 /**
@@ -14,6 +15,7 @@ export class TypeOrmMembershipReader extends MembershipReader {
   constructor(
     private readonly members: WorkspaceMemberRepository,
     private readonly transactional: TransactionalManager,
+    private readonly roleAccess: RoleAccessService,
   ) {
     super();
   }
@@ -27,7 +29,10 @@ export class TypeOrmMembershipReader extends MembershipReader {
   async findGrant(workspaceId: string, userId: string): Promise<MembershipGrant | null> {
     return this.transactional.runInScope({ kind: 'user', userId }, async () => {
       const membership = await this.members.findMembership(workspaceId, userId);
-      return membership ? { roleId: membership.roleId, permissions: membership.permissions } : null;
+      if (!membership) return null;
+      // Row-level security lets a user read the role and policies they hold, nothing else.
+      const access = await this.roleAccess.forRole(workspaceId, membership.roleId);
+      return access ? { roleId: membership.roleId, permissions: access.permissions, readableFields: access.readableFields } : null;
     });
   }
 

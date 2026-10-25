@@ -13,7 +13,8 @@ export interface TaskResponse {
   /** Sprint the task is planned into; null when it's in the backlog. */
   sprintId: string | null;
   position: number;
-  metadata: TaskMetadata;
+  /** Null unless a policy lets the caller read `task.metadata`. */
+  metadata: TaskMetadata | null;
   createdAt: string;
   updatedAt: string;
 }

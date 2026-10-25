@@ -3,7 +3,11 @@ import { CreateRoleDocument, DeleteRoleDocument, RolesDocument, UpdateRoleDocume
 import { graphql } from '@/core/api/graphql-client';
 
 /** Permission keys arrive as strings; unknown keys are dropped rather than trusted. */
-const toRole = (role: RoleFieldsFragment) => ({ ...role, permissions: parsePermissions(role.permissions) });
+const toRole = (role: RoleFieldsFragment) => ({
+  ...role,
+  permissions: parsePermissions(role.permissions),
+  effectivePermissions: parsePermissions(role.effectivePermissions),
+});
 
 export const rolesApi = {
   list: async (workspaceId: string) => (await graphql(RolesDocument, { workspaceId })).roles.map(toRole),

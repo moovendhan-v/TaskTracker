@@ -23,5 +23,6 @@ export const ValidatedQuery = createParamDecorator((resource: string, context: E
   return normalizeQuery(queryResource(resource), query, {
     userId: request.user?.id ?? null,
     permissions: request.workspaceAccess?.permissions ?? new Set(),
+    readableFields: request.workspaceAccess?.readableFields ?? new Set(),
   });
 });

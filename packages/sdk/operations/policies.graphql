@@ -1,0 +1,27 @@
+query Policies($workspaceId: ID!) { policies(workspaceId: $workspaceId) { ...PolicyFields } }
+
+query ProtectedFields($workspaceId: ID!) { protectedFields(workspaceId: $workspaceId) { key label description visibleByDefault } }
+
+query MyAccess($workspaceId: ID!) { myAccess(workspaceId: $workspaceId) { permissions readableFields } }
+
+mutation CreatePolicy($workspaceId: ID!, $input: SavePolicyInput!) {
+  createPolicy(workspaceId: $workspaceId, input: $input) { ...PolicyFields }
+}
+
+mutation UpdatePolicy($workspaceId: ID!, $policyId: ID!, $input: SavePolicyInput!) {
+  updatePolicy(workspaceId: $workspaceId, policyId: $policyId, input: $input) { ...PolicyFields }
+}
+
+mutation DeletePolicy($workspaceId: ID!, $policyId: ID!) { deletePolicy(workspaceId: $workspaceId, policyId: $policyId) }
+
+mutation AttachRolePolicy($workspaceId: ID!, $roleId: ID!, $policy: String!) {
+  attachRolePolicy(workspaceId: $workspaceId, roleId: $roleId, policy: $policy) { ...RoleFields }
+}
+
+mutation DetachRolePolicy($workspaceId: ID!, $roleId: ID!, $policy: String!) {
+  detachRolePolicy(workspaceId: $workspaceId, roleId: $roleId, policy: $policy) { ...RoleFields }
+}
+
+mutation SetRoleInlinePolicy($workspaceId: ID!, $roleId: ID!, $document: PolicyDocumentInput!) {
+  setRoleInlinePolicy(workspaceId: $workspaceId, roleId: $roleId, document: $document) { ...RoleFields }
+}

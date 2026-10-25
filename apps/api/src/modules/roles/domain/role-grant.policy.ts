@@ -24,6 +24,17 @@ export const RoleGrantPolicy = {
     }
   },
 
+  /** Handing out a role is only allowed when the actor already has everything the role grants, fields included. */
+  assertCanHandOutAccess(
+    held: { permissions: ReadonlySet<Permission>; readableFields: ReadonlySet<string> },
+    role: { permissions: readonly Permission[]; readableFields: readonly string[] },
+  ): void {
+    RoleGrantPolicy.assertCanHandOut(held.permissions, role.permissions);
+    if (!role.readableFields.every((field) => held.readableFields.has(field))) {
+      throw DomainError.forbidden('That role can see fields you cannot see');
+    }
+  },
+
   holdsAll(held: ReadonlySet<Permission>, permissions: readonly Permission[]): boolean {
     return permissions.every((permission) => held.has(permission));
   },

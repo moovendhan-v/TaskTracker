@@ -159,6 +159,20 @@ export type PlatformRole =
   | 'SUPER_ADMIN'
   | 'USER';
 
+export type PolicyDocumentInput = {
+  statements: Array<PolicyStatementInput>;
+};
+
+export type PolicyEffect =
+  | 'allow'
+  | 'deny';
+
+export type PolicyStatementInput = {
+  effect: PolicyEffect;
+  fields?: Array<string> | null | undefined;
+  permissions?: Array<string> | null | undefined;
+};
+
 export type RealtimeEntityType =
   | 'comment'
   | 'department'
@@ -194,6 +208,12 @@ export type ResourceQueryInput = {
   sort?: Array<SortInput> | null | undefined;
   /** Filters as a query string, e.g. status[in]=todo,done&metadata[order_id]=6735 */
   where?: string | null | undefined;
+};
+
+export type SavePolicyInput = {
+  description?: string | null | undefined;
+  document: PolicyDocumentInput;
+  name: string;
 };
 
 export type SortDirection =
@@ -320,7 +340,7 @@ export type AdminAuditLogQueryVariables = Exact<{
 }>;
 
 
-export type AdminAuditLogQuery = { adminAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown>, createdAt: string }> } };
+export type AdminAuditLogQuery = { adminAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string }> } };
 
 export type WorkspaceAuditLogQueryVariables = Exact<{
   workspaceId: string;
@@ -331,7 +351,7 @@ export type WorkspaceAuditLogQueryVariables = Exact<{
 }>;
 
 
-export type WorkspaceAuditLogQuery = { workspaceAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown>, createdAt: string }> } };
+export type WorkspaceAuditLogQuery = { workspaceAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string }> } };
 
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
@@ -429,15 +449,15 @@ export type CurrentUserFieldsFragment = { id: string, email: string, name: strin
 
 export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string };
 
-export type MemberFieldsFragment = { userId: string, name: string, email: string, roleId: string, roleName: string, joinedAt: string };
+export type MemberFieldsFragment = { userId: string, name: string, email: string | null, roleId: string, roleName: string, joinedAt: string };
 
-export type RoleFieldsFragment = { id: string, name: string, systemKey: string | null, permissions: Array<string> };
+export type RoleFieldsFragment = { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } };
 
 export type SpaceFieldsFragment = { id: string, workspaceId: string, name: string, color: string, createdAt: string };
 
 export type TaskListFieldsFragment = { id: string, spaceId: string, name: string, createdAt: string };
 
-export type TaskFieldsFragment = { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string };
+export type TaskFieldsFragment = { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null> | null, createdAt: string, updatedAt: string };
 
 export type CommentFieldsFragment = { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string };
 
@@ -449,7 +469,7 @@ export type DocumentFieldsFragment = { id: string, spaceId: string | null, paren
 
 export type DepartmentFieldsFragment = { id: string, name: string, headUserId: string | null, memberCount: number };
 
-export type EmployeeFieldsFragment = { userId: string, name: string, email: string, jobTitle: string | null, departmentId: string | null, departmentName: string | null, managerUserId: string | null, startDate: string | null, employmentType: EmploymentType | null };
+export type EmployeeFieldsFragment = { userId: string, name: string, email: string | null, jobTitle: string | null, departmentId: string | null, departmentName: string | null, managerUserId: string | null, startDate: string | null, employmentType: EmploymentType | null };
 
 export type LeaveTypeFieldsFragment = { id: string, name: string, color: string, annualAllowanceDays: number | null, requiresApproval: boolean };
 
@@ -457,7 +477,7 @@ export type LeaveRequestFieldsFragment = { id: string, userId: string, userName:
 
 export type LeaveBalanceFieldsFragment = { leaveTypeId: string, leaveTypeName: string, color: string, year: number, allowanceDays: number | null, usedDays: number, pendingDays: number, remainingDays: number | null };
 
-export type AuditLogEntryFieldsFragment = { id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown>, createdAt: string };
+export type AuditLogEntryFieldsFragment = { id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string };
 
 export type AdminUserFieldsFragment = { id: string, name: string, email: string, platformRole: PlatformRole, suspended: boolean, workspaceCount: number, createdAt: string };
 
@@ -468,6 +488,8 @@ export type NotificationFieldsFragment = { id: string, kind: NotificationKind, a
 export type ResourceSchemaFieldsFragment = { resource: string, label: string, logic: Array<LogicOperator>, searchable: boolean, defaultPageSize: number, maxPageSize: number, defaultSort: Array<{ field: string, direction: SortDirection }>, limits: { maxDepth: number, maxConditions: number, maxListValues: number, maxSortFields: number }, fields: Array<{ name: string, label: string, type: FieldType, operators: Array<FilterOperator>, sortable: boolean, defaultVisible: boolean, keyed: boolean, display: string | null, width: number | null, options: Array<{ value: string, label: string, color: string | null }> | null }> };
 
 export type FormSchemaFieldsFragment = { name: string, fields: Array<{ name: string, label: string | null, type: string, required: boolean, nullable: boolean, rules: Array<{ kind: string, value: string | null, values: Array<string> | null, field: string | null, message: string }> }> };
+
+export type PolicyFieldsFragment = { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } };
 
 export type DepartmentsQueryVariables = Exact<{
   workspaceId: string;
@@ -506,7 +528,7 @@ export type EmployeesQueryVariables = Exact<{
 }>;
 
 
-export type EmployeesQuery = { employees: Array<{ userId: string, name: string, email: string, jobTitle: string | null, departmentId: string | null, departmentName: string | null, managerUserId: string | null, startDate: string | null, employmentType: EmploymentType | null }> };
+export type EmployeesQuery = { employees: Array<{ userId: string, name: string, email: string | null, jobTitle: string | null, departmentId: string | null, departmentName: string | null, managerUserId: string | null, startDate: string | null, employmentType: EmploymentType | null }> };
 
 export type EmployeeQueryVariables = Exact<{
   workspaceId: string;
@@ -514,7 +536,7 @@ export type EmployeeQueryVariables = Exact<{
 }>;
 
 
-export type EmployeeQuery = { employee: { userId: string, name: string, email: string, jobTitle: string | null, departmentId: string | null, departmentName: string | null, managerUserId: string | null, startDate: string | null, employmentType: EmploymentType | null } };
+export type EmployeeQuery = { employee: { userId: string, name: string, email: string | null, jobTitle: string | null, departmentId: string | null, departmentName: string | null, managerUserId: string | null, startDate: string | null, employmentType: EmploymentType | null } };
 
 export type UpsertEmployeeProfileMutationVariables = Exact<{
   workspaceId: string;
@@ -523,7 +545,7 @@ export type UpsertEmployeeProfileMutationVariables = Exact<{
 }>;
 
 
-export type UpsertEmployeeProfileMutation = { upsertEmployeeProfile: { userId: string, name: string, email: string, jobTitle: string | null, departmentId: string | null, departmentName: string | null, managerUserId: string | null, startDate: string | null, employmentType: EmploymentType | null } };
+export type UpsertEmployeeProfileMutation = { upsertEmployeeProfile: { userId: string, name: string, email: string | null, jobTitle: string | null, departmentId: string | null, departmentName: string | null, managerUserId: string | null, startDate: string | null, employmentType: EmploymentType | null } };
 
 export type LeaveTypesQueryVariables = Exact<{
   workspaceId: string;
@@ -645,7 +667,7 @@ export type MembersQueryVariables = Exact<{
 }>;
 
 
-export type MembersQuery = { members: Array<{ userId: string, name: string, email: string, roleId: string, roleName: string, joinedAt: string }> };
+export type MembersQuery = { members: Array<{ userId: string, name: string, email: string | null, roleId: string, roleName: string, joinedAt: string }> };
 
 export type AddMemberMutationVariables = Exact<{
   workspaceId: string;
@@ -662,7 +684,7 @@ export type UpdateMemberRoleMutationVariables = Exact<{
 }>;
 
 
-export type UpdateMemberRoleMutation = { updateMemberRole: { userId: string, name: string, email: string, roleId: string, roleName: string, joinedAt: string } };
+export type UpdateMemberRoleMutation = { updateMemberRole: { userId: string, name: string, email: string | null, roleId: string, roleName: string, joinedAt: string } };
 
 export type RemoveMemberMutationVariables = Exact<{
   workspaceId: string;
@@ -718,6 +740,79 @@ export type WorkspaceEventsSubscriptionVariables = Exact<{
 
 export type WorkspaceEventsSubscription = { workspaceEvents: { type: string, entityType: RealtimeEntityType, entityId: string, actorId: string, occurredAt: string } };
 
+export type PoliciesQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type PoliciesQuery = { policies: Array<{ id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } }> };
+
+export type ProtectedFieldsQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ProtectedFieldsQuery = { protectedFields: Array<{ key: string, label: string, description: string, visibleByDefault: boolean }> };
+
+export type MyAccessQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type MyAccessQuery = { myAccess: { permissions: Array<string>, readableFields: Array<string> } };
+
+export type CreatePolicyMutationVariables = Exact<{
+  workspaceId: string;
+  input: SavePolicyInput;
+}>;
+
+
+export type CreatePolicyMutation = { createPolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+
+export type UpdatePolicyMutationVariables = Exact<{
+  workspaceId: string;
+  policyId: string;
+  input: SavePolicyInput;
+}>;
+
+
+export type UpdatePolicyMutation = { updatePolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+
+export type DeletePolicyMutationVariables = Exact<{
+  workspaceId: string;
+  policyId: string;
+}>;
+
+
+export type DeletePolicyMutation = { deletePolicy: boolean };
+
+export type AttachRolePolicyMutationVariables = Exact<{
+  workspaceId: string;
+  roleId: string;
+  policy: string;
+}>;
+
+
+export type AttachRolePolicyMutation = { attachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+
+export type DetachRolePolicyMutationVariables = Exact<{
+  workspaceId: string;
+  roleId: string;
+  policy: string;
+}>;
+
+
+export type DetachRolePolicyMutation = { detachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+
+export type SetRoleInlinePolicyMutationVariables = Exact<{
+  workspaceId: string;
+  roleId: string;
+  document: PolicyDocumentInput;
+}>;
+
+
+export type SetRoleInlinePolicyMutation = { setRoleInlinePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+
 export type ResourceSchemaQueryVariables = Exact<{
   workspaceId: string;
   resource: string;
@@ -741,7 +836,7 @@ export type SearchTasksQueryVariables = Exact<{
 }>;
 
 
-export type SearchTasksQuery = { searchTasks: { page: number, pageSize: number, total: number, items: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string }> } };
+export type SearchTasksQuery = { searchTasks: { page: number, pageSize: number, total: number, items: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null> | null, createdAt: string, updatedAt: string }> } };
 
 export type SearchMembersQueryVariables = Exact<{
   workspaceId: string;
@@ -749,7 +844,7 @@ export type SearchMembersQueryVariables = Exact<{
 }>;
 
 
-export type SearchMembersQuery = { searchMembers: { page: number, pageSize: number, total: number, items: Array<{ userId: string, name: string, email: string, roleId: string, roleName: string, joinedAt: string }> } };
+export type SearchMembersQuery = { searchMembers: { page: number, pageSize: number, total: number, items: Array<{ userId: string, name: string, email: string | null, roleId: string, roleName: string, joinedAt: string }> } };
 
 export type SearchWorkspaceAuditLogQueryVariables = Exact<{
   workspaceId: string;
@@ -757,14 +852,14 @@ export type SearchWorkspaceAuditLogQueryVariables = Exact<{
 }>;
 
 
-export type SearchWorkspaceAuditLogQuery = { searchWorkspaceAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown>, createdAt: string }> } };
+export type SearchWorkspaceAuditLogQuery = { searchWorkspaceAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string }> } };
 
 export type RolesQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type RolesQuery = { roles: Array<{ id: string, name: string, systemKey: string | null, permissions: Array<string> }> };
+export type RolesQuery = { roles: Array<{ id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } }> };
 
 export type CreateRoleMutationVariables = Exact<{
   workspaceId: string;
@@ -772,7 +867,7 @@ export type CreateRoleMutationVariables = Exact<{
 }>;
 
 
-export type CreateRoleMutation = { createRole: { id: string, name: string, systemKey: string | null, permissions: Array<string> } };
+export type CreateRoleMutation = { createRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
 
 export type UpdateRoleMutationVariables = Exact<{
   workspaceId: string;
@@ -781,7 +876,7 @@ export type UpdateRoleMutationVariables = Exact<{
 }>;
 
 
-export type UpdateRoleMutation = { updateRole: { id: string, name: string, systemKey: string | null, permissions: Array<string> } };
+export type UpdateRoleMutation = { updateRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
 
 export type DeleteRoleMutationVariables = Exact<{
   workspaceId: string;
@@ -892,7 +987,7 @@ export type TasksQueryVariables = Exact<{
 }>;
 
 
-export type TasksQuery = { tasks: { page: number, pageSize: number, total: number, items: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string }> } };
+export type TasksQuery = { tasks: { page: number, pageSize: number, total: number, items: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null> | null, createdAt: string, updatedAt: string }> } };
 
 export type TaskQueryVariables = Exact<{
   workspaceId: string;
@@ -900,7 +995,7 @@ export type TaskQueryVariables = Exact<{
 }>;
 
 
-export type TaskQuery = { task: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string } };
+export type TaskQuery = { task: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null> | null, createdAt: string, updatedAt: string } };
 
 export type SprintTasksQueryVariables = Exact<{
   workspaceId: string;
@@ -908,7 +1003,7 @@ export type SprintTasksQueryVariables = Exact<{
 }>;
 
 
-export type SprintTasksQuery = { sprintTasks: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string }> };
+export type SprintTasksQuery = { sprintTasks: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null> | null, createdAt: string, updatedAt: string }> };
 
 export type BacklogQueryVariables = Exact<{
   workspaceId: string;
@@ -916,7 +1011,7 @@ export type BacklogQueryVariables = Exact<{
 }>;
 
 
-export type BacklogQuery = { backlog: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string }> };
+export type BacklogQuery = { backlog: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null> | null, createdAt: string, updatedAt: string }> };
 
 export type CreateTaskMutationVariables = Exact<{
   workspaceId: string;
@@ -925,7 +1020,7 @@ export type CreateTaskMutationVariables = Exact<{
 }>;
 
 
-export type CreateTaskMutation = { createTask: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string } };
+export type CreateTaskMutation = { createTask: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null> | null, createdAt: string, updatedAt: string } };
 
 export type UpdateTaskMutationVariables = Exact<{
   workspaceId: string;
@@ -934,7 +1029,7 @@ export type UpdateTaskMutationVariables = Exact<{
 }>;
 
 
-export type UpdateTaskMutation = { updateTask: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string } };
+export type UpdateTaskMutation = { updateTask: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null> | null, createdAt: string, updatedAt: string } };
 
 export type DeleteTaskMutationVariables = Exact<{
   workspaceId: string;
@@ -1037,6 +1132,20 @@ export const RoleFieldsFragmentDoc = new TypedDocumentString(`
   name
   systemKey
   permissions
+  effectivePermissions
+  readableFields
+  policies {
+    ref
+    name
+    managed
+  }
+  inlinePolicy {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
 }
     `, {"fragmentName":"RoleFields"}) as unknown as TypedDocumentString<RoleFieldsFragment, unknown>;
 export const SpaceFieldsFragmentDoc = new TypedDocumentString(`
@@ -1287,6 +1396,22 @@ export const FormSchemaFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"FormSchemaFields"}) as unknown as TypedDocumentString<FormSchemaFieldsFragment, unknown>;
+export const PolicyFieldsFragmentDoc = new TypedDocumentString(`
+    fragment PolicyFields on Policy {
+  id
+  name
+  description
+  managed
+  attachedRoleCount
+  document {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
+}
+    `, {"fragmentName":"PolicyFields"}) as unknown as TypedDocumentString<PolicyFieldsFragment, unknown>;
 export const AdminUsersDocument = new TypedDocumentString(`
     query AdminUsers($search: String, $page: Int, $pageSize: Int) {
   adminUsers(search: $search, page: $page, pageSize: $pageSize) {
@@ -1994,6 +2119,171 @@ export const WorkspaceEventsDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<WorkspaceEventsSubscription, WorkspaceEventsSubscriptionVariables>;
+export const PoliciesDocument = new TypedDocumentString(`
+    query Policies($workspaceId: ID!) {
+  policies(workspaceId: $workspaceId) {
+    ...PolicyFields
+  }
+}
+    fragment PolicyFields on Policy {
+  id
+  name
+  description
+  managed
+  attachedRoleCount
+  document {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
+}`) as unknown as TypedDocumentString<PoliciesQuery, PoliciesQueryVariables>;
+export const ProtectedFieldsDocument = new TypedDocumentString(`
+    query ProtectedFields($workspaceId: ID!) {
+  protectedFields(workspaceId: $workspaceId) {
+    key
+    label
+    description
+    visibleByDefault
+  }
+}
+    `) as unknown as TypedDocumentString<ProtectedFieldsQuery, ProtectedFieldsQueryVariables>;
+export const MyAccessDocument = new TypedDocumentString(`
+    query MyAccess($workspaceId: ID!) {
+  myAccess(workspaceId: $workspaceId) {
+    permissions
+    readableFields
+  }
+}
+    `) as unknown as TypedDocumentString<MyAccessQuery, MyAccessQueryVariables>;
+export const CreatePolicyDocument = new TypedDocumentString(`
+    mutation CreatePolicy($workspaceId: ID!, $input: SavePolicyInput!) {
+  createPolicy(workspaceId: $workspaceId, input: $input) {
+    ...PolicyFields
+  }
+}
+    fragment PolicyFields on Policy {
+  id
+  name
+  description
+  managed
+  attachedRoleCount
+  document {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
+}`) as unknown as TypedDocumentString<CreatePolicyMutation, CreatePolicyMutationVariables>;
+export const UpdatePolicyDocument = new TypedDocumentString(`
+    mutation UpdatePolicy($workspaceId: ID!, $policyId: ID!, $input: SavePolicyInput!) {
+  updatePolicy(workspaceId: $workspaceId, policyId: $policyId, input: $input) {
+    ...PolicyFields
+  }
+}
+    fragment PolicyFields on Policy {
+  id
+  name
+  description
+  managed
+  attachedRoleCount
+  document {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
+}`) as unknown as TypedDocumentString<UpdatePolicyMutation, UpdatePolicyMutationVariables>;
+export const DeletePolicyDocument = new TypedDocumentString(`
+    mutation DeletePolicy($workspaceId: ID!, $policyId: ID!) {
+  deletePolicy(workspaceId: $workspaceId, policyId: $policyId)
+}
+    `) as unknown as TypedDocumentString<DeletePolicyMutation, DeletePolicyMutationVariables>;
+export const AttachRolePolicyDocument = new TypedDocumentString(`
+    mutation AttachRolePolicy($workspaceId: ID!, $roleId: ID!, $policy: String!) {
+  attachRolePolicy(workspaceId: $workspaceId, roleId: $roleId, policy: $policy) {
+    ...RoleFields
+  }
+}
+    fragment RoleFields on Role {
+  id
+  name
+  systemKey
+  permissions
+  effectivePermissions
+  readableFields
+  policies {
+    ref
+    name
+    managed
+  }
+  inlinePolicy {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
+}`) as unknown as TypedDocumentString<AttachRolePolicyMutation, AttachRolePolicyMutationVariables>;
+export const DetachRolePolicyDocument = new TypedDocumentString(`
+    mutation DetachRolePolicy($workspaceId: ID!, $roleId: ID!, $policy: String!) {
+  detachRolePolicy(workspaceId: $workspaceId, roleId: $roleId, policy: $policy) {
+    ...RoleFields
+  }
+}
+    fragment RoleFields on Role {
+  id
+  name
+  systemKey
+  permissions
+  effectivePermissions
+  readableFields
+  policies {
+    ref
+    name
+    managed
+  }
+  inlinePolicy {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
+}`) as unknown as TypedDocumentString<DetachRolePolicyMutation, DetachRolePolicyMutationVariables>;
+export const SetRoleInlinePolicyDocument = new TypedDocumentString(`
+    mutation SetRoleInlinePolicy($workspaceId: ID!, $roleId: ID!, $document: PolicyDocumentInput!) {
+  setRoleInlinePolicy(
+    workspaceId: $workspaceId
+    roleId: $roleId
+    document: $document
+  ) {
+    ...RoleFields
+  }
+}
+    fragment RoleFields on Role {
+  id
+  name
+  systemKey
+  permissions
+  effectivePermissions
+  readableFields
+  policies {
+    ref
+    name
+    managed
+  }
+  inlinePolicy {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
+}`) as unknown as TypedDocumentString<SetRoleInlinePolicyMutation, SetRoleInlinePolicyMutationVariables>;
 export const ResourceSchemaDocument = new TypedDocumentString(`
     query ResourceSchema($workspaceId: ID!, $resource: String!) {
   resourceSchema(workspaceId: $workspaceId, resource: $resource) {
@@ -2123,6 +2413,20 @@ export const RolesDocument = new TypedDocumentString(`
   name
   systemKey
   permissions
+  effectivePermissions
+  readableFields
+  policies {
+    ref
+    name
+    managed
+  }
+  inlinePolicy {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
 }`) as unknown as TypedDocumentString<RolesQuery, RolesQueryVariables>;
 export const CreateRoleDocument = new TypedDocumentString(`
     mutation CreateRole($workspaceId: ID!, $input: CreateRoleInput!) {
@@ -2135,6 +2439,20 @@ export const CreateRoleDocument = new TypedDocumentString(`
   name
   systemKey
   permissions
+  effectivePermissions
+  readableFields
+  policies {
+    ref
+    name
+    managed
+  }
+  inlinePolicy {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
 }`) as unknown as TypedDocumentString<CreateRoleMutation, CreateRoleMutationVariables>;
 export const UpdateRoleDocument = new TypedDocumentString(`
     mutation UpdateRole($workspaceId: ID!, $roleId: ID!, $input: UpdateRoleInput!) {
@@ -2147,6 +2465,20 @@ export const UpdateRoleDocument = new TypedDocumentString(`
   name
   systemKey
   permissions
+  effectivePermissions
+  readableFields
+  policies {
+    ref
+    name
+    managed
+  }
+  inlinePolicy {
+    statements {
+      effect
+      permissions
+      fields
+    }
+  }
 }`) as unknown as TypedDocumentString<UpdateRoleMutation, UpdateRoleMutationVariables>;
 export const DeleteRoleDocument = new TypedDocumentString(`
     mutation DeleteRole($workspaceId: ID!, $roleId: ID!) {

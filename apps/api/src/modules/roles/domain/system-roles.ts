@@ -1,4 +1,4 @@
-import { SYSTEM_ROLE_KEYS, SYSTEM_ROLE_PERMISSIONS, type SystemRoleKey } from '@taskflow/shared-types';
+import { SYSTEM_ROLE_KEYS, type SystemRoleKey } from '@taskflow/shared-types';
 import type { NewWorkspaceRole, WorkspaceRole } from './workspace-role.js';
 
 const SYSTEM_ROLE_NAMES: Record<SystemRoleKey, string> = {
@@ -8,13 +8,13 @@ const SYSTEM_ROLE_NAMES: Record<SystemRoleKey, string> = {
   guest: 'Guest',
 };
 
-/** Built-in roles every new workspace starts with. */
+/** Built-in roles every new workspace starts with. Their rights come from managed policies (SYSTEM_ROLE_POLICIES). */
 export function buildSystemRoles(workspaceId: string): NewWorkspaceRole[] {
   return SYSTEM_ROLE_KEYS.map((key) => ({
     workspaceId,
     systemKey: key,
     name: SYSTEM_ROLE_NAMES[key],
-    permissions: [...SYSTEM_ROLE_PERMISSIONS[key]],
+    permissions: [],
   }));
 }
 

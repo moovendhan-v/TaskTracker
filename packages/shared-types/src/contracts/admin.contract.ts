@@ -45,7 +45,8 @@ export interface AuditLogEntryResponse {
   workspaceId: string | null;
   /** Only shown to platform admins. */
   ip: string | null;
-  metadata: Record<string, unknown>;
+  /** Null unless a policy lets the caller read `audit.metadata`. */
+  metadata: Record<string, unknown> | null;
   createdAt: string;
 }
 

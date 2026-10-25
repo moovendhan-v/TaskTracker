@@ -38,23 +38,6 @@ export type PlatformRole = (typeof PLATFORM_ROLES)[number];
 export const SYSTEM_ROLE_KEYS = ['owner', 'admin', 'member', 'guest'] as const;
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
 
-const MEMBER_PERMISSIONS: readonly Permission[] = [
-  'task.view',
-  'task.create',
-  'task.update',
-  'task.assign',
-  'doc.view',
-  'doc.create',
-  'hr.view',
-  'leave.request',
-];
-
-/** Permissions seeded for the built-in roles of every new workspace. */
-export const SYSTEM_ROLE_PERMISSIONS: Record<SystemRoleKey, readonly Permission[]> = {
-  owner: PERMISSIONS,
-  admin: PERMISSIONS.filter((p) => p !== 'workspace.manage'),
-  member: MEMBER_PERMISSIONS,
-  guest: ['task.view', 'doc.view'],
-};
+// Built-in roles get their permissions from managed policies (see iam.ts, SYSTEM_ROLE_POLICIES).
 
 export const ROLE_NAME_MAX = 50;

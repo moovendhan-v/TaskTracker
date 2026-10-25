@@ -31,6 +31,8 @@ export interface NormalizedQuery {
   filter: NormalizedNode | null;
   sort: NormalizedSort[];
   search: string | null;
+  /** Columns the search box may match for this caller (protected ones left out). */
+  searchColumns: string[];
   page: number;
   pageSize: number;
 }
@@ -39,6 +41,8 @@ export interface NormalizedQuery {
 export interface QueryContext {
   userId: string | null;
   permissions: ReadonlySet<string>;
+  /** Protected fields the caller may read. */
+  readableFields: ReadonlySet<string>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -72,7 +76,9 @@ export function normalizeQuery(definition: QueryResourceDefinition, query: Resou
 
   const search = (query?.search ?? parsedWhere?.search ?? '').trim();
   if (search.length > FILTER_LIMITS.maxValueLength) throw DomainError.invalid('Search text is too long');
-  if (search && definition.search.length === 0) throw DomainError.invalid(`${definition.label} can't be searched`);
+  // Searching a protected column would let someone probe values they may not read.
+  const searchColumns = definition.search.filter((entry) => !entry.field || context.readableFields.has(entry.field)).map((entry) => entry.column);
+  if (search && searchColumns.length === 0) throw DomainError.invalid(`${definition.label} can't be searched`);
 
   const page = query?.page ?? parsedWhere?.page ?? 1;
   const pageSize = query?.pageSize ?? parsedWhere?.pageSize ?? definition.defaultPageSize;
@@ -81,7 +87,7 @@ export function normalizeQuery(definition: QueryResourceDefinition, query: Resou
     throw DomainError.invalid(`Page size must be between 1 and ${definition.maxPageSize}`);
   }
 
-  return { resource: definition, filter, sort, search: search || null, page, pageSize };
+  return { resource: definition, filter, sort, search: search || null, searchColumns, page, pageSize };
 }
 
 function parseWhere(where: string): ReturnType<typeof parseQueryString> {
@@ -133,7 +139,7 @@ function normalizeNode(
 
 function visibleField(definition: QueryResourceDefinition, name: string, context: QueryContext): QueryFieldDefinition {
   const field = definition.fields.get(name);
-  if (!field || (field.requires && !context.permissions.has(field.requires))) throw DomainError.invalid(`Unknown field ${name.slice(0, 64)}`);
+  if (!field || !isVisible(field, context)) throw DomainError.invalid(`Unknown field ${name.slice(0, 64)}`);
   return field;
 }
 
@@ -206,4 +212,10 @@ function convertValue(field: QueryFieldDefinition, op: FilterOperator, value: st
       }
       return value;
   }
+}
+
+/** Whether a caller may see a field at all: its permission and its protected-field rule. */
+export function isVisible(field: QueryFieldDefinition, context: Pick<QueryContext, 'permissions' | 'readableFields'>): boolean {
+  if (field.requires && !context.permissions.has(field.requires)) return false;
+  return !field.protectedField || context.readableFields.has(field.protectedField);
 }

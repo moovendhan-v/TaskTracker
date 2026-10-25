@@ -34,6 +34,8 @@ export interface QueryFieldOptions {
   width?: number;
   /** Only callers with this permission see, filter or sort by the field. */
   requires?: Permission;
+  /** A protected field key (e.g. `member.email`): only callers allowed to read it can see, filter or sort by it. */
+  field?: string;
 }
 
 export interface QueryResourceOptions {
@@ -48,8 +50,14 @@ export interface QueryResourceOptions {
   defaultPageSize?: number;
   maxPageSize?: number;
   logic?: readonly LogicOperator[];
-  /** Columns matched by the free-text search box. */
-  search?: readonly string[];
+  /** Columns matched by the free-text search box; protected ones only for callers who can read them. */
+  search?: readonly (string | SearchColumn)[];
+}
+
+export interface SearchColumn {
+  column: string;
+  /** Protected field key the column holds. */
+  field: string;
 }
 
 export interface QueryFieldDefinition extends Required<Pick<QueryFieldOptions, 'type' | 'column'>> {
@@ -63,6 +71,7 @@ export interface QueryFieldDefinition extends Required<Pick<QueryFieldOptions, '
   display: string | null;
   width: number | null;
   requires: Permission | null;
+  protectedField: string | null;
 }
 
 export interface QueryResourceDefinition {
@@ -74,7 +83,7 @@ export interface QueryResourceDefinition {
   defaultPageSize: number;
   maxPageSize: number;
   logic: readonly LogicOperator[];
-  search: readonly string[];
+  search: readonly { column: string; field: string | null }[];
   fields: ReadonlyMap<string, QueryFieldDefinition>;
 }
 
@@ -111,6 +120,7 @@ export function QueryField(options: QueryFieldOptions): PropertyDecorator {
       display: options.display ?? null,
       width: options.width ?? null,
       requires: options.requires ?? null,
+      protectedField: options.field ?? null,
     });
     pendingFields.set(target.constructor, fields);
   };
@@ -138,7 +148,7 @@ export function QueryResource(options: QueryResourceOptions): ClassDecorator {
       defaultPageSize: options.defaultPageSize ?? PAGE_SIZE_DEFAULT,
       maxPageSize: Math.min(options.maxPageSize ?? PAGE_SIZE_MAX, PAGE_SIZE_MAX),
       logic: options.logic ?? ['and', 'or', 'not'],
-      search: options.search ?? [],
+      search: (options.search ?? []).map((entry) => (typeof entry === 'string' ? { column: entry, field: null } : entry)),
       fields,
     };
     resources.set(options.name, definition);

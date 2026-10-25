@@ -41,6 +41,12 @@ type AdminWorkspacePage {
   total: Int!
 }
 
+type AttachedPolicy {
+  managed: Boolean!
+  name: String!
+  ref: String!
+}
+
 type AuditLogEntry {
   action: String!
   actorId: ID!
@@ -50,7 +56,11 @@ type AuditLogEntry {
 
   """Only shown to platform admins"""
   ip: String
-  metadata: JSONObject!
+
+  """
+  Protected (audit.metadata): null unless a policy lets the caller read it.
+  """
+  metadata: JSONObject
   targetId: String
   targetType: String!
   workspaceId: ID
@@ -189,13 +199,23 @@ type DocumentSummary {
 type Employee {
   departmentId: ID
   departmentName: String
-  email: String!
+
+  """
+  Protected (member.email): null unless a policy lets the caller read it.
+  """
+  email: String
+
+  """
+  Protected (employee.employmentType): null unless a policy lets the caller read it.
+  """
   employmentType: EmploymentType
   jobTitle: String
   managerUserId: ID
   name: String!
 
-  """yyyy-mm-dd"""
+  """
+  yyyy-mm-dd Protected (employee.startDate): null unless a policy lets the caller read it.
+  """
   startDate: String
   userId: ID!
 }
@@ -219,6 +239,16 @@ type EnumOption {
   color: String
   label: String!
   value: String!
+}
+
+"""A data field whose visibility policies control"""
+type FieldDefinition {
+  description: String!
+  key: String!
+  label: String!
+
+  """Visible unless denied (true), or hidden unless allowed (false)"""
+  visibleByDefault: Boolean!
 }
 
 enum FieldType {
@@ -360,7 +390,10 @@ enum LogicOperator {
 }
 
 type Member {
-  email: String!
+  """
+  Protected (member.email): null unless a policy lets the caller read it.
+  """
+  email: String
   joinedAt: String!
   name: String!
   roleId: ID!
@@ -382,6 +415,12 @@ scalar Metadata
 
 type Mutation {
   addMember(input: AddMemberInput!, workspaceId: ID!): AddMemberResult!
+  attachRolePolicy(
+    """managed:<key> or a custom policy id"""
+    policy: String!
+    roleId: ID!
+    workspaceId: ID!
+  ): Role!
   cancelLeaveRequest(requestId: ID!, workspaceId: ID!): LeaveRequest!
 
   """
@@ -393,6 +432,7 @@ type Mutation {
   createDocument(input: CreateDocumentInput!, workspaceId: ID!): Document!
   createLeaveType(input: CreateLeaveTypeInput!, workspaceId: ID!): LeaveType!
   createList(input: TaskListInput!, spaceId: ID!, workspaceId: ID!): TaskList!
+  createPolicy(input: SavePolicyInput!, workspaceId: ID!): Policy!
   createRole(input: CreateRoleInput!, workspaceId: ID!): Role!
   createSpace(input: CreateSpaceInput!, workspaceId: ID!): Space!
   createSprint(input: CreateSprintInput!, spaceId: ID!, workspaceId: ID!): Sprint!
@@ -410,11 +450,18 @@ type Mutation {
   deleteDocument(documentId: ID!, workspaceId: ID!): Boolean!
   deleteLeaveType(leaveTypeId: ID!, workspaceId: ID!): Boolean!
   deleteList(listId: ID!, workspaceId: ID!): Boolean!
+  deletePolicy(policyId: ID!, workspaceId: ID!): Boolean!
   deleteRole(roleId: ID!, workspaceId: ID!): Boolean!
   deleteSpace(spaceId: ID!, workspaceId: ID!): Boolean!
   deleteSprint(sprintId: ID!, workspaceId: ID!): Boolean!
   deleteTask(taskId: ID!, workspaceId: ID!): Boolean!
   deleteWorkspace(workspaceId: ID!): Boolean!
+  detachRolePolicy(
+    """managed:<key> or a custom policy id"""
+    policy: String!
+    roleId: ID!
+    workspaceId: ID!
+  ): Role!
 
   """Leave a workspace. The last owner cannot leave."""
   leaveWorkspace(workspaceId: ID!): Boolean!
@@ -429,6 +476,11 @@ type Mutation {
   moveDocument(documentId: ID!, parentId: ID, position: Float, workspaceId: ID!): Document!
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
   requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
+
+  """
+  Replaces a role's inline policy (statements that belong to that role only)
+  """
+  setRoleInlinePolicy(document: PolicyDocumentInput!, roleId: ID!, workspaceId: ID!): Role!
   startSprint(sprintId: ID!, workspaceId: ID!): Sprint!
 
   """
@@ -443,12 +495,18 @@ type Mutation {
   updateLeaveType(input: UpdateLeaveTypeInput!, leaveTypeId: ID!, workspaceId: ID!): LeaveType!
   updateList(input: TaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
   updateMemberRole(roleId: ID!, userId: ID!, workspaceId: ID!): Member!
+  updatePolicy(input: SavePolicyInput!, policyId: ID!, workspaceId: ID!): Policy!
   updateRole(input: UpdateRoleInput!, roleId: ID!, workspaceId: ID!): Role!
   updateSpace(input: UpdateSpaceInput!, spaceId: ID!, workspaceId: ID!): Space!
   updateSprint(input: UpdateSprintInput!, sprintId: ID!, workspaceId: ID!): Sprint!
   updateTask(input: UpdateTaskInput!, taskId: ID!, workspaceId: ID!): Task!
   updateWorkspace(input: UpdateWorkspaceInput!, workspaceId: ID!): Workspace!
   upsertEmployeeProfile(input: EmployeeProfileInput!, userId: ID!, workspaceId: ID!): Employee!
+}
+
+type MyAccess {
+  permissions: [String!]!
+  readableFields: [String!]!
 }
 
 type Notification {
@@ -489,6 +547,46 @@ type NotificationPage {
 enum PlatformRole {
   SUPER_ADMIN
   USER
+}
+
+type Policy {
+  attachedRoleCount: Int!
+  description: String!
+  document: PolicyDocument!
+
+  """managed:<key> for ready-made policies, otherwise a UUID"""
+  id: String!
+  managed: Boolean!
+  name: String!
+}
+
+type PolicyDocument {
+  statements: [PolicyStatement!]!
+}
+
+input PolicyDocumentInput {
+  statements: [PolicyStatementInput!]!
+}
+
+enum PolicyEffect {
+  allow
+  deny
+}
+
+type PolicyStatement {
+  effect: PolicyEffect!
+
+  """Field keys or patterns such as member.email"""
+  fields: [String!]
+
+  """Permission keys or patterns such as task.*"""
+  permissions: [String!]
+}
+
+input PolicyStatementInput {
+  effect: PolicyEffect!
+  fields: [String!]
+  permissions: [String!]
 }
 
 type Query {
@@ -554,6 +652,11 @@ type Query {
   """The signed-in user"""
   me: CurrentUser!
   members(workspaceId: ID!): [Member!]!
+
+  """
+  The caller's effective permissions and readable fields in the workspace
+  """
+  myAccess(workspaceId: ID!): MyAccess!
   myLeaveBalances(
     workspaceId: ID!
 
@@ -571,6 +674,12 @@ type Query {
     unreadOnly: Boolean
     workspaceId: ID!
   ): NotificationPage!
+
+  """Managed and custom policies, with how many roles use each"""
+  policies(workspaceId: ID!): [Policy!]!
+
+  """Data fields whose visibility policies control"""
+  protectedFields(workspaceId: ID!): [FieldDefinition!]!
 
   """Resources the caller can list with resourceSchema"""
   resourceNames(workspaceId: ID!): [String!]!
@@ -709,12 +818,29 @@ type ResourceSchema {
 }
 
 type Role {
+  """What members with this role can do after every policy and deny"""
+  effectivePermissions: [String!]!
   id: ID!
+
+  """Statements that belong to this role only"""
+  inlinePolicy: PolicyDocument!
   name: String!
+
+  """Permissions granted directly on the role"""
   permissions: [String!]!
+  policies: [AttachedPolicy!]!
+
+  """Protected fields members with this role can read"""
+  readableFields: [String!]!
 
   """Set for built-in roles"""
   systemKey: String
+}
+
+input SavePolicyInput {
+  description: String
+  document: PolicyDocumentInput!
+  name: String!
 }
 
 enum SortDirection {
@@ -775,7 +901,11 @@ type Task {
   dueDate: String
   id: ID!
   listId: ID!
-  metadata: Metadata!
+
+  """
+  Protected (task.metadata): null unless a policy lets the caller read it.
+  """
+  metadata: Metadata
   position: Float!
   priority: TaskPriority!
   sprintId: ID

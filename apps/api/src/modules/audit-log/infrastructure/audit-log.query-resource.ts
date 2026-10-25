@@ -25,6 +25,6 @@ export class AuditLogQueryResource {
   @QueryField({ type: 'string', column: 'log.target_id', label: 'Target id', operators: ['eq', 'in', 'is_null', 'is_not_null'], defaultVisible: false, display: 'code' })
   targetId: string;
 
-  @QueryField({ type: 'json', column: 'log.metadata', label: 'Details', operators: ['eq', 'contains', 'is_null', 'is_not_null'], display: 'code' })
+  @QueryField({ type: 'json', column: 'log.metadata', field: 'audit.metadata', label: 'Details', operators: ['eq', 'contains', 'is_null', 'is_not_null'], display: 'code' })
   metadata: string;
 }

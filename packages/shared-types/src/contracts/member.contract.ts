@@ -1,7 +1,8 @@
 export interface MemberResponse {
   userId: string;
   name: string;
-  email: string;
+  /** Null unless a policy lets the caller read `member.email`. */
+  email: string | null;
   roleId: string;
   roleName: string;
   joinedAt: string;

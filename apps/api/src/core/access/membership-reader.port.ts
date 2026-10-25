@@ -2,7 +2,10 @@ import type { Permission } from '@taskflow/shared-types';
 
 export interface MembershipGrant {
   roleId: string;
+  /** Effective permissions after every policy and deny. */
   permissions: readonly Permission[];
+  /** Protected fields the member may read. */
+  readableFields: readonly string[];
 }
 
 /**

@@ -1,4 +1,5 @@
 import { FILTER_LIMITS, type EnumOption, type ResourceSchema } from '@taskflow/shared-types';
+import { isVisible } from './normalize-query.js';
 import type { QueryResourceDefinition } from './query-resource.decorators.js';
 
 /**
@@ -8,11 +9,11 @@ import type { QueryResourceDefinition } from './query-resource.decorators.js';
  */
 export function describeResource(
   definition: QueryResourceDefinition,
-  permissions: ReadonlySet<string>,
+  caller: { permissions: ReadonlySet<string>; readableFields: ReadonlySet<string> },
   dynamicOptions: ReadonlyMap<string, EnumOption[]> = new Map(),
 ): ResourceSchema {
   const fields = [...definition.fields.values()]
-    .filter((field) => !field.requires || permissions.has(field.requires))
+    .filter((field) => isVisible(field, caller))
     .map((field) => ({
       name: field.name,
       label: field.label,
@@ -31,7 +32,7 @@ export function describeResource(
     label: definition.label,
     fields,
     logic: [...definition.logic],
-    searchable: definition.search.length > 0,
+    searchable: definition.search.some((entry) => !entry.field || caller.readableFields.has(entry.field)),
     defaultSort: definition.defaultSort.filter((sort) => visible.has(sort.field)),
     defaultPageSize: definition.defaultPageSize,
     maxPageSize: definition.maxPageSize,

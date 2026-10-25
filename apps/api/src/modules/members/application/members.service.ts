@@ -9,6 +9,7 @@ import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
 import { domainEvent } from '../../../core/events/domain-event.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
+import { RoleAccessService, type RoleAccess } from '../../roles/application/role-access.service.js';
 import { RolesService } from '../../roles/application/roles.service.js';
 import { RoleGrantPolicy } from '../../roles/domain/role-grant.policy.js';
 import { UsersService } from '../../users/application/users.service.js';
@@ -25,6 +26,7 @@ export class MembersService {
   constructor(
     private readonly members: WorkspaceMemberRepository,
     private readonly rolesService: RolesService,
+    private readonly roleAccess: RoleAccessService,
     private readonly usersService: UsersService,
     private readonly unitOfWork: UnitOfWork,
     private readonly auditLogger: AuditLogger,
@@ -50,7 +52,7 @@ export class MembersService {
   async add(actor: Actor, access: WorkspaceAccess, request: AddMemberRequest): Promise<{ message: string }> {
     await this.unitOfWork.run(async () => {
       const role = await this.rolesService.getInWorkspace(access.workspaceId, request.roleId);
-      RoleGrantPolicy.assertCanHandOut(access.permissions, role.permissions);
+      await this.assertCanHandOut(access, role.id);
 
       const user = await this.usersService.findVerifiedByEmail(request.email);
       if (!user) return;
@@ -79,9 +81,9 @@ export class MembersService {
 
     await this.unitOfWork.run(async () => {
       const membership = await this.getMembership(access.workspaceId, userId);
-      RoleGrantPolicy.assertCanHandOut(access.permissions, membership.permissions);
+      await this.assertCanHandOut(access, membership.roleId);
       const role = await this.rolesService.getInWorkspace(access.workspaceId, request.roleId);
-      RoleGrantPolicy.assertCanHandOut(access.permissions, role.permissions);
+      await this.assertCanHandOut(access, role.id);
 
       if (membership.roleSystemKey === 'owner' && role.systemKey !== 'owner') {
         await this.assertAnotherOwner(membership);
@@ -104,7 +106,7 @@ export class MembersService {
     const leaving = userId === actor.userId;
     await this.unitOfWork.run(async () => {
       const membership = await this.getMembership(access.workspaceId, userId);
-      if (!leaving) RoleGrantPolicy.assertCanHandOut(access.permissions, membership.permissions);
+      if (!leaving) await this.assertCanHandOut(access, membership.roleId);
       if (membership.roleSystemKey === 'owner') await this.assertAnotherOwner(membership);
 
       await this.members.remove(access.workspaceId, userId);
@@ -137,8 +139,26 @@ export class MembersService {
     return this.members.isMember(workspaceId, userId);
   }
 
-  listUserIdsWithPermission(workspaceId: string, permission: Permission): Promise<string[]> {
-    return this.members.listUserIdsWithPermission(workspaceId, permission);
+  /** Members whose role (after every policy) includes `permission`, e.g. everyone who can approve leave. */
+  async listUserIdsWithPermission(workspaceId: string, permission: Permission): Promise<string[]> {
+    const members = await this.members.listMembersWithRoles(workspaceId);
+    const byRole = new Map<string, boolean>();
+    const result: string[] = [];
+    for (const { userId, roleId } of members) {
+      if (!byRole.has(roleId)) byRole.set(roleId, (await this.roleAccess.forRole(workspaceId, roleId))?.permissions.includes(permission) ?? false);
+      if (byRole.get(roleId)) result.push(userId);
+    }
+    return result;
+  }
+
+  /** Effective access of a role, from its policies. */
+  roleAccessFor(workspaceId: string, roleId: string): Promise<RoleAccess | null> {
+    return this.roleAccess.forRole(workspaceId, roleId);
+  }
+
+  private async assertCanHandOut(access: WorkspaceAccess, roleId: string): Promise<void> {
+    const role = await this.roleAccess.forRole(access.workspaceId, roleId);
+    RoleGrantPolicy.assertCanHandOutAccess(access, role ?? { permissions: [], readableFields: [] });
   }
 
   private async getMembership(workspaceId: string, userId: string): Promise<MembershipWithRole> {
