@@ -78,7 +78,12 @@ function TaskDetail({ workspaceId, task, onDeleted }: TaskDetailProps) {
         <dl className="grid grid-cols-[7rem_1fr] items-center gap-x-4 gap-y-2 text-sm">
           <dt className="text-muted-foreground">Status</dt>
           <dd>
-            <StatusPicker value={task.status} disabled={!canEdit} onChange={(status) => save({ status })} />
+            <StatusPicker
+              workspaceId={workspaceId}
+              value={task.status}
+              disabled={!canEdit}
+              onChange={(status) => update.mutate({ taskId: task.id, body: { statusId: status.id }, status })}
+            />
           </dd>
           <dt className="text-muted-foreground">Priority</dt>
           <dd>

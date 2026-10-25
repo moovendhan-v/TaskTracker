@@ -63,11 +63,11 @@ export function ListPage({ workspaceId, listId, openTaskId }: ListPageProps) {
       <div className="min-h-0 flex-1 overflow-auto p-6">
         {tasks.isLoading ? <FullPageSpinner /> : null}
         {tasks.isError ? <ErrorState error={tasks.error} onRetry={() => void tasks.refetch()} /> : null}
-        {tasks.data ? (
+        {tasks.data && list ? (
           view === 'board' ? (
-            <TaskBoardView workspaceId={workspaceId} listId={listId} tasks={tasks.data.items} onOpen={openTask} />
+            <TaskBoardView workspaceId={workspaceId} spaceId={list.spaceId} listId={listId} tasks={tasks.data.items} onOpen={openTask} />
           ) : (
-            <TaskListView workspaceId={workspaceId} listId={listId} tasks={tasks.data.items} onOpen={openTask} />
+            <TaskListView workspaceId={workspaceId} spaceId={list.spaceId} listId={listId} tasks={tasks.data.items} onOpen={openTask} />
           )
         ) : null}
       </div>

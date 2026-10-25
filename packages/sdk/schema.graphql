@@ -99,6 +99,15 @@ input CommentInput {
   body: String!
 }
 
+input CreateCustomFieldInput {
+  entity: CustomFieldEntity
+  name: String!
+  options: [CustomFieldOptionInput!]
+  required: Boolean
+  spaceId: ID
+  type: CustomFieldType!
+}
+
 input CreateDepartmentInput {
   headUserId: ID
   name: String!
@@ -145,14 +154,33 @@ input CreateSprintInput {
 
 input CreateTaskInput {
   assigneeId: ID
+
+  """Values keyed by custom field id"""
+  customFields: CustomFieldValues
   description: String
 
   """ISO date-time; null clears it"""
   dueDate: String
+  estimateMinutes: Int
   metadata: Metadata
+
+  """Makes it a subtask of another task in the same list"""
+  parentId: ID
   priority: TaskPriority
-  status: TaskStatus
+
+  """ISO date-time"""
+  startDate: String
+
+  """One of the space's statuses; defaults to its first not-started status"""
+  statusId: ID
   title: String!
+  type: TaskType
+}
+
+input CreateTaskStatusInput {
+  category: StatusCategory!
+  color: String!
+  name: String!
 }
 
 input CreateWorkspaceInput {
@@ -170,6 +198,54 @@ type CurrentUser {
   name: String!
   platformRole: PlatformRole!
 }
+
+type CustomField {
+  entity: CustomFieldEntity!
+  id: ID!
+  name: String!
+  options: [CustomFieldOption!]!
+  position: Int!
+  required: Boolean!
+
+  """Null: applies in every space"""
+  spaceId: ID
+  type: CustomFieldType!
+}
+
+enum CustomFieldEntity {
+  space
+  task
+}
+
+type CustomFieldOption {
+  color: String
+  id: String!
+  label: String!
+}
+
+input CustomFieldOptionInput {
+  color: String
+
+  """Keep the id of an existing option so values stay attached"""
+  id: String
+  label: String!
+}
+
+enum CustomFieldType {
+  checkbox
+  date
+  email
+  money
+  multi_select
+  number
+  select
+  text
+  url
+  user
+}
+
+"""Custom field values keyed by field id"""
+scalar CustomFieldValues
 
 input DecideLeaveInput {
   decision: LeaveDecision!
@@ -448,6 +524,7 @@ type Mutation {
   """
   completeSprint(moveOpenTasksToSprintId: ID, sprintId: ID!, workspaceId: ID!): Sprint!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
+  createCustomField(input: CreateCustomFieldInput!, workspaceId: ID!): CustomField!
   createDepartment(input: CreateDepartmentInput!, workspaceId: ID!): Department!
   createDocument(input: CreateDocumentInput!, workspaceId: ID!): Document!
   createLeaveType(input: CreateLeaveTypeInput!, workspaceId: ID!): LeaveType!
@@ -456,6 +533,7 @@ type Mutation {
   createRole(input: CreateRoleInput!, workspaceId: ID!): Role!
   createSpace(input: CreateSpaceInput!, workspaceId: ID!): Space!
   createSprint(input: CreateSprintInput!, spaceId: ID!, workspaceId: ID!): Sprint!
+  createStatus(input: CreateTaskStatusInput!, spaceId: ID!, workspaceId: ID!): TaskStatus!
   createTask(input: CreateTaskInput!, listId: ID!, workspaceId: ID!): Task!
   createWorkspace(input: CreateWorkspaceInput!): Workspace!
 
@@ -464,6 +542,9 @@ type Mutation {
 
   """The author, or anyone with task.delete"""
   deleteComment(commentId: ID!, workspaceId: ID!): Boolean!
+
+  """Deletes the field and its values everywhere"""
+  deleteCustomField(fieldId: ID!, workspaceId: ID!): Boolean!
   deleteDepartment(departmentId: ID!, workspaceId: ID!): Boolean!
 
   """Sub-pages are deleted too"""
@@ -474,6 +555,11 @@ type Mutation {
   deleteRole(roleId: ID!, workspaceId: ID!): Boolean!
   deleteSpace(spaceId: ID!, workspaceId: ID!): Boolean!
   deleteSprint(sprintId: ID!, workspaceId: ID!): Boolean!
+
+  """Deletes a status; its tasks move to `moveTasksTo` in the same space"""
+  deleteStatus(moveTasksTo: ID!, statusId: ID!, workspaceId: ID!): Boolean!
+
+  """Deletes the task and its subtasks"""
   deleteTask(taskId: ID!, workspaceId: ID!): Boolean!
   deleteView(viewId: ID!): Preferences!
   deleteWorkspace(workspaceId: ID!): Boolean!
@@ -495,7 +581,9 @@ type Mutation {
 
   """parentId null moves the page to the top level"""
   moveDocument(documentId: ID!, parentId: ID, position: Float, workspaceId: ID!): Document!
+  relateTasks(kind: TaskRelationKind!, relatedTaskId: ID!, taskId: ID!, workspaceId: ID!): [TaskRelation!]!
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
+  reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
   requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
 
   """Back to the default settings"""
@@ -513,9 +601,13 @@ type Mutation {
   """
   setRoleInlinePolicy(document: PolicyDocumentInput!, roleId: ID!, workspaceId: ID!): Role!
 
+  """Sets a space's custom field values; a value of null clears it"""
+  setSpaceCustomFields(spaceId: ID!, values: CustomFieldValues!, workspaceId: ID!): Space!
+
   """Replaces the open tabs of the multi-tab workspace"""
   setTabs(input: SetTabsInput!): Preferences!
   startSprint(sprintId: ID!, workspaceId: ID!): Sprint!
+  unrelateTasks(relationId: ID!, workspaceId: ID!): Boolean!
 
   """
   Suspending signs the user out everywhere. You cannot change your own account.
@@ -524,6 +616,7 @@ type Mutation {
 
   """Only the author can edit"""
   updateComment(commentId: ID!, input: CommentInput!, workspaceId: ID!): Comment!
+  updateCustomField(fieldId: ID!, input: UpdateCustomFieldInput!, workspaceId: ID!): CustomField!
   updateDepartment(departmentId: ID!, input: UpdateDepartmentInput!, workspaceId: ID!): Department!
   updateDocument(documentId: ID!, input: UpdateDocumentInput!, workspaceId: ID!): Document!
   updateLeaveType(input: UpdateLeaveTypeInput!, leaveTypeId: ID!, workspaceId: ID!): LeaveType!
@@ -534,9 +627,13 @@ type Mutation {
   updateRole(input: UpdateRoleInput!, roleId: ID!, workspaceId: ID!): Role!
   updateSpace(input: UpdateSpaceInput!, spaceId: ID!, workspaceId: ID!): Space!
   updateSprint(input: UpdateSprintInput!, sprintId: ID!, workspaceId: ID!): Sprint!
+  updateStatus(input: UpdateTaskStatusInput!, statusId: ID!, workspaceId: ID!): TaskStatus!
   updateTask(input: UpdateTaskInput!, taskId: ID!, workspaceId: ID!): Task!
   updateWorkspace(input: UpdateWorkspaceInput!, workspaceId: ID!): Workspace!
   upsertEmployeeProfile(input: EmployeeProfileInput!, userId: ID!, workspaceId: ID!): Employee!
+
+  """Follow (true) or stop following (false) a task"""
+  watchTask(taskId: ID!, watching: Boolean!, workspaceId: ID!): [ID!]!
 }
 
 type MyAccess {
@@ -670,6 +767,7 @@ type Query {
   """Unfinished tasks in a space that aren't in a sprint"""
   backlog(spaceId: ID!, workspaceId: ID!): [Task!]!
   comments(taskId: ID!, workspaceId: ID!): [Comment!]!
+  customFields(entity: CustomFieldEntity, workspaceId: ID!): [CustomField!]!
   departments(workspaceId: ID!): [Department!]!
   document(documentId: ID!, workspaceId: ID!): Document!
 
@@ -765,17 +863,21 @@ type Query {
   sprint(sprintId: ID!, workspaceId: ID!): Sprint!
   sprintTasks(sprintId: ID!, workspaceId: ID!): [Task!]!
   sprints(spaceId: ID!, workspaceId: ID!): [Sprint!]!
-  task(taskId: ID!, workspaceId: ID!): Task!
-  tasks(
-    listId: ID!
-    page: Int
 
-    """1 to 100"""
-    pageSize: Int
-    search: String
-    status: TaskStatus
-    workspaceId: ID!
-  ): TaskPage!
+  """A space's statuses in display order"""
+  statuses(spaceId: ID!, workspaceId: ID!): [TaskStatus!]!
+  subtasks(taskId: ID!, workspaceId: ID!): [Task!]!
+  task(taskId: ID!, workspaceId: ID!): Task!
+
+  """What changed on a task, newest first"""
+  taskActivity(taskId: ID!, workspaceId: ID!): [TaskActivity!]!
+
+  """A task by its short number, e.g. 978 for #978"""
+  taskByNumber(number: Int!, workspaceId: ID!): Task!
+  taskRelations(taskId: ID!, workspaceId: ID!): [TaskRelation!]!
+
+  """Users following the task"""
+  taskWatchers(taskId: ID!, workspaceId: ID!): [ID!]!
   unreadNotificationCount(workspaceId: ID!): Int!
   workspace(workspaceId: ID!): Workspace!
 
@@ -793,6 +895,9 @@ type Query {
     workspaceId: ID!
   ): AuditLogPage!
 
+  """Every status in the workspace, for views across spaces"""
+  workspaceStatuses(workspaceId: ID!): [TaskStatus!]!
+
   """Workspaces the caller belongs to"""
   workspaces: [Workspace!]!
 }
@@ -806,6 +911,7 @@ type QueryLimits {
 
 enum RealtimeEntityType {
   comment
+  custom_field
   department
   document
   employee
@@ -820,7 +926,15 @@ enum RealtimeEntityType {
   sprint
   status
   task
+  time_entry
   workspace
+}
+
+type RelatedTask {
+  id: ID!
+  number: Int!
+  status: TaskStatus!
+  title: String!
 }
 
 input RequestLeaveInput {
@@ -953,9 +1067,28 @@ type SortSpec {
 type Space {
   color: String!
   createdAt: String!
+  customFields: CustomFieldValues!
+
+  """yyyy-mm-dd"""
+  dueDate: String
   id: ID!
   name: String!
+
+  """yyyy-mm-dd"""
+  startDate: String
+
+  """Project health"""
+  status: SpaceStatus!
+  statusNote: String!
   workspaceId: ID!
+}
+
+enum SpaceStatus {
+  at_risk
+  complete
+  off_track
+  on_hold
+  on_track
 }
 
 type Sprint {
@@ -979,6 +1112,15 @@ enum SprintStatus {
   active
   completed
   planned
+}
+
+enum StatusCategory {
+  blocked
+  cancelled
+  done
+  review
+  started
+  unstarted
 }
 
 type Subscription {
@@ -1006,9 +1148,13 @@ input TableLayoutInput {
 
 type Task {
   assigneeId: ID
+  completedAt: String
   createdAt: String!
+  createdById: ID!
+  customFields: CustomFieldValues!
   description: String!
   dueDate: String
+  estimateMinutes: Int
   id: ID!
   listId: ID!
 
@@ -1016,12 +1162,38 @@ type Task {
   Protected (task.metadata): null unless a policy lets the caller read it.
   """
   metadata: Metadata
+
+  """Short number, unique in the workspace (#978)"""
+  number: Int!
+  parentId: ID
   position: Float!
   priority: TaskPriority!
+
+  """0–100"""
+  progress: Int
+  spaceId: ID!
   sprintId: ID
+  startDate: String
   status: TaskStatus!
+  statusId: ID!
+  subtaskCount: Int!
   title: String!
+  type: TaskType!
   updatedAt: String!
+}
+
+type TaskActivity {
+  actorId: ID
+  actorName: String
+  createdAt: String!
+  field: String
+  from: String
+  id: ID!
+
+  """created, changed or related"""
+  kind: String!
+  taskId: ID!
+  to: String
 }
 
 type TaskList {
@@ -1050,16 +1222,52 @@ enum TaskPriority {
   urgent
 }
 
-enum TaskStatus {
-  done
-  in_progress
-  in_review
-  todo
+type TaskRelation {
+  id: ID!
+  kind: TaskRelationKind!
+
+  """
+  True when this task is the source: "this task blocks the other"
+  """
+  outgoing: Boolean!
+  task: RelatedTask!
+}
+
+enum TaskRelationKind {
+  blocks
+  duplicates
+  relates
+}
+
+type TaskStatus {
+  """
+  What the status means: unstarted, started, review, blocked, done or cancelled
+  """
+  category: StatusCategory!
+  color: String!
+  id: ID!
+  name: String!
+  position: Int!
+  spaceId: ID!
+}
+
+enum TaskType {
+  bug
+  feature
+  milestone
+  phase
+  task
 }
 
 input UpdateAdminUserInput {
   platformRole: PlatformRole
   suspended: Boolean
+}
+
+input UpdateCustomFieldInput {
+  name: String
+  options: [CustomFieldOptionInput!]
+  required: Boolean
 }
 
 input UpdateDepartmentInput {
@@ -1099,7 +1307,15 @@ input UpdateRoleInput {
 
 input UpdateSpaceInput {
   color: String
+
+  """yyyy-mm-dd; null clears it"""
+  dueDate: String
   name: String
+
+  """yyyy-mm-dd; null clears it"""
+  startDate: String
+  status: SpaceStatus
+  statusNote: String
 }
 
 input UpdateSprintInput {
@@ -1111,18 +1327,33 @@ input UpdateSprintInput {
 
 input UpdateTaskInput {
   assigneeId: ID
+
+  """Merged into the current values; null clears a field"""
+  customFields: CustomFieldValues
   description: String
   dueDate: String
+  estimateMinutes: Int
 
   """Merged into the current metadata; a key set to null is removed"""
   metadata: Metadata
   position: Float
   priority: TaskPriority
 
+  """0–100"""
+  progress: Int
+
   """null moves the task to the backlog; needs sprint.manage"""
   sprintId: ID
-  status: TaskStatus
+  startDate: String
+  statusId: ID
   title: String
+  type: TaskType
+}
+
+input UpdateTaskStatusInput {
+  category: StatusCategory
+  color: String
+  name: String
 }
 
 input UpdateWorkspaceInput {

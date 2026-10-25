@@ -1,10 +1,10 @@
 export { TaskListView } from './components/list-view/task-list-view';
 export { TaskBoardView } from './components/board-view/task-board-view';
 export { TaskDetailSheet } from './components/detail/task-detail-sheet';
-export { useTasks } from './hooks/use-tasks';
+export { useStatuses, useTasks } from './hooks/use-tasks';
 export { tasksApi } from './api/tasks.api';
 export { useTaskMutations } from './hooks/use-task-mutations';
 export { useTaskViewStore, type TaskViewMode } from './store/task-view.store';
 export { StatusLabel, StatusDot } from './components/shared/status-picker';
 export { PriorityIcon } from './components/shared/priority-picker';
-export { STATUS_META, PRIORITY_META } from './lib/task-meta';
+export { isClosed, PRIORITY_META } from './lib/task-meta';

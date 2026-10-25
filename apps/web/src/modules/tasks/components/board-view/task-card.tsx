@@ -2,6 +2,7 @@ import type { DragEvent } from 'react';
 import type { TaskResponse } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { cn } from '@/lib/cn';
+import { isClosed } from '../../lib/task-meta';
 import { useMemberName } from '@/modules/members';
 import { DueDateLabel } from '../shared/due-date';
 import { PriorityIcon } from '../shared/priority-picker';
@@ -34,13 +35,13 @@ export function TaskCard({ workspaceId, task, draggable, onOpen, onDropBefore }:
       <button
         type="button"
         onClick={() => onOpen(task.id)}
-        className={cn('block w-full text-left text-sm font-medium hover:text-primary', task.status === 'done' && 'text-muted-foreground line-through')}
+        className={cn('block w-full text-left text-sm font-medium hover:text-primary', isClosed(task) && 'text-muted-foreground line-through')}
       >
         {task.title}
       </button>
       <div className="mt-3 flex items-center gap-2">
         {task.priority !== 'none' ? <PriorityIcon priority={task.priority} className="size-3.5" /> : null}
-        <DueDateLabel dueDate={task.dueDate} done={task.status === 'done'} />
+        <DueDateLabel dueDate={task.dueDate} done={isClosed(task)} />
         <span className="flex-1" />
         {assignee ? <UserAvatar name={assignee} className="size-6" showTooltip /> : null}
       </div>

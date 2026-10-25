@@ -10,7 +10,7 @@ interface Page {
 }
 
 const SEARCH = `query($w: ID!, $l: ID, $s: ID, $q: ResourceQueryInput) {
-  searchTasks(workspaceId: $w, listId: $l, spaceId: $s, query: $q) { total page pageSize items { id title status priority metadata } }
+  searchTasks(workspaceId: $w, listId: $l, spaceId: $s, query: $q) { total page pageSize items { id title status { name } priority metadata } }
 }`;
 
 describe('resource queries (filters, sorting, paging, schema)', () => {
@@ -30,10 +30,10 @@ describe('resource queries (filters, sorting, paging, schema)', () => {
 
     const create = 'mutation($w: ID!, $l: ID!, $input: CreateTaskInput!) { createTask(workspaceId: $w, listId: $l, input: $input) { id } }';
     const tasks = [
-      { title: 'Ship order 6735', priority: 'urgent', status: 'in_progress', metadata: { order_id: '6735', total: 250 } },
-      { title: 'Ship order 9000', priority: 'low', status: 'todo', metadata: { order_id: '9000', total: 'n/a' } },
-      { title: 'Write release notes', priority: 'high', status: 'done', metadata: {} },
-      { title: "Fix 100% CPU; DROP TABLE task;--", priority: 'normal', status: 'todo' },
+      { title: 'Ship order 6735', priority: 'urgent', statusId: ws.statuses['In progress'], metadata: { order_id: '6735', total: 250 } },
+      { title: 'Ship order 9000', priority: 'low', statusId: ws.statuses['To do'], metadata: { order_id: '9000', total: 'n/a' } },
+      { title: 'Write release notes', priority: 'high', statusId: ws.statuses['Done'], metadata: {} },
+      { title: "Fix 100% CPU; DROP TABLE task;--", priority: 'normal', statusId: ws.statuses['To do'] },
     ];
     for (const input of tasks) await ws.owner.data(create, { w: ws.workspaceId, l: ws.listId, input });
   });
@@ -48,7 +48,7 @@ describe('resource queries (filters, sorting, paging, schema)', () => {
       filter: {
         and: [
           { or: [{ field: 'title', op: 'starts_with', value: 'ship' }, { field: 'priority', op: 'eq', value: 'high' }] },
-          { not: { field: 'status', op: 'eq', value: 'todo' } },
+          { not: { field: 'statusCategory', op: 'eq', value: 'unstarted' } },
         ],
       },
       sort: [{ field: 'priority', direction: 'asc' }],
@@ -73,7 +73,7 @@ describe('resource queries (filters, sorting, paging, schema)', () => {
   it('rejects unknown fields, bad operators, bad values and oversized pages', async () => {
     const errorOf = (query: unknown) => ws.owner.error(SEARCH, { w: ws.workspaceId, q: query });
     expect(await errorOf({ filter: { field: 'secret', op: 'eq', value: '1' } })).toMatchObject({ code: 'BAD_USER_INPUT', message: 'Unknown field secret' });
-    expect((await errorOf({ filter: { field: 'status', op: 'contains', value: 'to' } })).code).toBe('BAD_USER_INPUT');
+    expect((await errorOf({ filter: { field: 'statusId', op: 'contains', value: 'to' } })).code).toBe('BAD_USER_INPUT');
     expect((await errorOf({ filter: { field: 'dueDate', op: 'gt', value: 'tomorrow' } })).code).toBe('BAD_USER_INPUT');
     expect((await errorOf({ pageSize: 101 })).code).toBe('BAD_USER_INPUT');
     expect((await errorOf({ sort: [{ field: 'description', direction: 'asc' }] })).code).toBe('BAD_USER_INPUT');
@@ -99,15 +99,15 @@ describe('resource queries (filters, sorting, paging, schema)', () => {
     const schemaQuery = `query($w: ID!, $r: String!) { resourceSchema(workspaceId: $w, resource: $r) {
       resource logic searchable defaultPageSize maxPageSize defaultSort { field direction }
       fields { name type operators sortable keyed options { value label } } } }`;
-    const { resourceSchema } = await member.data<{ resourceSchema: { fields: { name: string; operators: string[]; options: { value: string }[] | null }[]; logic: string[]; maxPageSize: number } }>(
+    const { resourceSchema } = await member.data<{ resourceSchema: { fields: { name: string; operators: string[]; options: { value: string; label: string }[] | null }[]; logic: string[]; maxPageSize: number } }>(
       schemaQuery,
       { w: ws.workspaceId, r: 'tasks' },
     );
     expect(resourceSchema.logic).toEqual(['and', 'or', 'not']);
     expect(resourceSchema.maxPageSize).toBe(100);
-    const status = resourceSchema.fields.find((field) => field.name === 'status');
+    const status = resourceSchema.fields.find((field) => field.name === 'statusId');
     expect(status?.operators).toContain('in');
-    expect(status?.options?.map((option) => option.value)).toEqual(['todo', 'in_progress', 'in_review', 'done']);
+    expect(status?.options?.map((option) => option.label)).toEqual(['To do', 'In progress', 'In review', 'Blocked', 'Done']);
 
     const { resourceSchema: members } = await member.data<{ resourceSchema: { fields: { name: string; options: { label: string }[] | null }[] } }>(schemaQuery, {
       w: ws.workspaceId,

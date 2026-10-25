@@ -53,7 +53,8 @@ export class TypeOrmSprintRepository extends SprintRepository {
     // Bound parameters only; the task table is addressed by name so this module doesn't import the tasks entity.
     const moved: unknown = await this.transactional.manager.query(
       `UPDATE task SET sprint_id = $1, updated_at = now()
-       WHERE workspace_id = $2 AND sprint_id = $3 AND status <> 'done'
+       WHERE workspace_id = $2 AND sprint_id = $3
+         AND status_id NOT IN (SELECT id FROM task_status WHERE workspace_id = $2 AND category IN ('done', 'cancelled'))
        RETURNING id`,
       [toSprintId, workspaceId, fromSprintId],
     );
@@ -77,7 +78,8 @@ export class TypeOrmSprintRepository extends SprintRepository {
       .from('task', 'task')
       .select('task.sprint_id', 'sprint_id')
       .addSelect('COUNT(*)', 'total')
-      .addSelect(`COUNT(*) FILTER (WHERE task.status = 'done')`, 'done')
+      .innerJoin('task_status', 'status', 'status.id = task.status_id')
+      .addSelect(`COUNT(*) FILTER (WHERE status.category IN ('done', 'cancelled'))`, 'done')
       .where('task.workspace_id = :workspaceId AND task.sprint_id IN (:...sprintIds)', { workspaceId, sprintIds })
       .groupBy('task.sprint_id');
   }

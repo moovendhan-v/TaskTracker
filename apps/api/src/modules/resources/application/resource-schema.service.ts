@@ -13,12 +13,15 @@ export class ResourceSchemaService {
   constructor(private readonly enumOptions: EnumOptionsRegistry) {}
 
   /** Cached per workspace and permission set: everyone with the same role sees the same schema. */
-  @Cached({ entities: ['status', 'role', 'policy'], shared: true, workspace: (access: WorkspaceAccess) => access.workspaceId })
+  @Cached({ entities: ['status', 'role', 'policy', 'custom_field'], shared: true, workspace: (access: WorkspaceAccess) => access.workspaceId })
   async describe(access: WorkspaceAccess, resource: string): Promise<ResourceSchema> {
     const definition = findQueryResource(resource);
     // Unknown and forbidden look the same, so the list of resources isn't revealed.
     if (!definition || !canList(access, definition.permission)) throw DomainError.notFound('Resource');
-    return describeResource(definition, access, await this.enumOptions.optionsFor(resource, access.workspaceId));
+    // Sequential on purpose: one transaction connection.
+    const options = await this.enumOptions.optionsFor(resource, access.workspaceId);
+    const extraFields = await this.enumOptions.fieldsFor(resource, access.workspaceId);
+    return describeResource(definition, access, options, extraFields);
   }
 
   /** Names of the resources the caller may list. */

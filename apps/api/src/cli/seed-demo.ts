@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import type { INestApplicationContext } from '@nestjs/common';
-import type { TaskPriority, TaskStatus } from '@taskflow/shared-types';
+import type { TaskPriority, TaskType } from '@taskflow/shared-types';
 import { AppModule } from '../app.module.js';
 import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
@@ -21,6 +21,7 @@ import { MembersService } from '../modules/members/application/members.service.j
 import { RolesService } from '../modules/roles/application/roles.service.js';
 import { SpacesService } from '../modules/spaces/application/spaces.service.js';
 import { SprintsService } from '../modules/sprints/application/sprints.service.js';
+import { StatusesService } from '../modules/statuses/application/statuses.service.js';
 import { TasksService } from '../modules/tasks/application/tasks.service.js';
 import { WorkspacesService } from '../modules/workspaces/application/workspaces.service.js';
 
@@ -95,17 +96,33 @@ async function seed(app: INestApplicationContext): Promise<void> {
     const campaigns = await lists.create(ownerActor, workspaceId, marketing.id, { name: 'Campaigns' });
 
     const tasks = app.get(TasksService);
-    const task = (listId: string, title: string, status: TaskStatus, priority: TaskPriority, assigneeId: string | null, dueInDays: number | null) =>
-      tasks.create(ownerActor, access, listId, { title, status, priority, assigneeId, dueDate: dueInDays === null ? null : daysFromNow(dueInDays) });
+    // Every space starts with the default statuses: To do, In progress, In review, Blocked, Done.
+    const statuses = app.get(StatusesService);
+    const statusIn = async (spaceId: string, name: string) => (await statuses.listForSpace(workspaceId, spaceId)).find((status) => status.name === name)?.id;
+    const spaceOf = new Map([[roadmap.id, product.id], [bugs.id, product.id], [campaigns.id, marketing.id]]);
+    const task = async (listId: string, title: string, status: string, priority: TaskPriority, assigneeId: string | null, dueInDays: number | null, type: TaskType = 'task') =>
+      tasks.create(ownerActor, access, listId, {
+        title,
+        type,
+        statusId: await statusIn(spaceOf.get(listId) ?? '', status),
+        priority,
+        assigneeId,
+        startDate: dueInDays === null ? null : daysFromNow(dueInDays - 2),
+        dueDate: dueInDays === null ? null : daysFromNow(dueInDays),
+      });
 
-    const onboarding = await task(roadmap.id, 'Redesign the onboarding checklist', 'in_progress', 'high', admin.id, 4);
-    const sharing = await task(roadmap.id, 'Share boards with guests', 'todo', 'normal', member.id, 9);
-    const exportCsv = await task(roadmap.id, 'Export tasks to CSV', 'todo', 'low', null, null);
-    await task(roadmap.id, 'Dark mode polish', 'done', 'normal', member.id, -2);
-    await task(bugs.id, 'Due date shows the wrong day in some time zones', 'in_review', 'urgent', admin.id, 1);
-    await task(bugs.id, 'Board column scrolls the whole page', 'todo', 'high', null, 3);
-    await task(campaigns.id, 'Plan the spring launch email', 'todo', 'normal', owner.id, 14);
-    await task(campaigns.id, 'Write the release blog post', 'in_progress', 'high', owner.id, 6);
+    const onboarding = await task(roadmap.id, 'Redesign the onboarding checklist', 'In progress', 'high', admin.id, 4, 'feature');
+    const sharing = await task(roadmap.id, 'Share boards with guests', 'To do', 'normal', member.id, 9, 'feature');
+    const exportCsv = await task(roadmap.id, 'Export tasks to CSV', 'To do', 'low', null, null);
+    await task(roadmap.id, 'Dark mode polish', 'Done', 'normal', member.id, -2);
+    await task(roadmap.id, 'Public launch', 'To do', 'high', owner.id, 21, 'milestone');
+    await task(bugs.id, 'Due date shows the wrong day in some time zones', 'In review', 'urgent', admin.id, 1, 'bug');
+    await task(bugs.id, 'Board column scrolls the whole page', 'Blocked', 'high', null, 3, 'bug');
+    await task(campaigns.id, 'Plan the spring launch email', 'To do', 'normal', owner.id, 14);
+    await task(campaigns.id, 'Write the release blog post', 'In progress', 'high', owner.id, 6);
+    for (const title of ['Draft the checklist copy', 'Review with design', 'Ship behind a flag']) {
+      await tasks.create(ownerActor, access, roadmap.id, { title, parentId: onboarding.id });
+    }
 
     await app.get(CommentsService).create(actorOf(admin), workspaceId, onboarding.id, {
       body: 'First draft is in the doc. Feedback welcome before Thursday.',

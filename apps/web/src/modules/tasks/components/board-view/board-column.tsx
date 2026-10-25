@@ -1,7 +1,6 @@
 import { useState, type DragEvent } from 'react';
-import type { TaskResponse, TaskStatus } from '@taskflow/shared-types';
+import type { TaskResponse, TaskStatusResponse } from '@taskflow/shared-types';
 import { cn } from '@/lib/cn';
-import { STATUS_META } from '../../lib/task-meta';
 import { QuickAddTask } from '../shared/quick-add-task';
 import { StatusDot } from '../shared/status-picker';
 import { TaskCard } from './task-card';
@@ -9,12 +8,12 @@ import { TaskCard } from './task-card';
 interface BoardColumnProps {
   workspaceId: string;
   listId: string | undefined;
-  status: TaskStatus;
+  status: TaskStatusResponse;
   tasks: TaskResponse[];
   canEdit: boolean;
   canCreate: boolean;
   onOpen: (taskId: string) => void;
-  onDrop: (event: DragEvent, status: TaskStatus, beforeTaskId: string | null) => void;
+  onDrop: (event: DragEvent, status: TaskStatusResponse, beforeTaskId: string | null) => void;
 }
 
 export function BoardColumn({ workspaceId, listId, status, tasks, canEdit, canCreate, onOpen, onDrop }: BoardColumnProps) {
@@ -22,7 +21,7 @@ export function BoardColumn({ workspaceId, listId, status, tasks, canEdit, canCr
 
   return (
     <section
-      aria-label={STATUS_META[status].label}
+      aria-label={status.name}
       onDragOver={(event) => {
         if (!canEdit) return;
         event.preventDefault();
@@ -37,7 +36,7 @@ export function BoardColumn({ workspaceId, listId, status, tasks, canEdit, canCr
     >
       <header className="flex items-center gap-2 px-3 py-2.5">
         <StatusDot status={status} />
-        <h3 className="text-sm font-semibold">{STATUS_META[status].label}</h3>
+        <h3 className="text-sm font-semibold">{status.name}</h3>
         <span className="text-xs text-muted-foreground">{tasks.length}</span>
       </header>
       <div className="flex min-h-16 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
@@ -55,7 +54,7 @@ export function BoardColumn({ workspaceId, listId, status, tasks, canEdit, canCr
             }}
           />
         ))}
-        {canCreate && listId ? <QuickAddTask workspaceId={workspaceId} listId={listId} status={status} /> : null}
+        {canCreate && listId ? <QuickAddTask workspaceId={workspaceId} listId={listId} statusId={status.id} /> : null}
       </div>
     </section>
   );

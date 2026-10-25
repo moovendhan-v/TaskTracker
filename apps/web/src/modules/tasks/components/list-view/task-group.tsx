@@ -1,8 +1,7 @@
 import { ChevronRightIcon } from 'lucide-react';
-import type { TaskResponse, TaskStatus } from '@taskflow/shared-types';
+import type { TaskResponse, TaskStatusResponse } from '@taskflow/shared-types';
 import { cn } from '@/lib/cn';
 import { usePermissions } from '@/modules/workspaces';
-import { STATUS_META } from '../../lib/task-meta';
 import { useTaskViewStore } from '../../store/task-view.store';
 import { QuickAddTask } from '../shared/quick-add-task';
 import { StatusDot } from '../shared/status-picker';
@@ -11,13 +10,13 @@ import { TaskRow } from './task-row';
 interface TaskGroupProps {
   workspaceId: string;
   listId: string;
-  status: TaskStatus;
+  status: TaskStatusResponse;
   tasks: TaskResponse[];
   onOpen: (taskId: string) => void;
 }
 
 export function TaskGroup({ workspaceId, listId, status, tasks, onOpen }: TaskGroupProps) {
-  const groupKey = `${listId}:${status}`;
+  const groupKey = `${listId}:${status.id}`;
   const collapsed = useTaskViewStore((state) => Boolean(state.collapsedGroups[groupKey]));
   const toggleGroup = useTaskViewStore((state) => state.toggleGroup);
   const { can } = usePermissions(workspaceId);
@@ -32,7 +31,7 @@ export function TaskGroup({ workspaceId, listId, status, tasks, onOpen }: TaskGr
       >
         <ChevronRightIcon className={cn('size-4 text-muted-foreground transition-transform', !collapsed && 'rotate-90')} />
         <StatusDot status={status} />
-        <span className="text-sm font-semibold">{STATUS_META[status].label}</span>
+        <span className="text-sm font-semibold">{status.name}</span>
         <span className="rounded-full bg-muted px-2 text-xs text-muted-foreground">{tasks.length}</span>
       </button>
       {collapsed ? null : (
@@ -40,7 +39,7 @@ export function TaskGroup({ workspaceId, listId, status, tasks, onOpen }: TaskGr
           {tasks.map((task) => (
             <TaskRow key={task.id} workspaceId={workspaceId} task={task} onOpen={onOpen} />
           ))}
-          {can('task.create') ? <QuickAddTask workspaceId={workspaceId} listId={listId} status={status} /> : null}
+          {can('task.create') ? <QuickAddTask workspaceId={workspaceId} listId={listId} statusId={status.id} /> : null}
         </div>
       )}
     </section>

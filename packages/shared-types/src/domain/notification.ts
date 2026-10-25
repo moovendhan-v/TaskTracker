@@ -19,5 +19,7 @@ export const REALTIME_ENTITY_TYPES = [
   'leave_type',
   'policy',
   'status',
+  'custom_field',
+  'time_entry',
 ] as const;
 export type RealtimeEntityType = (typeof REALTIME_ENTITY_TYPES)[number];

@@ -2,12 +2,14 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { TestUser } from './support/api-client.js';
 import { addMember, createWorkspace, type WorkspaceFixture } from './support/fixtures.js';
 
-const TASK_FIELDS = 'id title status priority assigneeId sprintId position';
+const TASK_FIELDS = 'id number title statusId status { name category } priority assigneeId sprintId position';
 
 interface Task {
   id: string;
   title: string;
-  status: string;
+  number: number;
+  statusId: string;
+  status: { name: string; category: string };
   assigneeId: string | null;
   sprintId: string | null;
   position: number;
@@ -31,27 +33,27 @@ describe('tasks, comments and sprints', () => {
         `mutation($w: ID!, $l: ID!) { createTask(workspaceId: $w, listId: $l, input: { title: "Set up CI", priority: high }) { ${TASK_FIELDS} } }`,
         vars({ l: ws.listId }),
       );
-      expect(createTask).toMatchObject({ title: 'Set up CI', status: 'todo', position: 1024 });
+      expect(createTask).toMatchObject({ title: 'Set up CI', number: 1, status: { name: 'To do', category: 'unstarted' }, position: 1024 });
       taskId = createTask.id;
     });
 
     it('searches and pages', async () => {
       const { tasks } = await ws.owner.data<{ tasks: { total: number; items: Task[] } }>(
-        'query($w: ID!, $l: ID!) { tasks(workspaceId: $w, listId: $l, search: "ci", pageSize: 10) { total items { id } } }',
+        'query($w: ID!, $l: ID!) { tasks: searchTasks(workspaceId: $w, listId: $l, query: { search: "ci", pageSize: 10 }) { total items { id } } }',
         vars({ l: ws.listId }),
       );
       expect(tasks.total).toBe(1);
     });
 
     it('caps the page size', async () => {
-      const result = await ws.owner.error('query($w: ID!, $l: ID!) { tasks(workspaceId: $w, listId: $l, pageSize: 1000) { total } }', vars({ l: ws.listId }));
+      const result = await ws.owner.error('query($w: ID!, $l: ID!) { searchTasks(workspaceId: $w, listId: $l, query: { pageSize: 1000 }) { total } }', vars({ l: ws.listId }));
       expect(result.code).toBe('BAD_USER_INPUT');
     });
 
     it('validates input: unknown fields, bad enums, long titles and null for required fields', async () => {
       const create = 'mutation($w: ID!, $l: ID!, $input: CreateTaskInput!) { createTask(workspaceId: $w, listId: $l, input: $input) { id } }';
       expect((await ws.owner.gql(create, vars({ l: ws.listId, input: { title: 'x', createdById: 'me' } }))).errors?.[0]?.message).toMatch(/createdById/);
-      expect((await ws.owner.gql(create, vars({ l: ws.listId, input: { title: 'x', status: 'archived' } }))).errors).toBeDefined();
+      expect((await ws.owner.gql(create, vars({ l: ws.listId, input: { title: 'x', priority: 'someday' } }))).errors).toBeDefined();
       expect((await ws.owner.error(create, vars({ l: ws.listId, input: { title: 'x'.repeat(201) } }))).code).toBe('BAD_USER_INPUT');
       const update = 'mutation($w: ID!, $t: ID!, $input: UpdateTaskInput!) { updateTask(workspaceId: $w, taskId: $t, input: $input) { id } }';
       expect((await ws.owner.error(update, vars({ t: taskId, input: { title: null } }))).code).toBe('BAD_USER_INPUT');
@@ -68,8 +70,8 @@ describe('tasks, comments and sprints', () => {
 
     it('assigns only to workspace members', async () => {
       const update = `mutation($w: ID!, $t: ID!, $input: UpdateTaskInput!) { updateTask(workspaceId: $w, taskId: $t, input: $input) { ${TASK_FIELDS} } }`;
-      const { updateTask } = await ws.owner.data<{ updateTask: Task }>(update, vars({ t: taskId, input: { assigneeId: member.id, status: 'in_progress' } }));
-      expect(updateTask).toMatchObject({ assigneeId: member.id, status: 'in_progress' });
+      const { updateTask } = await ws.owner.data<{ updateTask: Task }>(update, vars({ t: taskId, input: { assigneeId: member.id, statusId: ws.statuses['In progress'] } }));
+      expect(updateTask).toMatchObject({ assigneeId: member.id, status: { name: 'In progress' } });
       const stranger = await TestUser.signUp('Stranger');
       expect((await ws.owner.error(update, vars({ t: taskId, input: { assigneeId: stranger.id } }))).message).toMatch(/must be a member/);
     });
@@ -126,6 +128,11 @@ describe('tasks, comments and sprints', () => {
       ).createSprint.id;
       const reversed = await ws.owner.error(create, vars({ s: ws.spaceId, input: { name: 'Bad', startDate: '2026-11-13', endDate: '2026-11-02' } }));
       expect(reversed.message).toMatch(/on or after/);
+    });
+
+    it('lists open, unplanned tasks in the backlog', async () => {
+      const { backlog } = await ws.owner.data<{ backlog: { id: string }[] }>('query($w: ID!, $s: ID!) { backlog(workspaceId: $w, spaceId: $s) { id } }', vars({ s: ws.spaceId }));
+      expect(backlog.map((task) => task.id)).toContain(taskId);
     });
 
     it('needs sprint.manage to plan work', async () => {

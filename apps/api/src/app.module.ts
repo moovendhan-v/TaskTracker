@@ -30,6 +30,8 @@ import { RealtimeFeatureModule } from './modules/realtime/realtime.module.js';
 import { ResourcesModule } from './modules/resources/resources.module.js';
 import { FormsModule } from './modules/forms/forms.module.js';
 import { PreferencesModule } from './modules/preferences/preferences.module.js';
+import { StatusesModule } from './modules/statuses/statuses.module.js';
+import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module.js';
 import { RolesModule } from './modules/roles/roles.module.js';
 import { SpacesModule } from './modules/spaces/spaces.module.js';
 import { SprintsModule } from './modules/sprints/sprints.module.js';
@@ -71,6 +73,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     ResourcesModule,
     FormsModule,
     PreferencesModule,
+    StatusesModule,
+    CustomFieldsModule,
   ],
   providers: [
     // Order matters: the session guard sets req.user, which the throttler uses as its key.

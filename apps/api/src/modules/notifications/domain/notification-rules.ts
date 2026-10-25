@@ -42,7 +42,7 @@ export const NotificationRules = {
         if (!facts.assigneeId || facts.assigneeId === facts.previousAssigneeId) return [];
         return to([facts.assigneeId], { kind: 'task_assigned', taskId: event.entityId });
       case 'comment.created':
-        return to([facts.assigneeId, facts.createdById], { kind: 'task_commented', taskId: facts.taskId ?? null });
+        return to([facts.assigneeId, facts.createdById, ...(facts.watcherIds ?? [])], { kind: 'task_commented', taskId: facts.taskId ?? null });
       case 'leave_request.created':
         return facts.status === 'pending' ? to(context.approverIds, { kind: 'leave_requested' }) : [];
       case 'leave_request.updated':

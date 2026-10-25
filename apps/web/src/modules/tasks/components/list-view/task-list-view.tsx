@@ -1,25 +1,27 @@
 import type { TaskResponse } from '@taskflow/shared-types';
-import { STATUS_ORDER } from '../../lib/task-meta';
+import { useStatuses } from '../../hooks/use-tasks';
 import { TaskGroup } from './task-group';
 
 interface TaskListViewProps {
   workspaceId: string;
+  spaceId: string;
   listId: string;
   tasks: TaskResponse[];
   onOpen: (taskId: string) => void;
 }
 
-/** Tasks grouped by status, in workflow order. */
-export function TaskListView({ workspaceId, listId, tasks, onOpen }: TaskListViewProps) {
+/** Tasks grouped by the space's statuses, in workflow order. */
+export function TaskListView({ workspaceId, spaceId, listId, tasks, onOpen }: TaskListViewProps) {
+  const { data: statuses = [] } = useStatuses(workspaceId, spaceId);
   return (
     <div className="grid gap-4">
-      {STATUS_ORDER.map((status) => (
+      {statuses.map((status) => (
         <TaskGroup
-          key={status}
+          key={status.id}
           workspaceId={workspaceId}
           listId={listId}
           status={status}
-          tasks={tasks.filter((task) => task.status === status)}
+          tasks={tasks.filter((task) => task.statusId === status.id)}
           onOpen={onOpen}
         />
       ))}

@@ -16,6 +16,8 @@ const ALSO_INVALIDATES: Partial<Record<CacheTopic, readonly CacheTopic[]>> = {
   space: ['list', 'task', 'status'],
   list: ['task'],
   status: ['task'],
+  custom_field: ['task', 'space'],
+  time_entry: ['task'],
   sprint: ['task'],
   employee: ['member'],
 };

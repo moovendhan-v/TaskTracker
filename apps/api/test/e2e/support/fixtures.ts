@@ -6,6 +6,8 @@ export interface WorkspaceFixture {
   spaceId: string;
   listId: string;
   roles: Record<'Owner' | 'Admin' | 'Member' | 'Guest', string>;
+  /** The space's default statuses by name: To do, In progress, In review, Blocked, Done. */
+  statuses: Record<string, string>;
 }
 
 /** A signed-up owner with a workspace, one space and one list. */
@@ -28,7 +30,11 @@ export async function createWorkspace(ownerName = 'Owner', workspaceName = 'Acme
     w: workspaceId,
   });
   const byName = Object.fromEntries(roles.map((role) => [role.name, role.id])) as WorkspaceFixture['roles'];
-  return { owner, workspaceId, spaceId: createSpace.id, listId: createList.id, roles: byName };
+  const { statuses } = await owner.data<{ statuses: { id: string; name: string }[] }>('query($w: ID!, $s: ID!) { statuses(workspaceId: $w, spaceId: $s) { id name } }', {
+    w: workspaceId,
+    s: createSpace.id,
+  });
+  return { owner, workspaceId, spaceId: createSpace.id, listId: createList.id, roles: byName, statuses: Object.fromEntries(statuses.map((s) => [s.name, s.id])) };
 }
 
 /** Adds an existing user to the fixture's workspace with a built-in role. */

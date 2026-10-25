@@ -9,6 +9,7 @@ import { Notifications1729610000000 } from './1729610000000-notifications.js';
 import { TaskMetadata1729620000000 } from './1729620000000-task-metadata.js';
 import { IamPolicies1729630000000 } from './1729630000000-iam-policies.js';
 import { UserPreferences1729640000000 } from './1729640000000-user-preferences.js';
+import { TaskModelV21729650000000 } from './1729650000000-task-model-v2.js';
 
 /** Registered in order. Add new migrations to the end. */
 export const MIGRATIONS = [
@@ -23,4 +24,5 @@ export const MIGRATIONS = [
   TaskMetadata1729620000000,
   IamPolicies1729630000000,
   UserPreferences1729640000000,
+  TaskModelV21729650000000,
 ];

@@ -97,8 +97,8 @@ Every list that grows (tasks, members, the audit log) is a *query resource*: a c
 ```ts
 @QueryResource({ name: 'tasks', label: 'Tasks', permission: 'task.view', idColumn: 'task.id', defaultSort: [{ field: 'position', direction: 'asc' }] })
 export class TaskQueryResource {
-  @QueryField({ type: 'enum', column: 'task.status', options: TASK_STATUSES, sortable: true })
-  status: string;
+  @QueryField({ type: 'enum', column: 'task.status_id', sortable: true })   // options: the space's own statuses
+  statusId: string;
 
   @QueryField({ type: 'json', column: 'task.metadata' })   // filter as metadata.<key>
   metadata: string;
@@ -108,10 +108,16 @@ export class TaskQueryResource {
 Clients send filters as a tree (`and`, `or`, `not`, conditions with `eq`, `neq`, `lt`…`gte`, `between`, `in`, `nin`, `contains`, `starts_with`, `ends_with`, `is_null`, `is_not_null`) or as a compact query string:
 
 ```graphql
-searchTasks(workspaceId: $w, query: { where: "status[in]=todo,in_progress&metadata[order_id]=6735&assigneeId=@me", sort: [{ field: "dueDate", direction: desc }], pageSize: 50 })
+searchTasks(workspaceId: $w, query: { where: "statusCategory[in]=unstarted,started&metadata[order_id]=6735&assigneeId=@me", sort: [{ field: "dueDate", direction: desc }], pageSize: 50 })
 ```
 
 The API checks every field, operator and value against the resource, enforces limits (depth 4, 30 conditions, 100 values per list, page size per resource) and compiles the rest to SQL with bound parameters only. `resourceSchema(workspaceId, resource)` describes each resource (fields, types, operators, enum options, sortable fields, page sizes, which of and/or/not are allowed), trimmed to the fields the caller may see, so the web app builds its tables and filter UI from it instead of hard-coding them.
+
+### Tasks: custom statuses and richer work items
+
+Each space has its own statuses (`statuses`, `createStatus`, `updateStatus`, `reorderStatuses`, `deleteStatus` with a status to move tasks to). New spaces start with To do, In progress, In review, Blocked and Done. Every status has a name, a colour and a category (`unstarted`, `started`, `review`, `blocked`, `done`, `cancelled`), and sprint progress, the backlog, "completed" timestamps and overdue warnings all go by the category, so renaming or adding statuses never breaks them.
+
+Tasks also have a workspace-wide number (`taskByNumber`), a type, subtasks (up to three levels, same list), start date, estimate, progress, watchers (`watchTask`; watchers hear about comments), relations (blocks, relates to, duplicates), an activity history of field changes (`taskActivity`) and custom fields. Custom fields are defined per space (`customFields`, text, number, date, checkbox, select, multi-select, URL) and can be filtered and sorted like built-in fields as `custom.<key>`. Spaces have a status, dates and their own custom fields too.
 
 ### Preferences
 

@@ -1,4 +1,5 @@
 export * from './domain/task.js';
+export * from './domain/custom-field.js';
 export * from './domain/workspace.js';
 export * from './domain/permissions.js';
 export * from './domain/pagination.js';
@@ -27,3 +28,4 @@ export * from './forms/validate-form.js';
 export * from './domain/iam.js';
 export * from './contracts/policy.contract.js';
 export * from './domain/preferences.js';
+export * from './contracts/custom-field.contract.js';

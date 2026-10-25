@@ -329,15 +329,30 @@ src/modules/
 ├── tasks/                                        ✅
 │   ├── tasks.module.ts
 │   ├── domain/task.ts
-│   ├── domain/task.repository.ts                 findInWorkspace, pageInList, nextPosition, save, delete
+│   ├── domain/task.repository.ts                 findInWorkspace, nextNumber, nextPosition, backlogInSpace, save, delete
+│   ├── domain/task-extras.repository.ts          watchers, relations, activity ports
+│   ├── domain/task-changes.ts                    describeChanges: field-level activity entries
 │   ├── domain/task-assignment.policy.ts          needs task.assign; assignee must be a member
 │   ├── domain/task-planning.policy.ts            sprint changes need sprint.manage and the same space
+│   ├── domain/task-structure.policy.ts           subtasks: same list, max depth, no cycles
 │   ├── application/tasks.service.ts
 │   ├── application/task.mapper.ts
 │   ├── infrastructure/task.orm-entity.ts
 │   ├── infrastructure/typeorm-task.repository.ts
-│   ├── testing/in-memory-task.repository.ts
+│   ├── infrastructure/task-extras.orm-entities.ts + typeorm-task-extras.repositories.ts
+│   ├── infrastructure/task.query-resource.ts     filterable/sortable fields incl. statusCategory, metadata, custom.<key>
+│   ├── testing/in-memory-task.repository.ts      plus watcher, relation and activity fakes
 │   └── presentation/graphql/{tasks.resolver.ts,task.types.ts}
+│
+├── statuses/                                     ✅  per-space task statuses with categories; seeded on space.created
+│   ├── domain/{task-status.ts,task-status.repository.ts}
+│   ├── application/statuses.service.ts           create, update, reorder, delete (moves tasks to another status)
+│   └── infrastructure/, presentation/graphql/
+│
+├── custom-fields/                                ✅  per-space field definitions for tasks and spaces
+│   ├── domain/{custom-field.ts,custom-field-values.ts,custom-field.repository.ts}   values checked against the definitions
+│   ├── application/custom-fields.service.ts      also registers custom.<key> as query fields
+│   └── infrastructure/, presentation/graphql/
 │
 ├── comments/                                     ✅
 │   ├── domain/{comment.ts,comment.repository.ts}

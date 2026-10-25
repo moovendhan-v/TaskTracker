@@ -18,13 +18,41 @@ fragment RoleFields on Role {
   inlinePolicy { statements { effect permissions fields } }
 }
 
-fragment SpaceFields on Space { id workspaceId name color createdAt }
+fragment SpaceFields on Space { id workspaceId name color status statusNote startDate dueDate customFields createdAt }
 
 fragment TaskListFields on TaskList { id spaceId name createdAt }
 
+fragment TaskStatusFields on TaskStatus { id spaceId name color category position }
+
 fragment TaskFields on Task {
-  id listId title description status priority dueDate assigneeId sprintId position metadata createdAt updatedAt
+  id
+  number
+  listId
+  spaceId
+  parentId
+  type
+  title
+  description
+  statusId
+  status { ...TaskStatusFields }
+  priority
+  startDate
+  dueDate
+  assigneeId
+  sprintId
+  position
+  estimateMinutes
+  progress
+  subtaskCount
+  metadata
+  customFields
+  completedAt
+  createdById
+  createdAt
+  updatedAt
 }
+
+fragment CustomFieldFields on CustomField { id spaceId entity name type required position options { id label color } }
 
 fragment CommentFields on Comment { id taskId authorId authorName body createdAt updatedAt }
 

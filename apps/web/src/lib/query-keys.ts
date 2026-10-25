@@ -1,5 +1,3 @@
-import type { TaskQuery } from '@taskflow/shared-types';
-
 /** Every TanStack Query key in one place, so invalidation never misses a typo'd key. */
 export const queryKeys = {
   me: ['me'] as const,
@@ -8,10 +6,11 @@ export const queryKeys = {
   members: (workspaceId: string) => ['workspaces', workspaceId, 'members'] as const,
   roles: (workspaceId: string) => ['workspaces', workspaceId, 'roles'] as const,
   spaces: (workspaceId: string) => ['workspaces', workspaceId, 'spaces'] as const,
+  // Under spaces, so a space change refreshes its statuses too.
+  statuses: (workspaceId: string, spaceId: string) => ['workspaces', workspaceId, 'spaces', spaceId, 'statuses'] as const,
   lists: (workspaceId: string) => ['workspaces', workspaceId, 'lists'] as const,
   tasksRoot: (workspaceId: string) => ['workspaces', workspaceId, 'tasks'] as const,
-  tasks: (workspaceId: string, listId: string, query: TaskQuery = {}) =>
-    ['workspaces', workspaceId, 'tasks', 'list', listId, query] as const,
+  tasks: (workspaceId: string, listId: string, query: object = {}) => ['workspaces', workspaceId, 'tasks', 'list', listId, query] as const,
   task: (workspaceId: string, taskId: string) => ['workspaces', workspaceId, 'tasks', 'detail', taskId] as const,
   commentsRoot: (workspaceId: string) => ['workspaces', workspaceId, 'comments'] as const,
   comments: (workspaceId: string, taskId: string) => ['workspaces', workspaceId, 'comments', taskId] as const,
@@ -24,6 +23,7 @@ export const queryKeys = {
   documentsRoot: (workspaceId: string) => ['workspaces', workspaceId, 'documents'] as const,
   documentTree: (workspaceId: string, search = '') => ['workspaces', workspaceId, 'documents', 'tree', search] as const,
   document: (workspaceId: string, documentId: string) => ['workspaces', workspaceId, 'documents', 'detail', documentId] as const,
+  timeRoot: (workspaceId: string) => ['workspaces', workspaceId, 'time'] as const,
   hrRoot: (workspaceId: string) => ['workspaces', workspaceId, 'hr'] as const,
   departments: (workspaceId: string) => ['workspaces', workspaceId, 'hr', 'departments'] as const,
   employees: (workspaceId: string) => ['workspaces', workspaceId, 'hr', 'employees'] as const,

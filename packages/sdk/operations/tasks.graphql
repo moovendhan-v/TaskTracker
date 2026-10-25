@@ -1,12 +1,3 @@
-query Tasks($workspaceId: ID!, $listId: ID!, $status: TaskStatus, $search: String, $page: Int, $pageSize: Int) {
-  tasks(workspaceId: $workspaceId, listId: $listId, status: $status, search: $search, page: $page, pageSize: $pageSize) {
-    items { ...TaskFields }
-    page
-    pageSize
-    total
-  }
-}
-
 query Task($workspaceId: ID!, $taskId: ID!) { task(workspaceId: $workspaceId, taskId: $taskId) { ...TaskFields } }
 
 query SprintTasks($workspaceId: ID!, $sprintId: ID!) {
@@ -24,3 +15,25 @@ mutation UpdateTask($workspaceId: ID!, $taskId: ID!, $input: UpdateTaskInput!) {
 }
 
 mutation DeleteTask($workspaceId: ID!, $taskId: ID!) { deleteTask(workspaceId: $workspaceId, taskId: $taskId) }
+
+query TaskByNumber($workspaceId: ID!, $number: Int!) { taskByNumber(workspaceId: $workspaceId, number: $number) { ...TaskFields } }
+
+query Subtasks($workspaceId: ID!, $taskId: ID!) { subtasks(workspaceId: $workspaceId, taskId: $taskId) { ...TaskFields } }
+
+query TaskRelations($workspaceId: ID!, $taskId: ID!) {
+  taskRelations(workspaceId: $workspaceId, taskId: $taskId) { id kind outgoing task { id number title status { ...TaskStatusFields } } }
+}
+
+query TaskActivity($workspaceId: ID!, $taskId: ID!) {
+  taskActivity(workspaceId: $workspaceId, taskId: $taskId) { id taskId actorId actorName kind field from to createdAt }
+}
+
+query TaskWatchers($workspaceId: ID!, $taskId: ID!) { taskWatchers(workspaceId: $workspaceId, taskId: $taskId) }
+
+mutation WatchTask($workspaceId: ID!, $taskId: ID!, $watching: Boolean!) { watchTask(workspaceId: $workspaceId, taskId: $taskId, watching: $watching) }
+
+mutation RelateTasks($workspaceId: ID!, $taskId: ID!, $relatedTaskId: ID!, $kind: TaskRelationKind!) {
+  relateTasks(workspaceId: $workspaceId, taskId: $taskId, relatedTaskId: $relatedTaskId, kind: $kind) { id }
+}
+
+mutation UnrelateTasks($workspaceId: ID!, $relationId: ID!) { unrelateTasks(workspaceId: $workspaceId, relationId: $relationId) }

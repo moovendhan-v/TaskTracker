@@ -1,5 +1,6 @@
 import type { TaskResponse } from '@taskflow/shared-types';
 import { cn } from '@/lib/cn';
+import { isClosed } from '../../lib/task-meta';
 import { usePermissions } from '@/modules/workspaces';
 import { useTaskMutations } from '../../hooks/use-task-mutations';
 import { AssigneePicker } from '../shared/assignee-picker';
@@ -20,15 +21,21 @@ export function TaskRow({ workspaceId, task, onOpen }: TaskRowProps) {
 
   return (
     <div className="group grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 border-b px-3 py-1.5 last:border-b-0 hover:bg-muted/50">
-      <StatusPicker compact value={task.status} disabled={!canEdit} onChange={(status) => update.mutate({ taskId: task.id, body: { status } })} />
+      <StatusPicker
+        compact
+        workspaceId={workspaceId}
+        value={task.status}
+        disabled={!canEdit}
+        onChange={(status) => update.mutate({ taskId: task.id, body: { statusId: status.id }, status })}
+      />
       <button
         type="button"
         onClick={() => onOpen(task.id)}
-        className={cn('truncate text-left text-sm hover:text-primary', task.status === 'done' && 'text-muted-foreground line-through')}
+        className={cn('truncate text-left text-sm hover:text-primary', isClosed(task) && 'text-muted-foreground line-through')}
       >
         {task.title}
       </button>
-      <DueDateLabel dueDate={task.dueDate} done={task.status === 'done'} />
+      <DueDateLabel dueDate={task.dueDate} done={isClosed(task)} />
       <PriorityPicker value={task.priority} disabled={!canEdit} onChange={(priority) => update.mutate({ taskId: task.id, body: { priority } })} />
       <AssigneePicker
         workspaceId={workspaceId}

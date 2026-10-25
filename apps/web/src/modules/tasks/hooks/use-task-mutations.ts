@@ -1,11 +1,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CreateTaskRequest, Paginated, TaskResponse, UpdateTaskRequest } from '@taskflow/shared-types';
+import type { CreateTaskRequest, Paginated, TaskResponse, TaskStatusResponse, UpdateTaskRequest } from '@taskflow/shared-types';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
 import { queryKeys } from '@/lib/query-keys';
 import { tasksApi } from '../api/tasks.api';
 
 type TaskPage = Paginated<TaskResponse>;
+
+interface UpdateVariables {
+  taskId: string;
+  body: UpdateTaskRequest;
+  /** The status `body.statusId` points at, so the optimistic copy can show it before the server answers. */
+  status?: TaskStatusResponse;
+}
 
 export function useTaskMutations(workspaceId: string) {
   const queryClient = useQueryClient();
@@ -24,17 +31,18 @@ export function useTaskMutations(workspaceId: string) {
 
   /** Optimistic: the row or card moves at once and rolls back if the server refuses. */
   const update = useMutation({
-    mutationFn: ({ taskId, body }: { taskId: string; body: UpdateTaskRequest }) => tasksApi.update(workspaceId, taskId, body),
-    onMutate: async ({ taskId, body }) => {
+    mutationFn: ({ taskId, body }: UpdateVariables) => tasksApi.update(workspaceId, taskId, body),
+    onMutate: async ({ taskId, body, status }) => {
+      const patch = (task: TaskResponse) => applyPatch(task, body, status);
       await queryClient.cancelQueries({ queryKey: tasksRoot });
       const snapshot = queryClient.getQueriesData<TaskPage | TaskResponse | TaskResponse[]>({ queryKey: tasksRoot });
       queryClient.setQueriesData<TaskPage | TaskResponse | TaskResponse[]>({ queryKey: tasksRoot }, (data) => {
         if (!data) return data;
-        if (Array.isArray(data)) return data.map((task) => (task.id === taskId ? applyPatch(task, body) : task));
+        if (Array.isArray(data)) return data.map((task) => (task.id === taskId ? patch(task) : task));
         if ('items' in data) {
-          return { ...data, items: data.items.map((task) => (task.id === taskId ? applyPatch(task, body) : task)) };
+          return { ...data, items: data.items.map((task) => (task.id === taskId ? patch(task) : task)) };
         }
-        return data.id === taskId ? applyPatch(data, body) : data;
+        return data.id === taskId ? patch(data) : data;
       });
       return { snapshot };
     },
@@ -54,13 +62,13 @@ export function useTaskMutations(workspaceId: string) {
   return { create, update, remove };
 }
 
-function applyPatch(task: TaskResponse, body: UpdateTaskRequest): TaskResponse {
-  const { title, description, status, priority, dueDate, assigneeId, position, sprintId } = body;
+function applyPatch(task: TaskResponse, body: UpdateTaskRequest, status: TaskStatusResponse | undefined): TaskResponse {
+  const { title, description, priority, dueDate, assigneeId, position, sprintId } = body;
   return {
     ...task,
     ...(title !== undefined && { title }),
     ...(description !== undefined && { description }),
-    ...(status !== undefined && { status }),
+    ...(status !== undefined && status.id === body.statusId && { status, statusId: status.id }),
     ...(priority !== undefined && { priority }),
     ...(dueDate !== undefined && { dueDate }),
     ...(assigneeId !== undefined && { assigneeId }),

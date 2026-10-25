@@ -39,7 +39,7 @@ export class CommentsService {
         workspaceId,
         entityId: created.id,
         actorId: actor.userId,
-        facts: { taskId, title: task.title, assigneeId: task.assigneeId, createdById: task.createdById, excerpt: created.body },
+        facts: { taskId, title: task.title, assigneeId: task.assigneeId, createdById: task.createdById, watcherIds: task.watcherIds, excerpt: created.body },
       }),
     );
     return CommentMapper.toResponse(await this.getInWorkspace(workspaceId, created.id));

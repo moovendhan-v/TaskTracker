@@ -125,6 +125,8 @@ test('edits a task and renders comments as text, never HTML', async () => {
 });
 
 test('drags a card to Done on the board, and it stays there after reload', async () => {
+  // Five status columns need a wide screen to all be in view; narrower ones scroll sideways.
+  await page.setViewportSize({ width: 1920, height: 1000 });
   await page.getByRole('tab', { name: 'Board' }).click();
   const done = page.getByRole('region', { name: 'Done' });
   await page.locator('article', { hasText: 'Design onboarding emails' }).dragTo(done);

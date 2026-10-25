@@ -32,6 +32,9 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
     case 'leave_type':
       return [queryKeys.hrRoot(workspaceId)];
     case 'status':
+    case 'custom_field':
       return [queryKeys.tasksRoot(workspaceId), queryKeys.spaces(workspaceId)];
+    case 'time_entry':
+      return [queryKeys.timeRoot(workspaceId)];
   }
 }

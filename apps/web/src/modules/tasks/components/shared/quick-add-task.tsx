@@ -1,18 +1,18 @@
 import { PlusIcon } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { TASK_TITLE_MAX, type TaskStatus } from '@taskflow/shared-types';
+import { TASK_TITLE_MAX } from '@taskflow/shared-types';
 import { cn } from '@/lib/cn';
 import { useTaskMutations } from '../../hooks/use-task-mutations';
 
 interface QuickAddTaskProps {
   workspaceId: string;
   listId: string;
-  status: TaskStatus;
+  statusId: string;
   className?: string;
 }
 
 /** Inline "add a task" row. Enter saves and keeps the field open for the next one. */
-export function QuickAddTask({ workspaceId, listId, status, className }: QuickAddTaskProps) {
+export function QuickAddTask({ workspaceId, listId, statusId, className }: QuickAddTaskProps) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
   const { create } = useTaskMutations(workspaceId);
@@ -21,7 +21,7 @@ export function QuickAddTask({ workspaceId, listId, status, className }: QuickAd
     event.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return setEditing(false);
-    create.mutate({ listId, body: { title: trimmed, status } }, { onSuccess: () => setTitle('') });
+    create.mutate({ listId, body: { title: trimmed, statusId } }, { onSuccess: () => setTitle('') });
   }
 
   if (!editing) {

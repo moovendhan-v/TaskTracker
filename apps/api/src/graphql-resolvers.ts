@@ -13,6 +13,8 @@ import { ListsResolver } from './modules/lists/presentation/graphql/lists.resolv
 import { MembersResolver } from './modules/members/presentation/graphql/members.resolver.js';
 import { NotificationsResolver } from './modules/notifications/presentation/graphql/notifications.resolver.js';
 import { WorkspaceEventsResolver } from './modules/realtime/presentation/graphql/workspace-events.resolver.js';
+import { CustomFieldsResolver } from './modules/custom-fields/presentation/graphql/custom-fields.resolver.js';
+import { StatusesResolver } from './modules/statuses/presentation/graphql/statuses.resolver.js';
 import { FormSchemaResolver } from './modules/forms/presentation/graphql/form-schema.resolver.js';
 import { PreferencesResolver, SavedViewFieldsResolver } from './modules/preferences/presentation/graphql/preferences.resolver.js';
 import { ResourceSchemaResolver } from './modules/resources/presentation/graphql/resource-schema.resolver.js';
@@ -47,4 +49,6 @@ export const RESOLVERS = [
   FormSchemaResolver,
   PreferencesResolver,
   SavedViewFieldsResolver,
+  StatusesResolver,
+  CustomFieldsResolver,
 ];

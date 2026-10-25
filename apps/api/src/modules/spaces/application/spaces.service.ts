@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { CreateSpaceRequest, SpaceResponse, UpdateSpaceRequest } from '@taskflow/shared-types';
+import type { CreateSpaceRequest, CustomFieldValues, SpaceResponse, UpdateSpaceRequest } from '@taskflow/shared-types';
+import { DomainError } from '../../../core/domain/domain-error.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { found } from '../../../core/domain/found.js';
@@ -38,6 +39,11 @@ export class SpacesService {
     const space = await this.getInWorkspace(workspaceId, spaceId);
     if (request.name !== undefined) space.name = request.name.trim();
     if (request.color !== undefined) space.color = request.color;
+    if (request.status !== undefined) space.status = request.status;
+    if (request.statusNote !== undefined) space.statusNote = request.statusNote.trim();
+    if (request.startDate !== undefined) space.startDate = request.startDate;
+    if (request.dueDate !== undefined) space.dueDate = request.dueDate;
+    if (space.startDate && space.dueDate && space.dueDate < space.startDate) throw DomainError.invalid('The due date must be on or after the start date');
     return SpaceMapper.toResponse(await this.spaces.save(space));
   }
 
@@ -47,6 +53,18 @@ export class SpacesService {
     const space = await this.getInWorkspace(workspaceId, spaceId);
     await this.spaces.delete(workspaceId, spaceId);
     return SpaceMapper.toResponse(space);
+  }
+
+  /** Stores already-validated custom field values (see CustomFieldsService.updateSpaceValues). */
+  async mergeCustomFields(workspaceId: string, spaceId: string, values: CustomFieldValues): Promise<SpaceResponse> {
+    const space = await this.getInWorkspace(workspaceId, spaceId);
+    const next = { ...space.customFields };
+    for (const [key, value] of Object.entries(values)) {
+      if (value === null) delete next[key];
+      else next[key] = value;
+    }
+    space.customFields = next;
+    return SpaceMapper.toResponse(await this.spaces.save(space));
   }
 
   async getInWorkspace(workspaceId: string, spaceId: string): Promise<Space> {

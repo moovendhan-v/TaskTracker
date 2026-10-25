@@ -11,6 +11,7 @@ export function describeResource(
   definition: QueryResourceDefinition,
   caller: { permissions: ReadonlySet<string>; readableFields: ReadonlySet<string> },
   dynamicOptions: ReadonlyMap<string, EnumOption[]> = new Map(),
+  dynamicFields: readonly ResourceSchema['fields'][number][] = [],
 ): ResourceSchema {
   const fields = [...definition.fields.values()]
     .filter((field) => isVisible(field, caller))
@@ -26,6 +27,7 @@ export function describeResource(
       display: field.display,
       width: field.width,
     }));
+  fields.push(...dynamicFields.map((field) => ({ ...field, options: field.options ?? null, display: field.display ?? null, width: field.width ?? null })));
   const visible = new Set(fields.map((field) => field.name));
   return {
     resource: definition.name,

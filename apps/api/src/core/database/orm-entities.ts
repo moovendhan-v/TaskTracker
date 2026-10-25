@@ -15,6 +15,9 @@ import { WorkspaceRoleOrmEntity } from '../../modules/roles/infrastructure/works
 import { SpaceOrmEntity } from '../../modules/spaces/infrastructure/space.orm-entity.js';
 import { SprintOrmEntity } from '../../modules/sprints/infrastructure/sprint.orm-entity.js';
 import { TaskOrmEntity } from '../../modules/tasks/infrastructure/task.orm-entity.js';
+import { TaskActivityOrmEntity, TaskRelationOrmEntity, TaskWatcherOrmEntity } from '../../modules/tasks/infrastructure/task-extras.orm-entities.js';
+import { TaskStatusOrmEntity } from '../../modules/statuses/infrastructure/task-status.orm-entity.js';
+import { CustomFieldOrmEntity } from '../../modules/custom-fields/infrastructure/custom-field.orm-entity.js';
 import { UserOrmEntity } from '../../modules/users/infrastructure/user.orm-entity.js';
 import { WorkspaceOrmEntity } from '../../modules/workspaces/infrastructure/workspace.orm-entity.js';
 
@@ -33,6 +36,11 @@ export const ORM_ENTITIES = [
   SpaceOrmEntity,
   TaskListOrmEntity,
   TaskOrmEntity,
+  TaskStatusOrmEntity,
+  TaskWatcherOrmEntity,
+  TaskRelationOrmEntity,
+  TaskActivityOrmEntity,
+  CustomFieldOrmEntity,
   CommentOrmEntity,
   SprintOrmEntity,
   DocumentOrmEntity,

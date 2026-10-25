@@ -108,6 +108,9 @@ importers:
       '@nestjs/testing':
         specifier: 12.2.0
         version: 12.2.0(@nestjs/common@12.2.0(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.2.0)(@nestjs/platform-express@12.2.0)
+      '@taskflow/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       '@types/express':
         specifier: 5.0.6
         version: 5.0.6
