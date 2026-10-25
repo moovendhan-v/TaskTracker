@@ -86,6 +86,17 @@ Services publish domain events inside their transaction, and `pg_notify` sends t
 
 Sockets check the `Origin` header against `CORS_ORIGINS` and the session cookie before the connection is accepted. Subscribing needs workspace membership, and the server rechecks the session and membership every 30 seconds and ends the stream when either is gone. Reverse proxies need to pass the WebSocket upgrade for `/api/graphql` (the bundled nginx config and the Vite dev proxy do).
 
+### Caching
+
+Reads are cached in Redis (`REDIS_URL`, required in production; without it each instance caches in memory). Service methods opt in with a decorator:
+
+```ts
+@Cached({ entities: ['space'], shared: true })   // shared: same answer for every member
+async list(workspaceId: string): Promise<SpaceResponse[]> { ... }
+```
+
+Keys are scoped to the workspace (and to the user unless `shared`), mutations never read the cache, and every domain event drops the tags it affects, first in the transaction and again on every instance after commit. Membership checks are cached for 60 seconds at most. Writes use `@Audited(...)` and `@Announces(...)` instead of hand-written audit and event code.
+
 ### Typed client (SDK)
 
 The web app never writes queries inline. Operations live in `packages/sdk/operations/*.graphql`, and codegen turns them into typed documents:

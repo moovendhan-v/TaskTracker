@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { AddMemberRequest, MemberResponse, Permission, UpdateMemberRoleRequest } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
+import { Cached } from '../../../core/cache/cached.decorator.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
+import { found } from '../../../core/domain/found.js';
 import { domainEvent } from '../../../core/events/domain-event.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
@@ -28,6 +30,7 @@ export class MembersService {
     private readonly eventBus: EventBus,
   ) {}
 
+  @Cached({ entities: ['member', 'role'], shared: true })
   async list(workspaceId: string): Promise<MemberResponse[]> {
     const members = await this.members.listDetails(workspaceId);
     return members.map(MemberMapper.toResponse);
@@ -87,9 +90,7 @@ export class MembersService {
       await this.announce('updated', actor, access.workspaceId, userId, role.name);
     });
 
-    const details = await this.members.findDetails(access.workspaceId, userId);
-    if (!details) throw DomainError.notFound('Member');
-    return MemberMapper.toResponse(details);
+    return MemberMapper.toResponse(found(await this.members.findDetails(access.workspaceId, userId), 'Member'));
   }
 
   async remove(actor: Actor, access: WorkspaceAccess, userId: string): Promise<void> {
@@ -134,9 +135,7 @@ export class MembersService {
   }
 
   private async getMembership(workspaceId: string, userId: string): Promise<MembershipWithRole> {
-    const membership = await this.members.findMembership(workspaceId, userId);
-    if (!membership) throw DomainError.notFound('Member');
-    return membership;
+    return found(await this.members.findMembership(workspaceId, userId), 'Member');
   }
 
   private async assertAnotherOwner(owner: MembershipWithRole): Promise<void> {

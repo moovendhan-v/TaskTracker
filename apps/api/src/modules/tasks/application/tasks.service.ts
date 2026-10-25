@@ -6,7 +6,8 @@ import type {
   TaskResponse,
   UpdateTaskRequest,
 } from '@taskflow/shared-types';
-import { DomainError } from '../../../core/domain/domain-error.js';
+import { Cached } from '../../../core/cache/cached.decorator.js';
+import { found } from '../../../core/domain/found.js';
 import { domainEvent } from '../../../core/events/domain-event.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
 import { toPageRequest } from '../../../core/domain/page-request.js';
@@ -35,6 +36,7 @@ export class TasksService {
     private readonly eventBus: EventBus,
   ) {}
 
+  @Cached({ entities: ['task', 'list'], shared: true })
   async listInList(workspaceId: string, listId: string, query: TaskQuery): Promise<Paginated<TaskResponse>> {
     await this.listsService.getInWorkspace(workspaceId, listId);
     const page = toPageRequest(query);
@@ -42,18 +44,21 @@ export class TasksService {
     return { items: result.items.map(TaskMapper.toResponse), total: result.total, ...page };
   }
 
+  @Cached({ entities: ['task', 'sprint'], shared: true })
   async listInSprint(workspaceId: string, sprintId: string): Promise<TaskResponse[]> {
     await this.sprintsService.getInWorkspace(workspaceId, sprintId);
     const tasks = await this.tasks.listInSprint(workspaceId, sprintId, PLANNING_VIEW_LIMIT);
     return tasks.map(TaskMapper.toResponse);
   }
 
+  @Cached({ entities: ['task', 'sprint'], shared: true })
   async backlog(workspaceId: string, spaceId: string): Promise<TaskResponse[]> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
     const tasks = await this.tasks.backlogInSpace(workspaceId, spaceId, PLANNING_VIEW_LIMIT);
     return tasks.map(TaskMapper.toResponse);
   }
 
+  @Cached({ entities: ['task'], shared: true })
   async get(workspaceId: string, taskId: string): Promise<TaskResponse> {
     return TaskMapper.toResponse(await this.getInWorkspace(workspaceId, taskId));
   }
@@ -105,10 +110,11 @@ export class TasksService {
     return TaskMapper.toResponse(saved);
   }
 
-  async remove(actor: Actor, workspaceId: string, taskId: string): Promise<void> {
+  async remove(actor: Actor, workspaceId: string, taskId: string): Promise<TaskResponse> {
     const task = await this.getInWorkspace(workspaceId, taskId);
     await this.tasks.delete(workspaceId, taskId);
     await this.publish('deleted', actor, task);
+    return TaskMapper.toResponse(task);
   }
 
   /** Who cares about a task: for notifying people about comments on it. */
@@ -129,9 +135,7 @@ export class TasksService {
   }
 
   private async getInWorkspace(workspaceId: string, taskId: string): Promise<Task> {
-    const task = await this.tasks.findInWorkspace(workspaceId, taskId);
-    if (!task) throw DomainError.notFound('Task');
-    return task;
+    return found(await this.tasks.findInWorkspace(workspaceId, taskId), 'Task');
   }
 
   private async assertPlannable(access: WorkspaceAccess, task: Task, sprintId: string | null): Promise<void> {

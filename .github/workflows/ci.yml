@@ -59,6 +59,16 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
+      # Throwaway cache for this job. The API e2e suite runs against it (E2E_REDIS_URL).
+      redis:
+        image: redis:7.4.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -88,6 +98,8 @@ jobs:
 
       - name: API end-to-end tests
         run: pnpm --filter @taskflow/api test:e2e
+        env:
+          E2E_REDIS_URL: redis://localhost:6379/0
 
       - name: Install Chromium for Playwright
         run: pnpm --filter @taskflow/web exec playwright install --with-deps chromium
@@ -120,5 +132,5 @@ jobs:
           terraform validate
       - name: Docker Compose config is valid
         run: |
-          sed -E 's/^(POSTGRES_PASSWORD|APP_DB_OWNER_PASSWORD|APP_DB_PASSWORD|BETTER_AUTH_SECRET)=$/\1=ci-placeholder/' .env.example > "$RUNNER_TEMP/compose.env"
+          sed -E 's/^(POSTGRES_PASSWORD|APP_DB_OWNER_PASSWORD|APP_DB_PASSWORD|BETTER_AUTH_SECRET|REDIS_PASSWORD)=$/\1=ci-placeholder/' .env.example > "$RUNNER_TEMP/compose.env"
           docker compose -f infra/docker/docker-compose.yml --env-file "$RUNNER_TEMP/compose.env" config --quiet

@@ -109,6 +109,7 @@ Core code knows nothing about tasks, sprints or HR. Feature modules depend on co
 src/core/
 ├── domain/
 │   ├── domain-error.ts               DomainError (not_found | forbidden | invalid | conflict); no HTTP details
+│   ├── found.ts                      found(value, 'Space'): the value or NOT_FOUND
 │   └── page-request.ts               PageRequest and toPageRequest() for repository ports
 ├── time/
 │   ├── clock.port.ts                 abstract class Clock; SystemClock and FixedClock (tests)
@@ -135,6 +136,7 @@ src/core/
 ├── audit/
 │   ├── audit.module.ts
 │   ├── audit-logger.port.ts          abstract class AuditLogger { record(actor, entry) }
+│   ├── audited.decorator.ts          @Audited('space.update', { metadata }): writes the entry in the same transaction
 │   ├── typeorm-audit-logger.ts       adapter writing to audit_log
 │   └── audit-log.orm-entity.ts
 ├── database/
@@ -153,10 +155,23 @@ src/core/
 │   └── migrations/
 │       ├── index.ts                  ordered list of migrations
 │       └── <timestamp>-<name>.ts     one file per migration, never edited after merge
+├── cache/                            ✅ shared cache (Redis, in-memory fallback)
+│   ├── cache-store.port.ts           abstract class CacheStore { get, set(ttl, tags), invalidateTags }; failures count as a miss
+│   ├── redis.cache-store.ts          ioredis adapter: tag sets, one Lua script per invalidation, 250 ms command timeout
+│   ├── memory.cache-store.ts         per-instance adapter for development and tests (bounded)
+│   ├── cache-keys.ts                 tf:v1 prefix, workspace/user scoped keys, hashed arguments
+│   ├── cached.decorator.ts           @Cached({ entities, shared?, ttlSeconds? }) for read methods; mutations always bypass it
+│   ├── cache-invalidator.ts          drops tags on every domain event, in the transaction and again after commit on every instance
+│   └── cache.module.ts
+├── runtime/                          ✅ support for method decorators
+│   ├── decorator-runtime.ts          lets decorators look up Nest providers at call time
+│   ├── method-decorator.ts           wrapMethod(): wraps an async method and keeps `this`
+│   └── change-target.ts              actor (first argument) and changed entity (result) for @Audited/@Announces
 ├── events/                           ✅ domain events inside one process
 │   ├── domain-event.ts               { type, workspaceId, actorId, entityType, entityId, subject? }; ids only, no data
 │   ├── event-bus.port.ts             abstract class EventBus { publish(event) }; handlers register themselves
 │   ├── in-process-event-bus.ts       runs handlers in order inside the caller's transaction
+│   ├── announces.decorator.ts        @Announces('space.updated'): publishes the event after the method succeeds
 │   └── events.module.ts
 ├── realtime/                         ✅ fan-out of events to every API instance (Postgres LISTEN/NOTIFY)
 │   ├── realtime-event.ts             what goes on the wire, and its parser (untrusted input)

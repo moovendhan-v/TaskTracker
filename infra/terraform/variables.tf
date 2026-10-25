@@ -100,6 +100,17 @@ variable "mail_from" {
   default     = "TaskFlow <no-reply@taskflow.localhost>"
 }
 
+variable "redis_password" {
+  description = "Password for the Redis cache."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.redis_password) >= 16
+    error_message = "redis_password must be at least 16 characters."
+  }
+}
+
 variable "mailpit_ui_port" {
   description = "Port on 127.0.0.1 for the Mailpit inbox UI."
   type        = number

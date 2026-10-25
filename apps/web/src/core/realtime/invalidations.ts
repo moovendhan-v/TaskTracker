@@ -22,5 +22,16 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
       return [queryKeys.hrRoot(workspaceId)];
     case 'notification':
       return [queryKeys.notificationsRoot(workspaceId)];
+    case 'role':
+    case 'policy':
+      return [queryKeys.roles(workspaceId), queryKeys.members(workspaceId), queryKeys.workspace(workspaceId)];
+    case 'workspace':
+      return [queryKeys.workspace(workspaceId), queryKeys.workspaces];
+    case 'department':
+    case 'employee':
+    case 'leave_type':
+      return [queryKeys.hrRoot(workspaceId)];
+    case 'status':
+      return [queryKeys.tasksRoot(workspaceId), queryKeys.spaces(workspaceId)];
   }
 }

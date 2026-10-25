@@ -516,14 +516,21 @@ type Query {
 
 enum RealtimeEntityType {
   comment
+  department
   document
+  employee
   leave_request
+  leave_type
   list
   member
   notification
+  policy
+  role
   space
   sprint
+  status
   task
+  workspace
 }
 
 input RequestLeaveInput {

@@ -16,7 +16,7 @@ describe('loadEnv', () => {
     expect(env.TURNSTILE_SECRET_KEY).toBeUndefined();
   });
 
-  const production = { ...base, NODE_ENV: 'production', SMTP_URL: 'smtps://user:pw@smtp.example.com:465', MAIL_FROM: 'TaskFlow <no-reply@example.com>' };
+  const production = { ...base, NODE_ENV: 'production', SMTP_URL: 'smtps://user:pw@smtp.example.com:465', MAIL_FROM: 'TaskFlow <no-reply@example.com>', REDIS_URL: 'redis://:pw@redis:6379/0' };
 
   it('requires a CAPTCHA secret in production', () => {
     expect(() => loadEnv(production)).toThrow(/TURNSTILE_SECRET_KEY is required/);
@@ -29,6 +29,13 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...withCaptcha, SMTP_URL: '' })).toThrow(/SMTP_URL and MAIL_FROM are required/);
     expect(() => loadEnv({ ...withCaptcha, SMTP_URL: 'https://mail.example.com' })).toThrow(/smtp:\/\/ or smtps:\/\//);
     expect(loadEnv({ ...withCaptcha }).MAIL_FROM).toBe('TaskFlow <no-reply@example.com>');
+  });
+
+  it('requires a shared cache in production', () => {
+    const complete = { ...production, TURNSTILE_SECRET_KEY: 'secret' };
+    expect(() => loadEnv({ ...complete, REDIS_URL: '' })).toThrow(/REDIS_URL is required/);
+    expect(() => loadEnv({ ...complete, REDIS_URL: 'http://redis:6379' })).toThrow(/redis:\/\/ or rediss:\/\//);
+    expect(loadEnv(complete).REDIS_URL).toBe('redis://:pw@redis:6379/0');
   });
 
   it('rejects a short auth secret', () => {

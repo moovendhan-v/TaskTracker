@@ -6,6 +6,7 @@ import { AccessModule } from './core/access/access.module.js';
 import { DataScopeInterceptor } from './core/access/data-scope.interceptor.js';
 import { AuditModule } from './core/audit/audit.module.js';
 import { AuthModule } from './core/auth/auth.module.js';
+import { CacheModule } from './core/cache/cache.module.js';
 import { SessionGuard } from './core/auth/session.guard.js';
 import { DatabaseModule } from './core/database/database.module.js';
 import { EventsModule } from './core/events/events.module.js';
@@ -40,6 +41,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     TimeModule,
     EventsModule,
     RealtimeModule,
+    CacheModule,
     GraphqlApiModule,
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     AuthModule,

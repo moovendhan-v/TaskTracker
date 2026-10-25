@@ -6,11 +6,13 @@ import type {
   UpdateSprintRequest,
 } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
-import { changeOfAction, domainEvent } from '../../../core/events/domain-event.js';
-import { EventBus } from '../../../core/events/event-bus.port.js';
+import { Audited } from '../../../core/audit/audited.decorator.js';
+import { Cached } from '../../../core/cache/cached.decorator.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
-import { DomainError } from '../../../core/domain/domain-error.js';
+import { found } from '../../../core/domain/found.js';
+import { Announces } from '../../../core/events/announces.decorator.js';
 import type { Actor } from '../../../core/http/types/authenticated-request.js';
+import { workspaceFromArg } from '../../../core/runtime/change-target.js';
 import { Clock } from '../../../core/time/clock.port.js';
 import { SpacesService } from '../../spaces/application/spaces.service.js';
 import type { Sprint, SprintWithCounts } from '../domain/sprint.js';
@@ -19,6 +21,8 @@ import { SprintRolloverPolicy } from '../domain/sprint-rollover.policy.js';
 import { SprintRepository } from '../domain/sprint.repository.js';
 import { SprintMapper } from './sprint.mapper.js';
 
+const change = { ...workspaceFromArg, metadata: (sprint: SprintResponse) => ({ name: sprint.name, spaceId: sprint.spaceId }) };
+
 @Injectable()
 export class SprintsService {
   constructor(
@@ -26,10 +30,10 @@ export class SprintsService {
     private readonly spacesService: SpacesService,
     private readonly unitOfWork: UnitOfWork,
     private readonly auditLogger: AuditLogger,
-    private readonly eventBus: EventBus,
     private readonly clock: Clock,
   ) {}
 
+  @Cached({ entities: ['sprint', 'task'], shared: true })
   async listInSpace(workspaceId: string, spaceId: string): Promise<SprintResponse[]> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
     const sprints = await this.sprints.listInSpace(workspaceId, spaceId);
@@ -40,7 +44,9 @@ export class SprintsService {
     return SprintMapper.toResponse(await this.getInWorkspace(workspaceId, sprintId));
   }
 
-  async create(actor: Actor, workspaceId: string, spaceId: string, request: CreateSprintRequest): Promise<SprintResponse> {
+  @Audited('sprint.create', change)
+  @Announces('sprint.created', workspaceFromArg)
+  async create(_actor: Actor, workspaceId: string, spaceId: string, request: CreateSprintRequest): Promise<SprintResponse> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
     SprintLifecyclePolicy.assertValidRange(request.startDate, request.endDate);
     const created = await this.sprints.create({
@@ -51,11 +57,12 @@ export class SprintsService {
       startDate: request.startDate,
       endDate: request.endDate,
     });
-    await this.audit(actor, 'sprint.create', created);
     return this.get(workspaceId, created.id);
   }
 
-  async update(actor: Actor, workspaceId: string, sprintId: string, request: UpdateSprintRequest): Promise<SprintResponse> {
+  @Audited('sprint.update', change)
+  @Announces('sprint.updated', workspaceFromArg)
+  async update(_actor: Actor, workspaceId: string, sprintId: string, request: UpdateSprintRequest): Promise<SprintResponse> {
     const sprint = await this.getInWorkspace(workspaceId, sprintId);
     SprintLifecyclePolicy.assertEditable(sprint);
     const startDate = request.startDate ?? sprint.startDate;
@@ -69,29 +76,32 @@ export class SprintsService {
       startDate,
       endDate,
     });
-    await this.audit(actor, 'sprint.update', sprint, { fields: Object.keys(request) });
     return this.get(workspaceId, sprintId);
   }
 
-  async remove(actor: Actor, workspaceId: string, sprintId: string): Promise<void> {
+  @Audited('sprint.delete', change)
+  @Announces('sprint.deleted', workspaceFromArg)
+  async remove(_actor: Actor, workspaceId: string, sprintId: string): Promise<SprintResponse> {
     const sprint = await this.getInWorkspace(workspaceId, sprintId);
     SprintLifecyclePolicy.assertDeletable(sprint);
     // Tasks return to the backlog through ON DELETE SET NULL.
     await this.sprints.delete(workspaceId, sprintId);
-    await this.audit(actor, 'sprint.delete', sprint);
+    return SprintMapper.toResponse(sprint);
   }
 
-  async start(actor: Actor, workspaceId: string, sprintId: string): Promise<SprintResponse> {
+  @Audited('sprint.start', change)
+  @Announces('sprint.updated', workspaceFromArg)
+  async start(_actor: Actor, workspaceId: string, sprintId: string): Promise<SprintResponse> {
     await this.unitOfWork.run(async () => {
       const sprint = await this.getInWorkspace(workspaceId, sprintId);
       SprintLifecyclePolicy.assertCanStart(sprint, await this.sprints.hasActiveSprint(workspaceId, sprint.spaceId));
       await this.sprints.save({ ...toSprint(sprint), status: 'active' });
-      await this.audit(actor, 'sprint.start', sprint);
     });
     return this.get(workspaceId, sprintId);
   }
 
   /** Completes the sprint and moves unfinished tasks in the same transaction. */
+  @Announces('sprint.updated', workspaceFromArg)
   async complete(actor: Actor, workspaceId: string, sprintId: string, request: CompleteSprintRequest): Promise<SprintResponse> {
     await this.unitOfWork.run(async () => {
       const sprint = await this.getInWorkspace(workspaceId, sprintId);
@@ -103,7 +113,14 @@ export class SprintsService {
 
       const moved = await this.sprints.moveOpenTasks(workspaceId, sprint.id, target?.id ?? null);
       await this.sprints.save({ ...toSprint(sprint), status: 'completed', completedAt: this.clock.now() });
-      await this.audit(actor, 'sprint.complete', sprint, { movedTasks: moved, movedTo: target?.id ?? 'backlog' });
+      // Audited here rather than with @Audited because the entry records how many tasks moved.
+      await this.auditLogger.record(actor, {
+        action: 'sprint.complete',
+        targetType: 'sprint',
+        targetId: sprint.id,
+        workspaceId,
+        metadata: { name: sprint.name, spaceId: sprint.spaceId, movedTasks: moved, movedTo: target?.id ?? 'backlog' },
+      });
     });
     return this.get(workspaceId, sprintId);
   }
@@ -116,21 +133,7 @@ export class SprintsService {
   }
 
   async getInWorkspace(workspaceId: string, sprintId: string): Promise<SprintWithCounts> {
-    const sprint = await this.sprints.findInWorkspace(workspaceId, sprintId);
-    if (!sprint) throw DomainError.notFound('Sprint');
-    return sprint;
-  }
-
-  private async audit(actor: Actor, action: string, sprint: Sprint, metadata?: Record<string, unknown>): Promise<void> {
-    await this.auditLogger.record(actor, {
-      action,
-      targetType: 'sprint',
-      targetId: sprint.id,
-      workspaceId: sprint.workspaceId,
-      metadata: { name: sprint.name, spaceId: sprint.spaceId, ...metadata },
-    });
-    // Live updates for everyone looking at this workspace.
-    await this.eventBus.publish(domainEvent('sprint', changeOfAction(action), { workspaceId: sprint.workspaceId, entityId: sprint.id, actorId: actor.userId }));
+    return found(await this.sprints.findInWorkspace(workspaceId, sprintId), 'Sprint');
   }
 }
 

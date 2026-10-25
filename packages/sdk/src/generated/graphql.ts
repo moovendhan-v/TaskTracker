@@ -115,14 +115,21 @@ export type PlatformRole =
 
 export type RealtimeEntityType =
   | 'comment'
+  | 'department'
   | 'document'
+  | 'employee'
   | 'leave_request'
+  | 'leave_type'
   | 'list'
   | 'member'
   | 'notification'
+  | 'policy'
+  | 'role'
   | 'space'
   | 'sprint'
-  | 'task';
+  | 'status'
+  | 'task'
+  | 'workspace';
 
 export type RequestLeaveInput = {
   /** yyyy-mm-dd */

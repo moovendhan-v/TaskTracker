@@ -39,5 +39,7 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     CORS_ORIGINS: TEST_ORIGIN,
     // Each test user sends its own X-Forwarded-For address, so per-IP auth limits apply per user.
     TRUST_PROXY: '1',
+    // Optional: run the suite against a real Redis (CI does) instead of the in-process cache.
+    ...(process.env['E2E_REDIS_URL'] ? { REDIS_URL: process.env['E2E_REDIS_URL'] } : {}),
   };
 }
