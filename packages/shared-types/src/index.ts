@@ -19,3 +19,6 @@ export * from './contracts/document.contract.js';
 export * from './contracts/hr.contract.js';
 export * from './contracts/admin.contract.js';
 export * from './contracts/notification.contract.js';
+export * from './query/filter.js';
+export * from './query/query-string.js';
+export * from './query/resource-schema.js';

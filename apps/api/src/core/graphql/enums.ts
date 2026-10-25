@@ -1,6 +1,9 @@
 import { registerEnumType } from '@nestjs/graphql';
 import {
   EMPLOYMENT_TYPES,
+  FIELD_TYPES,
+  FILTER_OPERATORS,
+  LOGIC_OPERATORS,
   LEAVE_DECISIONS,
   LEAVE_STATUSES,
   NOTIFICATION_KINDS,
@@ -25,6 +28,10 @@ export const EmploymentTypeEnum = enumOf(EMPLOYMENT_TYPES);
 export const PlatformRoleEnum = enumOf(PLATFORM_ROLES);
 export const NotificationKindEnum = enumOf(NOTIFICATION_KINDS);
 export const RealtimeEntityTypeEnum = enumOf(REALTIME_ENTITY_TYPES);
+export const FilterOperatorEnum = enumOf(FILTER_OPERATORS);
+export const FieldTypeEnum = enumOf(FIELD_TYPES);
+export const LogicOperatorEnum = enumOf(LOGIC_OPERATORS);
+export const SortDirectionEnum = enumOf(['asc', 'desc'] as const);
 
 registerEnumType(TaskStatusEnum, { name: 'TaskStatus' });
 registerEnumType(TaskPriorityEnum, { name: 'TaskPriority' });
@@ -35,3 +42,7 @@ registerEnumType(EmploymentTypeEnum, { name: 'EmploymentType' });
 registerEnumType(PlatformRoleEnum, { name: 'PlatformRole' });
 registerEnumType(NotificationKindEnum, { name: 'NotificationKind' });
 registerEnumType(RealtimeEntityTypeEnum, { name: 'RealtimeEntityType' });
+registerEnumType(FilterOperatorEnum, { name: 'FilterOperator' });
+registerEnumType(FieldTypeEnum, { name: 'FieldType' });
+registerEnumType(LogicOperatorEnum, { name: 'LogicOperator' });
+registerEnumType(SortDirectionEnum, { name: 'SortDirection' });

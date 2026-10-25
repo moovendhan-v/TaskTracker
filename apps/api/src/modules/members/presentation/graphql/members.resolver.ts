@@ -2,10 +2,13 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentAccess } from '../../../../core/access/current-access.decorator.js';
 import { RequirePermissions } from '../../../../core/access/require-permissions.decorator.js';
 import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
+import { resourceQueryComplexity } from '../../../../core/graphql/resource-query.types.js';
+import type { NormalizedQuery } from '../../../../core/query/normalize-query.js';
+import { ResourceQueryArg, ValidatedQuery } from '../../../../core/query/resource-query.decorator.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { MembersService } from '../../application/members.service.js';
-import { AddMemberInput, AddMemberResultGql, MemberGql } from './member.types.js';
+import { AddMemberInput, AddMemberResultGql, MemberGql, MemberPageGql } from './member.types.js';
 
 @Resolver(() => MemberGql)
 export class MembersResolver {
@@ -15,6 +18,17 @@ export class MembersResolver {
   @RequirePermissions()
   members(@WorkspaceIdArg() _workspaceId: string, @CurrentAccess() access: WorkspaceAccess): Promise<MemberGql[]> {
     return this.membersService.list(access.workspaceId);
+  }
+
+  @Query(() => MemberPageGql, { complexity: resourceQueryComplexity, description: 'Members matching filters, sort and paging; see resourceSchema(resource: "members")' })
+  @RequirePermissions()
+  searchMembers(
+    @WorkspaceIdArg() _workspaceId: string,
+    @ResourceQueryArg() _query: unknown,
+    @ValidatedQuery('members') query: NormalizedQuery,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<MemberPageGql> {
+    return this.membersService.search(access.workspaceId, query);
   }
 
   @Mutation(() => AddMemberResultGql)

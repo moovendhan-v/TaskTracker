@@ -1,5 +1,5 @@
 import { Column, Entity, Index } from 'typeorm';
-import type { TaskPriority, TaskStatus } from '@taskflow/shared-types';
+import type { TaskMetadata, TaskPriority, TaskStatus } from '@taskflow/shared-types';
 import { TenantOrmEntity } from '../../../core/database/base.orm-entity.js';
 import type { Task } from '../domain/task.js';
 
@@ -35,4 +35,7 @@ export class TaskOrmEntity extends TenantOrmEntity implements Task {
 
   @Column({ type: 'text' })
   createdById: string;
+
+  @Column({ type: 'jsonb', default: () => `'{}'::jsonb` })
+  metadata: TaskMetadata;
 }

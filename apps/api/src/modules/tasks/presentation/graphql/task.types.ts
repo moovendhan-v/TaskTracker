@@ -8,10 +8,12 @@ import {
   type CreateTaskRequest,
   type TaskPriority,
   type TaskResponse,
+  type TaskMetadata,
   type TaskStatus,
   type UpdateTaskRequest,
 } from '@taskflow/shared-types';
 import { TaskPriorityEnum, TaskStatusEnum } from '../../../../core/graphql/enums.js';
+import { MetadataScalar } from '../../../../core/graphql/metadata.scalar.js';
 import { PageOf, WorkspacePageArgs } from '../../../../core/graphql/page.type.js';
 import { IsOmittable } from '../../../../core/graphql/validation.js';
 
@@ -27,6 +29,7 @@ export class TaskGql implements TaskResponse {
   @Field(() => ID, { nullable: true }) assigneeId: string | null;
   @Field(() => ID, { nullable: true }) sprintId: string | null;
   @Field(() => Float) position: number;
+  @Field(() => MetadataScalar) metadata: TaskMetadata;
   @Field() createdAt: string;
   @Field() updatedAt: string;
 }
@@ -88,6 +91,10 @@ export class CreateTaskInput implements CreateTaskRequest {
   @IsString()
   @MaxLength(64)
   assigneeId?: string | null;
+
+  @Field(() => MetadataScalar, { nullable: true })
+  @IsOmittable()
+  metadata?: TaskMetadata;
 }
 
 @InputType()
@@ -138,4 +145,8 @@ export class UpdateTaskInput implements UpdateTaskRequest {
   @ValidateIf((_, value) => value !== null)
   @IsUUID('4')
   sprintId?: string | null;
+
+  @Field(() => MetadataScalar, { nullable: true, description: 'Merged into the current metadata; a key set to null is removed' })
+  @IsOmittable()
+  metadata?: TaskMetadata;
 }

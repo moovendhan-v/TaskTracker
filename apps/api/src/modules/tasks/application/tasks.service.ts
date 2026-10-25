@@ -8,6 +8,7 @@ import type {
 } from '@taskflow/shared-types';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { found } from '../../../core/domain/found.js';
+import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
 import { domainEvent } from '../../../core/events/domain-event.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
 import { toPageRequest } from '../../../core/domain/page-request.js';
@@ -16,10 +17,10 @@ import { ListsService } from '../../lists/application/lists.service.js';
 import { MembersService } from '../../members/application/members.service.js';
 import { SpacesService } from '../../spaces/application/spaces.service.js';
 import { SprintsService } from '../../sprints/application/sprints.service.js';
-import { TASK_POSITION_STEP, type Task } from '../domain/task.js';
+import { TASK_POSITION_STEP, mergeMetadata, type Task } from '../domain/task.js';
 import { TaskAssignmentPolicy } from '../domain/task-assignment.policy.js';
 import { TaskPlanningPolicy } from '../domain/task-planning.policy.js';
-import { TaskRepository } from '../domain/task.repository.js';
+import { TaskRepository, type TaskSearchScope } from '../domain/task.repository.js';
 import { TaskMapper } from './task.mapper.js';
 
 /** Sprint and backlog views show at most this many tasks. */
@@ -42,6 +43,15 @@ export class TasksService {
     const page = toPageRequest(query);
     const result = await this.tasks.pageInList(workspaceId, listId, { status: query.status, search: query.search }, page);
     return { items: result.items.map(TaskMapper.toResponse), total: result.total, ...page };
+  }
+
+  /** Tasks matching a validated resource query, optionally limited to a list or a space. */
+  @Cached({ entities: ['task', 'list'], shared: true })
+  async search(workspaceId: string, scope: TaskSearchScope, query: NormalizedQuery): Promise<Paginated<TaskResponse>> {
+    if (scope.listId) await this.listsService.getInWorkspace(workspaceId, scope.listId);
+    if (scope.spaceId) await this.spacesService.getInWorkspace(workspaceId, scope.spaceId);
+    const result = await this.tasks.search(workspaceId, scope, query);
+    return { items: result.items.map(TaskMapper.toResponse), total: result.total, page: query.page, pageSize: query.pageSize };
   }
 
   @Cached({ entities: ['task', 'sprint'], shared: true })
@@ -80,6 +90,7 @@ export class TasksService {
       sprintId: null,
       position: (await this.tasks.maxPosition(workspaceId, listId)) + TASK_POSITION_STEP,
       createdById: actor.userId,
+      metadata: mergeMetadata({}, request.metadata ?? {}),
     });
     await this.publish('created', actor, task);
     return TaskMapper.toResponse(task);
@@ -104,6 +115,7 @@ export class TasksService {
     if (request.priority !== undefined) task.priority = request.priority;
     if (request.dueDate !== undefined) task.dueDate = request.dueDate ? new Date(request.dueDate) : null;
     if (request.position !== undefined) task.position = request.position;
+    if (request.metadata !== undefined) task.metadata = mergeMetadata(task.metadata, request.metadata);
 
     const saved = await this.tasks.save(task);
     await this.publish('updated', actor, saved, previousAssigneeId);

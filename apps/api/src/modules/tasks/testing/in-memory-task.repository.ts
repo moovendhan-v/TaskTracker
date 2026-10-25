@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type { PageRequest } from '../../../core/domain/page-request.js';
+import { evaluateQuery } from '../../../core/query/evaluate-query.js';
+import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
 import type { NewTask, Task, TaskFilter } from '../domain/task.js';
-import { TaskRepository, type TaskPage } from '../domain/task.repository.js';
+import { TaskRepository, type TaskPage, type TaskSearchScope } from '../domain/task.repository.js';
 
 /** Test double that honours the same contract as TypeOrmTaskRepository (Liskov). */
 export class InMemoryTaskRepository extends TaskRepository {
@@ -21,6 +23,11 @@ export class InMemoryTaskRepository extends TaskRepository {
       .sort((a, b) => a.position - b.position || a.createdAt.getTime() - b.createdAt.getTime());
     const start = (page.page - 1) * page.pageSize;
     return { items: matches.slice(start, start + page.pageSize), total: matches.length };
+  }
+
+  async search(workspaceId: string, scope: TaskSearchScope, query: NormalizedQuery): Promise<TaskPage> {
+    const inScope = [...this.rows.values()].filter((t) => t.workspaceId === workspaceId && (!scope.listId || t.listId === scope.listId));
+    return evaluateQuery(inScope, query);
   }
 
   async maxPosition(workspaceId: string, listId: string): Promise<number> {

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import type { SelectQueryBuilder } from 'typeorm';
 import type { Permission, SystemRoleKey } from '@taskflow/shared-types';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
+import { pageRawWithResourceQuery } from '../../../core/query/apply-resource-query.js';
+import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
 import type { MemberDetails, MembershipWithRole, NewWorkspaceMember } from '../domain/workspace-member.js';
 import { WorkspaceMemberRepository } from '../domain/workspace-member.repository.js';
 import { WorkspaceMemberOrmEntity } from './workspace-member.orm-entity.js';
@@ -56,6 +58,12 @@ export class TypeOrmWorkspaceMemberRepository extends WorkspaceMemberRepository 
       .orderBy('member.created_at', 'ASC')
       .getRawMany<DetailsRow>();
     return rows.map(toDetails);
+  }
+
+  async searchDetails(workspaceId: string, query: NormalizedQuery): Promise<{ items: MemberDetails[]; total: number }> {
+    const builder = this.detailsQuery().where('member.workspace_id = :workspaceId', { workspaceId });
+    const { rows, total } = await pageRawWithResourceQuery<DetailsRow>(builder, query);
+    return { items: rows.map(toDetails), total };
   }
 
   async findDetails(workspaceId: string, userId: string): Promise<MemberDetails | null> {

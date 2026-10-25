@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { AddMemberRequest, MemberResponse, Permission, UpdateMemberRoleRequest } from '@taskflow/shared-types';
+import type { AddMemberRequest, MemberResponse, Paginated, Permission, UpdateMemberRoleRequest } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
+import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
 import { domainEvent } from '../../../core/events/domain-event.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
@@ -34,6 +35,12 @@ export class MembersService {
   async list(workspaceId: string): Promise<MemberResponse[]> {
     const members = await this.members.listDetails(workspaceId);
     return members.map(MemberMapper.toResponse);
+  }
+
+  @Cached({ entities: ['member', 'role'], shared: true })
+  async search(workspaceId: string, query: NormalizedQuery): Promise<Paginated<MemberResponse>> {
+    const result = await this.members.searchDetails(workspaceId, query);
+    return { items: result.items.map(MemberMapper.toResponse), total: result.total, page: query.page, pageSize: query.pageSize };
   }
 
   /**

@@ -14,6 +14,7 @@ export const TaskMapper = {
       assigneeId: task.assigneeId,
       sprintId: task.sprintId,
       position: task.position,
+      metadata: task.metadata ?? {},
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
     };

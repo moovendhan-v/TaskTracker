@@ -1,4 +1,4 @@
-import type { TaskPriority, TaskStatus } from '../domain/task.js';
+import type { TaskMetadata, TaskPriority, TaskStatus } from '../domain/task.js';
 import type { PageQuery } from '../domain/pagination.js';
 
 export interface TaskResponse {
@@ -13,6 +13,7 @@ export interface TaskResponse {
   /** Sprint the task is planned into; null when it's in the backlog. */
   sprintId: string | null;
   position: number;
+  metadata: TaskMetadata;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,8 +25,10 @@ export interface CreateTaskRequest {
   priority?: TaskPriority;
   dueDate?: string | null;
   assigneeId?: string | null;
+  metadata?: TaskMetadata;
 }
 
+/** `metadata` is merged into what the task has; a key set to null is removed. */
 export interface UpdateTaskRequest extends Partial<CreateTaskRequest> {
   position?: number;
   /** Planning a task into a sprint needs sprint.manage. */

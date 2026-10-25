@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import type { PageRequest } from '../../../core/domain/page-request.js';
+import { applyResourceQuery } from '../../../core/query/apply-resource-query.js';
+import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
 import { escapeLike } from '../../../core/http/utils/escape-like.js';
 import type { NewTask, Task, TaskFilter } from '../domain/task.js';
-import { TaskRepository, type TaskPage } from '../domain/task.repository.js';
+import { TaskRepository, type TaskPage, type TaskSearchScope } from '../domain/task.repository.js';
 import { TaskOrmEntity } from './task.orm-entity.js';
-
-/** Most urgent first; a fixed expression with no user input. */
-const PRIORITY_RANK_SQL = `CASE task.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 WHEN 'low' THEN 3 ELSE 4 END`;
+import { PRIORITY_RANK_SQL } from './task.query-resource.js';
 
 @Injectable()
 export class TypeOrmTaskRepository extends TaskRepository {
@@ -36,6 +36,17 @@ export class TypeOrmTaskRepository extends TaskRepository {
       .skip((page.page - 1) * page.pageSize)
       .take(page.pageSize)
       .getManyAndCount();
+    return { items, total };
+  }
+
+  async search(workspaceId: string, scope: TaskSearchScope, query: NormalizedQuery): Promise<TaskPage> {
+    const builder = this.repository.createQueryBuilder('task').where('task.workspace_id = :workspaceId', { workspaceId });
+    if (scope.listId) builder.andWhere('task.list_id = :scopeListId', { scopeListId: scope.listId });
+    if (scope.spaceId) {
+      builder.innerJoin('task_list', 'scope_list', 'scope_list.id = task.list_id AND scope_list.workspace_id = task.workspace_id');
+      builder.andWhere('scope_list.space_id = :scopeSpaceId', { scopeSpaceId: scope.spaceId });
+    }
+    const [items, total] = await applyResourceQuery(builder, query).getManyAndCount();
     return { items, total };
   }
 

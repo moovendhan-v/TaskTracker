@@ -163,6 +163,16 @@ src/core/
 │   ├── cached.decorator.ts           @Cached({ entities, shared?, ttlSeconds? }) for read methods; mutations always bypass it
 │   ├── cache-invalidator.ts          drops tags on every domain event, in the transaction and again after commit on every instance
 │   └── cache.module.ts
+├── query/                            ✅ filter language for list endpoints
+│   ├── query-resource.decorators.ts  @QueryResource and @QueryField: fields, SQL columns, operators, sorting, paging, permissions
+│   ├── normalize-query.ts            checks a client query against a resource (fields, operators, values, @me, limits)
+│   ├── compile-query.ts              filter tree → SQL with bound parameters only; ORDER BY with an id tie-breaker
+│   ├── apply-resource-query.ts       adds filter, search, sort and paging to a TypeORM query builder
+│   ├── evaluate-query.ts             the same semantics in memory, for test repositories
+│   ├── resource-query.decorator.ts   @ResourceQueryArg() and @ValidatedQuery('tasks') for resolvers
+│   ├── resource-schema.ts            the client-facing description of a resource, per caller
+│   ├── enum-options.registry.ts      workspace-specific enum options (roles, custom statuses)
+│   └── query.module.ts
 ├── runtime/                          ✅ support for method decorators
 │   ├── decorator-runtime.ts          lets decorators look up Nest providers at call time
 │   ├── method-decorator.ts           wrapMethod(): wraps an async method and keeps `this`
@@ -392,6 +402,10 @@ src/modules/
 │   ├── application/workspace-events.service.ts   filters the stream by workspace and recipient; rechecks the session
 │   │                                             and membership every 30 s and ends the stream when either is gone
 │   └── presentation/graphql/{workspace-events.resolver.ts,workspace-event.types.ts}
+│
+├── resources/                                    ✅ resourceSchema and resourceNames queries
+│   ├── application/resource-schema.service.ts    unknown and forbidden resources both answer NOT_FOUND
+│   └── presentation/graphql/resource-schema.resolver.ts
 │
 ├── audit-log/                                    ✅ read side of the audit log
 │   ├── domain/{audit-entry.ts,audit-log.repository.ts}

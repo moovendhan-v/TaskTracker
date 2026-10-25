@@ -1,6 +1,7 @@
 import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
 import { IsEmail, IsUUID, MaxLength } from 'class-validator';
 import type { AddMemberRequest, MemberResponse } from '@taskflow/shared-types';
+import { PageOf } from '../../../../core/graphql/page.type.js';
 
 @ObjectType('Member')
 export class MemberGql implements MemberResponse {
@@ -11,6 +12,9 @@ export class MemberGql implements MemberResponse {
   @Field() roleName: string;
   @Field() joinedAt: string;
 }
+
+@ObjectType('MemberPage')
+export class MemberPageGql extends PageOf(MemberGql) {}
 
 @ObjectType('AddMemberResult')
 export class AddMemberResultGql {

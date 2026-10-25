@@ -86,6 +86,29 @@ Services publish domain events inside their transaction, and `pg_notify` sends t
 
 Sockets check the `Origin` header against `CORS_ORIGINS` and the session cookie before the connection is accepted. Subscribing needs workspace membership, and the server rechecks the session and membership every 30 seconds and ends the stream when either is gone. Reverse proxies need to pass the WebSocket upgrade for `/api/graphql` (the bundled nginx config and the Vite dev proxy do).
 
+### Filters, sorting and paging
+
+Every list that grows (tasks, members, the audit log) is a *query resource*: a class in the feature's `infrastructure/` folder that declares which fields exist and how each can be filtered and sorted.
+
+```ts
+@QueryResource({ name: 'tasks', label: 'Tasks', permission: 'task.view', idColumn: 'task.id', defaultSort: [{ field: 'position', direction: 'asc' }] })
+export class TaskQueryResource {
+  @QueryField({ type: 'enum', column: 'task.status', options: TASK_STATUSES, sortable: true })
+  status: string;
+
+  @QueryField({ type: 'json', column: 'task.metadata' })   // filter as metadata.<key>
+  metadata: string;
+}
+```
+
+Clients send filters as a tree (`and`, `or`, `not`, conditions with `eq`, `neq`, `lt`…`gte`, `between`, `in`, `nin`, `contains`, `starts_with`, `ends_with`, `is_null`, `is_not_null`) or as a compact query string:
+
+```graphql
+searchTasks(workspaceId: $w, query: { where: "status[in]=todo,in_progress&metadata[order_id]=6735&assigneeId=@me", sort: [{ field: "dueDate", direction: desc }], pageSize: 50 })
+```
+
+The API checks every field, operator and value against the resource, enforces limits (depth 4, 30 conditions, 100 values per list, page size per resource) and compiles the rest to SQL with bound parameters only. `resourceSchema(workspaceId, resource)` describes each resource (fields, types, operators, enum options, sortable fields, page sizes, which of and/or/not are allowed), trimmed to the fields the caller may see, so the web app builds its tables and filter UI from it instead of hard-coding them.
+
 ### Caching
 
 Reads are cached in Redis (`REDIS_URL`, required in production; without it each instance caches in memory). Service methods opt in with a decorator:

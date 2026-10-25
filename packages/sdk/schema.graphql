@@ -129,6 +129,7 @@ input CreateTaskInput {
 
   """ISO date-time; null clears it"""
   dueDate: String
+  metadata: Metadata
   priority: TaskPriority
   status: TaskStatus
   title: String!
@@ -214,6 +215,55 @@ enum EmploymentType {
   part_time
 }
 
+type EnumOption {
+  color: String
+  label: String!
+  value: String!
+}
+
+enum FieldType {
+  boolean
+  date
+  datetime
+  enum
+  json
+  number
+  string
+  text
+  user
+  uuid
+}
+
+input FilterInput {
+  and: [FilterInput!]
+
+  """A field name; json fields take a key: metadata.order_id"""
+  field: String
+  not: FilterInput
+  op: FilterOperator
+  or: [FilterInput!]
+  value: String
+  values: [String!]
+}
+
+enum FilterOperator {
+  between
+  contains
+  ends_with
+  eq
+  gt
+  gte
+  in
+  is_not_null
+  is_null
+  lt
+  lte
+  neq
+  nin
+  not_contains
+  starts_with
+}
+
 """A JSON object (read-only)"""
 scalar JSONObject
 
@@ -280,6 +330,12 @@ type LeaveType {
   requiresApproval: Boolean!
 }
 
+enum LogicOperator {
+  and
+  not
+  or
+}
+
 type Member {
   email: String!
   joinedAt: String!
@@ -288,6 +344,18 @@ type Member {
   roleName: String!
   userId: ID!
 }
+
+type MemberPage {
+  items: [Member!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+"""
+Flat key/value data: up to 50 keys, values are text, numbers, booleans or null
+"""
+scalar Metadata
 
 type Mutation {
   addMember(input: AddMemberInput!, workspaceId: ID!): AddMemberResult!
@@ -477,7 +545,30 @@ type Query {
     unreadOnly: Boolean
     workspaceId: ID!
   ): NotificationPage!
+
+  """Resources the caller can list with resourceSchema"""
+  resourceNames(workspaceId: ID!): [String!]!
+
+  """
+  Fields, filter operators, sorting and paging a resource supports, for building tables and filters
+  """
+  resourceSchema(resource: String!, workspaceId: ID!): ResourceSchema!
   roles(workspaceId: ID!): [Role!]!
+
+  """
+  Members matching filters, sort and paging; see resourceSchema(resource: "members")
+  """
+  searchMembers(query: ResourceQueryInput, workspaceId: ID!): MemberPage!
+
+  """
+  Tasks matching filters, sort and paging; see resourceSchema(resource: "tasks"). Optionally limited to a list or a space.
+  """
+  searchTasks(listId: ID, query: ResourceQueryInput, spaceId: ID, workspaceId: ID!): TaskPage!
+
+  """
+  Audit entries matching filters; see resourceSchema(resource: "audit_log")
+  """
+  searchWorkspaceAuditLog(query: ResourceQueryInput, workspaceId: ID!): AuditLogPage!
   spaces(workspaceId: ID!): [Space!]!
   sprint(sprintId: ID!, workspaceId: ID!): Sprint!
   sprintTasks(sprintId: ID!, workspaceId: ID!): [Task!]!
@@ -514,6 +605,13 @@ type Query {
   workspaces: [Workspace!]!
 }
 
+type QueryLimits {
+  maxConditions: Int!
+  maxDepth: Int!
+  maxListValues: Int!
+  maxSortFields: Int!
+}
+
 enum RealtimeEntityType {
   comment
   department
@@ -543,6 +641,47 @@ input RequestLeaveInput {
   startDate: String!
 }
 
+type ResourceFieldSchema {
+  defaultVisible: Boolean!
+  display: String
+  keyed: Boolean!
+  label: String!
+  name: String!
+  operators: [FilterOperator!]!
+  options: [EnumOption!]
+  sortable: Boolean!
+  type: FieldType!
+  width: Int
+}
+
+input ResourceQueryInput {
+  filter: FilterInput
+  page: Int
+  pageSize: Int
+  search: String
+  sort: [SortInput!]
+
+  """
+  Filters as a query string, e.g. status[in]=todo,done&metadata[order_id]=6735
+  """
+  where: String
+}
+
+"""
+How a resource can be listed: fields, operators, sorting and paging. Clients build tables from it.
+"""
+type ResourceSchema {
+  defaultPageSize: Int!
+  defaultSort: [SortSpec!]!
+  fields: [ResourceFieldSchema!]!
+  label: String!
+  limits: QueryLimits!
+  logic: [LogicOperator!]!
+  maxPageSize: Int!
+  resource: String!
+  searchable: Boolean!
+}
+
 type Role {
   id: ID!
   name: String!
@@ -550,6 +689,21 @@ type Role {
 
   """Set for built-in roles"""
   systemKey: String
+}
+
+enum SortDirection {
+  asc
+  desc
+}
+
+input SortInput {
+  direction: SortDirection! = asc
+  field: String!
+}
+
+type SortSpec {
+  direction: SortDirection!
+  field: String!
 }
 
 type Space {
@@ -595,6 +749,7 @@ type Task {
   dueDate: String
   id: ID!
   listId: ID!
+  metadata: Metadata!
   position: Float!
   priority: TaskPriority!
   sprintId: ID
@@ -679,6 +834,9 @@ input UpdateTaskInput {
   assigneeId: ID
   description: String
   dueDate: String
+
+  """Merged into the current metadata; a key set to null is removed"""
+  metadata: Metadata
   position: Float
   priority: TaskPriority
 

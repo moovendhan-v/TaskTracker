@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+// Registers the module's query resource (filters, sorting, resourceSchema).
+import './infrastructure/task.query-resource.js';
 import { TasksResolver } from './presentation/graphql/tasks.resolver.js';
 import { ListsModule } from '../lists/lists.module.js';
 import { MembersModule } from '../members/members.module.js';

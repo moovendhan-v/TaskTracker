@@ -14,7 +14,7 @@ fragment SpaceFields on Space { id workspaceId name color createdAt }
 fragment TaskListFields on TaskList { id spaceId name createdAt }
 
 fragment TaskFields on Task {
-  id listId title description status priority dueDate assigneeId sprintId position createdAt updatedAt
+  id listId title description status priority dueDate assigneeId sprintId position metadata createdAt updatedAt
 }
 
 fragment CommentFields on Comment { id taskId authorId authorName body createdAt updatedAt }
@@ -56,4 +56,16 @@ fragment AdminWorkspaceFields on AdminWorkspace { id name ownerId ownerName memb
 
 fragment NotificationFields on Notification {
   id kind actorId actorName entityType entityId taskId subject excerpt readAt createdAt
+}
+
+fragment ResourceSchemaFields on ResourceSchema {
+  resource
+  label
+  logic
+  searchable
+  defaultPageSize
+  maxPageSize
+  defaultSort { field direction }
+  limits { maxDepth maxConditions maxListValues maxSortFields }
+  fields { name label type operators sortable defaultVisible keyed display width options { value label color } }
 }

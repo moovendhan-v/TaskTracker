@@ -1,10 +1,12 @@
 import type { Permission } from '@taskflow/shared-types';
+import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
 import type { MemberDetails, MembershipWithRole, NewWorkspaceMember } from './workspace-member.js';
 
 export abstract class WorkspaceMemberRepository {
   abstract findMembership(workspaceId: string, userId: string): Promise<MembershipWithRole | null>;
   abstract listMembershipsForUser(userId: string): Promise<MembershipWithRole[]>;
   abstract listDetails(workspaceId: string): Promise<MemberDetails[]>;
+  abstract searchDetails(workspaceId: string, query: NormalizedQuery): Promise<{ items: MemberDetails[]; total: number }>;
   abstract findDetails(workspaceId: string, userId: string): Promise<MemberDetails | null>;
   abstract isMember(workspaceId: string, userId: string): Promise<boolean>;
   /** Members whose role includes `permission`, e.g. everyone who can approve leave. */

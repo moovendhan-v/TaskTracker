@@ -63,6 +63,7 @@ export type CreateTaskInput = {
   description?: string | null | undefined;
   /** ISO date-time; null clears it */
   dueDate?: string | null | undefined;
+  metadata?: Record<string, string | number | boolean | null> | null | undefined;
   priority?: TaskPriority | null | undefined;
   status?: TaskStatus | null | undefined;
   title: string;
@@ -92,6 +93,46 @@ export type EmploymentType =
   | 'intern'
   | 'part_time';
 
+export type FieldType =
+  | 'boolean'
+  | 'date'
+  | 'datetime'
+  | 'enum'
+  | 'json'
+  | 'number'
+  | 'string'
+  | 'text'
+  | 'user'
+  | 'uuid';
+
+export type FilterInput = {
+  and?: Array<FilterInput> | null | undefined;
+  /** A field name; json fields take a key: metadata.order_id */
+  field?: string | null | undefined;
+  not?: FilterInput | null | undefined;
+  op?: FilterOperator | null | undefined;
+  or?: Array<FilterInput> | null | undefined;
+  value?: string | null | undefined;
+  values?: Array<string> | null | undefined;
+};
+
+export type FilterOperator =
+  | 'between'
+  | 'contains'
+  | 'ends_with'
+  | 'eq'
+  | 'gt'
+  | 'gte'
+  | 'in'
+  | 'is_not_null'
+  | 'is_null'
+  | 'lt'
+  | 'lte'
+  | 'neq'
+  | 'nin'
+  | 'not_contains'
+  | 'starts_with';
+
 export type LeaveDecision =
   | 'approved'
   | 'rejected';
@@ -101,6 +142,11 @@ export type LeaveStatus =
   | 'cancelled'
   | 'pending'
   | 'rejected';
+
+export type LogicOperator =
+  | 'and'
+  | 'not'
+  | 'or';
 
 export type NotificationKind =
   | 'leave_decided'
@@ -138,6 +184,25 @@ export type RequestLeaveInput = {
   reason?: string | null | undefined;
   /** yyyy-mm-dd */
   startDate: string;
+};
+
+export type ResourceQueryInput = {
+  filter?: FilterInput | null | undefined;
+  page?: number | null | undefined;
+  pageSize?: number | null | undefined;
+  search?: string | null | undefined;
+  sort?: Array<SortInput> | null | undefined;
+  /** Filters as a query string, e.g. status[in]=todo,done&metadata[order_id]=6735 */
+  where?: string | null | undefined;
+};
+
+export type SortDirection =
+  | 'asc'
+  | 'desc';
+
+export type SortInput = {
+  direction?: SortDirection;
+  field: string;
 };
 
 export type SprintStatus =
@@ -205,6 +270,8 @@ export type UpdateTaskInput = {
   assigneeId?: string | null | undefined;
   description?: string | null | undefined;
   dueDate?: string | null | undefined;
+  /** Merged into the current metadata; a key set to null is removed */
+  metadata?: Record<string, string | number | boolean | null> | null | undefined;
   position?: number | null | undefined;
   priority?: TaskPriority | null | undefined;
   /** null moves the task to the backlog; needs sprint.manage */
@@ -363,7 +430,7 @@ export type SpaceFieldsFragment = { id: string, workspaceId: string, name: strin
 
 export type TaskListFieldsFragment = { id: string, spaceId: string, name: string, createdAt: string };
 
-export type TaskFieldsFragment = { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, createdAt: string, updatedAt: string };
+export type TaskFieldsFragment = { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string };
 
 export type CommentFieldsFragment = { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string };
 
@@ -390,6 +457,8 @@ export type AdminUserFieldsFragment = { id: string, name: string, email: string,
 export type AdminWorkspaceFieldsFragment = { id: string, name: string, ownerId: string, ownerName: string, memberCount: number, createdAt: string };
 
 export type NotificationFieldsFragment = { id: string, kind: NotificationKind, actorId: string | null, actorName: string | null, entityType: string, entityId: string, taskId: string | null, subject: string, excerpt: string, readAt: string | null, createdAt: string };
+
+export type ResourceSchemaFieldsFragment = { resource: string, label: string, logic: Array<LogicOperator>, searchable: boolean, defaultPageSize: number, maxPageSize: number, defaultSort: Array<{ field: string, direction: SortDirection }>, limits: { maxDepth: number, maxConditions: number, maxListValues: number, maxSortFields: number }, fields: Array<{ name: string, label: string, type: FieldType, operators: Array<FilterOperator>, sortable: boolean, defaultVisible: boolean, keyed: boolean, display: string | null, width: number | null, options: Array<{ value: string, label: string, color: string | null }> | null }> };
 
 export type DepartmentsQueryVariables = Exact<{
   workspaceId: string;
@@ -640,6 +709,47 @@ export type WorkspaceEventsSubscriptionVariables = Exact<{
 
 export type WorkspaceEventsSubscription = { workspaceEvents: { type: string, entityType: RealtimeEntityType, entityId: string, actorId: string, occurredAt: string } };
 
+export type ResourceSchemaQueryVariables = Exact<{
+  workspaceId: string;
+  resource: string;
+}>;
+
+
+export type ResourceSchemaQuery = { resourceSchema: { resource: string, label: string, logic: Array<LogicOperator>, searchable: boolean, defaultPageSize: number, maxPageSize: number, defaultSort: Array<{ field: string, direction: SortDirection }>, limits: { maxDepth: number, maxConditions: number, maxListValues: number, maxSortFields: number }, fields: Array<{ name: string, label: string, type: FieldType, operators: Array<FilterOperator>, sortable: boolean, defaultVisible: boolean, keyed: boolean, display: string | null, width: number | null, options: Array<{ value: string, label: string, color: string | null }> | null }> } };
+
+export type ResourceNamesQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ResourceNamesQuery = { resourceNames: Array<string> };
+
+export type SearchTasksQueryVariables = Exact<{
+  workspaceId: string;
+  listId?: string | null | undefined;
+  spaceId?: string | null | undefined;
+  query?: ResourceQueryInput | null | undefined;
+}>;
+
+
+export type SearchTasksQuery = { searchTasks: { page: number, pageSize: number, total: number, items: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string }> } };
+
+export type SearchMembersQueryVariables = Exact<{
+  workspaceId: string;
+  query?: ResourceQueryInput | null | undefined;
+}>;
+
+
+export type SearchMembersQuery = { searchMembers: { page: number, pageSize: number, total: number, items: Array<{ userId: string, name: string, email: string, roleId: string, roleName: string, joinedAt: string }> } };
+
+export type SearchWorkspaceAuditLogQueryVariables = Exact<{
+  workspaceId: string;
+  query?: ResourceQueryInput | null | undefined;
+}>;
+
+
+export type SearchWorkspaceAuditLogQuery = { searchWorkspaceAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown>, createdAt: string }> } };
+
 export type RolesQueryVariables = Exact<{
   workspaceId: string;
 }>;
@@ -773,7 +883,7 @@ export type TasksQueryVariables = Exact<{
 }>;
 
 
-export type TasksQuery = { tasks: { page: number, pageSize: number, total: number, items: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, createdAt: string, updatedAt: string }> } };
+export type TasksQuery = { tasks: { page: number, pageSize: number, total: number, items: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string }> } };
 
 export type TaskQueryVariables = Exact<{
   workspaceId: string;
@@ -781,7 +891,7 @@ export type TaskQueryVariables = Exact<{
 }>;
 
 
-export type TaskQuery = { task: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, createdAt: string, updatedAt: string } };
+export type TaskQuery = { task: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string } };
 
 export type SprintTasksQueryVariables = Exact<{
   workspaceId: string;
@@ -789,7 +899,7 @@ export type SprintTasksQueryVariables = Exact<{
 }>;
 
 
-export type SprintTasksQuery = { sprintTasks: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, createdAt: string, updatedAt: string }> };
+export type SprintTasksQuery = { sprintTasks: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string }> };
 
 export type BacklogQueryVariables = Exact<{
   workspaceId: string;
@@ -797,7 +907,7 @@ export type BacklogQueryVariables = Exact<{
 }>;
 
 
-export type BacklogQuery = { backlog: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, createdAt: string, updatedAt: string }> };
+export type BacklogQuery = { backlog: Array<{ id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string }> };
 
 export type CreateTaskMutationVariables = Exact<{
   workspaceId: string;
@@ -806,7 +916,7 @@ export type CreateTaskMutationVariables = Exact<{
 }>;
 
 
-export type CreateTaskMutation = { createTask: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, createdAt: string, updatedAt: string } };
+export type CreateTaskMutation = { createTask: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string } };
 
 export type UpdateTaskMutationVariables = Exact<{
   workspaceId: string;
@@ -815,7 +925,7 @@ export type UpdateTaskMutationVariables = Exact<{
 }>;
 
 
-export type UpdateTaskMutation = { updateTask: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, createdAt: string, updatedAt: string } };
+export type UpdateTaskMutation = { updateTask: { id: string, listId: string, title: string, description: string, status: TaskStatus, priority: TaskPriority, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, metadata: Record<string, string | number | boolean | null>, createdAt: string, updatedAt: string } };
 
 export type DeleteTaskMutationVariables = Exact<{
   workspaceId: string;
@@ -949,6 +1059,7 @@ export const TaskFieldsFragmentDoc = new TypedDocumentString(`
   assigneeId
   sprintId
   position
+  metadata
   createdAt
   updatedAt
 }
@@ -1112,6 +1223,42 @@ export const NotificationFieldsFragmentDoc = new TypedDocumentString(`
   createdAt
 }
     `, {"fragmentName":"NotificationFields"}) as unknown as TypedDocumentString<NotificationFieldsFragment, unknown>;
+export const ResourceSchemaFieldsFragmentDoc = new TypedDocumentString(`
+    fragment ResourceSchemaFields on ResourceSchema {
+  resource
+  label
+  logic
+  searchable
+  defaultPageSize
+  maxPageSize
+  defaultSort {
+    field
+    direction
+  }
+  limits {
+    maxDepth
+    maxConditions
+    maxListValues
+    maxSortFields
+  }
+  fields {
+    name
+    label
+    type
+    operators
+    sortable
+    defaultVisible
+    keyed
+    display
+    width
+    options {
+      value
+      label
+      color
+    }
+  }
+}
+    `, {"fragmentName":"ResourceSchemaFields"}) as unknown as TypedDocumentString<ResourceSchemaFieldsFragment, unknown>;
 export const AdminUsersDocument = new TypedDocumentString(`
     query AdminUsers($search: String, $page: Int, $pageSize: Int) {
   adminUsers(search: $search, page: $page, pageSize: $pageSize) {
@@ -1796,6 +1943,124 @@ export const WorkspaceEventsDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<WorkspaceEventsSubscription, WorkspaceEventsSubscriptionVariables>;
+export const ResourceSchemaDocument = new TypedDocumentString(`
+    query ResourceSchema($workspaceId: ID!, $resource: String!) {
+  resourceSchema(workspaceId: $workspaceId, resource: $resource) {
+    ...ResourceSchemaFields
+  }
+}
+    fragment ResourceSchemaFields on ResourceSchema {
+  resource
+  label
+  logic
+  searchable
+  defaultPageSize
+  maxPageSize
+  defaultSort {
+    field
+    direction
+  }
+  limits {
+    maxDepth
+    maxConditions
+    maxListValues
+    maxSortFields
+  }
+  fields {
+    name
+    label
+    type
+    operators
+    sortable
+    defaultVisible
+    keyed
+    display
+    width
+    options {
+      value
+      label
+      color
+    }
+  }
+}`) as unknown as TypedDocumentString<ResourceSchemaQuery, ResourceSchemaQueryVariables>;
+export const ResourceNamesDocument = new TypedDocumentString(`
+    query ResourceNames($workspaceId: ID!) {
+  resourceNames(workspaceId: $workspaceId)
+}
+    `) as unknown as TypedDocumentString<ResourceNamesQuery, ResourceNamesQueryVariables>;
+export const SearchTasksDocument = new TypedDocumentString(`
+    query SearchTasks($workspaceId: ID!, $listId: ID, $spaceId: ID, $query: ResourceQueryInput) {
+  searchTasks(
+    workspaceId: $workspaceId
+    listId: $listId
+    spaceId: $spaceId
+    query: $query
+  ) {
+    items {
+      ...TaskFields
+    }
+    page
+    pageSize
+    total
+  }
+}
+    fragment TaskFields on Task {
+  id
+  listId
+  title
+  description
+  status
+  priority
+  dueDate
+  assigneeId
+  sprintId
+  position
+  metadata
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<SearchTasksQuery, SearchTasksQueryVariables>;
+export const SearchMembersDocument = new TypedDocumentString(`
+    query SearchMembers($workspaceId: ID!, $query: ResourceQueryInput) {
+  searchMembers(workspaceId: $workspaceId, query: $query) {
+    items {
+      ...MemberFields
+    }
+    page
+    pageSize
+    total
+  }
+}
+    fragment MemberFields on Member {
+  userId
+  name
+  email
+  roleId
+  roleName
+  joinedAt
+}`) as unknown as TypedDocumentString<SearchMembersQuery, SearchMembersQueryVariables>;
+export const SearchWorkspaceAuditLogDocument = new TypedDocumentString(`
+    query SearchWorkspaceAuditLog($workspaceId: ID!, $query: ResourceQueryInput) {
+  searchWorkspaceAuditLog(workspaceId: $workspaceId, query: $query) {
+    items {
+      ...AuditLogEntryFields
+    }
+    page
+    pageSize
+    total
+  }
+}
+    fragment AuditLogEntryFields on AuditLogEntry {
+  id
+  actorId
+  actorName
+  action
+  targetType
+  targetId
+  workspaceId
+  ip
+  metadata
+  createdAt
+}`) as unknown as TypedDocumentString<SearchWorkspaceAuditLogQuery, SearchWorkspaceAuditLogQueryVariables>;
 export const RolesDocument = new TypedDocumentString(`
     query Roles($workspaceId: ID!) {
   roles(workspaceId: $workspaceId) {
@@ -2027,6 +2292,7 @@ export const TasksDocument = new TypedDocumentString(`
   assigneeId
   sprintId
   position
+  metadata
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<TasksQuery, TasksQueryVariables>;
@@ -2047,6 +2313,7 @@ export const TaskDocument = new TypedDocumentString(`
   assigneeId
   sprintId
   position
+  metadata
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<TaskQuery, TaskQueryVariables>;
@@ -2067,6 +2334,7 @@ export const SprintTasksDocument = new TypedDocumentString(`
   assigneeId
   sprintId
   position
+  metadata
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<SprintTasksQuery, SprintTasksQueryVariables>;
@@ -2087,6 +2355,7 @@ export const BacklogDocument = new TypedDocumentString(`
   assigneeId
   sprintId
   position
+  metadata
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<BacklogQuery, BacklogQueryVariables>;
@@ -2107,6 +2376,7 @@ export const CreateTaskDocument = new TypedDocumentString(`
   assigneeId
   sprintId
   position
+  metadata
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<CreateTaskMutation, CreateTaskMutationVariables>;
@@ -2127,6 +2397,7 @@ export const UpdateTaskDocument = new TypedDocumentString(`
   assigneeId
   sprintId
   position
+  metadata
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<UpdateTaskMutation, UpdateTaskMutationVariables>;

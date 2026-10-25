@@ -6,6 +6,7 @@ import { Documents1729580000000 } from './1729580000000-documents.js';
 import { Hr1729590000000 } from './1729590000000-hr.js';
 import { RowLevelSecurity1729600000000 } from './1729600000000-row-level-security.js';
 import { Notifications1729610000000 } from './1729610000000-notifications.js';
+import { TaskMetadata1729620000000 } from './1729620000000-task-metadata.js';
 
 /** Registered in order. Add new migrations to the end. */
 export const MIGRATIONS = [
@@ -17,4 +18,5 @@ export const MIGRATIONS = [
   Hr1729590000000,
   RowLevelSecurity1729600000000,
   Notifications1729610000000,
+  TaskMetadata1729620000000,
 ];
