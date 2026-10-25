@@ -15,10 +15,15 @@ Captured from the demo workspace (`pnpm --filter @taskflow/api seed`). All of th
 
 | | |
 |---|---|
-| ![Board view](docs/screenshots/04-board-view.png) | ![Task detail](docs/screenshots/05-task-detail.png) |
-| ![Sprints](docs/screenshots/06-sprints.png) | ![Docs](docs/screenshots/08-docs.png) |
-| ![People directory](docs/screenshots/09-people-directory.png) | ![Leave approvals](docs/screenshots/10-leave-approvals.png) |
-| ![Roles](docs/screenshots/11-roles.png) | ![Board in dark mode](docs/screenshots/15-board-dark.png) |
+| ![Home dashboard](docs/screenshots/ui-01-home.png) | ![Home charts](docs/screenshots/ui-02-home-charts.png) |
+| ![List view grouped by status](docs/screenshots/ui-04-list.png) | ![Bulk actions on selected tasks](docs/screenshots/ui-05-list-bulk.png) |
+| ![Board view](docs/screenshots/ui-06-board.png) | ![Table view built from the resource schema](docs/screenshots/ui-07-table.png) |
+| ![Calendar](docs/screenshots/ui-08-calendar.png) | ![Timeline](docs/screenshots/ui-09-timeline.png) |
+| ![Team planner](docs/screenshots/ui-10-team-planner.png) | ![Time report](docs/screenshots/ui-11-time-report.png) |
+| ![Project dashboard](docs/screenshots/ui-12-project-dashboard.png) | ![Task detail](docs/screenshots/ui-14-task-detail.png) |
+| ![Timesheets](docs/screenshots/ui-15-timesheets.png) | ![Log time](docs/screenshots/ui-16-log-time.png) |
+| ![Daily log](docs/screenshots/ui-17-daily-log.png) | ![My tasks](docs/screenshots/ui-18-my-tasks.png) |
+| ![Sprints](docs/screenshots/ui-19-sprints.png) | ![List in light mode](docs/screenshots/ui-20-list-light.png) |
 
 ## Repository layout
 
@@ -124,6 +129,12 @@ Tasks also have a workspace-wide number (`taskByNumber`), a type, subtasks (up t
 People with `time.log` start and stop a timer (`startTimer`, `stopTimer`, one running per person), log time against a task or a project (`logTime`), or save a whole day at once (`logTimeBatch`, all or none, at most 24 hours). `timeEntries(from, to)` feeds timesheets and the Time view. Without `time.view_all` a person only ever sees their own entries, and changing someone else's entry needs `time.manage` and is audited. The managed *Time manager* policy grants both.
 
 `dashboard(input: { from, to, timeZone, spaceId?, userIds? })` returns everything the Home and project dashboards show: live task counts (open, closed, overdue, due soon, unassigned), status and priority breakdowns, overdue aging, a due-date forecast, created vs closed per week, hours per day, person, project and task, workload per person, project health, phases (parent tasks with their subtasks) and the overdue, due-soon and recently updated lists. All of it is computed in SQL with bound parameters, and the result is cached until a task, status, space or time entry changes. Hours cover everyone only for callers with `time.view_all`.
+
+### Building blocks for the web app
+
+Screens are assembled from a small kit in `apps/web/src/components/kit`, each piece configured through props rather than copied: `DataTable` (multi-column sort, selection, paging, column show/hide, drag to reorder, drag to resize; the layout goes in and comes out so callers can save it), `Modal` (sizes, header actions, footer, optional side column), `Section` (collapsible, controlled or remembered), `Segmented`, `Panel`, `StatCard`, `StatusPill`, small charts, and `notify` for toasts with shared durations. `ResourceTable` (in the `resources` module) builds a `DataTable` and a filter builder from `resourceSchema`, so a new list in the API shows up as a table with the right filters, operators, sorting and page sizes without front-end changes; the user's column layout, sort and page size are saved to their preferences.
+
+The workspace shell is an icon rail (Home, My tasks, Daily log, Timesheets, Inbox, Docs, People), a resizable sidebar of projects with live counts, and a top bar with task search (Cmd/Ctrl+K), the running timer, notifications and "+ Task". Each project has ten views: List, Board, Table, Calendar, Timeline, Team planner, Time, Sprints, Members and Dashboard. Tasks open over any page (`?task=`), as a modal or a side panel depending on the user's preference.
 
 ### Preferences
 

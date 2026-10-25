@@ -11,14 +11,17 @@ import { AdminAuditLogPage, AdminLayout, AdminUsersPage, AdminWorkspacesPage } f
 import { WorkspaceAuditLogPage } from '@/modules/audit-log';
 import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/modules/auth';
 import { DocumentsPage } from '@/modules/documents';
-import { HomePage } from '@/modules/home';
+import { HomePage } from '@/modules/dashboard';
 import { ApprovalsPage, DepartmentsPage, DirectoryPage, LeaveTypesPage, TimeOffPage } from '@/modules/hr';
-import { ListPage } from '@/modules/lists';
+import { listsApi } from '@/modules/lists';
 import { InboxPage } from '@/modules/inbox';
 import { tasksApi } from '@/modules/tasks';
 import { MembersPage } from '@/modules/members';
+import { isProjectView, MyTasksPage, ProjectPage } from '@/modules/projects';
 import { RolesPage } from '@/modules/roles';
-import { SprintBoardPage, SprintsPage } from '@/modules/sprints';
+import { SprintBoardPage } from '@/modules/sprints';
+import { DailyLogPage, TimesheetsPage } from '@/modules/time';
+import { preferencesQuery as preferences } from '@/core/preferences/use-preferences';
 import { OnboardingPage, useWorkspaceUiStore, WorkspaceSettingsPage, workspacesApi } from '@/modules/workspaces';
 import { WorkspaceLayout } from './layouts/workspace-layout';
 
@@ -113,9 +116,15 @@ const adminUsersRoute = createRoute({ getParentRoute: () => adminRoute, path: '/
 const adminWorkspacesRoute = createRoute({ getParentRoute: () => adminRoute, path: '/workspaces', component: AdminWorkspacesPage });
 const adminAuditRoute = createRoute({ getParentRoute: () => adminRoute, path: '/audit-log', component: AdminAuditLogPage });
 
+/** `?task=<id>` opens a task over any workspace page. */
+const taskSearch = (search: Record<string, unknown>): { task?: string } => ({
+  task: typeof search.task === 'string' && UUID.test(search.task) ? search.task : undefined,
+});
+
 const workspaceRoute = createRoute({
   getParentRoute: () => appLayout,
   path: '/w/$workspaceId',
+  validateSearch: taskSearch,
   beforeLoad: async ({ context, params }) => {
     if (!UUID.test(params.workspaceId)) throw redirect({ to: '/' });
     try {
@@ -131,7 +140,8 @@ const workspaceRoute = createRoute({
   },
   component: function WorkspaceRoute() {
     const { workspaceId } = workspaceRoute.useParams();
-    return <WorkspaceLayout workspaceId={workspaceId} />;
+    const { task } = workspaceRoute.useSearch();
+    return <WorkspaceLayout workspaceId={workspaceId} openTaskId={task} />;
   },
 });
 
@@ -144,16 +154,41 @@ const workspaceHomeRoute = createRoute({
   },
 });
 
+/** Old list links open the list's project, narrowed to that list. */
 const listRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: '/l/$listId',
-  validateSearch: (search: Record<string, unknown>): { task?: string } => ({
-    task: typeof search.task === 'string' && UUID.test(search.task) ? search.task : undefined,
+  beforeLoad: async ({ context, params, search }) => {
+    const lists = await context.queryClient.ensureQueryData({ queryKey: queryKeys.lists(params.workspaceId), queryFn: () => listsApi.list(params.workspaceId) });
+    const list = lists.find((item) => item.id === params.listId);
+    if (!list) throw redirect({ to: '/w/$workspaceId', params: { workspaceId: params.workspaceId } });
+    const { defaultTaskView } = await context.queryClient.ensureQueryData(preferences);
+    throw redirect({ to: '/w/$workspaceId/p/$spaceId/$view', params: { workspaceId: params.workspaceId, spaceId: list.spaceId, view: defaultTaskView }, search: { list: list.id, task: search.task } });
+  },
+});
+
+const projectRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/p/$spaceId/$view',
+  validateSearch: (search: Record<string, unknown>): { list?: string } => ({
+    list: typeof search.list === 'string' && UUID.test(search.list) ? search.list : undefined,
   }),
-  component: function ListRoute() {
-    const { workspaceId, listId } = listRoute.useParams();
-    const { task } = listRoute.useSearch();
-    return <ListPage key={listId} workspaceId={workspaceId} listId={listId} openTaskId={task} />;
+  beforeLoad: ({ params }) => {
+    if (!UUID.test(params.spaceId) || !isProjectView(params.view)) throw redirect({ to: '/w/$workspaceId', params: { workspaceId: params.workspaceId } });
+  },
+  component: function ProjectRoute() {
+    const { workspaceId, spaceId, view } = projectRoute.useParams();
+    const { list } = projectRoute.useSearch();
+    return isProjectView(view) ? <ProjectPage key={spaceId} workspaceId={workspaceId} spaceId={spaceId} view={view} listId={list} /> : null;
+  },
+});
+
+const projectIndexRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/p/$spaceId',
+  beforeLoad: async ({ context, params }) => {
+    const { defaultTaskView } = await context.queryClient.ensureQueryData(preferences);
+    throw redirect({ to: '/w/$workspaceId/p/$spaceId/$view', params: { ...params, view: defaultTaskView } });
   },
 });
 
@@ -168,33 +203,26 @@ const taskLinkRoute = createRoute({
       .ensureQueryData({ queryKey: queryKeys.task(params.workspaceId, params.taskId), queryFn: () => tasksApi.get(params.workspaceId, params.taskId) })
       .catch(() => null);
     if (!task) throw home;
-    throw redirect({ to: '/w/$workspaceId/l/$listId', params: { workspaceId: params.workspaceId, listId: task.listId }, search: { task: task.id } });
+    const { defaultTaskView } = await context.queryClient.ensureQueryData(preferences);
+    throw redirect({ to: '/w/$workspaceId/p/$spaceId/$view', params: { workspaceId: params.workspaceId, spaceId: task.spaceId, view: defaultTaskView }, search: { task: task.id } });
   },
 });
 
-const taskSearch = (search: Record<string, unknown>): { task?: string } => ({
-  task: typeof search.task === 'string' && UUID.test(search.task) ? search.task : undefined,
-});
-
+/** Old sprint links open the project's Sprints tab. */
 const sprintsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: '/s/$spaceId/sprints',
-  validateSearch: taskSearch,
-  component: function SprintsRoute() {
-    const { workspaceId, spaceId } = sprintsRoute.useParams();
-    const { task } = sprintsRoute.useSearch();
-    return <SprintsPage key={spaceId} workspaceId={workspaceId} spaceId={spaceId} openTaskId={task} />;
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: '/w/$workspaceId/p/$spaceId/$view', params: { ...params, view: 'sprints' } });
   },
 });
 
 const sprintBoardRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: '/sprints/$sprintId',
-  validateSearch: taskSearch,
   component: function SprintBoardRoute() {
     const { workspaceId, sprintId } = sprintBoardRoute.useParams();
-    const { task } = sprintBoardRoute.useSearch();
-    return <SprintBoardPage key={sprintId} workspaceId={workspaceId} sprintId={sprintId} openTaskId={task} />;
+    return <SprintBoardPage key={sprintId} workspaceId={workspaceId} sprintId={sprintId} />;
   },
 });
 
@@ -236,6 +264,9 @@ const approvalsRoute = workspacePage('/people/approvals', ApprovalsPage);
 const leaveTypesRoute = workspacePage('/people/leave-types', LeaveTypesPage);
 const auditLogRoute = workspacePage('/audit-log', WorkspaceAuditLogPage);
 const inboxRoute = workspacePage('/inbox', InboxPage);
+const myTasksRoute = workspacePage('/my-tasks', MyTasksPage);
+const dailyLogRoute = workspacePage('/daily-log', DailyLogPage);
+const timesheetsRoute = workspacePage('/timesheets', TimesheetsPage);
 
 const membersRoute = createRoute({
   getParentRoute: () => workspaceRoute,
@@ -272,6 +303,11 @@ const routeTree = rootRoute.addChildren([
       inboxRoute,
       taskLinkRoute,
       listRoute,
+      projectRoute,
+      projectIndexRoute,
+      myTasksRoute,
+      dailyLogRoute,
+      timesheetsRoute,
       sprintsRoute,
       sprintBoardRoute,
       documentsRoute,

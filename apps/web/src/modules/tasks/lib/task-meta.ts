@@ -1,4 +1,4 @@
-import { isClosedCategory, TASK_PRIORITIES, type TaskPriority, type TaskResponse } from '@taskflow/shared-types';
+import { isClosedCategory, TASK_PRIORITIES, type TaskPriority, type TaskResponse, type TaskType } from '@taskflow/shared-types';
 
 interface Meta {
   label: string;
@@ -16,6 +16,15 @@ export const PRIORITY_META: Record<TaskPriority, Meta> = {
 };
 
 export const PRIORITY_ORDER = TASK_PRIORITIES;
+
+/** Task types as small labels; the background is a fixed, readable tint per type. */
+export const TYPE_META: Record<TaskType, { label: string; className: string }> = {
+  task: { label: 'Task', className: 'bg-chart-1/25 text-foreground' },
+  bug: { label: 'Bug', className: 'bg-critical/25 text-foreground' },
+  feature: { label: 'Feature', className: 'bg-good/25 text-foreground' },
+  phase: { label: 'Phase', className: 'bg-chart-2/30 text-foreground' },
+  milestone: { label: 'Milestone', className: 'bg-warning/30 text-foreground' },
+};
 
 /** Done or cancelled: shown struck through and left out of overdue warnings. */
 export function isClosed(task: Pick<TaskResponse, 'status'>): boolean {

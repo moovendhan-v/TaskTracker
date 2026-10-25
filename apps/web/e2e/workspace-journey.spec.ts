@@ -58,7 +58,7 @@ test('creates a workspace, a space and a list', async () => {
   await page.getByRole('dialog').getByLabel('Name').fill('Product');
   await page.getByRole('button', { name: 'Create space' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
-  const nav = page.getByRole('navigation');
+  const nav = page.getByRole('complementary', { name: 'Workspace navigation' });
   await expect(nav.getByText('Product')).toBeVisible();
 
   await nav.getByText('Product').hover();
@@ -67,7 +67,7 @@ test('creates a workspace, a space and a list', async () => {
   await page.getByRole('button', { name: 'Create list' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
   await nav.getByRole('link', { name: 'Launch plan' }).click();
-  await expect(page).toHaveURL(/\/l\//);
+  await expect(page).toHaveURL(/\/p\/[0-9a-f-]+\/list\?list=/);
 });
 
 test('quick-adds tasks and changes status from the list', async () => {
@@ -80,7 +80,7 @@ test('quick-adds tasks and changes status from the list', async () => {
   await page.keyboard.press('Escape');
 
   const row = page.locator('div.group', { has: page.getByRole('button', { name: 'Fix sign-in bug' }) });
-  await row.getByRole('button', { name: /Status:/ }).click();
+  await row.getByRole('button', { name: /Status:/ }).first().click();
   await page.getByRole('menuitem', { name: 'In progress' }).click();
   await expect(page.locator('section', { hasText: 'In progress' }).getByRole('button', { name: 'Fix sign-in bug' })).toBeVisible();
 });
@@ -108,7 +108,8 @@ test('edits a task and renders comments as text, never HTML', async () => {
   await page.getByRole('button', { name: 'Write release notes' }).click();
   await expect(page).toHaveURL(/task=/);
   const panel = page.getByRole('dialog');
-  await panel.getByLabel('Description').fill('Summarise the changes for customers.');
+  await panel.getByRole('button', { name: 'Description' }).click();
+  await panel.getByRole('textbox', { name: 'Description' }).fill('Summarise the changes for customers.');
   await panel.getByLabel('Task title').click();
   await panel.getByRole('button', { name: /Priority:/ }).click();
   await page.getByRole('menuitem', { name: 'High' }).click();
@@ -127,16 +128,20 @@ test('edits a task and renders comments as text, never HTML', async () => {
 test('drags a card to Done on the board, and it stays there after reload', async () => {
   // Five status columns need a wide screen to all be in view; narrower ones scroll sideways.
   await page.setViewportSize({ width: 1920, height: 1000 });
-  await page.getByRole('tab', { name: 'Board' }).click();
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('link', { name: 'Board', exact: true }).click();
   const done = page.getByRole('region', { name: 'Done' });
   await page.locator('article', { hasText: 'Design onboarding emails' }).dragTo(done);
   await expect(done.locator('article', { hasText: 'Design onboarding emails' })).toBeVisible();
   await page.reload();
+  // Closed tasks are hidden until "Show closed" is on.
+  await expect(page.locator('article', { hasText: 'Design onboarding emails' })).toBeHidden();
+  await page.getByRole('button', { name: 'Show closed' }).click();
   await expect(page.getByRole('region', { name: 'Done' }).locator('article', { hasText: 'Design onboarding emails' })).toBeVisible();
+  await page.getByRole('button', { name: 'Show closed' }).click();
 });
 
 test('plans, starts and completes a sprint', async () => {
-  await page.getByRole('navigation').getByRole('link', { name: 'Sprints' }).click();
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('link', { name: 'Sprints', exact: true }).click();
   await expect(page).toHaveURL(/\/sprints/);
   await page.getByRole('button', { name: 'New sprint' }).click();
   await page.getByRole('dialog').getByLabel('Goal').fill('Ship the launch notes');
@@ -150,7 +155,8 @@ test('plans, starts and completes a sprint', async () => {
   await page.getByRole('button', { name: 'Start sprint' }).click();
   await expect(page.getByText('Active', { exact: true }).first()).toBeVisible();
 
-  await page.getByRole('link', { name: 'Board' }).first().click();
+  // The sprint card's board link (the project's own Board tab comes first on the page).
+  await page.getByRole('link', { name: 'Board', exact: true }).last().click();
   await expect(page).toHaveURL(/\/sprints\/[0-9a-f-]+/);
   await expect(page.locator('article', { hasText: 'Write release notes' })).toBeVisible();
   await page.getByRole('link', { name: 'All sprints' }).click();
@@ -163,7 +169,7 @@ test('plans, starts and completes a sprint', async () => {
 });
 
 test('writes a doc with autosave and a preview that drops unsafe markup', async () => {
-  await page.getByRole('link', { name: 'Docs' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Docs' }).click();
   await page.getByRole('button', { name: 'New page' }).first().click();
   await expect(page).toHaveURL(/\/docs\/[0-9a-f-]+/);
   await page.getByLabel('Page title').fill('Team handbook');
@@ -296,7 +302,7 @@ test('opens the platform admin console after promotion by the operator CLI', asy
 });
 
 test('opens an empty inbox', async () => {
-  await page.getByRole('navigation').getByRole('link', { name: 'Inbox' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
   await expect(page).toHaveURL(/\/inbox$/);
   await expect(page.getByText('You’re all caught up')).toBeVisible();
 });

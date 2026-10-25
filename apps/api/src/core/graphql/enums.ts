@@ -4,6 +4,7 @@ import {
   CUSTOM_FIELD_TYPES,
   EMPLOYMENT_TYPES,
   FIELD_TYPES,
+  FORECAST_KINDS,
   FILTER_OPERATORS,
   LOGIC_OPERATORS,
   LEAVE_DECISIONS,
@@ -26,6 +27,7 @@ function enumOf<const T extends readonly string[]>(values: T): { [K in T[number]
 }
 
 export const StatusCategoryEnum = enumOf(STATUS_CATEGORIES);
+export const ForecastKindEnum = enumOf(FORECAST_KINDS);
 export const TaskTypeEnum = enumOf(TASK_TYPES);
 export const TaskRelationKindEnum = enumOf(TASK_RELATION_KINDS);
 export const CustomFieldTypeEnum = enumOf(CUSTOM_FIELD_TYPES);
@@ -51,6 +53,7 @@ registerEnumType(TaskRelationKindEnum, { name: 'TaskRelationKind' });
 registerEnumType(CustomFieldTypeEnum, { name: 'CustomFieldType' });
 registerEnumType(CustomFieldEntityEnum, { name: 'CustomFieldEntity' });
 registerEnumType(SpaceStatusEnum, { name: 'SpaceStatus' });
+registerEnumType(ForecastKindEnum, { name: 'ForecastKind' });
 registerEnumType(TaskPriorityEnum, { name: 'TaskPriority' });
 registerEnumType(SprintStatusEnum, { name: 'SprintStatus' });
 registerEnumType(LeaveStatusEnum, { name: 'LeaveStatus' });

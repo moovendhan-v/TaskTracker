@@ -162,6 +162,7 @@ describe('time tracking and dashboards', () => {
 
     it('scopes to one project and rejects bad input and other tenants', async () => {
       expect((await dashboard(ws.owner, { spaceId: ws.spaceId })).summary['projects']).toBe(1);
+      expect((await dashboard(ws.owner, { spaceId: ws.spaceId, userIds: null })).summary['projects']).toBe(1);
       expect((await ws.owner.error(DASHBOARD, vars({ input: { ...input, timeZone: "UTC'; DROP TABLE task;--" } }))).code).toBe('BAD_USER_INPUT');
       expect((await ws.owner.error(DASHBOARD, vars({ input: { ...input, timeZone: 'Mars/Olympus' } }))).code).toBe('BAD_USER_INPUT');
       const other = await createWorkspace('Dashboard other');

@@ -276,9 +276,7 @@ type DashboardDayMinutes {
 
 type DashboardForecastBucket {
   count: Int!
-
-  """overdue, week, later or none"""
-  kind: String!
+  kind: ForecastKind!
   label: String!
   weekStart: String
 }
@@ -540,6 +538,13 @@ enum FilterOperator {
   nin
   not_contains
   starts_with
+}
+
+enum ForecastKind {
+  later
+  none
+  overdue
+  week
 }
 
 type FormFieldSchema {

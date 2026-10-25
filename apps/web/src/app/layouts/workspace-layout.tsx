@@ -1,41 +1,22 @@
 import { Outlet, useNavigate } from '@tanstack/react-router';
-import {
-  Building2Icon,
-  ClipboardCheckIcon,
-  FileTextIcon,
-  BellIcon,
-  HomeIcon,
-  InboxIcon,
-  PalmtreeIcon,
-  ScrollTextIcon,
-  SettingsIcon,
-  ShieldIcon,
-  TagsIcon,
-  UsersIcon,
-  UsersRoundIcon,
-} from 'lucide-react';
-import { AppShell } from '@/components/layout/app-shell';
-import { SidebarLink } from '@/components/layout/sidebar-link';
-import { SidebarSection } from '@/components/layout/sidebar-section';
-import { Topbar } from '@/components/layout/topbar';
+import { BellIcon } from 'lucide-react';
 import { VerifyEmailBanner } from '@/core/auth/verify-email-banner';
-import { RealtimeIndicator } from '@/core/realtime/realtime-indicator';
 import { useWorkspaceEvents } from '@/core/realtime/use-workspace-events';
 import { toast } from '@/components/ui/sonner';
 import { describeNotification, inboxApi, useUnreadCount } from '@/modules/inbox';
-import { SpaceTree } from '@/modules/spaces';
-import { usePermissions, useWorkspace, useWorkspaceUiStore, WorkspaceSwitcher } from '@/modules/workspaces';
-import { UserMenu } from './user-menu';
+import { TaskDetail, useOpenTask } from '@/modules/tasks';
+import { AppTopbar } from './app-topbar';
+import { IconRail } from './icon-rail';
+import { WorkspaceSidebar } from './workspace-sidebar';
 
-/** Composition root for a workspace page: sidebar made from feature modules, page in the outlet. */
-export function WorkspaceLayout({ workspaceId }: { workspaceId: string }) {
-  const sidebarOpen = useWorkspaceUiStore((state) => state.sidebarOpen);
-  const toggleSidebar = useWorkspaceUiStore((state) => state.toggleSidebar);
-  const { data: workspace } = useWorkspace(workspaceId);
-  const { can } = usePermissions(workspaceId);
+/**
+ * Composition root for a workspace: icon rail, context sidebar, top bar and
+ * the page. The open task (`?task=`) shows over any page.
+ */
+export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: string; openTaskId: string | undefined }) {
   const { data: unread = 0 } = useUnreadCount(workspaceId);
   const navigate = useNavigate();
-  const params = { workspaceId };
+  const openTask = useOpenTask();
 
   // Live updates for this workspace, and a toast when something new lands in your inbox.
   const showLatestNotification = async () => {
@@ -43,80 +24,21 @@ export function WorkspaceLayout({ workspaceId }: { workspaceId: string }) {
     if (!latest) return;
     toast(describeNotification(latest), {
       icon: <BellIcon className="size-4" />,
-      action: { label: 'Open inbox', onClick: () => void navigate({ to: '/w/$workspaceId/inbox', params }) },
+      action: { label: 'Open inbox', onClick: () => void navigate({ to: '/w/$workspaceId/inbox', params: { workspaceId } }) },
     });
   };
   useWorkspaceEvents(workspaceId, () => void showLatestNotification());
 
-  const sidebar = (
-    <>
-      <WorkspaceSwitcher workspaceId={workspaceId} />
-      <nav className="flex-1 overflow-y-auto pb-4">
-        <SidebarSection title="Workspace">
-          <SidebarLink to="/w/$workspaceId" params={params} activeOptions={{ exact: true }} icon={<HomeIcon />}>
-            Home
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/inbox" params={params} icon={<InboxIcon />} badge={unread > 0 ? (unread > 99 ? '99+' : String(unread)) : undefined}>
-            Inbox
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/docs" params={params} icon={<FileTextIcon />}>
-            Docs
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/members" params={params} icon={<UsersIcon />}>
-            Members
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/roles" params={params} icon={<ShieldIcon />}>
-            Roles
-          </SidebarLink>
-          {can('audit.view') ? (
-            <SidebarLink to="/w/$workspaceId/audit-log" params={params} icon={<ScrollTextIcon />}>
-              Audit log
-            </SidebarLink>
-          ) : null}
-          <SidebarLink to="/w/$workspaceId/settings" params={params} icon={<SettingsIcon />}>
-            Settings
-          </SidebarLink>
-        </SidebarSection>
-        <SpaceTree workspaceId={workspaceId} />
-        <SidebarSection title="People">
-          {can('hr.view') ? (
-            <SidebarLink to="/w/$workspaceId/people" params={params} activeOptions={{ exact: true }} icon={<UsersRoundIcon />}>
-              Directory
-            </SidebarLink>
-          ) : null}
-          {can('leave.request') ? (
-            <SidebarLink to="/w/$workspaceId/people/time-off" params={params} icon={<PalmtreeIcon />}>
-              Time off
-            </SidebarLink>
-          ) : null}
-          {can('leave.approve') ? (
-            <SidebarLink to="/w/$workspaceId/people/approvals" params={params} icon={<ClipboardCheckIcon />}>
-              Approvals
-            </SidebarLink>
-          ) : null}
-          {can('hr.view') ? (
-            <SidebarLink to="/w/$workspaceId/people/departments" params={params} icon={<Building2Icon />}>
-              Departments
-            </SidebarLink>
-          ) : null}
-          {can('hr.manage') ? (
-            <SidebarLink to="/w/$workspaceId/people/leave-types" params={params} icon={<TagsIcon />}>
-              Leave types
-            </SidebarLink>
-          ) : null}
-        </SidebarSection>
-      </nav>
-      <div className="border-t border-sidebar-border p-2">
-        <UserMenu />
-      </div>
-    </>
-  );
-
   return (
-    <AppShell sidebar={sidebar} sidebarOpen={sidebarOpen}>
-      <Topbar onToggleSidebar={toggleSidebar} breadcrumbs={workspace?.name} actions={<RealtimeIndicator />} />
-      <VerifyEmailBanner />
-      <Outlet />
-    </AppShell>
+    <div className="flex h-full overflow-hidden">
+      <IconRail workspaceId={workspaceId} unread={unread} />
+      <WorkspaceSidebar workspaceId={workspaceId} />
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <AppTopbar workspaceId={workspaceId} unread={unread} />
+        <VerifyEmailBanner />
+        <Outlet />
+      </main>
+      <TaskDetail workspaceId={workspaceId} taskId={openTaskId} onClose={() => openTask(undefined)} onOpen={openTask} />
+    </div>
   );
 }

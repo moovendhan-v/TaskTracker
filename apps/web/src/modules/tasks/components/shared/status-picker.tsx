@@ -1,5 +1,6 @@
 import type { TaskStatusResponse } from '@taskflow/shared-types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { StatusPill } from '@/components/kit/status-pill';
 import { cn } from '@/lib/cn';
 import { useStatuses } from '../../hooks/use-tasks';
 
@@ -25,10 +26,12 @@ interface StatusPickerProps {
   value: TaskStatusResponse;
   onChange: (status: TaskStatusResponse) => void;
   disabled?: boolean;
+  /** `dot`: a coloured dot (plus the name unless compact); `pill`: the status pill. */
+  variant?: 'dot' | 'pill';
   compact?: boolean;
 }
 
-export function StatusPicker({ workspaceId, value, onChange, disabled, compact = false }: StatusPickerProps) {
+export function StatusPicker({ workspaceId, value, onChange, disabled, variant = 'dot', compact = false }: StatusPickerProps) {
   const { data: statuses = [value] } = useStatuses(workspaceId, value.spaceId);
   return (
     <DropdownMenu>
@@ -37,8 +40,14 @@ export function StatusPicker({ workspaceId, value, onChange, disabled, compact =
         className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none"
         aria-label={`Status: ${value.name}`}
       >
-        <StatusDot status={value} />
-        {compact ? null : value.name}
+        {variant === 'pill' ? (
+          <StatusPill status={value} />
+        ) : (
+          <>
+            <StatusDot status={value} />
+            {compact ? null : value.name}
+          </>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {statuses.map((status) => (

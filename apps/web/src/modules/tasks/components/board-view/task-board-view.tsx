@@ -9,21 +9,22 @@ import { TASK_DRAG_TYPE } from './task-card';
 
 interface TaskBoardViewProps {
   workspaceId: string;
-  /** Space whose statuses make the columns. */
+  /** Space whose statuses make the columns (fetched when `statuses` isn't given). */
   spaceId: string;
-  /** Set when the board shows one list; enables quick-add. Sprint boards span lists and leave it out. */
+  statuses?: readonly TaskStatusResponse[];
+  /** Set when new cards can be added in place; boards spanning lists leave it out. */
   listId?: string;
-  tasks: TaskResponse[];
+  tasks: readonly TaskResponse[];
   onOpen: (taskId: string) => void;
 }
 
 /** One column per status; drag a card to change its status or order. */
-export function TaskBoardView({ workspaceId, spaceId, listId, tasks, onOpen }: TaskBoardViewProps) {
+export function TaskBoardView({ workspaceId, spaceId, statuses: given, listId, tasks, onOpen }: TaskBoardViewProps) {
   const { update } = useTaskMutations(workspaceId);
   const { can } = usePermissions(workspaceId);
-  const { data: statuses = [] } = useStatuses(workspaceId, spaceId);
-  const byStatus = (statusId: string) =>
-    tasks.filter((task) => task.statusId === statusId).sort((a, b) => a.position - b.position);
+  const { data: fetched = [] } = useStatuses(workspaceId, given ? undefined : spaceId);
+  const statuses = given ?? fetched;
+  const byStatus = (statusId: string) => tasks.filter((task) => task.statusId === statusId).sort((a, b) => a.position - b.position);
 
   function handleDrop(event: DragEvent, status: TaskStatusResponse, beforeTaskId: string | null) {
     event.preventDefault();

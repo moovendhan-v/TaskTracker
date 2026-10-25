@@ -1,8 +1,8 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { ArrayMaxSize, IsArray, IsISO8601, IsString, IsUUID, MaxLength } from 'class-validator';
-import type { DashboardRequest, DashboardResponse, SpaceStatus, StatusCategory, TaskPriority } from '@taskflow/shared-types';
-import { SpaceStatusEnum, StatusCategoryEnum, TaskPriorityEnum } from '../../../../core/graphql/enums.js';
-import { IsClearable, IsOmittable } from '../../../../core/graphql/validation.js';
+import type { DashboardRequest, DashboardResponse, ForecastKind, SpaceStatus, StatusCategory, TaskPriority } from '@taskflow/shared-types';
+import { ForecastKindEnum, SpaceStatusEnum, StatusCategoryEnum, TaskPriorityEnum } from '../../../../core/graphql/enums.js';
+import { IsClearable } from '../../../../core/graphql/validation.js';
 
 type Summary = DashboardResponse['summary'];
 
@@ -12,7 +12,7 @@ export class DashboardInput implements DashboardRequest {
   @Field() @IsISO8601({ strict: true }) to: string;
   @Field({ description: 'IANA time zone, e.g. Europe/Berlin' }) @IsString() @MaxLength(64) timeZone: string;
   @Field(() => ID, { nullable: true }) @IsClearable() @IsUUID('4') spaceId?: string | null;
-  @Field(() => [ID], { nullable: true }) @IsOmittable() @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) @MaxLength(64, { each: true }) userIds?: string[] | null;
+  @Field(() => [ID], { nullable: true }) @IsClearable() @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) @MaxLength(64, { each: true }) userIds?: string[] | null;
 }
 
 @ObjectType('DashboardStatusRef')
@@ -65,7 +65,7 @@ export class DashboardForecastBucketGql {
   @Field() label: string;
   @Field(() => String, { nullable: true }) weekStart: string | null;
   @Field(() => Int) count: number;
-  @Field({ description: 'overdue, week, later or none' }) kind: 'overdue' | 'week' | 'later' | 'none';
+  @Field(() => ForecastKindEnum) kind: ForecastKind;
 }
 
 @ObjectType('DashboardWeekFlow')

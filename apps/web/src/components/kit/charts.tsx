@@ -1,0 +1,259 @@
+import { useState, type ReactNode } from 'react';
+import { cn } from '@/lib/cn';
+
+/*
+ * Small, dependency-free charts for dashboards. They follow one set of rules:
+ * thin columns (max 24px) with a 4px rounded data end on a single baseline,
+ * hairline gridlines, a legend whenever there are two or more series, text in
+ * text colours (never the series colour) and a tooltip on hover or focus.
+ */
+
+const BAR_MAX = 24;
+
+function niceMax(value: number): number {
+  if (value <= 0) return 1;
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const step = [1, 2, 2.5, 5, 10].find((candidate) => candidate * magnitude >= value) ?? 10;
+  return step * magnitude;
+}
+
+function Tooltip({ left, children }: { left: string; children: ReactNode }) {
+  return (
+    <div role="status" className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 -translate-y-full rounded-md border bg-popover px-2 py-1 text-xs whitespace-nowrap text-popover-foreground shadow-md" style={{ left }}>
+      {children}
+    </div>
+  );
+}
+
+export interface Column {
+  key: string;
+  /** Axis label under the column. */
+  label: string;
+  value: number;
+  /** What the tooltip says, e.g. "Tue Oct 20 · 6 h 30 m". */
+  tooltip: string;
+  /** Colour token for this column; defaults to the series colour. */
+  color?: string;
+}
+
+interface ColumnChartProps {
+  data: readonly Column[];
+  /** Accessible name; also what the chart's panel title says. */
+  label: string;
+  height?: number;
+  color?: string;
+  /** A labelled hairline, e.g. an 8 h working day. */
+  reference?: { value: number; label: string };
+  /** Which axis labels to show: all, or only the first and last. */
+  axis?: 'all' | 'ends';
+  formatValue?: (value: number) => string;
+  /** Value labels on the column caps. Use only with a handful of columns. */
+  showValues?: boolean;
+}
+
+/** Columns over a category or time axis: hours per day, counts per week. */
+export function ColumnChart({ data, label, height = 160, color = 'var(--chart-1)', reference, axis = 'all', formatValue = String, showValues = false }: ColumnChartProps) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const max = niceMax(Math.max(reference?.value ?? 0, ...data.map((column) => column.value)));
+  const pct = (value: number) => `${(value / max) * 100}%`;
+
+  return (
+    <figure aria-label={label} className="w-full">
+      <div className="relative" style={{ height }}>
+        <div className="absolute inset-x-0 bottom-0 border-t border-chart-grid" />
+        <div className="absolute inset-x-0 top-0 border-t border-chart-grid" />
+        {reference ? (
+          <div className="absolute inset-x-0 border-t border-muted-foreground/40" style={{ bottom: pct(reference.value) }}>
+            <span className="absolute -top-4 right-0 text-[10px] text-muted-foreground">{reference.label}</span>
+          </div>
+        ) : null}
+        <div className="absolute inset-0 flex items-end gap-0.5">
+          {data.map((column, index) => (
+            <button
+              key={column.key}
+              type="button"
+              aria-label={column.tooltip}
+              onMouseEnter={() => setHovered(index)}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setHovered(index)}
+              onBlur={() => setHovered(null)}
+              className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end focus-visible:outline-none"
+            >
+              {showValues && column.value > 0 ? <span className="mb-1 text-[11px] tabular-nums text-muted-foreground">{formatValue(column.value)}</span> : null}
+              <span
+                className={cn('w-full rounded-t-[4px] transition-opacity group-focus-visible:ring-2 group-focus-visible:ring-ring', hovered !== null && hovered !== index && 'opacity-60')}
+                style={{ height: column.value > 0 ? `max(2px, ${pct(column.value)})` : 0, maxWidth: BAR_MAX, background: column.color ?? color }}
+              />
+            </button>
+          ))}
+        </div>
+        {hovered !== null && data[hovered] ? <Tooltip left={`${((hovered + 0.5) / data.length) * 100}%`}>{data[hovered].tooltip}</Tooltip> : null}
+      </div>
+      <figcaption className="mt-1.5 flex gap-0.5 text-[11px] text-muted-foreground">
+        {axis === 'ends' ? (
+          <>
+            <span className="flex-1 truncate">{data[0]?.label}</span>
+            <span className="flex-1 truncate text-right">{data[data.length - 1]?.label}</span>
+          </>
+        ) : (
+          data.map((column) => (
+            <span key={column.key} className="min-w-0 flex-1 truncate text-center">
+              {column.label}
+            </span>
+          ))
+        )}
+      </figcaption>
+    </figure>
+  );
+}
+
+export interface Series {
+  key: string;
+  label: string;
+  color: string;
+}
+
+interface GroupedColumnChartProps {
+  series: readonly Series[];
+  groups: readonly { key: string; label: string; values: readonly number[] }[];
+  label: string;
+  height?: number;
+  /** A one-line takeaway shown at the right of the legend. */
+  note?: ReactNode;
+}
+
+/** Two or three series side by side per group, e.g. tasks created vs closed per week. */
+export function GroupedColumnChart({ series, groups, label, height = 160, note }: GroupedColumnChartProps) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const max = niceMax(Math.max(...groups.flatMap((group) => group.values)));
+  const hoveredGroup = hovered === null ? undefined : groups[hovered];
+
+  return (
+    <figure aria-label={label} className="w-full">
+      <Legend items={series} aside={note} />
+      <div className="relative mt-3" style={{ height }}>
+        <div className="absolute inset-x-0 bottom-0 border-t border-chart-grid" />
+        <div className="absolute inset-0 flex items-end">
+          {groups.map((group, index) => (
+            <button
+              key={group.key}
+              type="button"
+              aria-label={`${group.label}: ${series.map((item, i) => `${item.label} ${group.values[i] ?? 0}`).join(', ')}`}
+              onMouseEnter={() => setHovered(index)}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setHovered(index)}
+              onBlur={() => setHovered(null)}
+              className="flex h-full min-w-0 flex-1 items-end justify-center gap-0.5 focus-visible:outline-none"
+            >
+              {series.map((item, i) => {
+                const value = group.values[i] ?? 0;
+                return <span key={item.key} className="w-full max-w-4 rounded-t-[4px]" style={{ height: value > 0 ? `max(2px, ${(value / max) * 100}%)` : 0, background: item.color }} />;
+              })}
+            </button>
+          ))}
+        </div>
+        {hoveredGroup && hovered !== null ? (
+          <Tooltip left={`${((hovered + 0.5) / groups.length) * 100}%`}>
+            <span className="font-medium">{hoveredGroup.label}</span>
+            {series.map((item, i) => (
+              <span key={item.key} className="ml-2 inline-flex items-center gap-1">
+                <span className="size-2 rounded-full" style={{ background: item.color }} />
+                {item.label} {hoveredGroup.values[i] ?? 0}
+              </span>
+            ))}
+          </Tooltip>
+        ) : null}
+      </div>
+      <figcaption className="mt-1.5 flex text-[11px] text-muted-foreground">
+        {groups.map((group) => (
+          <span key={group.key} className="min-w-0 flex-1 truncate text-center">
+            {group.label}
+          </span>
+        ))}
+      </figcaption>
+    </figure>
+  );
+}
+
+export function Legend({ items, aside }: { items: readonly { key: string; label: string; color: string }[]; aside?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      {items.map((item) => (
+        <span key={item.key} className="inline-flex items-center gap-1.5">
+          <span className="size-2.5 rounded-full" style={{ background: item.color }} />
+          {item.label}
+        </span>
+      ))}
+      {aside ? <span className="ml-auto">{aside}</span> : null}
+    </div>
+  );
+}
+
+export interface Segment {
+  key: string;
+  label: string;
+  value: number;
+  color: string;
+}
+
+/** Parts of one whole in a single bar, with a legend that carries the numbers. */
+export function StackedBar({ segments, label, showPercent = true }: { segments: readonly Segment[]; label: string; showPercent?: boolean }) {
+  const total = segments.reduce((sum, segment) => sum + segment.value, 0);
+  const visible = segments.filter((segment) => segment.value > 0);
+  return (
+    <figure aria-label={label} className="grid gap-3">
+      <div className="flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-muted">
+        {visible.map((segment) => (
+          <span key={segment.key} title={`${segment.label}: ${segment.value}`} className="h-full first:rounded-l-full last:rounded-r-full" style={{ width: `${(segment.value / total) * 100}%`, background: segment.color }} />
+        ))}
+      </div>
+      <figcaption className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-x-6 gap-y-1.5 text-sm">
+        {segments.map((segment) => (
+          <span key={segment.key} className="flex items-center gap-2">
+            <span className="size-2.5 shrink-0 rounded-full" style={{ background: segment.color }} />
+            <span className="min-w-0 flex-1 truncate">{segment.label}</span>
+            <span className="font-medium tabular-nums">{segment.value}</span>
+            {showPercent ? <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{total ? Math.round((segment.value / total) * 100) : 0}%</span> : null}
+          </span>
+        ))}
+      </figcaption>
+    </figure>
+  );
+}
+
+export interface BarRow {
+  key: string;
+  label: ReactNode;
+  value: number;
+  /** The value as text, e.g. "22 h". */
+  display: string;
+}
+
+/** Ranked horizontal bars: hours by person, project or task. */
+export function BarList({ rows, label, color = 'var(--chart-1)', empty = 'Nothing yet' }: { rows: readonly BarRow[]; label: string; color?: string; empty?: string }) {
+  const max = Math.max(1, ...rows.map((row) => row.value));
+  if (rows.length === 0) return <p className="py-6 text-center text-sm text-muted-foreground">{empty}</p>;
+  return (
+    <ul aria-label={label} className="grid gap-2.5">
+      {rows.map((row) => (
+        <li key={row.key} className="grid grid-cols-[minmax(0,1fr)_minmax(4rem,8rem)_auto] items-center gap-3 text-sm">
+          <span className="truncate">{row.label}</span>
+          <span className="h-2 overflow-hidden rounded-full bg-muted">
+            <span className="block h-full rounded-full" style={{ width: `${(row.value / max) * 100}%`, background: color }} />
+          </span>
+          <span className="w-20 text-right font-medium whitespace-nowrap tabular-nums">{row.display}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** A slim progress meter with its own track. */
+export function Meter({ value, label, className, color = 'var(--good)' }: { value: number; label: string; className?: string; color?: string }) {
+  const clamped = Math.max(0, Math.min(100, value));
+  return (
+    <span role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={clamped} className={cn('block h-1.5 overflow-hidden rounded-full bg-muted', className)}>
+      <span className="block h-full rounded-full" style={{ width: `${clamped}%`, background: color }} />
+    </span>
+  );
+}

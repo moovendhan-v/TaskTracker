@@ -1,6 +1,10 @@
 import type { StatusCategory, TaskPriority } from '../domain/task.js';
 import type { SpaceStatus } from '../domain/custom-field.js';
 
+/** Buckets of the due-date forecast. */
+export const FORECAST_KINDS = ['overdue', 'week', 'later', 'none'] as const;
+export type ForecastKind = (typeof FORECAST_KINDS)[number];
+
 export interface DashboardRequest {
   /** Window for hours; task counts are live. */
   from: string;
@@ -43,7 +47,7 @@ export interface DashboardResponse {
   /** Overdue open tasks by days late: 1–7, 8–30, 31–90, 90+. */
   overdueAging: number[];
   /** Open tasks by due week: overdue, the next eight weeks, later, no date. */
-  dueForecast: { label: string; weekStart: string | null; count: number; kind: 'overdue' | 'week' | 'later' | 'none' }[];
+  dueForecast: { label: string; weekStart: string | null; count: number; kind: ForecastKind }[];
   /** Created and closed per week, last eight weeks. */
   createdVsClosed: { weekStart: string; created: number; closed: number }[];
   minutesPerDay: { day: string; minutes: number }[];

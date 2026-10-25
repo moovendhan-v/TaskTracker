@@ -540,21 +540,21 @@ src/components/
 │   ├── dialog.tsx  sheet.tsx  dropdown-menu.tsx  popover.tsx  tooltip.tsx
 │   ├── badge.tsx  avatar.tsx  card.tsx  separator.tsx  skeleton.tsx  tabs.tsx
 │   ├── table.tsx  calendar.tsx  sonner.tsx
-│   └── form.tsx                      react-hook-form + zod bindings
+│   └── form-field.tsx                label, control and error, wired for screen readers
 ├── common/                           built from ui/, still feature-agnostic
-│   ├── page-header.tsx
-│   ├── empty-state.tsx
-│   ├── confirm-dialog.tsx
-│   ├── data-table.tsx                TanStack Table wrapper with paging
-│   ├── color-picker.tsx
-│   ├── user-avatar.tsx
-│   ├── date-picker.tsx
-│   └── error-boundary.tsx
+│   ├── page-header.tsx  empty-state.tsx  error-state.tsx  confirm-dialog.tsx
+│   ├── name-dialog.tsx               "name this thing" dialog checked by an API form schema
+│   └── user-avatar.tsx  color-picker.tsx  logo.tsx
+├── kit/                              configurable building blocks used across features
+│   ├── data-table.tsx                sort (multi), select, page, show/hide, reorder and resize columns; layout comes in and goes out
+│   ├── modal.tsx                     sizes, eyebrow, header actions, footer, optional side column
+│   ├── section.tsx                   collapsible block (accordion item), controlled or remembered per browser
+│   ├── segmented.tsx  panel.tsx  stat-card.tsx  status-pill.tsx
+│   ├── charts.tsx                    columns, grouped columns, stacked bar, bar list, meter (no chart library)
+│   └── notify.ts                     toast presets: success, info, error, undoable, promise
 └── layout/
-    ├── app-shell.tsx                 sidebar + topbar + <Outlet/>
-    ├── sidebar.tsx                   composes the workspace switcher and nav sections
-    ├── sidebar-section.tsx
-    └── topbar.tsx
+    ├── sidebar-link.tsx
+    └── sidebar-section.tsx
 
 src/lib/
 ├── cn.ts                             clsx + tailwind-merge
@@ -589,13 +589,20 @@ src/modules/
 ├── workspaces/      pages/{workspace-home,workspace-settings}.page.tsx, components/{workspace-switcher,create-workspace-dialog}.tsx
 ├── members/         pages/members.page.tsx, components/{member-table,add-member-dialog,role-select}.tsx
 ├── roles/           pages/roles.page.tsx, components/{role-list,role-editor,permission-matrix}.tsx
-├── spaces/          components/{space-tree,space-tree-item,create-space-dialog}.tsx
-├── lists/           pages/list.page.tsx, components/{list-header,view-switcher}.tsx
+├── spaces/          components/space-tree.tsx (projects with live counts and quick links), hooks/use-spaces.ts (incl. custom field definitions)
+├── lists/           hooks/use-lists.ts, api/lists.api.ts
 ├── tasks/           components/
-│                      list-view/{task-list-view,task-group,task-row}.tsx
+│                      views/{list-view,bulk-bar,calendar-view,timeline-view,planner-view}.tsx
 │                      board-view/{task-board-view,board-column,task-card}.tsx
-│                      detail/{task-detail-sheet,task-fields,task-description}.tsx
-│                      shared/{status-badge,priority-flag,assignee-picker,due-date-picker,quick-add-task}.tsx
+│                      detail/task-detail.tsx            modal or side panel (preference), subtasks, relations, history
+│                      shared/{status-picker,priority-picker,assignee-picker,due-date,task-dates,type-badge,quick-add-task}.tsx
+│                      {command-search,new-task-dialog}.tsx
+│                    hooks/{use-tasks,use-task-mutations,use-open-task}.ts, lib/{group-tasks,task-meta,export-tasks}.ts
+├── projects/        pages/{project,my-tasks}.page.tsx: one page per project with ten views and a shared toolbar
+│                    components/{project-tabs,saved-views-menu,task-table-view}.tsx, store/project-view.store.ts
+├── resources/       components/{resource-table,filter-builder}.tsx: tables and filters built from `resourceSchema`
+├── dashboard/       pages/home.page.tsx, components/{project-dashboard,dashboard-panels,projects-table,dashboard-filters}.tsx
+├── time/            pages/{timesheets,daily-log}.page.tsx, components/{log-time-dialog,task-time-controls,timer-indicator,time-report}.tsx
 ├── comments/        components/{comment-thread,comment-composer}.tsx
 ├── sprints/         pages/{sprints,sprint-board}.page.tsx, components/{sprint-card,backlog-panel,start-sprint-dialog,complete-sprint-dialog}.tsx
 ├── documents/       pages/document.page.tsx, components/{doc-tree,doc-editor,markdown-preview}.tsx

@@ -28,7 +28,7 @@ export function DueDateInput({ id, value, onChange, disabled }: DueDateInputProp
       disabled={disabled}
       value={toDateInputValue(value)}
       onChange={(event) => onChange(fromDateInputValue(event.target.value))}
-      className="h-8 rounded-md border border-input bg-card px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="h-8 w-[8.5rem] rounded-md border border-input bg-card px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
     />
   );
 }

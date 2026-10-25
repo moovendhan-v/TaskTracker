@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { DashboardTask, SpaceStatus, StatusCategory, TaskPriority } from '@taskflow/shared-types';
+import type { DashboardTask, ForecastKind, SpaceStatus, StatusCategory, TaskPriority } from '@taskflow/shared-types';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import { AnalyticsRepository, type DashboardScope } from '../domain/analytics.repository.js';
 
@@ -112,7 +112,7 @@ export class SqlAnalyticsRepository extends AnalyticsRepository {
   }
 
   async dueForecast(scope: DashboardScope) {
-    const rows = await this.query<{ kind: 'overdue' | 'week' | 'later' | 'none'; week_start: Date | string | null; count: string }>(
+    const rows = await this.query<{ kind: ForecastKind; week_start: Date | string | null; count: string }>(
       `WITH ${SCOPED_TASKS},
        open AS (SELECT due_date FROM scoped WHERE NOT closed),
        this_week AS (SELECT date_trunc('week', now() AT TIME ZONE $4)::date AS start),

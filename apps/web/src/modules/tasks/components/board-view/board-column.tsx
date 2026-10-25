@@ -2,7 +2,7 @@ import { useState, type DragEvent } from 'react';
 import type { TaskResponse, TaskStatusResponse } from '@taskflow/shared-types';
 import { cn } from '@/lib/cn';
 import { QuickAddTask } from '../shared/quick-add-task';
-import { StatusDot } from '../shared/status-picker';
+import { StatusPill } from '@/components/kit/status-pill';
 import { TaskCard } from './task-card';
 
 interface BoardColumnProps {
@@ -32,12 +32,13 @@ export function BoardColumn({ workspaceId, listId, status, tasks, canEdit, canCr
         setOver(false);
         onDrop(event, status, null);
       }}
-      className={cn('flex w-72 shrink-0 flex-col rounded-xl bg-muted/60 transition-colors', over && 'bg-accent')}
+      className={cn('flex w-72 shrink-0 flex-col rounded-xl border bg-muted/40 transition-colors', over && 'border-primary/50 bg-accent')}
     >
       <header className="flex items-center gap-2 px-3 py-2.5">
-        <StatusDot status={status} />
-        <h3 className="text-sm font-semibold">{status.name}</h3>
-        <span className="text-xs text-muted-foreground">{tasks.length}</span>
+        <h3>
+          <StatusPill status={status} />
+        </h3>
+        <span className="text-xs tabular-nums text-muted-foreground">{tasks.length}</span>
       </header>
       <div className="flex min-h-16 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
         {tasks.map((task) => (

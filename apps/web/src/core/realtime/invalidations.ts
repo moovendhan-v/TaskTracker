@@ -7,7 +7,7 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
   switch (entityType) {
     case 'task':
     case 'sprint':
-      return [queryKeys.tasksRoot(workspaceId), queryKeys.sprintsRoot(workspaceId)];
+      return [queryKeys.tasksRoot(workspaceId), queryKeys.sprintsRoot(workspaceId), queryKeys.dashboardRoot(workspaceId)];
     case 'comment':
       return [queryKeys.commentsRoot(workspaceId)];
     case 'document':
@@ -35,6 +35,6 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
     case 'custom_field':
       return [queryKeys.tasksRoot(workspaceId), queryKeys.spaces(workspaceId)];
     case 'time_entry':
-      return [queryKeys.timeRoot(workspaceId)];
+      return [queryKeys.timeRoot(workspaceId), queryKeys.dashboardRoot(workspaceId)];
   }
 }
