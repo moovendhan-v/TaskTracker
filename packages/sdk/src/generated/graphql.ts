@@ -126,6 +126,15 @@ export type CustomFieldType =
   | 'url'
   | 'user';
 
+export type DashboardInput = {
+  from: string;
+  spaceId?: string | null | undefined;
+  /** IANA time zone, e.g. Europe/Berlin */
+  timeZone: string;
+  to: string;
+  userIds?: Array<string> | null | undefined;
+};
+
 export type DecideLeaveInput = {
   decision: LeaveDecision;
   note?: string | null | undefined;
@@ -194,6 +203,19 @@ export type LeaveStatus =
   | 'cancelled'
   | 'pending'
   | 'rejected';
+
+export type LogTimeBatchInput = {
+  entries: Array<LogTimeInput>;
+};
+
+export type LogTimeInput = {
+  activity?: string | null | undefined;
+  endedAt: string;
+  note?: string | null | undefined;
+  spaceId?: string | null | undefined;
+  startedAt: string;
+  taskId?: string | null | undefined;
+};
 
 export type LogicOperator =
   | 'and'
@@ -309,6 +331,12 @@ export type SprintStatus =
   | 'completed'
   | 'planned';
 
+export type StartTimerInput = {
+  note?: string | null | undefined;
+  spaceId?: string | null | undefined;
+  taskId?: string | null | undefined;
+};
+
 export type StatusCategory =
   | 'blocked'
   | 'cancelled'
@@ -348,6 +376,15 @@ export type TaskType =
   | 'milestone'
   | 'phase'
   | 'task';
+
+export type TimeEntryQueryInput = {
+  from: string;
+  spaceId?: string | null | undefined;
+  taskId?: string | null | undefined;
+  to: string;
+  /** Others' entries need time.view_all */
+  userIds?: Array<string> | null | undefined;
+};
 
 export type UpdateAdminUserInput = {
   platformRole?: PlatformRole | null | undefined;
@@ -440,6 +477,15 @@ export type UpdateTaskStatusInput = {
   name?: string | null | undefined;
 };
 
+export type UpdateTimeEntryInput = {
+  activity?: string | null | undefined;
+  endedAt?: string | null | undefined;
+  note?: string | null | undefined;
+  spaceId?: string | null | undefined;
+  startedAt?: string | null | undefined;
+  taskId?: string | null | undefined;
+};
+
 export type UpdateWorkspaceInput = {
   color?: string | null | undefined;
   name?: string | null | undefined;
@@ -488,6 +534,16 @@ export type AdminAuditLogQueryVariables = Exact<{
 
 
 export type AdminAuditLogQuery = { adminAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string }> } };
+
+export type DashboardTaskFieldsFragment = { id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } };
+
+export type DashboardQueryVariables = Exact<{
+  workspaceId: string;
+  input: DashboardInput;
+}>;
+
+
+export type DashboardQuery = { dashboard: { hoursOnlyMine: boolean, overdueAging: Array<number>, summary: { projects: number, openTasks: number, closedTasks: number, overdue: number, dueSoon: number, unassigned: number, minutesLogged: number, entries: number, minutesAllTime: number }, byStatus: Array<{ name: string, color: string, category: StatusCategory, count: number }>, byPriority: Array<{ priority: TaskPriority, open: number, overdue: number }>, dueForecast: Array<{ label: string, weekStart: string | null, count: number, kind: string }>, createdVsClosed: Array<{ weekStart: string, created: number, closed: number }>, minutesPerDay: Array<{ day: string, minutes: number }>, minutesByPerson: Array<{ userId: string, name: string, minutes: number }>, minutesByProject: Array<{ spaceId: string | null, name: string, minutes: number }>, minutesByTask: Array<{ taskId: string, number: number, title: string, minutes: number }>, people: Array<{ userId: string | null, name: string, open: number, overdue: number, minutes: number }>, projects: Array<{ spaceId: string, name: string, status: SpaceStatus, open: number, closed: number, overdue: number, dueSoon: number, progress: number, minutes: number, assignees: number, updatedAt: string | null }>, phases: Array<{ id: string, number: number, title: string, assigneeName: string | null, dueDate: string | null, done: number, total: number, minutes: number, status: { name: string, color: string, category: StatusCategory } }>, overdueTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, dueSoonTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, recentlyUpdated: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }> } };
 
 export type WorkspaceAuditLogQueryVariables = Exact<{
   workspaceId: string;
@@ -1392,6 +1448,79 @@ export type UnrelateTasksMutationVariables = Exact<{
 
 export type UnrelateTasksMutation = { unrelateTasks: boolean };
 
+export type TimeEntryFieldsFragment = { id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null };
+
+export type RunningTimerQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type RunningTimerQuery = { runningTimer: { id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null } | null };
+
+export type TimeEntriesQueryVariables = Exact<{
+  workspaceId: string;
+  query: TimeEntryQueryInput;
+}>;
+
+
+export type TimeEntriesQuery = { timeEntries: Array<{ id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null }> };
+
+export type TaskTimeSummaryQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type TaskTimeSummaryQuery = { taskTimeSummary: { taskId: string, totalMinutes: number, myMinutes: number, entryCount: number } };
+
+export type StartTimerMutationVariables = Exact<{
+  workspaceId: string;
+  input: StartTimerInput;
+}>;
+
+
+export type StartTimerMutation = { startTimer: { id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null } };
+
+export type StopTimerMutationVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type StopTimerMutation = { stopTimer: { id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null } };
+
+export type LogTimeMutationVariables = Exact<{
+  workspaceId: string;
+  input: LogTimeInput;
+}>;
+
+
+export type LogTimeMutation = { logTime: { id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null } };
+
+export type LogTimeBatchMutationVariables = Exact<{
+  workspaceId: string;
+  input: LogTimeBatchInput;
+}>;
+
+
+export type LogTimeBatchMutation = { logTimeBatch: Array<{ id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null }> };
+
+export type UpdateTimeEntryMutationVariables = Exact<{
+  workspaceId: string;
+  entryId: string;
+  input: UpdateTimeEntryInput;
+}>;
+
+
+export type UpdateTimeEntryMutation = { updateTimeEntry: { id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null } };
+
+export type DeleteTimeEntryMutationVariables = Exact<{
+  workspaceId: string;
+  entryId: string;
+}>;
+
+
+export type DeleteTimeEntryMutation = { deleteTimeEntry: boolean };
+
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -1449,6 +1578,23 @@ export class TypedDocumentString<TResult, TVariables>
     return this.value;
   }
 }
+export const DashboardTaskFieldsFragmentDoc = new TypedDocumentString(`
+    fragment DashboardTaskFields on DashboardTask {
+  id
+  number
+  title
+  spaceId
+  spaceName
+  assigneeName
+  status {
+    name
+    color
+    category
+  }
+  dueDate
+  updatedAt
+}
+    `, {"fragmentName":"DashboardTaskFields"}) as unknown as TypedDocumentString<DashboardTaskFieldsFragment, unknown>;
 export const CurrentUserFieldsFragmentDoc = new TypedDocumentString(`
     fragment CurrentUserFields on CurrentUser {
   id
@@ -1866,6 +2012,26 @@ export const PreferencesFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"PreferencesFields"}) as unknown as TypedDocumentString<PreferencesFieldsFragment, unknown>;
+export const TimeEntryFieldsFragmentDoc = new TypedDocumentString(`
+    fragment TimeEntryFields on TimeEntry {
+  id
+  userId
+  userName
+  taskId
+  task {
+    id
+    number
+    title
+  }
+  spaceId
+  spaceName
+  startedAt
+  endedAt
+  minutes
+  note
+  activity
+}
+    `, {"fragmentName":"TimeEntryFields"}) as unknown as TypedDocumentString<TimeEntryFieldsFragment, unknown>;
 export const AdminUsersDocument = new TypedDocumentString(`
     query AdminUsers($search: String, $page: Int, $pageSize: Int) {
   adminUsers(search: $search, page: $page, pageSize: $pageSize) {
@@ -1949,6 +2115,125 @@ export const AdminAuditLogDocument = new TypedDocumentString(`
   metadata
   createdAt
 }`) as unknown as TypedDocumentString<AdminAuditLogQuery, AdminAuditLogQueryVariables>;
+export const DashboardDocument = new TypedDocumentString(`
+    query Dashboard($workspaceId: ID!, $input: DashboardInput!) {
+  dashboard(workspaceId: $workspaceId, input: $input) {
+    hoursOnlyMine
+    summary {
+      projects
+      openTasks
+      closedTasks
+      overdue
+      dueSoon
+      unassigned
+      minutesLogged
+      entries
+      minutesAllTime
+    }
+    byStatus {
+      name
+      color
+      category
+      count
+    }
+    byPriority {
+      priority
+      open
+      overdue
+    }
+    overdueAging
+    dueForecast {
+      label
+      weekStart
+      count
+      kind
+    }
+    createdVsClosed {
+      weekStart
+      created
+      closed
+    }
+    minutesPerDay {
+      day
+      minutes
+    }
+    minutesByPerson {
+      userId
+      name
+      minutes
+    }
+    minutesByProject {
+      spaceId
+      name
+      minutes
+    }
+    minutesByTask {
+      taskId
+      number
+      title
+      minutes
+    }
+    people {
+      userId
+      name
+      open
+      overdue
+      minutes
+    }
+    projects {
+      spaceId
+      name
+      status
+      open
+      closed
+      overdue
+      dueSoon
+      progress
+      minutes
+      assignees
+      updatedAt
+    }
+    phases {
+      id
+      number
+      title
+      assigneeName
+      dueDate
+      done
+      total
+      minutes
+      status {
+        name
+        color
+        category
+      }
+    }
+    overdueTasks {
+      ...DashboardTaskFields
+    }
+    dueSoonTasks {
+      ...DashboardTaskFields
+    }
+    recentlyUpdated {
+      ...DashboardTaskFields
+    }
+  }
+}
+    fragment DashboardTaskFields on DashboardTask {
+  id
+  number
+  title
+  spaceId
+  spaceName
+  assigneeName
+  status {
+    name
+    color
+    category
+  }
+  dueDate
+  updatedAt
+}`) as unknown as TypedDocumentString<DashboardQuery, DashboardQueryVariables>;
 export const WorkspaceAuditLogDocument = new TypedDocumentString(`
     query WorkspaceAuditLog($workspaceId: ID!, $action: String, $actorId: ID, $page: Int, $pageSize: Int) {
   workspaceAuditLog(
@@ -4103,6 +4388,189 @@ export const UnrelateTasksDocument = new TypedDocumentString(`
   unrelateTasks(workspaceId: $workspaceId, relationId: $relationId)
 }
     `) as unknown as TypedDocumentString<UnrelateTasksMutation, UnrelateTasksMutationVariables>;
+export const RunningTimerDocument = new TypedDocumentString(`
+    query RunningTimer($workspaceId: ID!) {
+  runningTimer(workspaceId: $workspaceId) {
+    ...TimeEntryFields
+  }
+}
+    fragment TimeEntryFields on TimeEntry {
+  id
+  userId
+  userName
+  taskId
+  task {
+    id
+    number
+    title
+  }
+  spaceId
+  spaceName
+  startedAt
+  endedAt
+  minutes
+  note
+  activity
+}`) as unknown as TypedDocumentString<RunningTimerQuery, RunningTimerQueryVariables>;
+export const TimeEntriesDocument = new TypedDocumentString(`
+    query TimeEntries($workspaceId: ID!, $query: TimeEntryQueryInput!) {
+  timeEntries(workspaceId: $workspaceId, query: $query) {
+    ...TimeEntryFields
+  }
+}
+    fragment TimeEntryFields on TimeEntry {
+  id
+  userId
+  userName
+  taskId
+  task {
+    id
+    number
+    title
+  }
+  spaceId
+  spaceName
+  startedAt
+  endedAt
+  minutes
+  note
+  activity
+}`) as unknown as TypedDocumentString<TimeEntriesQuery, TimeEntriesQueryVariables>;
+export const TaskTimeSummaryDocument = new TypedDocumentString(`
+    query TaskTimeSummary($workspaceId: ID!, $taskId: ID!) {
+  taskTimeSummary(workspaceId: $workspaceId, taskId: $taskId) {
+    taskId
+    totalMinutes
+    myMinutes
+    entryCount
+  }
+}
+    `) as unknown as TypedDocumentString<TaskTimeSummaryQuery, TaskTimeSummaryQueryVariables>;
+export const StartTimerDocument = new TypedDocumentString(`
+    mutation StartTimer($workspaceId: ID!, $input: StartTimerInput!) {
+  startTimer(workspaceId: $workspaceId, input: $input) {
+    ...TimeEntryFields
+  }
+}
+    fragment TimeEntryFields on TimeEntry {
+  id
+  userId
+  userName
+  taskId
+  task {
+    id
+    number
+    title
+  }
+  spaceId
+  spaceName
+  startedAt
+  endedAt
+  minutes
+  note
+  activity
+}`) as unknown as TypedDocumentString<StartTimerMutation, StartTimerMutationVariables>;
+export const StopTimerDocument = new TypedDocumentString(`
+    mutation StopTimer($workspaceId: ID!) {
+  stopTimer(workspaceId: $workspaceId) {
+    ...TimeEntryFields
+  }
+}
+    fragment TimeEntryFields on TimeEntry {
+  id
+  userId
+  userName
+  taskId
+  task {
+    id
+    number
+    title
+  }
+  spaceId
+  spaceName
+  startedAt
+  endedAt
+  minutes
+  note
+  activity
+}`) as unknown as TypedDocumentString<StopTimerMutation, StopTimerMutationVariables>;
+export const LogTimeDocument = new TypedDocumentString(`
+    mutation LogTime($workspaceId: ID!, $input: LogTimeInput!) {
+  logTime(workspaceId: $workspaceId, input: $input) {
+    ...TimeEntryFields
+  }
+}
+    fragment TimeEntryFields on TimeEntry {
+  id
+  userId
+  userName
+  taskId
+  task {
+    id
+    number
+    title
+  }
+  spaceId
+  spaceName
+  startedAt
+  endedAt
+  minutes
+  note
+  activity
+}`) as unknown as TypedDocumentString<LogTimeMutation, LogTimeMutationVariables>;
+export const LogTimeBatchDocument = new TypedDocumentString(`
+    mutation LogTimeBatch($workspaceId: ID!, $input: LogTimeBatchInput!) {
+  logTimeBatch(workspaceId: $workspaceId, input: $input) {
+    ...TimeEntryFields
+  }
+}
+    fragment TimeEntryFields on TimeEntry {
+  id
+  userId
+  userName
+  taskId
+  task {
+    id
+    number
+    title
+  }
+  spaceId
+  spaceName
+  startedAt
+  endedAt
+  minutes
+  note
+  activity
+}`) as unknown as TypedDocumentString<LogTimeBatchMutation, LogTimeBatchMutationVariables>;
+export const UpdateTimeEntryDocument = new TypedDocumentString(`
+    mutation UpdateTimeEntry($workspaceId: ID!, $entryId: ID!, $input: UpdateTimeEntryInput!) {
+  updateTimeEntry(workspaceId: $workspaceId, entryId: $entryId, input: $input) {
+    ...TimeEntryFields
+  }
+}
+    fragment TimeEntryFields on TimeEntry {
+  id
+  userId
+  userName
+  taskId
+  task {
+    id
+    number
+    title
+  }
+  spaceId
+  spaceName
+  startedAt
+  endedAt
+  minutes
+  note
+  activity
+}`) as unknown as TypedDocumentString<UpdateTimeEntryMutation, UpdateTimeEntryMutationVariables>;
+export const DeleteTimeEntryDocument = new TypedDocumentString(`
+    mutation DeleteTimeEntry($workspaceId: ID!, $entryId: ID!) {
+  deleteTimeEntry(workspaceId: $workspaceId, entryId: $entryId)
+}
+    `) as unknown as TypedDocumentString<DeleteTimeEntryMutation, DeleteTimeEntryMutationVariables>;
 export const MeDocument = new TypedDocumentString(`
     query Me {
   me {

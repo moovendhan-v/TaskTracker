@@ -29,3 +29,6 @@ export * from './domain/iam.js';
 export * from './contracts/policy.contract.js';
 export * from './domain/preferences.js';
 export * from './contracts/custom-field.contract.js';
+export * from './contracts/time.contract.js';
+export * from './contracts/analytics.contract.js';
+export * from './domain/time-tracking.js';

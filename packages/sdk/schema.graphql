@@ -247,6 +247,158 @@ enum CustomFieldType {
 """Custom field values keyed by field id"""
 scalar CustomFieldValues
 
+type Dashboard {
+  byPriority: [DashboardPriorityCount!]!
+  byStatus: [DashboardStatusCount!]!
+  createdVsClosed: [DashboardWeekFlow!]!
+  dueForecast: [DashboardForecastBucket!]!
+  dueSoonTasks: [DashboardTask!]!
+  hoursOnlyMine: Boolean!
+  minutesByPerson: [DashboardPersonMinutes!]!
+  minutesByProject: [DashboardProjectMinutes!]!
+  minutesByTask: [DashboardTaskMinutes!]!
+  minutesPerDay: [DashboardDayMinutes!]!
+
+  """Days late: 1–7, 8–30, 31–90, 90+"""
+  overdueAging: [Int!]!
+  overdueTasks: [DashboardTask!]!
+  people: [DashboardPerson!]!
+  phases: [DashboardPhase!]!
+  projects: [DashboardProject!]!
+  recentlyUpdated: [DashboardTask!]!
+  summary: DashboardSummary!
+}
+
+type DashboardDayMinutes {
+  day: String!
+  minutes: Int!
+}
+
+type DashboardForecastBucket {
+  count: Int!
+
+  """overdue, week, later or none"""
+  kind: String!
+  label: String!
+  weekStart: String
+}
+
+input DashboardInput {
+  from: String!
+  spaceId: ID
+
+  """IANA time zone, e.g. Europe/Berlin"""
+  timeZone: String!
+  to: String!
+  userIds: [ID!]
+}
+
+type DashboardPerson {
+  minutes: Int!
+  name: String!
+  open: Int!
+  overdue: Int!
+
+  """Null for the unassigned row"""
+  userId: ID
+}
+
+type DashboardPersonMinutes {
+  minutes: Int!
+  name: String!
+  userId: ID!
+}
+
+type DashboardPhase {
+  assigneeName: String
+  done: Int!
+  dueDate: String
+  id: ID!
+  minutes: Int!
+  number: Int!
+  status: DashboardStatusRef!
+  title: String!
+  total: Int!
+}
+
+type DashboardPriorityCount {
+  open: Int!
+  overdue: Int!
+  priority: TaskPriority!
+}
+
+type DashboardProject {
+  assignees: Int!
+  closed: Int!
+  dueSoon: Int!
+  minutes: Int!
+  name: String!
+  open: Int!
+  overdue: Int!
+
+  """Closed share of all tasks, 0–100"""
+  progress: Int!
+  spaceId: ID!
+  status: SpaceStatus!
+  updatedAt: String
+}
+
+type DashboardProjectMinutes {
+  minutes: Int!
+  name: String!
+  spaceId: ID
+}
+
+type DashboardStatusCount {
+  category: StatusCategory!
+  color: String!
+  count: Int!
+  name: String!
+}
+
+type DashboardStatusRef {
+  category: StatusCategory!
+  color: String!
+  name: String!
+}
+
+type DashboardSummary {
+  closedTasks: Int!
+  dueSoon: Int!
+  entries: Int!
+  minutesAllTime: Int!
+  minutesLogged: Int!
+  openTasks: Int!
+  overdue: Int!
+  projects: Int!
+  unassigned: Int!
+}
+
+type DashboardTask {
+  assigneeName: String
+  dueDate: String
+  id: ID!
+  number: Int!
+  spaceId: ID!
+  spaceName: String!
+  status: DashboardStatusRef!
+  title: String!
+  updatedAt: String!
+}
+
+type DashboardTaskMinutes {
+  minutes: Int!
+  number: Int!
+  taskId: ID!
+  title: String!
+}
+
+type DashboardWeekFlow {
+  closed: Int!
+  created: Int!
+  weekStart: String!
+}
+
 input DecideLeaveInput {
   decision: LeaveDecision!
   note: String
@@ -479,6 +631,19 @@ type LeaveType {
   requiresApproval: Boolean!
 }
 
+input LogTimeBatchInput {
+  entries: [LogTimeInput!]!
+}
+
+input LogTimeInput {
+  activity: String
+  endedAt: String!
+  note: String
+  spaceId: ID
+  startedAt: String!
+  taskId: ID
+}
+
 enum LogicOperator {
   and
   not
@@ -561,6 +726,7 @@ type Mutation {
 
   """Deletes the task and its subtasks"""
   deleteTask(taskId: ID!, workspaceId: ID!): Boolean!
+  deleteTimeEntry(entryId: ID!, workspaceId: ID!): Boolean!
   deleteView(viewId: ID!): Preferences!
   deleteWorkspace(workspaceId: ID!): Boolean!
   detachRolePolicy(
@@ -572,6 +738,12 @@ type Mutation {
 
   """Leave a workspace. The last owner cannot leave."""
   leaveWorkspace(workspaceId: ID!): Boolean!
+  logTime(input: LogTimeInput!, workspaceId: ID!): TimeEntry!
+
+  """
+  Saves a daily log: several entries, all or none, at most 24 hours in total
+  """
+  logTimeBatch(input: LogTimeBatchInput!, workspaceId: ID!): [TimeEntry!]!
 
   """Returns how many were unread"""
   markAllNotificationsRead(workspaceId: ID!): Int!
@@ -607,6 +779,10 @@ type Mutation {
   """Replaces the open tabs of the multi-tab workspace"""
   setTabs(input: SetTabsInput!): Preferences!
   startSprint(sprintId: ID!, workspaceId: ID!): Sprint!
+
+  """Starts a timer; a timer already running is stopped first"""
+  startTimer(input: StartTimerInput!, workspaceId: ID!): TimeEntry!
+  stopTimer(workspaceId: ID!): TimeEntry!
   unrelateTasks(relationId: ID!, workspaceId: ID!): Boolean!
 
   """
@@ -629,6 +805,9 @@ type Mutation {
   updateSprint(input: UpdateSprintInput!, sprintId: ID!, workspaceId: ID!): Sprint!
   updateStatus(input: UpdateTaskStatusInput!, statusId: ID!, workspaceId: ID!): TaskStatus!
   updateTask(input: UpdateTaskInput!, taskId: ID!, workspaceId: ID!): Task!
+
+  """Your own entries need time.log; anyone else's need time.manage"""
+  updateTimeEntry(entryId: ID!, input: UpdateTimeEntryInput!, workspaceId: ID!): TimeEntry!
   updateWorkspace(input: UpdateWorkspaceInput!, workspaceId: ID!): Workspace!
   upsertEmployeeProfile(input: EmployeeProfileInput!, userId: ID!, workspaceId: ID!): Employee!
 
@@ -768,6 +947,11 @@ type Query {
   backlog(spaceId: ID!, workspaceId: ID!): [Task!]!
   comments(taskId: ID!, workspaceId: ID!): [Comment!]!
   customFields(entity: CustomFieldEntity, workspaceId: ID!): [CustomField!]!
+
+  """
+  Workspace or project (spaceId) dashboard: live task counts and hours for a window
+  """
+  dashboard(input: DashboardInput!, workspaceId: ID!): Dashboard!
   departments(workspaceId: ID!): [Department!]!
   document(documentId: ID!, workspaceId: ID!): Document!
 
@@ -845,6 +1029,9 @@ type Query {
   resourceSchema(resource: String!, workspaceId: ID!): ResourceSchema!
   roles(workspaceId: ID!): [Role!]!
 
+  """The caller's running timer"""
+  runningTimer(workspaceId: ID!): TimeEntry
+
   """
   Members matching filters, sort and paging; see resourceSchema(resource: "members")
   """
@@ -875,9 +1062,15 @@ type Query {
   """A task by its short number, e.g. 978 for #978"""
   taskByNumber(number: Int!, workspaceId: ID!): Task!
   taskRelations(taskId: ID!, workspaceId: ID!): [TaskRelation!]!
+  taskTimeSummary(taskId: ID!, workspaceId: ID!): TaskTimeSummary!
 
   """Users following the task"""
   taskWatchers(taskId: ID!, workspaceId: ID!): [ID!]!
+
+  """
+  Entries started in [from, to), oldest first, at most 1000. Without time.view_all, only your own.
+  """
+  timeEntries(query: TimeEntryQueryInput!, workspaceId: ID!): [TimeEntry!]!
   unreadNotificationCount(workspaceId: ID!): Int!
   workspace(workspaceId: ID!): Workspace!
 
@@ -1114,6 +1307,12 @@ enum SprintStatus {
   planned
 }
 
+input StartTimerInput {
+  note: String
+  spaceId: ID
+  taskId: ID
+}
+
 enum StatusCategory {
   blocked
   cancelled
@@ -1251,12 +1450,54 @@ type TaskStatus {
   spaceId: ID!
 }
 
+type TaskTimeSummary {
+  entryCount: Int!
+  myMinutes: Int!
+  taskId: ID!
+  totalMinutes: Int!
+}
+
 enum TaskType {
   bug
   feature
   milestone
   phase
   task
+}
+
+type TimeEntry {
+  activity: String!
+
+  """Null while the timer runs"""
+  endedAt: String
+  id: ID!
+
+  """For a running timer: the minutes so far"""
+  minutes: Int!
+  note: String!
+  spaceId: ID
+  spaceName: String
+  startedAt: String!
+  task: TimeEntryTask
+  taskId: ID
+  userId: ID!
+  userName: String
+}
+
+input TimeEntryQueryInput {
+  from: String!
+  spaceId: ID
+  taskId: ID
+  to: String!
+
+  """Others' entries need time.view_all"""
+  userIds: [ID!]
+}
+
+type TimeEntryTask {
+  id: ID!
+  number: Int!
+  title: String!
 }
 
 input UpdateAdminUserInput {
@@ -1354,6 +1595,15 @@ input UpdateTaskStatusInput {
   category: StatusCategory
   color: String
   name: String
+}
+
+input UpdateTimeEntryInput {
+  activity: String
+  endedAt: String
+  note: String
+  spaceId: ID
+  startedAt: String
+  taskId: ID
 }
 
 input UpdateWorkspaceInput {

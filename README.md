@@ -119,6 +119,12 @@ Each space has its own statuses (`statuses`, `createStatus`, `updateStatus`, `re
 
 Tasks also have a workspace-wide number (`taskByNumber`), a type, subtasks (up to three levels, same list), start date, estimate, progress, watchers (`watchTask`; watchers hear about comments), relations (blocks, relates to, duplicates), an activity history of field changes (`taskActivity`) and custom fields. Custom fields are defined per space (`customFields`, text, number, date, checkbox, select, multi-select, URL) and can be filtered and sorted like built-in fields as `custom.<key>`. Spaces have a status, dates and their own custom fields too.
 
+### Time tracking and dashboards
+
+People with `time.log` start and stop a timer (`startTimer`, `stopTimer`, one running per person), log time against a task or a project (`logTime`), or save a whole day at once (`logTimeBatch`, all or none, at most 24 hours). `timeEntries(from, to)` feeds timesheets and the Time view. Without `time.view_all` a person only ever sees their own entries, and changing someone else's entry needs `time.manage` and is audited. The managed *Time manager* policy grants both.
+
+`dashboard(input: { from, to, timeZone, spaceId?, userIds? })` returns everything the Home and project dashboards show: live task counts (open, closed, overdue, due soon, unassigned), status and priority breakdowns, overdue aging, a due-date forecast, created vs closed per week, hours per day, person, project and task, workload per person, project health, phases (parent tasks with their subtasks) and the overdue, due-soon and recently updated lists. All of it is computed in SQL with bound parameters, and the result is cached until a task, status, space or time entry changes. Hours cover everyone only for callers with `time.view_all`.
+
 ### Preferences
 
 Each user's settings live on the server (`myPreferences`) and load with the session, so they follow the user to every device: theme (system, light, dark), accent palette, density, sidebar, default task view, where tasks open, date and time formats, the first day of the week, table layouts (column order, hidden columns, widths, paging, sort), saved views (named filter sets, optionally pinned) and the open tabs of the multi-tab workspace. Inputs are validated like every other form, tabs only ever point inside the app, and the row is protected by row-level security so only its owner can read or write it.

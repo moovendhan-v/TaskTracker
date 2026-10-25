@@ -73,9 +73,9 @@ export const MANAGED_POLICIES: readonly ManagedPolicy[] = [
   {
     key: 'Contributor',
     name: 'Contributor',
-    description: 'Create and update tasks and docs, request time off and see the people directory.',
+    description: 'Create and update tasks and docs, log their own time, request time off and see the people directory.',
     document: {
-      statements: [{ effect: 'allow', permissions: ['task.view', 'task.create', 'task.update', 'task.assign', 'doc.view', 'doc.create', 'hr.view', 'leave.request'] }],
+      statements: [{ effect: 'allow', permissions: ['task.view', 'task.create', 'task.update', 'task.assign', 'doc.view', 'doc.create', 'hr.view', 'leave.request', 'time.log'] }],
     },
   },
   {
@@ -89,6 +89,12 @@ export const MANAGED_POLICIES: readonly ManagedPolicy[] = [
     name: 'Sprint planner',
     description: 'Plan sprints and manage every task.',
     document: { statements: [{ effect: 'allow', permissions: ['sprint.manage', 'task.*', 'list.manage'] }] },
+  },
+  {
+    key: 'TimeManager',
+    name: 'Time manager',
+    description: "See everyone's time and timesheets, and correct anyone's entries.",
+    document: { statements: [{ effect: 'allow', permissions: ['time.*', 'task.view'] }] },
   },
   {
     key: 'PeopleManager',

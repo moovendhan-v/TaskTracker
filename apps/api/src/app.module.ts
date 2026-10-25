@@ -32,6 +32,8 @@ import { FormsModule } from './modules/forms/forms.module.js';
 import { PreferencesModule } from './modules/preferences/preferences.module.js';
 import { StatusesModule } from './modules/statuses/statuses.module.js';
 import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module.js';
+import { AnalyticsModule } from './modules/analytics/analytics.module.js';
+import { TimeTrackingModule } from './modules/time-tracking/time-tracking.module.js';
 import { RolesModule } from './modules/roles/roles.module.js';
 import { SpacesModule } from './modules/spaces/spaces.module.js';
 import { SprintsModule } from './modules/sprints/sprints.module.js';
@@ -75,6 +77,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     PreferencesModule,
     StatusesModule,
     CustomFieldsModule,
+    TimeTrackingModule,
+    AnalyticsModule,
   ],
   providers: [
     // Order matters: the session guard sets req.user, which the throttler uses as its key.

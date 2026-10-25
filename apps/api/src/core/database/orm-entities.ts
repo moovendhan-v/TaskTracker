@@ -8,6 +8,7 @@ import { LeaveTypeOrmEntity } from '../../modules/hr/leave/infrastructure/leave-
 import { TaskListOrmEntity } from '../../modules/lists/infrastructure/task-list.orm-entity.js';
 import { WorkspaceMemberOrmEntity } from '../../modules/members/infrastructure/workspace-member.orm-entity.js';
 import { NotificationOrmEntity } from '../../modules/notifications/infrastructure/notification.orm-entity.js';
+import { TimeEntryOrmEntity } from '../../modules/time-tracking/infrastructure/time-entry.orm-entity.js';
 import { UserPreferenceOrmEntity } from '../../modules/preferences/infrastructure/user-preference.orm-entity.js';
 import { PolicyOrmEntity } from '../../modules/roles/infrastructure/policy.orm-entity.js';
 import { RolePolicyOrmEntity } from '../../modules/roles/infrastructure/role-policy.orm-entity.js';
@@ -31,6 +32,7 @@ export const ORM_ENTITIES = [
   WorkspaceRoleOrmEntity,
   PolicyOrmEntity,
   UserPreferenceOrmEntity,
+  TimeEntryOrmEntity,
   RolePolicyOrmEntity,
   WorkspaceMemberOrmEntity,
   SpaceOrmEntity,

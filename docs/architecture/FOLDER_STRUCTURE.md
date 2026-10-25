@@ -354,6 +354,17 @@ src/modules/
 │   ├── application/custom-fields.service.ts      also registers custom.<key> as query fields
 │   └── infrastructure/, presentation/graphql/
 │
+├── time-tracking/                                ✅  timers, logged time, daily log; own entries unless time.view_all / time.manage
+│   ├── domain/{time-entry.ts,time-entry.policy.ts,time-entry.repository.ts}
+│   ├── application/time-tracking.service.ts
+│   └── infrastructure/, presentation/graphql/
+│
+├── analytics/                                    ✅  read-only dashboards; SQL aggregates with bound parameters only
+│   ├── domain/analytics.repository.ts            port: counts, breakdowns, hours, workload, lists
+│   ├── application/analytics.service.ts          scopes hours to the caller without time.view_all; cached
+│   ├── infrastructure/sql-analytics.repository.ts
+│   └── presentation/graphql/
+│
 ├── comments/                                     ✅
 │   ├── domain/{comment.ts,comment.repository.ts}
 │   ├── application/{comments.service.ts,comment.mapper.ts}

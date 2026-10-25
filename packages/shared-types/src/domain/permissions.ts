@@ -18,6 +18,12 @@ export const PERMISSIONS = [
   'leave.request',
   'leave.approve',
   'audit.view',
+  /** Track and log your own time. */
+  'time.log',
+  /** See everyone's time entries and reports. */
+  'time.view_all',
+  /** Change or delete anyone's time entries. */
+  'time.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
