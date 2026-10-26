@@ -44,8 +44,10 @@ The file-by-file layout and the SOLID and import-boundary rules are in [docs/arc
 Needs only Docker with Compose v2.
 
 ```sh
-./scripts/dev.sh          # or: pnpm dev:stack
+./scripts/dev.sh
 ```
+
+(`pnpm dev:stack` does the same.)
 
 The first run creates `.env` from `.env.example` with fresh random secrets (git-ignored, `chmod 600`, never printed). Then it starts Postgres, Redis and Mailpit and runs a bootstrap container that installs dependencies, builds the shared packages and the API, applies migrations as the schema owner and seeds the demo workspace. Finally it starts the API and the Vite app with live reload, and follows their logs.
 
@@ -56,7 +58,7 @@ The first run creates `.env` from `.env.example` with fresh random secrets (git-
 | Emails (Mailpit) | http://localhost:8025 |
 | Postgres | localhost:5432 (loopback only) |
 
-Sign in as `avery@example.com` (or jordan@, sam@, kai@) with `SEED_PASSWORD` from `.env`. Every step is idempotent, so running it again only starts things. Other commands: `./scripts/dev.sh down` (stop, keep data), `logs`, `bootstrap` (re-run install, build, migrations and seed), `reset` (delete the database and dependency volumes). Ports and seeding are set in `.env` (`WEB_DEV_PORT`, `API_HOST_PORT`, `POSTGRES_HOST_PORT`, `SEED_DEMO`). Behind a proxy that inspects TLS, put its CA in a git-ignored `infra/docker/docker-compose.dev.override.yml` (mount it into `bootstrap` and set `NODE_EXTRA_CA_CERTS`); the script picks that file up.
+Sign in as `avery@example.com` (or jordan@, sam@, kai@) with `SEED_PASSWORD` from `.env`. Every step is idempotent, so running it again only starts things. Before starting, the script frees the ports it needs: another TaskFlow stack (such as `pnpm infra:up`) is stopped with its data kept, and any other container or program on those ports is shown and stopped once you confirm (`./scripts/dev.sh -y` skips the question). An older `.env` gets any settings it lacks added. Other commands: `./scripts/dev.sh down` (stop, keep data), `logs`, `bootstrap` (re-run install, build, migrations and seed), `reset` (delete the database and dependency volumes). Ports and seeding are set in `.env` (`WEB_DEV_PORT`, `API_HOST_PORT`, `POSTGRES_HOST_PORT`, `SEED_DEMO`). Behind a proxy that inspects TLS, put its CA in a git-ignored `infra/docker/docker-compose.dev.override.yml` (mount it into `bootstrap` and set `NODE_EXTRA_CA_CERTS`); the script picks that file up.
 
 The compose file is `infra/docker/docker-compose.dev.yml`. Dependencies live in Docker volumes, so they never mix with `node_modules` on the host, and the API and web containers run as your user, so files they write stay yours.
 
