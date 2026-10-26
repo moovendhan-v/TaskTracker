@@ -1,2 +1,2 @@
 export { useLists, useList, useListMutations } from './hooks/use-lists';
-export { ListPage } from './pages/list.page';
+export { listsApi } from './api/lists.api';

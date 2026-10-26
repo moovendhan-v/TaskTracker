@@ -1,0 +1,33 @@
+fragment DashboardTaskFields on DashboardTask {
+  id
+  number
+  title
+  spaceId
+  spaceName
+  assigneeName
+  status { name color category }
+  dueDate
+  updatedAt
+}
+
+query Dashboard($workspaceId: ID!, $input: DashboardInput!) {
+  dashboard(workspaceId: $workspaceId, input: $input) {
+    hoursOnlyMine
+    summary { projects openTasks closedTasks overdue dueSoon unassigned minutesLogged entries minutesAllTime }
+    byStatus { name color category count }
+    byPriority { priority open overdue }
+    overdueAging
+    dueForecast { label weekStart count kind }
+    createdVsClosed { weekStart created closed }
+    minutesPerDay { day minutes }
+    minutesByPerson { userId name minutes }
+    minutesByProject { spaceId name minutes }
+    minutesByTask { taskId number title minutes }
+    people { userId name open overdue minutes }
+    projects { spaceId name status open closed overdue dueSoon progress minutes assignees updatedAt }
+    phases { id number title assigneeName dueDate done total minutes status { name color category } }
+    overdueTasks { ...DashboardTaskFields }
+    dueSoonTasks { ...DashboardTaskFields }
+    recentlyUpdated { ...DashboardTaskFields }
+  }
+}

@@ -10,6 +10,7 @@ import {
 import { PlatformRoleEnum } from '../../../../core/graphql/enums.js';
 import { PageArgs, PageOf } from '../../../../core/graphql/page.type.js';
 import { IsOmittable } from '../../../../core/graphql/validation.js';
+import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('AdminUser')
 export class AdminUserGql implements AdminUserResponse {
@@ -67,6 +68,7 @@ export class AdminAuditArgs extends PageArgs {
   workspaceId?: string;
 }
 
+@FormSchema('admin.user.update')
 @InputType()
 export class UpdateAdminUserInput implements UpdateAdminUserRequest {
   @Field({ nullable: true })

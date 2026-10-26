@@ -7,6 +7,12 @@ import { APPLY_SCOPE_SQL, toScopeSettings, type DataScope } from './data-scope.j
 interface TransactionContext {
   manager: EntityManager;
   scope: DataScope | null;
+  /** True for a GraphQL query: nothing in it writes, so cached reads are safe. */
+  readOnly: boolean;
+}
+
+export interface ScopeOptions {
+  readOnly?: boolean;
 }
 
 /**
@@ -30,6 +36,21 @@ export class TransactionalManager {
     return this.storage.getStore() !== undefined;
   }
 
+  /** The current data scope, or null outside a scoped transaction. */
+  get scope(): DataScope | null {
+    return this.storage.getStore()?.scope ?? null;
+  }
+
+  /**
+   * Whether a cached read may stand in for the database right now: outside a
+   * transaction (guards) or inside a read-only one. A write must see its own
+   * uncommitted changes, so it always reads from Postgres.
+   */
+  get cacheable(): boolean {
+    const store = this.storage.getStore();
+    return store === undefined || store.readOnly;
+  }
+
   repository<T extends ObjectLiteral>(target: EntityTarget<T>): Repository<T> {
     return this.manager.getRepository(target);
   }
@@ -37,7 +58,7 @@ export class TransactionalManager {
   /** Runs work in a transaction. Inside one already, the work joins it and keeps its scope. */
   runInTransaction<T>(work: () => Promise<T>): Promise<T> {
     if (this.inTransaction) return work();
-    return this.dataSource.transaction((manager) => this.storage.run({ manager, scope: null }, work));
+    return this.dataSource.transaction((manager) => this.storage.run({ manager, scope: null, readOnly: false }, work));
   }
 
   /**
@@ -45,18 +66,18 @@ export class TransactionalManager {
    * it switches that transaction's scope for the duration of the work, then
    * switches back.
    */
-  async runInScope<T>(scope: DataScope, work: () => Promise<T>): Promise<T> {
+  async runInScope<T>(scope: DataScope, work: () => Promise<T>, options: ScopeOptions = {}): Promise<T> {
     const current = this.storage.getStore();
     if (!current) {
       return this.dataSource.transaction(async (manager) => {
         await applyScope(manager, scope);
-        return this.storage.run({ manager, scope }, work);
+        return this.storage.run({ manager, scope, readOnly: options.readOnly ?? false }, work);
       });
     }
 
     await applyScope(current.manager, scope);
     try {
-      const result = await this.storage.run({ manager: current.manager, scope }, work);
+      const result = await this.storage.run({ manager: current.manager, scope, readOnly: current.readOnly }, work);
       await applyScope(current.manager, current.scope);
       return result;
     } catch (error) {

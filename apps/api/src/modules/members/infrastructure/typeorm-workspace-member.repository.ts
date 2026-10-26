@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { SelectQueryBuilder } from 'typeorm';
-import type { Permission, SystemRoleKey } from '@taskflow/shared-types';
+import type { SystemRoleKey } from '@taskflow/shared-types';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
+import { pageRawWithResourceQuery } from '../../../core/query/apply-resource-query.js';
+import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
 import type { MemberDetails, MembershipWithRole, NewWorkspaceMember } from '../domain/workspace-member.js';
 import { WorkspaceMemberRepository } from '../domain/workspace-member.repository.js';
 import { WorkspaceMemberOrmEntity } from './workspace-member.orm-entity.js';
@@ -12,7 +14,6 @@ interface MembershipRow {
   role_id: string;
   role_name: string;
   role_system_key: SystemRoleKey | null;
-  permissions: Permission[];
 }
 
 interface DetailsRow {
@@ -58,6 +59,12 @@ export class TypeOrmWorkspaceMemberRepository extends WorkspaceMemberRepository 
     return rows.map(toDetails);
   }
 
+  async searchDetails(workspaceId: string, query: NormalizedQuery): Promise<{ items: MemberDetails[]; total: number }> {
+    const builder = this.detailsQuery().where('member.workspace_id = :workspaceId', { workspaceId });
+    const { rows, total } = await pageRawWithResourceQuery<DetailsRow>(builder, query);
+    return { items: rows.map(toDetails), total };
+  }
+
   async findDetails(workspaceId: string, userId: string): Promise<MemberDetails | null> {
     const row = await this.detailsQuery()
       .where('member.workspace_id = :workspaceId AND member.user_id = :userId', { workspaceId, userId })
@@ -69,15 +76,11 @@ export class TypeOrmWorkspaceMemberRepository extends WorkspaceMemberRepository 
     return this.repository.exists({ where: { workspaceId, userId } });
   }
 
-  async listUserIdsWithPermission(workspaceId: string, permission: Permission): Promise<string[]> {
-    const rows: { user_id: string }[] = await this.transactional.manager.query(
-      `SELECT member.user_id FROM workspace_member member
-       JOIN workspace_role role ON role.id = member.role_id AND role.workspace_id = member.workspace_id
-       WHERE member.workspace_id = $1 AND $2 = ANY(role.permissions)`,
-      [workspaceId, permission],
-    );
-    return rows.map((row) => row.user_id);
+  async listMembersWithRoles(workspaceId: string): Promise<{ userId: string; roleId: string }[]> {
+    const rows = await this.repository.find({ where: { workspaceId }, select: { userId: true, roleId: true } });
+    return rows.map(({ userId, roleId }) => ({ userId, roleId }));
   }
+
 
   async addIfAbsent(member: NewWorkspaceMember): Promise<boolean> {
     const result = await this.repository
@@ -117,7 +120,6 @@ export class TypeOrmWorkspaceMemberRepository extends WorkspaceMemberRepository 
         'member.role_id AS role_id',
         'role.name AS role_name',
         'role.system_key AS role_system_key',
-        'role.permissions AS permissions',
       ]);
   }
 
@@ -144,7 +146,6 @@ function toMembership(row: MembershipRow): MembershipWithRole {
     roleId: row.role_id,
     roleName: row.role_name,
     roleSystemKey: row.role_system_key,
-    permissions: row.permissions,
   };
 }
 

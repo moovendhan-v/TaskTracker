@@ -1,7 +1,9 @@
 import { betterAuth } from 'better-auth';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { captcha } from 'better-auth/plugins';
 import type { Pool } from 'pg';
 import type { Env } from '../../config/env.schema.js';
+import { PASSWORD_MAX, PASSWORD_MIN, validateAuthBody } from './auth-forms.js';
 import type { Mailer } from './mailer/mailer.port.js';
 
 const PUBLIC_AUTH_FORMS = ['/sign-up/email', '/sign-in/email', '/request-password-reset'];
@@ -17,8 +19,8 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
     trustedOrigins: env.CORS_ORIGINS,
     emailAndPassword: {
       enabled: true,
-      minPasswordLength: 10,
-      maxPasswordLength: 128,
+      minPasswordLength: PASSWORD_MIN,
+      maxPasswordLength: PASSWORD_MAX,
       revokeSessionsOnPasswordReset: true,
       resetPasswordTokenExpiresIn: 60 * 30,
       sendResetPassword: async ({ user, url }) => mailer.sendPasswordReset(user.email, url),
@@ -41,6 +43,13 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
+    },
+    // The same rules the web app gets from formSchemas('auth.*'), with the same per-field messages.
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        const fields = await validateAuthBody(ctx.path, ctx.body);
+        if (fields.length > 0) throw new APIError('BAD_REQUEST', { code: 'VALIDATION_FAILED', message: fields[0]?.message ?? 'Invalid input', fields });
+      }),
     },
     rateLimit: {
       enabled: true,

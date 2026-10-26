@@ -3,7 +3,9 @@ import { Injectable } from '@nestjs/common';
 import type { CreateWorkspaceRequest, UpdateWorkspaceRequest, WorkspaceResponse } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
-import { DomainError } from '../../../core/domain/domain-error.js';
+import { found } from '../../../core/domain/found.js';
+import { Announces } from '../../../core/events/announces.decorator.js';
+import { workspaceFromAccess } from '../../../core/runtime/change-target.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { MembersService } from '../../members/application/members.service.js';
 import { RolesService } from '../../roles/application/roles.service.js';
@@ -28,10 +30,15 @@ export class WorkspacesService {
     const workspaces = await this.workspaces.findByIds(memberships.map((m) => m.workspaceId));
     const byId = new Map(workspaces.map((workspace) => [workspace.id, workspace]));
 
-    return memberships.flatMap((membership) => {
+    const result: WorkspaceResponse[] = [];
+    for (const membership of memberships) {
       const workspace = byId.get(membership.workspaceId);
-      return workspace ? [WorkspaceMapper.toResponse(workspace, membership.roleName, membership.permissions)] : [];
-    });
+      if (!workspace) continue;
+      // Sequential on purpose: one transaction connection. Each lookup is cached per role.
+      const access = await this.membersService.roleAccessFor(membership.workspaceId, membership.roleId);
+      result.push(WorkspaceMapper.toResponse(workspace, membership.roleName, access?.permissions ?? []));
+    }
+    return result;
   }
 
   /**
@@ -62,6 +69,7 @@ export class WorkspacesService {
     return WorkspaceMapper.toResponse(workspace, await this.roleName(access, userId), access.permissions);
   }
 
+  @Announces('workspace.updated', workspaceFromAccess)
   async update(actor: Actor, access: WorkspaceAccess, request: UpdateWorkspaceRequest): Promise<WorkspaceResponse> {
     const workspace = await this.getOrFail(access.workspaceId);
     if (request.name !== undefined) workspace.name = request.name.trim();
@@ -72,19 +80,20 @@ export class WorkspacesService {
     return WorkspaceMapper.toResponse(saved, await this.roleName(access, actor.userId), access.permissions);
   }
 
-  async remove(actor: Actor, access: WorkspaceAccess): Promise<void> {
+  /** Announced so every instance drops cached access to the workspace at once. */
+  @Announces('workspace.deleted', workspaceFromAccess)
+  async remove(actor: Actor, access: WorkspaceAccess): Promise<{ id: string }> {
     const workspace = await this.getOrFail(access.workspaceId);
     await this.unitOfWork.run(async () => {
       await this.audit(actor, 'workspace.delete', workspace);
       // Child rows go with it through ON DELETE CASCADE foreign keys.
       await this.workspaces.delete(workspace.id);
     });
+    return { id: workspace.id };
   }
 
   private async getOrFail(id: string): Promise<Workspace> {
-    const workspace = await this.workspaces.findById(id);
-    if (!workspace) throw DomainError.notFound('Workspace');
-    return workspace;
+    return found(await this.workspaces.findById(id), 'Workspace');
   }
 
   private async roleName(access: WorkspaceAccess, userId: string): Promise<string> {

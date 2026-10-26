@@ -1,0 +1,19 @@
+query Statuses($workspaceId: ID!, $spaceId: ID!) { statuses(workspaceId: $workspaceId, spaceId: $spaceId) { ...TaskStatusFields } }
+
+query WorkspaceStatuses($workspaceId: ID!) { workspaceStatuses(workspaceId: $workspaceId) { ...TaskStatusFields } }
+
+mutation CreateStatus($workspaceId: ID!, $spaceId: ID!, $input: CreateTaskStatusInput!) {
+  createStatus(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) { ...TaskStatusFields }
+}
+
+mutation UpdateStatus($workspaceId: ID!, $statusId: ID!, $input: UpdateTaskStatusInput!) {
+  updateStatus(workspaceId: $workspaceId, statusId: $statusId, input: $input) { ...TaskStatusFields }
+}
+
+mutation DeleteStatus($workspaceId: ID!, $statusId: ID!, $moveTasksTo: ID!) {
+  deleteStatus(workspaceId: $workspaceId, statusId: $statusId, moveTasksTo: $moveTasksTo)
+}
+
+mutation ReorderStatuses($workspaceId: ID!, $spaceId: ID!, $statusIds: [ID!]!) {
+  reorderStatuses(workspaceId: $workspaceId, spaceId: $spaceId, statusIds: $statusIds) { ...TaskStatusFields }
+}

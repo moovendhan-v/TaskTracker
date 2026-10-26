@@ -1,5 +1,6 @@
 import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { ArrayMaxSize, ArrayUnique, IsArray, IsIn, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { AttachedPolicyGql, PolicyDocumentGql } from './policy.types.js';
+import { ArrayMaxSize, ArrayUnique, IsArray, IsIn, IsString, MaxLength } from 'class-validator';
 import {
   PERMISSIONS,
   ROLE_NAME_MAX,
@@ -8,21 +9,27 @@ import {
   type RoleResponse,
   type UpdateRoleRequest,
 } from '@taskflow/shared-types';
-import { IsOmittable } from '../../../../core/graphql/validation.js';
+import { IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
+import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('Role')
 export class RoleGql implements RoleResponse {
   @Field(() => ID) id: string;
   @Field() name: string;
   @Field(() => String, { nullable: true, description: 'Set for built-in roles' }) systemKey: string | null;
-  @Field(() => [String]) permissions: Permission[];
+  @Field(() => [String], { description: 'Permissions granted directly on the role' }) permissions: Permission[];
+  @Field(() => PolicyDocumentGql, { description: 'Statements that belong to this role only' }) inlinePolicy: PolicyDocumentGql;
+  @Field(() => [AttachedPolicyGql]) policies: AttachedPolicyGql[];
+  @Field(() => [String], { description: 'What members with this role can do after every policy and deny' }) effectivePermissions: Permission[];
+  @Field(() => [String], { description: 'Protected fields members with this role can read' }) readableFields: string[];
 }
 
+@FormSchema('role.create')
 @InputType()
 export class CreateRoleInput implements CreateRoleRequest {
   @Field()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(ROLE_NAME_MAX)
   name: string;
 
@@ -34,12 +41,13 @@ export class CreateRoleInput implements CreateRoleRequest {
   permissions: Permission[];
 }
 
+@FormSchema('role.update')
 @InputType()
 export class UpdateRoleInput implements UpdateRoleRequest {
   @Field({ nullable: true })
   @IsOmittable()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(ROLE_NAME_MAX)
   name?: string;
 

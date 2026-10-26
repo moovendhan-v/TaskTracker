@@ -4,7 +4,7 @@ import type { GqlContextType } from '@nestjs/graphql';
 import { from, lastValueFrom, type Observable } from 'rxjs';
 import type { DataScope } from '../database/data-scope.js';
 import { TransactionalManager } from '../database/transactional-manager.js';
-import { getRequest, isSubscription } from '../http/request-context.js';
+import { getRequest, isSubscription, isWriteOperation } from '../http/request-context.js';
 import type { AuthenticatedRequest } from '../http/types/authenticated-request.js';
 import { REQUIRES_PLATFORM_ADMIN_KEY } from './require-platform-admin.decorator.js';
 
@@ -42,6 +42,10 @@ export class DataScopeInterceptor implements NestInterceptor {
     const scope = resolveDataScope(getRequest(context), requiresPlatformAdmin);
     if (!scope) return next.handle();
 
-    return from(this.transactional.runInScope(scope, () => lastValueFrom(next.handle(), { defaultValue: undefined })));
+    return from(
+      this.transactional.runInScope(scope, () => lastValueFrom(next.handle(), { defaultValue: undefined }), {
+        readOnly: !isWriteOperation(context),
+      }),
+    );
   }
 }

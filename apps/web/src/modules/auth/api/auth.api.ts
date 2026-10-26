@@ -1,12 +1,23 @@
 import { authClient, captchaHeaders } from '@/core/auth/auth-client';
 
 interface AuthResult {
-  error: { message?: string | undefined } | null;
+  error: { message?: string | undefined; fields?: unknown } | null;
 }
 
-/** Turns Better Auth's `{ error }` result into a thrown Error, so callers can use mutations. */
+/** A Better Auth failure; `fields` holds per-field validation messages when the API sent them. */
+export class AuthRequestError extends Error {
+  constructor(
+    message: string,
+    readonly fields: unknown,
+  ) {
+    super(message);
+    this.name = 'AuthRequestError';
+  }
+}
+
+/** Turns Better Auth's `{ error }` result into a thrown error, so callers can use mutations. */
 function throwOnError<T extends AuthResult>(result: T): T {
-  if (result.error) throw new Error(result.error.message || 'Request failed');
+  if (result.error) throw new AuthRequestError(result.error.message || 'Request failed', result.error.fields);
   return result;
 }
 

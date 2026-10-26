@@ -3,6 +3,7 @@ postgres_password     = ""
 app_db_owner_password = ""
 app_db_password       = ""
 better_auth_secret    = ""
+redis_password        = ""
 
 # Optional
 # public_url           = "http://localhost:8080"

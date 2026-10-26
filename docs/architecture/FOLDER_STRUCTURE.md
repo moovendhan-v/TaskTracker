@@ -109,6 +109,7 @@ Core code knows nothing about tasks, sprints or HR. Feature modules depend on co
 src/core/
 ├── domain/
 │   ├── domain-error.ts               DomainError (not_found | forbidden | invalid | conflict); no HTTP details
+│   ├── found.ts                      found(value, 'Space'): the value or NOT_FOUND
 │   └── page-request.ts               PageRequest and toPageRequest() for repository ports
 ├── time/
 │   ├── clock.port.ts                 abstract class Clock; SystemClock and FixedClock (tests)
@@ -129,12 +130,14 @@ src/core/
 │   ├── workspace-access.guard.ts     checks membership and permissions for operations with a workspaceId argument
 │   ├── platform-admin.guard.ts       SUPER_ADMIN-only operations; everyone else gets NOT_FOUND
 │   ├── data-scope.interceptor.ts     runs each operation in one transaction with its row-level security scope
+│   ├── sensitive-field.decorator.ts  @SensitiveField('member.email', ...): null unless the caller's policies allow it
 │   ├── require-platform-admin.decorator.ts
 │   ├── require-permissions.decorator.ts
 │   └── current-access.decorator.ts
 ├── audit/
 │   ├── audit.module.ts
 │   ├── audit-logger.port.ts          abstract class AuditLogger { record(actor, entry) }
+│   ├── audited.decorator.ts          @Audited('space.update', { metadata }): writes the entry in the same transaction
 │   ├── typeorm-audit-logger.ts       adapter writing to audit_log
 │   └── audit-log.orm-entity.ts
 ├── database/
@@ -153,10 +156,38 @@ src/core/
 │   └── migrations/
 │       ├── index.ts                  ordered list of migrations
 │       └── <timestamp>-<name>.ts     one file per migration, never edited after merge
+├── cache/                            ✅ shared cache (Redis, in-memory fallback)
+│   ├── cache-store.port.ts           abstract class CacheStore { get, set(ttl, tags), invalidateTags }; failures count as a miss
+│   ├── redis.cache-store.ts          ioredis adapter: tag sets, one Lua script per invalidation, 250 ms command timeout
+│   ├── memory.cache-store.ts         per-instance adapter for development and tests (bounded)
+│   ├── cache-keys.ts                 tf:v1 prefix, workspace/user scoped keys, hashed arguments
+│   ├── cached.decorator.ts           @Cached({ entities, shared?, ttlSeconds? }) for read methods; mutations always bypass it
+│   ├── cache-invalidator.ts          drops tags on every domain event, in the transaction and again after commit on every instance
+│   └── cache.module.ts
+├── forms/                            ✅ validation rules published to clients
+│   ├── form-field.decorators.ts      IsOmittable, IsClearable, IsNullable, IsNotBlank, IsCalendarDate, OnOrAfter, WithinDaysOf, SameAs, Label
+│   ├── describe-rules.ts             class-validator metadata → rules with readable messages; per-field errors
+│   ├── form-schema.decorators.ts     @FormSchema('task.create') registry and schema builder
+│   └── field-validation.exception.ts BAD_USER_INPUT with extensions.fields
+├── query/                            ✅ filter language for list endpoints
+│   ├── query-resource.decorators.ts  @QueryResource and @QueryField: fields, SQL columns, operators, sorting, paging, permissions
+│   ├── normalize-query.ts            checks a client query against a resource (fields, operators, values, @me, limits)
+│   ├── compile-query.ts              filter tree → SQL with bound parameters only; ORDER BY with an id tie-breaker
+│   ├── apply-resource-query.ts       adds filter, search, sort and paging to a TypeORM query builder
+│   ├── evaluate-query.ts             the same semantics in memory, for test repositories
+│   ├── resource-query.decorator.ts   @ResourceQueryArg() and @ValidatedQuery('tasks') for resolvers
+│   ├── resource-schema.ts            the client-facing description of a resource, per caller
+│   ├── enum-options.registry.ts      workspace-specific enum options (roles, custom statuses)
+│   └── query.module.ts
+├── runtime/                          ✅ support for method decorators
+│   ├── decorator-runtime.ts          lets decorators look up Nest providers at call time
+│   ├── method-decorator.ts           wrapMethod(): wraps an async method and keeps `this`
+│   └── change-target.ts              actor (first argument) and changed entity (result) for @Audited/@Announces
 ├── events/                           ✅ domain events inside one process
 │   ├── domain-event.ts               { type, workspaceId, actorId, entityType, entityId, subject? }; ids only, no data
 │   ├── event-bus.port.ts             abstract class EventBus { publish(event) }; handlers register themselves
 │   ├── in-process-event-bus.ts       runs handlers in order inside the caller's transaction
+│   ├── announces.decorator.ts        @Announces('space.updated'): publishes the event after the method succeeds
 │   └── events.module.ts
 ├── realtime/                         ✅ fan-out of events to every API instance (Postgres LISTEN/NOTIFY)
 │   ├── realtime-event.ts             what goes on the wire, and its parser (untrusted input)
@@ -263,17 +294,22 @@ src/modules/
 │   ├── infrastructure/typeorm-workspace.repository.ts
 │   └── presentation/graphql/{workspaces.resolver.ts,workspace.types.ts}
 │
-├── roles/                                        ✅
+├── roles/                                        ✅ roles and IAM policies
 │   ├── roles.module.ts
-│   ├── domain/workspace-role.ts
+│   ├── domain/workspace-role.ts                  direct permissions + inline policy
 │   ├── domain/workspace-role.repository.ts
-│   ├── domain/system-roles.ts                    built-in roles seeded per workspace
-│   ├── domain/role-grant.policy.ts               no granting permissions you don't hold; owner-only permission
-│   ├── application/roles.service.ts
+│   ├── domain/system-roles.ts                    built-in roles seeded per workspace (rights from managed policies)
+│   ├── domain/role-grant.policy.ts               no granting permissions or fields you don't hold; owner-only permission
+│   ├── domain/policy.ts                          custom policies, attachments, PolicyRef, effective access of a role
+│   ├── domain/policy-document.policy.ts          validates documents; no granting more than you have
+│   ├── domain/policy.repository.ts
+│   ├── application/roles.service.ts              roles with their policies and effective access
+│   ├── application/role-access.service.ts        effective access per role (cached; used by access checks)
+│   ├── application/policies.service.ts           custom policy CRUD, attach/detach, inline; changes stay within the actor's access
 │   ├── application/role.mapper.ts
-│   ├── infrastructure/workspace-role.orm-entity.ts
-│   ├── infrastructure/typeorm-workspace-role.repository.ts
-│   └── presentation/graphql/{roles.resolver.ts,role.types.ts}
+│   ├── infrastructure/{workspace-role,policy,role-policy}.orm-entity.ts
+│   ├── infrastructure/typeorm-{workspace-role,policy}.repository.ts
+│   └── presentation/graphql/{roles.resolver.ts,role.types.ts,policies.resolver.ts,policy.types.ts}
 │
 ├── members/                                      ✅
 │   ├── members.module.ts
@@ -293,15 +329,41 @@ src/modules/
 ├── tasks/                                        ✅
 │   ├── tasks.module.ts
 │   ├── domain/task.ts
-│   ├── domain/task.repository.ts                 findInWorkspace, pageInList, nextPosition, save, delete
+│   ├── domain/task.repository.ts                 findInWorkspace, nextNumber, nextPosition, backlogInSpace, save, delete
+│   ├── domain/task-extras.repository.ts          watchers, relations, activity ports
+│   ├── domain/task-changes.ts                    describeChanges: field-level activity entries
 │   ├── domain/task-assignment.policy.ts          needs task.assign; assignee must be a member
 │   ├── domain/task-planning.policy.ts            sprint changes need sprint.manage and the same space
+│   ├── domain/task-structure.policy.ts           subtasks: same list, max depth, no cycles
 │   ├── application/tasks.service.ts
 │   ├── application/task.mapper.ts
 │   ├── infrastructure/task.orm-entity.ts
 │   ├── infrastructure/typeorm-task.repository.ts
-│   ├── testing/in-memory-task.repository.ts
+│   ├── infrastructure/task-extras.orm-entities.ts + typeorm-task-extras.repositories.ts
+│   ├── infrastructure/task.query-resource.ts     filterable/sortable fields incl. statusCategory, metadata, custom.<key>
+│   ├── testing/in-memory-task.repository.ts      plus watcher, relation and activity fakes
 │   └── presentation/graphql/{tasks.resolver.ts,task.types.ts}
+│
+├── statuses/                                     ✅  per-space task statuses with categories; seeded on space.created
+│   ├── domain/{task-status.ts,task-status.repository.ts}
+│   ├── application/statuses.service.ts           create, update, reorder, delete (moves tasks to another status)
+│   └── infrastructure/, presentation/graphql/
+│
+├── custom-fields/                                ✅  per-space field definitions for tasks and spaces
+│   ├── domain/{custom-field.ts,custom-field-values.ts,custom-field.repository.ts}   values checked against the definitions
+│   ├── application/custom-fields.service.ts      also registers custom.<key> as query fields
+│   └── infrastructure/, presentation/graphql/
+│
+├── time-tracking/                                ✅  timers, logged time, daily log; own entries unless time.view_all / time.manage
+│   ├── domain/{time-entry.ts,time-entry.policy.ts,time-entry.repository.ts}
+│   ├── application/time-tracking.service.ts
+│   └── infrastructure/, presentation/graphql/
+│
+├── analytics/                                    ✅  read-only dashboards; SQL aggregates with bound parameters only
+│   ├── domain/analytics.repository.ts            port: counts, breakdowns, hours, workload, lists
+│   ├── application/analytics.service.ts          scopes hours to the caller without time.view_all; cached
+│   ├── infrastructure/sql-analytics.repository.ts
+│   └── presentation/graphql/
 │
 ├── comments/                                     ✅
 │   ├── domain/{comment.ts,comment.repository.ts}
@@ -378,6 +440,14 @@ src/modules/
 │   │                                             and membership every 30 s and ends the stream when either is gone
 │   └── presentation/graphql/{workspace-events.resolver.ts,workspace-event.types.ts}
 │
+├── forms/                                        ✅ public formSchemas query (rules only, no data)
+│
+├── preferences/                                  ✅ personal settings, table layouts, saved views, tabs (own row only, RLS)
+│
+├── resources/                                    ✅ resourceSchema and resourceNames queries
+│   ├── application/resource-schema.service.ts    unknown and forbidden resources both answer NOT_FOUND
+│   └── presentation/graphql/resource-schema.resolver.ts
+│
 ├── audit-log/                                    ✅ read side of the audit log
 │   ├── domain/{audit-entry.ts,audit-log.repository.ts}
 │   ├── application/{audit-log.service.ts,audit-log.mapper.ts}   workspace view drops IPs
@@ -449,6 +519,14 @@ src/core/
 │   ├── session.ts                    hasSession() for route guards
 │   ├── use-current-user.ts           query me
 │   └── turnstile-widget.tsx          CAPTCHA widget for public forms (off when no site key)
+├── forms/
+│   ├── use-form-schema.ts            all form rules, loaded once
+│   ├── schema-resolver.ts            react-hook-form resolver from the API's rules (shared validateForm)
+│   └── use-server-form.ts            useServerForm(name): resolver, server field errors, input hints
+├── preferences/
+│   ├── appearance.ts                 applies theme, accent and density to <html>; first-paint snapshot
+│   ├── use-preferences.ts            server preferences with optimistic updates
+│   └── preferences-effects.tsx       keeps <html> in sync with the signed-in user's choices
 ├── realtime/
 │   ├── use-workspace-events.ts       subscribes while a workspace is open and refreshes the affected queries
 │   ├── invalidations.ts              entity type → query keys to refresh
@@ -462,21 +540,21 @@ src/components/
 │   ├── dialog.tsx  sheet.tsx  dropdown-menu.tsx  popover.tsx  tooltip.tsx
 │   ├── badge.tsx  avatar.tsx  card.tsx  separator.tsx  skeleton.tsx  tabs.tsx
 │   ├── table.tsx  calendar.tsx  sonner.tsx
-│   └── form.tsx                      react-hook-form + zod bindings
+│   └── form-field.tsx                label, control and error, wired for screen readers
 ├── common/                           built from ui/, still feature-agnostic
-│   ├── page-header.tsx
-│   ├── empty-state.tsx
-│   ├── confirm-dialog.tsx
-│   ├── data-table.tsx                TanStack Table wrapper with paging
-│   ├── color-picker.tsx
-│   ├── user-avatar.tsx
-│   ├── date-picker.tsx
-│   └── error-boundary.tsx
+│   ├── page-header.tsx  empty-state.tsx  error-state.tsx  confirm-dialog.tsx
+│   ├── name-dialog.tsx               "name this thing" dialog checked by an API form schema
+│   └── user-avatar.tsx  color-picker.tsx  logo.tsx
+├── kit/                              configurable building blocks used across features
+│   ├── data-table.tsx                sort (multi), select, page, show/hide, reorder and resize columns; layout comes in and goes out
+│   ├── modal.tsx                     sizes, eyebrow, header actions, footer, optional side column
+│   ├── section.tsx                   collapsible block (accordion item), controlled or remembered per browser
+│   ├── segmented.tsx  panel.tsx  stat-card.tsx  status-pill.tsx
+│   ├── charts.tsx                    columns, grouped columns, stacked bar, bar list, meter (no chart library)
+│   └── notify.ts                     toast presets: success, info, error, undoable, promise
 └── layout/
-    ├── app-shell.tsx                 sidebar + topbar + <Outlet/>
-    ├── sidebar.tsx                   composes the workspace switcher and nav sections
-    ├── sidebar-section.tsx
-    └── topbar.tsx
+    ├── sidebar-link.tsx
+    └── sidebar-section.tsx
 
 src/lib/
 ├── cn.ts                             clsx + tailwind-merge
@@ -511,13 +589,20 @@ src/modules/
 ├── workspaces/      pages/{workspace-home,workspace-settings}.page.tsx, components/{workspace-switcher,create-workspace-dialog}.tsx
 ├── members/         pages/members.page.tsx, components/{member-table,add-member-dialog,role-select}.tsx
 ├── roles/           pages/roles.page.tsx, components/{role-list,role-editor,permission-matrix}.tsx
-├── spaces/          components/{space-tree,space-tree-item,create-space-dialog}.tsx
-├── lists/           pages/list.page.tsx, components/{list-header,view-switcher}.tsx
+├── spaces/          components/space-tree.tsx (projects with live counts and quick links), hooks/use-spaces.ts (incl. custom field definitions)
+├── lists/           hooks/use-lists.ts, api/lists.api.ts
 ├── tasks/           components/
-│                      list-view/{task-list-view,task-group,task-row}.tsx
+│                      views/{list-view,bulk-bar,calendar-view,timeline-view,planner-view}.tsx
 │                      board-view/{task-board-view,board-column,task-card}.tsx
-│                      detail/{task-detail-sheet,task-fields,task-description}.tsx
-│                      shared/{status-badge,priority-flag,assignee-picker,due-date-picker,quick-add-task}.tsx
+│                      detail/task-detail.tsx            modal or side panel (preference), subtasks, relations, history
+│                      shared/{status-picker,priority-picker,assignee-picker,due-date,task-dates,type-badge,quick-add-task}.tsx
+│                      {command-search,new-task-dialog}.tsx
+│                    hooks/{use-tasks,use-task-mutations,use-open-task}.ts, lib/{group-tasks,task-meta,export-tasks}.ts
+├── projects/        pages/{project,my-tasks}.page.tsx: one page per project with ten views and a shared toolbar
+│                    components/{project-tabs,saved-views-menu,task-table-view}.tsx, store/project-view.store.ts
+├── resources/       components/{resource-table,filter-builder}.tsx: tables and filters built from `resourceSchema`
+├── dashboard/       pages/home.page.tsx, components/{project-dashboard,dashboard-panels,projects-table,dashboard-filters}.tsx
+├── time/            pages/{timesheets,daily-log}.page.tsx, components/{log-time-dialog,task-time-controls,timer-indicator,time-report}.tsx
 ├── comments/        components/{comment-thread,comment-composer}.tsx
 ├── sprints/         pages/{sprints,sprint-board}.page.tsx, components/{sprint-card,backlog-panel,start-sprint-dialog,complete-sprint-dialog}.tsx
 ├── documents/       pages/document.page.tsx, components/{doc-tree,doc-editor,markdown-preview}.tsx

@@ -1,19 +1,28 @@
 import { PlusIcon } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { TASK_TITLE_MAX, type TaskStatus } from '@taskflow/shared-types';
+import { TASK_TITLE_MAX, type CreateTaskRequest } from '@taskflow/shared-types';
 import { cn } from '@/lib/cn';
 import { useTaskMutations } from '../../hooks/use-task-mutations';
 
 interface QuickAddTaskProps {
   workspaceId: string;
   listId: string;
-  status: TaskStatus;
+  /** Status for new tasks; the space's first status when left out. */
+  statusId?: string;
+  /** Other fields new tasks start with, e.g. the group's priority or assignee. */
+  defaults?: Partial<CreateTaskRequest>;
+  startOpen?: boolean;
+  onClose?: () => void;
   className?: string;
 }
 
 /** Inline "add a task" row. Enter saves and keeps the field open for the next one. */
-export function QuickAddTask({ workspaceId, listId, status, className }: QuickAddTaskProps) {
-  const [editing, setEditing] = useState(false);
+export function QuickAddTask({ workspaceId, listId, statusId, defaults, startOpen = false, onClose, className }: QuickAddTaskProps) {
+  const [editing, setOpen] = useState(startOpen);
+  const setEditing = (open: boolean) => {
+    setOpen(open);
+    if (!open) onClose?.();
+  };
   const [title, setTitle] = useState('');
   const { create } = useTaskMutations(workspaceId);
 
@@ -21,7 +30,7 @@ export function QuickAddTask({ workspaceId, listId, status, className }: QuickAd
     event.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return setEditing(false);
-    create.mutate({ listId, body: { title: trimmed, status } }, { onSuccess: () => setTitle('') });
+    create.mutate({ listId, body: { ...defaults, title: trimmed, ...(statusId && { statusId }) } }, { onSuccess: () => setTitle('') });
   }
 
   if (!editing) {
@@ -45,7 +54,7 @@ export function QuickAddTask({ workspaceId, listId, status, className }: QuickAd
         onChange={(event) => setTitle(event.target.value)}
         onBlur={() => !title.trim() && setEditing(false)}
         onKeyDown={(event) => event.key === 'Escape' && setEditing(false)}
-        placeholder="Task name, then Enter"
+        placeholder="Task name — Enter to save, Esc to cancel"
         aria-label="New task name"
         className="h-9 w-full rounded-md border border-primary/50 bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
         disabled={create.isPending}

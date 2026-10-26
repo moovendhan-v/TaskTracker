@@ -8,6 +8,11 @@ export const SpaceMapper = {
       workspaceId: space.workspaceId,
       name: space.name,
       color: space.color,
+      status: space.status,
+      statusNote: space.statusNote,
+      startDate: space.startDate,
+      dueDate: space.dueDate,
+      customFields: space.customFields ?? {},
       createdAt: space.createdAt.toISOString(),
     };
   },

@@ -1,0 +1,15 @@
+query CustomFields($workspaceId: ID!, $entity: CustomFieldEntity) { customFields(workspaceId: $workspaceId, entity: $entity) { ...CustomFieldFields } }
+
+mutation CreateCustomField($workspaceId: ID!, $input: CreateCustomFieldInput!) {
+  createCustomField(workspaceId: $workspaceId, input: $input) { ...CustomFieldFields }
+}
+
+mutation UpdateCustomField($workspaceId: ID!, $fieldId: ID!, $input: UpdateCustomFieldInput!) {
+  updateCustomField(workspaceId: $workspaceId, fieldId: $fieldId, input: $input) { ...CustomFieldFields }
+}
+
+mutation DeleteCustomField($workspaceId: ID!, $fieldId: ID!) { deleteCustomField(workspaceId: $workspaceId, fieldId: $fieldId) }
+
+mutation SetSpaceCustomFields($workspaceId: ID!, $spaceId: ID!, $values: CustomFieldValues!) {
+  setSpaceCustomFields(workspaceId: $workspaceId, spaceId: $spaceId, values: $values) { ...SpaceFields }
+}

@@ -1,5 +1,5 @@
 import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { IsNotEmpty, IsString, Matches, MaxLength } from 'class-validator';
+import { IsString, Matches, MaxLength } from 'class-validator';
 import {
   COLOR_PATTERN,
   NAME_MAX,
@@ -8,7 +8,8 @@ import {
   type UpdateWorkspaceRequest,
   type WorkspaceResponse,
 } from '@taskflow/shared-types';
-import { IsOmittable } from '../../../../core/graphql/validation.js';
+import { IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
+import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('Workspace')
 export class WorkspaceGql implements WorkspaceResponse {
@@ -20,11 +21,12 @@ export class WorkspaceGql implements WorkspaceResponse {
   @Field() createdAt: string;
 }
 
+@FormSchema('workspace.create')
 @InputType()
 export class CreateWorkspaceInput implements CreateWorkspaceRequest {
   @Field()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(NAME_MAX)
   name: string;
 
@@ -34,12 +36,13 @@ export class CreateWorkspaceInput implements CreateWorkspaceRequest {
   color?: string;
 }
 
+@FormSchema('workspace.update')
 @InputType()
 export class UpdateWorkspaceInput implements UpdateWorkspaceRequest {
   @Field({ nullable: true })
   @IsOmittable()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(NAME_MAX)
   name?: string;
 

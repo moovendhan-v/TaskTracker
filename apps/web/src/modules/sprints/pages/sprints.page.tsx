@@ -1,11 +1,10 @@
-import { useNavigate } from '@tanstack/react-router';
 import { CalendarRangeIcon, PlusIcon } from 'lucide-react';
 import { ErrorState } from '@/components/common/error-state';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { PageHeader } from '@/components/common/page-header';
 import { Button } from '@/components/ui/button';
 import { useSpaces } from '@/modules/spaces';
-import { TaskDetailSheet } from '@/modules/tasks';
+import { useOpenTask } from '@/modules/tasks';
 import { usePermissions } from '@/modules/workspaces';
 import { BacklogPanel } from '../components/backlog-panel';
 import { SprintCard } from '../components/sprint-card';
@@ -15,11 +14,9 @@ import { useSprintMutations, useSprints } from '../hooks/use-sprints';
 interface SprintsPageProps {
   workspaceId: string;
   spaceId: string;
-  openTaskId: string | undefined;
 }
 
-export function SprintsPage({ workspaceId, spaceId, openTaskId }: SprintsPageProps) {
-  const navigate = useNavigate();
+export function SprintsPage({ workspaceId, spaceId }: SprintsPageProps) {
   const { data: spaces = [] } = useSpaces(workspaceId);
   const sprints = useSprints(workspaceId, spaceId);
   const mutations = useSprintMutations(workspaceId, spaceId);
@@ -31,8 +28,7 @@ export function SprintsPage({ workspaceId, spaceId, openTaskId }: SprintsPagePro
   const active = all.filter((sprint) => sprint.status === 'active');
   const planned = all.filter((sprint) => sprint.status === 'planned');
   const completed = all.filter((sprint) => sprint.status === 'completed');
-  const openTask = (taskId: string | undefined) =>
-    void navigate({ to: '/w/$workspaceId/s/$spaceId/sprints', params: { workspaceId, spaceId }, search: { task: taskId } });
+  const openTask = useOpenTask();
 
   const cardFor = (sprint: (typeof all)[number]) => (
     <SprintCard
@@ -57,6 +53,7 @@ export function SprintsPage({ workspaceId, spaceId, openTaskId }: SprintsPagePro
         actions={
           canManage ? (
             <SprintFormDialog
+              formName="sprint.create"
               trigger={
                 <Button size="sm">
                   <PlusIcon /> New sprint
@@ -88,7 +85,6 @@ export function SprintsPage({ workspaceId, spaceId, openTaskId }: SprintsPagePro
           onOpenTask={openTask}
         />
       </div>
-      <TaskDetailSheet workspaceId={workspaceId} taskId={openTaskId} onClose={() => openTask(undefined)} />
     </div>
   );
 }

@@ -23,6 +23,19 @@ export class GraphQLRequestError extends Error {
     this.name = 'GraphQLRequestError';
   }
 
+  /**
+   * Per-field validation messages from a BAD_USER_INPUT error (`extensions.fields`),
+   * so forms can show each one next to its input. Empty for other errors.
+   */
+  get fieldErrors(): { field: string; message: string }[] {
+    const fields = this.errors[0]?.extensions?.['fields'];
+    if (!Array.isArray(fields)) return [];
+    return fields.filter(
+      (item): item is { field: string; message: string } =>
+        !!item && typeof item === 'object' && typeof (item as { field?: unknown }).field === 'string' && typeof (item as { message?: unknown }).message === 'string',
+    );
+  }
+
   /** The `extensions.code` of the first error, e.g. FORBIDDEN, NOT_FOUND or BAD_USER_INPUT. */
   get code(): string | undefined {
     const code = this.errors[0]?.extensions?.['code'];

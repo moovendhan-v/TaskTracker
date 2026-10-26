@@ -35,6 +35,8 @@ const envSchema = z.object({
   SMTP_URL: optionalString(z.string().url().refine((url) => /^smtps?:\/\//.test(url), 'SMTP_URL must start with smtp:// or smtps://')),
   /** Sender address, e.g. "TaskFlow <no-reply@example.com>" */
   MAIL_FROM: optionalString(z.string().trim().min(3).max(200)),
+  /** Shared cache, e.g. redis://:password@redis:6379/0. Without it each instance caches in memory. */
+  REDIS_URL: optionalString(z.string().url().refine((url) => /^rediss?:\/\//.test(url), 'REDIS_URL must start with redis:// or rediss://')),
 })
   // Public forms need a CAPTCHA in production (AGENTS.md rule 11), so a missing secret fails startup.
   .refine((env) => env.NODE_ENV !== 'production' || env.TURNSTILE_SECRET_KEY !== undefined, {
@@ -45,6 +47,11 @@ const envSchema = z.object({
   .refine((env) => env.NODE_ENV !== 'production' || (env.SMTP_URL !== undefined && env.MAIL_FROM !== undefined), {
     path: ['SMTP_URL'],
     message: 'SMTP_URL and MAIL_FROM are required when NODE_ENV=production',
+  })
+  // Several API instances must share one cache, or one instance keeps serving what another changed.
+  .refine((env) => env.NODE_ENV !== 'production' || env.REDIS_URL !== undefined, {
+    path: ['REDIS_URL'],
+    message: 'REDIS_URL is required when NODE_ENV=production',
   });
 
 export type Env = z.infer<typeof envSchema>;

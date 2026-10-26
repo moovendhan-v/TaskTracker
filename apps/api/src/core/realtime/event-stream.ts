@@ -29,6 +29,12 @@ export class EventStream {
     }
   }
 
+  /** Calls `listener` for every event on this instance (cache invalidation). Returns a function that stops it. */
+  listen(listener: Listener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
   subscribe(accept: (event: RealtimeEvent) => boolean): AsyncIterableIterator<RealtimeEvent> {
     const queue: RealtimeEvent[] = [];
     let waiting: ((result: IteratorResult<RealtimeEvent>) => void) | null = null;

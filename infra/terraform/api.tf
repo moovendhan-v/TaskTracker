@@ -13,6 +13,7 @@ locals {
     "TURNSTILE_SECRET_KEY=${var.turnstile_secret_key}",
     "SMTP_URL=${var.smtp_url}",
     "MAIL_FROM=${var.mail_from}",
+    "REDIS_URL=redis://:${urlencode(var.redis_password)}@redis:6379/0",
   ]
 }
 
@@ -77,5 +78,5 @@ resource "docker_container" "api" {
     aliases = ["api"]
   }
 
-  depends_on = [docker_container.migrate, docker_container.mailpit]
+  depends_on = [docker_container.migrate, docker_container.mailpit, docker_container.redis]
 }

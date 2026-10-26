@@ -1,10 +1,10 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { ArrowLeftIcon, KanbanIcon } from 'lucide-react';
 import { ErrorState } from '@/components/common/error-state';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { PageHeader } from '@/components/common/page-header';
 import { Button } from '@/components/ui/button';
-import { TaskBoardView, TaskDetailSheet } from '@/modules/tasks';
+import { TaskBoardView, useOpenTask } from '@/modules/tasks';
 import { SprintProgress } from '../components/sprint-progress';
 import { useSprint, useSprintTasks } from '../hooks/use-sprints';
 import { formatSprintRange } from '../lib/sprint-dates';
@@ -12,15 +12,12 @@ import { formatSprintRange } from '../lib/sprint-dates';
 interface SprintBoardPageProps {
   workspaceId: string;
   sprintId: string;
-  openTaskId: string | undefined;
 }
 
-export function SprintBoardPage({ workspaceId, sprintId, openTaskId }: SprintBoardPageProps) {
-  const navigate = useNavigate();
+export function SprintBoardPage({ workspaceId, sprintId }: SprintBoardPageProps) {
   const sprint = useSprint(workspaceId, sprintId);
   const tasks = useSprintTasks(workspaceId, sprintId);
-  const openTask = (taskId: string | undefined) =>
-    void navigate({ to: '/w/$workspaceId/sprints/$sprintId', params: { workspaceId, sprintId }, search: { task: taskId } });
+  const openTask = useOpenTask();
 
   if (sprint.isLoading) return <FullPageSpinner />;
   if (sprint.isError || !sprint.data) return <ErrorState error={sprint.error} />;
@@ -47,9 +44,8 @@ export function SprintBoardPage({ workspaceId, sprintId, openTaskId }: SprintBoa
       />
       <div className="min-h-0 flex-1 overflow-auto p-6">
         {tasks.isLoading ? <FullPageSpinner /> : null}
-        {tasks.data ? <TaskBoardView workspaceId={workspaceId} tasks={tasks.data} onOpen={openTask} /> : null}
+        {tasks.data ? <TaskBoardView workspaceId={workspaceId} spaceId={data.spaceId} tasks={tasks.data} onOpen={openTask} /> : null}
       </div>
-      <TaskDetailSheet workspaceId={workspaceId} taskId={openTaskId} onClose={() => openTask(undefined)} />
     </div>
   );
 }

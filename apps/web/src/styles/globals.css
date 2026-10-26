@@ -44,29 +44,49 @@
   --priority-high: oklch(0.68 0.17 50);
   --priority-normal: oklch(0.62 0.12 230);
   --priority-low: oklch(0.65 0.03 257);
+
+  /* Icon rail and chart roles (categorical slots 1 and 2 of the validated chart palette). */
+  --rail: oklch(0.17 0.02 250);
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-grid: oklch(0.92 0.006 250);
+  --good: oklch(0.55 0.14 155);
+  --warning: oklch(0.65 0.15 70);
+  --critical: oklch(0.57 0.21 27);
 }
 
 .dark {
-  --background: oklch(0.18 0.02 250);
-  --foreground: oklch(0.93 0.01 250);
-  --card: oklch(0.22 0.022 250);
+  /* Near-neutral charcoal, so status and project colours carry the colour. */
+  --background: oklch(0.165 0.004 285);
+  --foreground: oklch(0.94 0.004 285);
+  --card: oklch(0.2 0.005 285);
   --card-foreground: var(--foreground);
-  --popover: oklch(0.23 0.022 250);
+  --popover: oklch(0.22 0.006 285);
   --popover-foreground: var(--foreground);
   --primary: oklch(0.7 0.11 186);
   --primary-foreground: oklch(0.18 0.03 186);
-  --secondary: oklch(0.27 0.02 250);
-  --secondary-foreground: oklch(0.9 0.01 250);
-  --muted: oklch(0.26 0.02 250);
-  --muted-foreground: oklch(0.7 0.02 250);
-  --accent: oklch(0.3 0.04 186);
-  --accent-foreground: oklch(0.92 0.03 186);
-  --border: oklch(0.31 0.02 250);
-  --input: oklch(0.34 0.02 250);
+  --secondary: oklch(0.25 0.006 285);
+  --secondary-foreground: oklch(0.9 0.005 285);
+  --muted: oklch(0.24 0.006 285);
+  --muted-foreground: oklch(0.68 0.01 285);
+  --accent: oklch(0.27 0.02 285);
+  --accent-foreground: oklch(0.94 0.01 285);
+  --border: oklch(0.28 0.006 285);
+  --input: oklch(0.31 0.008 285);
   --ring: oklch(0.7 0.11 186);
-  --sidebar: oklch(0.15 0.02 235);
-  --sidebar-accent: oklch(0.24 0.03 230);
-  --sidebar-border: oklch(0.25 0.025 230);
+  --sidebar: oklch(0.185 0.005 285);
+  --sidebar-foreground: oklch(0.9 0.005 285);
+  --sidebar-muted: oklch(0.64 0.01 285);
+  --sidebar-accent: oklch(0.26 0.012 285);
+  --sidebar-border: oklch(0.27 0.006 285);
+  --rail: oklch(0.13 0.004 285);
+
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-grid: oklch(0.3 0.006 285);
+  --good: oklch(0.72 0.15 155);
+  --warning: oklch(0.82 0.15 85);
+  --critical: oklch(0.68 0.19 25);
 }
 
 @theme inline {
@@ -108,6 +128,13 @@
   --color-priority-high: var(--priority-high);
   --color-priority-normal: var(--priority-normal);
   --color-priority-low: var(--priority-low);
+  --color-rail: var(--rail);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-grid: var(--chart-grid);
+  --color-good: var(--good);
+  --color-warning: var(--warning);
+  --color-critical: var(--critical);
 }
 
 @layer base {
@@ -182,3 +209,28 @@
     @apply mr-2 align-middle;
   }
 }
+
+/*
+ * Accent palettes (Settings → Appearance). Each sets the primary colour and the focus ring
+ * for light and dark. The default palette above applies when no accent is set.
+ */
+:root[data-accent='violet'] { --primary: oklch(0.55 0.2 290); --primary-foreground: oklch(0.99 0.01 290); --ring: oklch(0.62 0.18 290); }
+:root[data-accent='blue'] { --primary: oklch(0.55 0.17 255); --primary-foreground: oklch(0.99 0.01 255); --ring: oklch(0.62 0.15 255); }
+:root[data-accent='teal'] { --primary: oklch(0.51 0.09 186); --primary-foreground: oklch(0.99 0.01 186); --ring: oklch(0.6 0.1 186); }
+:root[data-accent='green'] { --primary: oklch(0.55 0.14 150); --primary-foreground: oklch(0.99 0.01 150); --ring: oklch(0.62 0.13 150); }
+:root[data-accent='amber'] { --primary: oklch(0.7 0.15 75); --primary-foreground: oklch(0.22 0.04 75); --ring: oklch(0.72 0.14 75); }
+:root[data-accent='orange'] { --primary: oklch(0.62 0.18 45); --primary-foreground: oklch(0.99 0.01 45); --ring: oklch(0.66 0.16 45); }
+:root[data-accent='rose'] { --primary: oklch(0.58 0.2 15); --primary-foreground: oklch(0.99 0.01 15); --ring: oklch(0.64 0.18 15); }
+:root[data-accent='slate'] { --primary: oklch(0.42 0.03 260); --primary-foreground: oklch(0.99 0 0); --ring: oklch(0.55 0.03 260); }
+:root.dark[data-accent='violet'] { --primary: oklch(0.68 0.17 290); --primary-foreground: oklch(0.16 0.03 290); --ring: oklch(0.68 0.17 290); }
+:root.dark[data-accent='blue'] { --primary: oklch(0.68 0.15 255); --primary-foreground: oklch(0.16 0.03 255); --ring: oklch(0.68 0.15 255); }
+:root.dark[data-accent='teal'] { --primary: oklch(0.7 0.11 186); --primary-foreground: oklch(0.18 0.03 186); --ring: oklch(0.7 0.11 186); }
+:root.dark[data-accent='green'] { --primary: oklch(0.7 0.15 150); --primary-foreground: oklch(0.17 0.03 150); --ring: oklch(0.7 0.15 150); }
+:root.dark[data-accent='amber'] { --primary: oklch(0.78 0.14 75); --primary-foreground: oklch(0.2 0.04 75); --ring: oklch(0.78 0.14 75); }
+:root.dark[data-accent='orange'] { --primary: oklch(0.72 0.16 45); --primary-foreground: oklch(0.18 0.03 45); --ring: oklch(0.72 0.16 45); }
+:root.dark[data-accent='rose'] { --primary: oklch(0.7 0.17 15); --primary-foreground: oklch(0.17 0.03 15); --ring: oklch(0.7 0.17 15); }
+:root.dark[data-accent='slate'] { --primary: oklch(0.78 0.02 260); --primary-foreground: oklch(0.18 0.01 260); --ring: oklch(0.7 0.02 260); }
+
+/* Compact density tightens text and spacing everywhere a component uses the density tokens. */
+:root { --row-height: 2.5rem; --density-gap: 0.75rem; }
+:root[data-density='compact'] { --row-height: 2rem; --density-gap: 0.5rem; font-size: 15px; }

@@ -7,15 +7,52 @@ fragment WorkspaceFields on Workspace { id name color roleName permissions creat
 
 fragment MemberFields on Member { userId name email roleId roleName joinedAt }
 
-fragment RoleFields on Role { id name systemKey permissions }
+fragment RoleFields on Role {
+  id
+  name
+  systemKey
+  permissions
+  effectivePermissions
+  readableFields
+  policies { ref name managed }
+  inlinePolicy { statements { effect permissions fields } }
+}
 
-fragment SpaceFields on Space { id workspaceId name color createdAt }
+fragment SpaceFields on Space { id workspaceId name color status statusNote startDate dueDate customFields createdAt }
 
 fragment TaskListFields on TaskList { id spaceId name createdAt }
 
+fragment TaskStatusFields on TaskStatus { id spaceId name color category position }
+
 fragment TaskFields on Task {
-  id listId title description status priority dueDate assigneeId sprintId position createdAt updatedAt
+  id
+  number
+  listId
+  spaceId
+  parentId
+  type
+  title
+  description
+  statusId
+  status { ...TaskStatusFields }
+  priority
+  startDate
+  dueDate
+  assigneeId
+  sprintId
+  position
+  estimateMinutes
+  progress
+  subtaskCount
+  metadata
+  customFields
+  completedAt
+  createdById
+  createdAt
+  updatedAt
 }
+
+fragment CustomFieldFields on CustomField { id spaceId entity name type required position options { id label color } }
 
 fragment CommentFields on Comment { id taskId authorId authorName body createdAt updatedAt }
 
@@ -56,4 +93,57 @@ fragment AdminWorkspaceFields on AdminWorkspace { id name ownerId ownerName memb
 
 fragment NotificationFields on Notification {
   id kind actorId actorName entityType entityId taskId subject excerpt readAt createdAt
+}
+
+fragment ResourceSchemaFields on ResourceSchema {
+  resource
+  label
+  logic
+  searchable
+  defaultPageSize
+  maxPageSize
+  defaultSort { field direction }
+  limits { maxDepth maxConditions maxListValues maxSortFields }
+  fields { name label type operators sortable defaultVisible keyed display width options { value label color } }
+}
+
+fragment FormSchemaFields on FormSchema {
+  name
+  fields { name label type required nullable rules { kind value values field message } }
+}
+
+fragment PolicyFields on Policy {
+  id
+  name
+  description
+  managed
+  attachedRoleCount
+  document { statements { effect permissions fields } }
+}
+
+fragment PreferencesFields on Preferences {
+  theme
+  accent
+  density
+  sidebarCollapsed
+  sidebarWidth
+  defaultTaskView
+  taskDetailMode
+  dateFormat
+  timeFormat
+  weekStart
+  tables { key columns hidden widths { column width } pageSize sort { field direction } }
+  savedViews {
+    id
+    name
+    resource
+    scope
+    where
+    sort { field direction }
+    columns
+    pinned
+    color
+    filterJson
+  }
+  tabs { id path title pinned }
 }

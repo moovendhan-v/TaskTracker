@@ -7,12 +7,13 @@ import {
   type MoveDocumentRequest,
   type UpdateDocumentRequest,
 } from '@taskflow/shared-types';
-import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
-import { domainEvent } from '../../../core/events/domain-event.js';
-import { EventBus } from '../../../core/events/event-bus.port.js';
+import { Audited } from '../../../core/audit/audited.decorator.js';
+import { Cached } from '../../../core/cache/cached.decorator.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
-import { DomainError } from '../../../core/domain/domain-error.js';
+import { found } from '../../../core/domain/found.js';
+import { Announces } from '../../../core/events/announces.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
+import { workspaceFromAccess, workspaceFromArg } from '../../../core/runtime/change-target.js';
 import { SpacesService } from '../../spaces/application/spaces.service.js';
 import { ContentSanitizer } from '../domain/content-sanitizer.port.js';
 import { DOC_POSITION_STEP, type Document } from '../domain/document.js';
@@ -28,10 +29,9 @@ export class DocumentsService {
     private readonly sanitizer: ContentSanitizer,
     private readonly spacesService: SpacesService,
     private readonly unitOfWork: UnitOfWork,
-    private readonly auditLogger: AuditLogger,
-    private readonly eventBus: EventBus,
   ) {}
 
+  @Cached({ entities: ['document'], shared: true })
   async listTree(workspaceId: string, search?: string): Promise<DocumentSummaryResponse[]> {
     const documents = await this.documents.listSummaries(workspaceId, DOC_TREE_LIMIT, search?.trim() || undefined);
     return documents.map(DocumentMapper.toSummary);
@@ -41,6 +41,7 @@ export class DocumentsService {
     return DocumentMapper.toResponse(await this.getInWorkspace(workspaceId, documentId));
   }
 
+  @Announces('document.created', workspaceFromArg)
   async create(actor: Actor, workspaceId: string, request: CreateDocumentRequest): Promise<DocumentResponse> {
     const document = await this.unitOfWork.run(async () => {
       const parentId = request.parentId ?? null;
@@ -63,10 +64,10 @@ export class DocumentsService {
         updatedById: actor.userId,
       });
     });
-    await this.announce('created', actor, document);
     return DocumentMapper.toResponse(document);
   }
 
+  @Announces('document.updated', workspaceFromAccess)
   async update(actor: Actor, access: WorkspaceAccess, documentId: string, request: UpdateDocumentRequest): Promise<DocumentResponse> {
     const document = await this.getInWorkspace(access.workspaceId, documentId);
     DocumentAccessPolicy.assertCanEdit(document, actor.userId, access.permissions);
@@ -74,11 +75,10 @@ export class DocumentsService {
     if (request.title !== undefined) document.title = request.title.trim();
     if (request.content !== undefined) document.content = this.sanitizer.sanitize(request.content);
     document.updatedById = actor.userId;
-    const saved = await this.documents.save(document);
-    await this.announce('updated', actor, saved);
-    return DocumentMapper.toResponse(saved);
+    return DocumentMapper.toResponse(await this.documents.save(document));
   }
 
+  @Announces('document.updated', workspaceFromAccess)
   async move(actor: Actor, access: WorkspaceAccess, documentId: string, request: MoveDocumentRequest): Promise<DocumentResponse> {
     const moved = await this.unitOfWork.run(async () => {
       const document = await this.getInWorkspace(access.workspaceId, documentId);
@@ -99,34 +99,19 @@ export class DocumentsService {
       document.updatedById = actor.userId;
       return this.documents.save(document);
     });
-    await this.announce('updated', actor, moved);
     return DocumentMapper.toResponse(moved);
   }
 
-  async remove(actor: Actor, access: WorkspaceAccess, documentId: string): Promise<void> {
+  @Audited('document.delete', { ...workspaceFromAccess, metadata: (document: DocumentResponse) => ({ title: document.title }) })
+  @Announces('document.deleted', workspaceFromAccess)
+  async remove(actor: Actor, access: WorkspaceAccess, documentId: string): Promise<DocumentResponse> {
     const document = await this.getInWorkspace(access.workspaceId, documentId);
     DocumentAccessPolicy.assertCanEdit(document, actor.userId, access.permissions);
-    await this.unitOfWork.run(async () => {
-      await this.documents.delete(access.workspaceId, documentId);
-      await this.auditLogger.record(actor, {
-        action: 'document.delete',
-        targetType: 'document',
-        targetId: documentId,
-        workspaceId: access.workspaceId,
-        metadata: { title: document.title },
-      });
-      await this.announce('deleted', actor, document);
-    });
-  }
-
-  /** Live updates for everyone looking at this workspace's docs. */
-  private announce(change: 'created' | 'updated' | 'deleted', actor: Actor, document: Document): Promise<void> {
-    return this.eventBus.publish(domainEvent('document', change, { workspaceId: document.workspaceId, entityId: document.id, actorId: actor.userId }));
+    await this.documents.delete(access.workspaceId, documentId);
+    return DocumentMapper.toResponse(document);
   }
 
   private async getInWorkspace(workspaceId: string, documentId: string): Promise<Document> {
-    const document = await this.documents.findInWorkspace(workspaceId, documentId);
-    if (!document) throw DomainError.notFound('Page');
-    return document;
+    return found(await this.documents.findInWorkspace(workspaceId, documentId), 'Page');
   }
 }

@@ -1,7 +1,7 @@
-import { CalendarRangeIcon, ChevronRightIcon, ListIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
-import { useState } from 'react';
+import { Link, useRouterState } from '@tanstack/react-router';
+import { ChevronRightIcon, ClockIcon, LayoutDashboardIcon, ListIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, RocketIcon, TrashIcon } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import type { SpaceResponse, TaskListResponse } from '@taskflow/shared-types';
-import { ColorDot } from '@/components/common/color-dot';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { NameDialog } from '@/components/common/name-dialog';
 import { SidebarLink } from '@/components/layout/sidebar-link';
@@ -17,8 +17,24 @@ import { useSpaceMutations, useSpaces } from '../hooks/use-spaces';
 const iconButton =
   'rounded p-0.5 text-sidebar-muted opacity-0 transition hover:bg-sidebar-border hover:text-sidebar-foreground group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100';
 
-/** Sidebar tree of spaces and the lists inside them. */
-export function SpaceTree({ workspaceId }: { workspaceId: string }) {
+/** Live counts the sidebar shows under an open project. */
+export interface SpaceStats {
+  open: number;
+  overdue: number;
+  dueSoon: number;
+}
+
+interface SpaceTreeProps {
+  workspaceId: string;
+  stats?: Record<string, SpaceStats>;
+  /** Only projects whose name contains this. */
+  filter?: string;
+  /** The view a project opens in (the user's default task view). */
+  defaultView: string;
+}
+
+/** Sidebar tree of projects (spaces): counts, quick links and the lists inside each. */
+export function SpaceTree({ workspaceId, stats = {}, filter = '', defaultView }: SpaceTreeProps) {
   const { data: spaces = [] } = useSpaces(workspaceId);
   const { data: lists = [] } = useLists(workspaceId);
   const { can } = usePermissions(workspaceId);
@@ -30,6 +46,7 @@ export function SpaceTree({ workspaceId }: { workspaceId: string }) {
       action={
         can('space.manage') ? (
           <NameDialog
+            formName="space.create"
             trigger={
               <button type="button" className="rounded p-0.5 text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground" aria-label="New space">
                 <PlusIcon className="size-4" />
@@ -46,9 +63,11 @@ export function SpaceTree({ workspaceId }: { workspaceId: string }) {
       }
     >
       {spaces.length === 0 ? <p className="px-2 py-1 text-xs text-sidebar-muted">No spaces yet.</p> : null}
-      {spaces.map((space) => (
-        <SpaceNode key={space.id} workspaceId={workspaceId} space={space} lists={lists.filter((list) => list.spaceId === space.id)} />
-      ))}
+      {spaces
+        .filter((space) => space.name.toLowerCase().includes(filter.trim().toLowerCase()))
+        .map((space) => (
+          <SpaceNode key={space.id} workspaceId={workspaceId} space={space} stats={stats[space.id]} defaultView={defaultView} lists={lists.filter((list) => list.spaceId === space.id)} />
+        ))}
     </SidebarSection>
   );
 }
@@ -56,11 +75,27 @@ export function SpaceTree({ workspaceId }: { workspaceId: string }) {
 interface SpaceNodeProps {
   workspaceId: string;
   space: SpaceResponse;
+  stats: SpaceStats | undefined;
+  defaultView: string;
   lists: TaskListResponse[];
 }
 
-function SpaceNode({ workspaceId, space, lists }: SpaceNodeProps) {
-  const [expanded, setExpanded] = useState(true);
+function QuickLink({ to, children }: { to: { workspaceId: string; spaceId: string; view: string }; children: ReactNode }) {
+  return (
+    <Link
+      to="/w/$workspaceId/p/$spaceId/$view"
+      params={to}
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground [&_svg]:size-3.5"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function SpaceNode({ workspaceId, space, stats, defaultView, lists }: SpaceNodeProps) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const inside = pathname.includes(`/p/${space.id}`);
+  const [expanded, setExpanded] = useState(inside);
   const { can } = usePermissions(workspaceId);
   const spaceMutations = useSpaceMutations(workspaceId);
   const listMutations = useListMutations(workspaceId);
@@ -68,19 +103,24 @@ function SpaceNode({ workspaceId, space, lists }: SpaceNodeProps) {
 
   return (
     <div>
-      <div className="group flex items-center gap-1 rounded-md px-1 py-1 hover:bg-sidebar-accent">
-        <button
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
-          className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-sm"
-          aria-expanded={expanded}
-        >
-          <ChevronRightIcon className={cn('size-3.5 shrink-0 text-sidebar-muted transition-transform', expanded && 'rotate-90')} />
-          <ColorDot color={space.color} />
-          <span className="truncate font-medium">{space.name}</span>
+      <div className={cn('group flex items-center gap-1 rounded-md px-1 py-1 hover:bg-sidebar-accent', inside && 'bg-sidebar-accent')}>
+        <button type="button" onClick={() => setExpanded((value) => !value)} className="rounded p-0.5 text-sidebar-muted" aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${space.name}`}>
+          <ChevronRightIcon className={cn('size-3.5 shrink-0 transition-transform', expanded && 'rotate-90')} />
         </button>
+        <Link
+          to="/w/$workspaceId/p/$spaceId/$view"
+          params={{ workspaceId, spaceId: space.id, view: defaultView }}
+          onClick={() => setExpanded(true)}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+        >
+          <span className="flex size-5 shrink-0 items-center justify-center rounded text-[11px] font-bold text-white" style={{ backgroundColor: space.color }} aria-hidden>
+            {space.name.slice(0, 1).toUpperCase()}
+          </span>
+          <span className="truncate font-medium">{space.name}</span>
+        </Link>
         {can('list.manage') ? (
           <NameDialog
+            formName="list.save"
             trigger={
               <button type="button" className={iconButton} aria-label={`New list in ${space.name}`}>
                 <PlusIcon className="size-3.5" />
@@ -89,7 +129,12 @@ function SpaceNode({ workspaceId, space, lists }: SpaceNodeProps) {
             title={`New list in ${space.name}`}
             submitLabel="Create list"
             placeholder="e.g. Sprint backlog"
-            onSubmit={(values) => listMutations.create.mutateAsync({ spaceId: space.id, body: { name: values.name } }).catch(onError)}
+            onSubmit={(values) =>
+              listMutations.create
+                .mutateAsync({ spaceId: space.id, body: { name: values.name } })
+                .then(() => setExpanded(true))
+                .catch(onError)
+            }
           />
         ) : null}
         {can('space.manage') ? (
@@ -99,6 +144,7 @@ function SpaceNode({ workspaceId, space, lists }: SpaceNodeProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <NameDialog
+                formName="space.update"
                 trigger={
                   <DropdownMenuItem onSelect={(event) => event.preventDefault()}>
                     <PencilIcon /> Rename
@@ -128,11 +174,26 @@ function SpaceNode({ workspaceId, space, lists }: SpaceNodeProps) {
       </div>
       {expanded ? (
         <div className="ml-4 grid gap-0.5 border-l border-sidebar-border pl-2">
-          <SidebarLink to="/w/$workspaceId/s/$spaceId/sprints" params={{ workspaceId, spaceId: space.id }} icon={<CalendarRangeIcon />}>
-            Sprints
-          </SidebarLink>
+          {stats ? (
+            <p className="px-2 pt-0.5 text-xs text-sidebar-muted">
+              {stats.open} open
+              {stats.overdue ? <span className="ml-2 text-critical">{stats.overdue} overdue</span> : null}
+              {stats.dueSoon ? <span className="ml-2 text-warning">{stats.dueSoon} due soon</span> : null}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-0.5 px-1 pb-1">
+            <QuickLink to={{ workspaceId, spaceId: space.id, view: 'dashboard' }}>
+              <LayoutDashboardIcon /> Dashboard
+            </QuickLink>
+            <QuickLink to={{ workspaceId, spaceId: space.id, view: 'sprints' }}>
+              <RocketIcon /> Sprints
+            </QuickLink>
+            <QuickLink to={{ workspaceId, spaceId: space.id, view: 'time' }}>
+              <ClockIcon /> Time
+            </QuickLink>
+          </div>
           {lists.map((list) => (
-            <SidebarLink key={list.id} to="/w/$workspaceId/l/$listId" params={{ workspaceId, listId: list.id }} icon={<ListIcon />}>
+            <SidebarLink key={list.id} to="/w/$workspaceId/p/$spaceId/$view" params={{ workspaceId, spaceId: space.id, view: defaultView }} search={{ list: list.id }} activeOptions={{ includeSearch: true }} icon={<ListIcon />}>
               {list.name}
             </SidebarLink>
           ))}

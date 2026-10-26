@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import type { INestApplicationContext } from '@nestjs/common';
-import type { TaskPriority, TaskStatus } from '@taskflow/shared-types';
+import type { TaskPriority, TaskType } from '@taskflow/shared-types';
 import { AppModule } from '../app.module.js';
 import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
@@ -10,6 +10,7 @@ import { AuthService } from '../core/auth/auth.service.js';
 import { TransactionalManager } from '../core/database/transactional-manager.js';
 import { UnitOfWork } from '../core/database/unit-of-work.port.js';
 import type { Actor, SessionUser, WorkspaceAccess } from '../core/http/types/authenticated-request.js';
+import { CustomFieldsService } from '../modules/custom-fields/application/custom-fields.service.js';
 import { CommentsService } from '../modules/comments/application/comments.service.js';
 import { DocumentsService } from '../modules/documents/application/documents.service.js';
 import { DepartmentsService } from '../modules/hr/departments/application/departments.service.js';
@@ -21,13 +22,16 @@ import { MembersService } from '../modules/members/application/members.service.j
 import { RolesService } from '../modules/roles/application/roles.service.js';
 import { SpacesService } from '../modules/spaces/application/spaces.service.js';
 import { SprintsService } from '../modules/sprints/application/sprints.service.js';
+import { StatusesService } from '../modules/statuses/application/statuses.service.js';
 import { TasksService } from '../modules/tasks/application/tasks.service.js';
+import { TimeTrackingService } from '../modules/time-tracking/application/time-tracking.service.js';
 import { WorkspacesService } from '../modules/workspaces/application/workspaces.service.js';
 
 const DEMO_USERS = {
   owner: { name: 'Avery Chen', email: 'avery@example.com' },
   admin: { name: 'Jordan Patel', email: 'jordan@example.com' },
   member: { name: 'Sam Rivera', email: 'sam@example.com' },
+  engineer: { name: 'Kai Morgan', email: 'kai@example.com' },
 } as const;
 
 const HANDBOOK = `# Team handbook
@@ -72,6 +76,7 @@ async function seed(app: INestApplicationContext): Promise<void> {
   const owner = await signUp(app, DEMO_USERS.owner, password);
   const admin = await signUp(app, DEMO_USERS.admin, password);
   const member = await signUp(app, DEMO_USERS.member, password);
+  const engineer = await signUp(app, DEMO_USERS.engineer, password);
   const actorOf = (user: SessionUser): Actor => ({ userId: user.id, platformRole: user.platformRole, ip: null });
   const ownerActor = actorOf(owner);
 
@@ -85,6 +90,7 @@ async function seed(app: INestApplicationContext): Promise<void> {
     const members = app.get(MembersService);
     await members.add(ownerActor, access, { email: admin.email, roleId: roleId('Admin') });
     await members.add(ownerActor, access, { email: member.email, roleId: roleId('Member') });
+    await members.add(ownerActor, access, { email: engineer.email, roleId: roleId('Member') });
 
     const spaces = app.get(SpacesService);
     const lists = app.get(ListsService);
@@ -95,17 +101,123 @@ async function seed(app: INestApplicationContext): Promise<void> {
     const campaigns = await lists.create(ownerActor, workspaceId, marketing.id, { name: 'Campaigns' });
 
     const tasks = app.get(TasksService);
-    const task = (listId: string, title: string, status: TaskStatus, priority: TaskPriority, assigneeId: string | null, dueInDays: number | null) =>
-      tasks.create(ownerActor, access, listId, { title, status, priority, assigneeId, dueDate: dueInDays === null ? null : daysFromNow(dueInDays) });
+    // Every space starts with the default statuses: To do, In progress, In review, Blocked, Done.
+    const statuses = app.get(StatusesService);
+    const statusIn = async (spaceId: string, name: string) => (await statuses.listForSpace(workspaceId, spaceId)).find((status) => status.name === name)?.id;
+    const spaceOf = new Map([[roadmap.id, product.id], [bugs.id, product.id], [campaigns.id, marketing.id]]);
+    const task = async (listId: string, title: string, status: string, priority: TaskPriority, assigneeId: string | null, dueInDays: number | null, type: TaskType = 'task') =>
+      tasks.create(ownerActor, access, listId, {
+        title,
+        type,
+        statusId: await statusIn(spaceOf.get(listId) ?? '', status),
+        priority,
+        assigneeId,
+        startDate: dueInDays === null ? null : daysFromNow(dueInDays - 2),
+        dueDate: dueInDays === null ? null : daysFromNow(dueInDays),
+      });
 
-    const onboarding = await task(roadmap.id, 'Redesign the onboarding checklist', 'in_progress', 'high', admin.id, 4);
-    const sharing = await task(roadmap.id, 'Share boards with guests', 'todo', 'normal', member.id, 9);
-    const exportCsv = await task(roadmap.id, 'Export tasks to CSV', 'todo', 'low', null, null);
-    await task(roadmap.id, 'Dark mode polish', 'done', 'normal', member.id, -2);
-    await task(bugs.id, 'Due date shows the wrong day in some time zones', 'in_review', 'urgent', admin.id, 1);
-    await task(bugs.id, 'Board column scrolls the whole page', 'todo', 'high', null, 3);
-    await task(campaigns.id, 'Plan the spring launch email', 'todo', 'normal', owner.id, 14);
-    await task(campaigns.id, 'Write the release blog post', 'in_progress', 'high', owner.id, 6);
+    const onboarding = await task(roadmap.id, 'Redesign the onboarding checklist', 'In progress', 'high', admin.id, 4, 'feature');
+    const sharing = await task(roadmap.id, 'Share boards with guests', 'To do', 'normal', member.id, 9, 'feature');
+    const exportCsv = await task(roadmap.id, 'Export tasks to CSV', 'To do', 'low', null, null);
+    await task(roadmap.id, 'Dark mode polish', 'Done', 'normal', member.id, -2);
+    await task(roadmap.id, 'Public launch', 'To do', 'high', owner.id, 21, 'milestone');
+    await task(bugs.id, 'Due date shows the wrong day in some time zones', 'In review', 'urgent', admin.id, 1, 'bug');
+    await task(bugs.id, 'Board column scrolls the whole page', 'Blocked', 'high', null, 3, 'bug');
+    await task(campaigns.id, 'Plan the spring launch email', 'To do', 'normal', owner.id, 14);
+    await task(campaigns.id, 'Write the release blog post', 'In progress', 'high', owner.id, 6);
+    for (const [title, status] of [['Draft the checklist copy', 'Done'], ['Review with design', 'Done'], ['Ship behind a flag', 'In progress']] as const) {
+      await tasks.create(ownerActor, access, roadmap.id, { title, parentId: onboarding.id, statusId: await statusIn(product.id, status), assigneeId: admin.id });
+    }
+
+    // A client project with phases (parent tasks with subtasks), attributes and a health status.
+    const portal = await spaces.create(ownerActor, workspaceId, { name: 'Client portal', color: '#14b8a6' });
+    const delivery = await lists.create(ownerActor, workspaceId, portal.id, { name: 'Delivery' });
+    spaceOf.set(delivery.id, portal.id);
+    const phase = async (title: string, assigneeId: string, dueInDays: number, children: [string, string, number][]) => {
+      const parent = await task(delivery.id, title, 'In progress', 'high', assigneeId, dueInDays, 'phase');
+      for (const [childTitle, status, due] of children) {
+        await tasks.create(ownerActor, access, delivery.id, {
+          title: childTitle,
+          parentId: parent.id,
+          statusId: await statusIn(portal.id, status),
+          assigneeId,
+          startDate: daysFromNow(due - 3),
+          dueDate: daysFromNow(due),
+        });
+      }
+      return parent;
+    };
+    const discovery = await phase('Discovery and sign-off', owner.id, -6, [
+      ['Stakeholder interviews', 'Done', -12],
+      ['Write the scope document', 'Done', -9],
+      ['Sign-off meeting', 'In review', -6],
+    ]);
+    const build = await phase('Build the self-service portal', engineer.id, 12, [
+      ['Login with single sign-on', 'Done', -2],
+      ['Invoice history page', 'In progress', 3],
+      ['Support ticket form', 'To do', 8],
+      ['Accessibility pass', 'To do', 11],
+    ]);
+    const portalTasks = [
+      await task(delivery.id, 'Set up staging environment', 'Done', 'normal', engineer.id, -4),
+      await task(delivery.id, 'Weekly client sync notes', 'In progress', 'normal', owner.id, -1),
+      await task(delivery.id, 'Fix session timeout on mobile', 'Blocked', 'urgent', engineer.id, -3, 'bug'),
+      await task(delivery.id, 'Load test the invoice API', 'To do', 'high', engineer.id, 5),
+      await task(delivery.id, 'Draft the cutover plan', 'To do', 'normal', admin.id, 15),
+    ];
+    await spaces.update(ownerActor, workspaceId, portal.id, {
+      status: 'at_risk',
+      statusNote: 'The mobile session bug blocks the beta. Kai is on it; cutover moves a week if it is not fixed by Friday.',
+      startDate: daysFromNow(-20),
+      dueDate: daysFromNow(30),
+    });
+    await spaces.update(ownerActor, workspaceId, product.id, { status: 'on_track', statusNote: 'Sprint 12 is on schedule for the onboarding release.' });
+    const fields = app.get(CustomFieldsService);
+    const clientField = await fields.create(ownerActor, workspaceId, { name: 'Client name', type: 'text', entity: 'space', required: true });
+    const contractField = await fields.create(ownerActor, workspaceId, {
+      name: 'Contract type',
+      type: 'select',
+      entity: 'space',
+      options: [{ id: 'fixed', label: 'Fixed price' }, { id: 'tm', label: 'Time and materials' }],
+    });
+    const regionField = await fields.create(ownerActor, workspaceId, { name: 'Region', type: 'text', entity: 'space' });
+    const sowField = await fields.create(ownerActor, workspaceId, { name: 'SoW reference', type: 'url', entity: 'space' });
+    await fields.updateSpaceValues(ownerActor, workspaceId, portal.id, {
+      [clientField.id]: 'Harbor Health',
+      [contractField.id]: 'fixed',
+      [regionField.id]: 'Europe',
+      [sowField.id]: 'https://example.com/contracts/harbor-health-sow',
+    });
+
+    // Two weeks of logged time, so timesheets, reports and dashboards have something to show.
+    const time = app.get(TimeTrackingService);
+    const work: [SessionUser, string, string][] = [
+      [engineer, build.id, 'Built the invoice history API and paging'],
+      [engineer, portalTasks[2]!.id, 'Reproduced the timeout on iOS, traced it to the refresh token'],
+      [engineer, portalTasks[3]!.id, 'Wrote k6 scripts for the invoice endpoints'],
+      [owner, portalTasks[1]!.id, 'Client sync: agreed the beta scope'],
+      [owner, discovery.id, 'Prepared the sign-off deck'],
+      [admin, onboarding.id, 'Reviewed checklist copy with design'],
+      [admin, sharing.id, 'Spike on guest permissions'],
+      [member, onboarding.id, 'Onboarding illustrations'],
+    ];
+    for (let daysAgo = 13; daysAgo >= 0; daysAgo -= 1) {
+      const day = new Date(Date.now() - daysAgo * 86_400_000);
+      if (day.getUTCDay() === 0 || day.getUTCDay() === 6) continue;
+      for (const [index, [user, taskId, note]] of work.entries()) {
+        if ((index + daysAgo) % 3 === 0) continue;
+        const startHour = 8 + ((index * 2 + daysAgo) % 6);
+        const minutes = [60, 90, 120, 150, 180][(index + daysAgo) % 5] ?? 60;
+        const startedAt = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), startHour, 0));
+        await time.log(actorOf(user), access, {
+          taskId,
+          startedAt: startedAt.toISOString(),
+          endedAt: new Date(startedAt.getTime() + minutes * 60_000).toISOString(),
+          note,
+          activity: user.id === owner.id ? 'Management' : 'Development',
+        });
+      }
+    }
 
     await app.get(CommentsService).create(actorOf(admin), workspaceId, onboarding.id, {
       body: 'First draft is in the doc. Feedback welcome before Thursday.',

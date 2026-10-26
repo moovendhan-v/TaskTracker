@@ -22,7 +22,7 @@ export function DirectoryPage({ workspaceId }: { workspaceId: string }) {
 
   const filtered = people.filter((person) => {
     const needle = search.trim().toLowerCase();
-    return !needle || [person.name, person.email, person.jobTitle ?? '', person.departmentName ?? ''].some((v) => v.toLowerCase().includes(needle));
+    return !needle || [person.name, person.email ?? '', person.jobTitle ?? '', person.departmentName ?? ''].some((v) => v.toLowerCase().includes(needle));
   });
 
   return (

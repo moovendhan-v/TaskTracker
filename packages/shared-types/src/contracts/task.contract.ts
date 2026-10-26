@@ -1,18 +1,48 @@
-import type { TaskPriority, TaskStatus } from '../domain/task.js';
-import type { PageQuery } from '../domain/pagination.js';
+import type { CustomFieldValues, StatusCategory, TaskMetadata, TaskPriority, TaskRelationKind, TaskType } from '../domain/task.js';
+
+export interface TaskStatusResponse {
+  id: string;
+  spaceId: string;
+  name: string;
+  color: string;
+  category: StatusCategory;
+  position: number;
+}
+
+export interface SaveTaskStatusRequest {
+  name: string;
+  color: string;
+  category: StatusCategory;
+}
 
 export interface TaskResponse {
   id: string;
+  /** Short number, unique in the workspace: #978. */
+  number: number;
   listId: string;
+  spaceId: string;
+  parentId: string | null;
+  type: TaskType;
   title: string;
   description: string;
-  status: TaskStatus;
+  statusId: string;
+  status: TaskStatusResponse;
   priority: TaskPriority;
+  startDate: string | null;
   dueDate: string | null;
   assigneeId: string | null;
   /** Sprint the task is planned into; null when it's in the backlog. */
   sprintId: string | null;
   position: number;
+  estimateMinutes: number | null;
+  /** 0–100. */
+  progress: number | null;
+  subtaskCount: number;
+  /** Null unless a policy lets the caller read `task.metadata`. */
+  metadata: TaskMetadata | null;
+  customFields: CustomFieldValues;
+  completedAt: string | null;
+  createdById: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,19 +50,43 @@ export interface TaskResponse {
 export interface CreateTaskRequest {
   title: string;
   description?: string;
-  status?: TaskStatus;
+  type?: TaskType;
+  statusId?: string;
   priority?: TaskPriority;
+  startDate?: string | null;
   dueDate?: string | null;
   assigneeId?: string | null;
+  parentId?: string | null;
+  estimateMinutes?: number | null;
+  metadata?: TaskMetadata;
+  customFields?: CustomFieldValues;
 }
 
-export interface UpdateTaskRequest extends Partial<CreateTaskRequest> {
+/** `metadata` and `customFields` are merged into what the task has; a key set to null is removed. */
+export interface UpdateTaskRequest extends Partial<Omit<CreateTaskRequest, 'parentId'>> {
   position?: number;
   /** Planning a task into a sprint needs sprint.manage. */
   sprintId?: string | null;
+  progress?: number | null;
 }
 
-export interface TaskQuery extends PageQuery {
-  status?: TaskStatus;
-  search?: string;
+export interface TaskRelationResponse {
+  id: string;
+  kind: TaskRelationKind;
+  /** True when this task is the source: "this task blocks the other". */
+  outgoing: boolean;
+  task: { id: string; number: number; title: string; status: TaskStatusResponse };
+}
+
+export interface TaskActivityResponse {
+  id: string;
+  taskId: string;
+  actorId: string | null;
+  actorName: string | null;
+  kind: string;
+  /** Human-readable change, e.g. { field: 'status', from: 'To do', to: 'Done' }. */
+  field: string | null;
+  from: string | null;
+  to: string | null;
+  createdAt: string;
 }

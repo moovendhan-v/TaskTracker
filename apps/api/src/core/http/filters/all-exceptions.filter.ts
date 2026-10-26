@@ -11,6 +11,7 @@ import type { Response } from 'express';
 import { GraphQLError } from 'graphql';
 import { QueryFailedError } from 'typeorm';
 import { DomainError, type DomainErrorKind } from '../../domain/domain-error.js';
+import { FieldValidationException } from '../../forms/field-validation.exception.js';
 
 const PG_UNIQUE_VIOLATION = '23505';
 const PG_FOREIGN_KEY_VIOLATION = '23503';
@@ -54,7 +55,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // GraphQL errors are returned to the executor, which puts them in the response's `errors` array.
     if (host.getType<GqlContextType>() === 'graphql') {
       return new GraphQLError(Array.isArray(message) ? message.join(', ') : message, {
-        extensions: { code: GRAPHQL_CODES[status] ?? 'INTERNAL_SERVER_ERROR', statusCode: status },
+        extensions: {
+          code: GRAPHQL_CODES[status] ?? 'INTERNAL_SERVER_ERROR',
+          statusCode: status,
+          // Per-field messages, so forms can show each one next to its input.
+          ...(exception instanceof FieldValidationException ? { fields: exception.fields } : {}),
+        },
       });
     }
     host.switchToHttp().getResponse<Response>().status(status).json({ statusCode: status, message });

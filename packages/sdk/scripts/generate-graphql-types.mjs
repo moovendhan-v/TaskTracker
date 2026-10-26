@@ -37,7 +37,7 @@ const output = await codegen({
   config: {
     enumsAsTypes: true,
     avoidOptionals: { field: true, inputValue: false, object: true },
-    scalars: { ID: 'string', JSONObject: 'Record<string, unknown>' },
+    scalars: { ID: 'string', JSONObject: 'Record<string, unknown>', Metadata: 'Record<string, string | number | boolean | null>', CustomFieldValues: 'Record<string, string | number | boolean | string[] | null>' },
     useTypeImports: true,
     // Documents are plain strings at runtime, so the browser bundle needs no graphql parser.
     documentMode: 'string',

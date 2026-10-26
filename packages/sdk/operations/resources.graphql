@@ -1,0 +1,32 @@
+query ResourceSchema($workspaceId: ID!, $resource: String!) {
+  resourceSchema(workspaceId: $workspaceId, resource: $resource) { ...ResourceSchemaFields }
+}
+
+query ResourceNames($workspaceId: ID!) { resourceNames(workspaceId: $workspaceId) }
+
+query SearchTasks($workspaceId: ID!, $listId: ID, $spaceId: ID, $query: ResourceQueryInput) {
+  searchTasks(workspaceId: $workspaceId, listId: $listId, spaceId: $spaceId, query: $query) {
+    items { ...TaskFields }
+    page
+    pageSize
+    total
+  }
+}
+
+query SearchMembers($workspaceId: ID!, $query: ResourceQueryInput) {
+  searchMembers(workspaceId: $workspaceId, query: $query) {
+    items { ...MemberFields }
+    page
+    pageSize
+    total
+  }
+}
+
+query SearchWorkspaceAuditLog($workspaceId: ID!, $query: ResourceQueryInput) {
+  searchWorkspaceAuditLog(workspaceId: $workspaceId, query: $query) {
+    items { ...AuditLogEntryFields }
+    page
+    pageSize
+    total
+  }
+}

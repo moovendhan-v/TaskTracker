@@ -1,41 +1,32 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState, type ReactNode } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { NAME_MAX, SPRINT_GOAL_MAX, SPRINT_MAX_DAYS } from '@taskflow/shared-types';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useServerForm } from '@/core/forms/use-server-form';
 import { defaultSprintDates } from '../lib/sprint-dates';
 
-const DAY_MS = 86_400_000;
-const schema = z
-  .object({
-    name: z.string().trim().min(1, 'Give the sprint a name').max(NAME_MAX),
-    goal: z.string().max(SPRINT_GOAL_MAX),
-    startDate: z.iso.date('Pick a start date'),
-    endDate: z.iso.date('Pick an end date'),
-  })
-  .refine((v) => v.endDate >= v.startDate, { message: 'End on or after the start date', path: ['endDate'] })
-  .refine((v) => (Date.parse(v.endDate) - Date.parse(v.startDate)) / DAY_MS <= SPRINT_MAX_DAYS, {
-    message: `A sprint can last at most ${SPRINT_MAX_DAYS} days`,
-    path: ['endDate'],
-  });
-export type SprintFormValues = z.infer<typeof schema>;
+export interface SprintFormValues {
+  name: string;
+  goal: string;
+  startDate: string;
+  endDate: string;
+}
 
 interface SprintFormDialogProps {
   trigger: ReactNode;
   title: string;
   submitLabel: string;
+  /** `sprint.create` or `sprint.update`: whose rules apply. */
+  formName: 'sprint.create' | 'sprint.update';
   defaultValues?: Partial<SprintFormValues>;
   onSubmit: (values: SprintFormValues) => Promise<unknown>;
 }
 
-export function SprintFormDialog({ trigger, title, submitLabel, defaultValues, onSubmit }: SprintFormDialogProps) {
+export function SprintFormDialog({ trigger, title, submitLabel, formName, defaultValues, onSubmit }: SprintFormDialogProps) {
   const [open, setOpen] = useState(false);
-  const form = useForm<SprintFormValues>({ resolver: zodResolver(schema) });
+  const { form, applyServerErrors } = useServerForm<SprintFormValues>(formName);
   const { errors } = form.formState;
 
   useEffect(() => {
@@ -43,8 +34,12 @@ export function SprintFormDialog({ trigger, title, submitLabel, defaultValues, o
   }, [open, defaultValues, form]);
 
   const submit = form.handleSubmit(async (values) => {
-    await onSubmit(values);
-    setOpen(false);
+    try {
+      await onSubmit(values);
+      setOpen(false);
+    } catch (error) {
+      if (!applyServerErrors(error)) throw error;
+    }
   });
 
   return (

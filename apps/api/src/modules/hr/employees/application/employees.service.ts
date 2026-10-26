@@ -2,8 +2,12 @@ import { Injectable } from '@nestjs/common';
 import type { EmployeeResponse, UpsertEmployeeProfileRequest } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../../core/audit/audit-logger.port.js';
 import { UnitOfWork } from '../../../../core/database/unit-of-work.port.js';
+import { Cached } from '../../../../core/cache/cached.decorator.js';
 import { DomainError } from '../../../../core/domain/domain-error.js';
+import { found } from '../../../../core/domain/found.js';
+import { Announces } from '../../../../core/events/announces.decorator.js';
 import type { Actor } from '../../../../core/http/types/authenticated-request.js';
+import { workspaceFromArg } from '../../../../core/runtime/change-target.js';
 import { MembersService } from '../../../members/application/members.service.js';
 import { DepartmentsService } from '../../departments/application/departments.service.js';
 import type { DirectoryEntry, ProfileFields } from '../domain/employee-profile.js';
@@ -23,6 +27,7 @@ export class EmployeesService {
     private readonly auditLogger: AuditLogger,
   ) {}
 
+  @Cached({ entities: ['employee', 'member', 'department'], shared: true })
   async directory(workspaceId: string): Promise<EmployeeResponse[]> {
     const entries = await this.profiles.directory(workspaceId, DIRECTORY_LIMIT);
     return entries.map(EmployeeMapper.toResponse);
@@ -33,6 +38,7 @@ export class EmployeesService {
   }
 
   /** Creates or updates a profile. Fields left out keep their current value. */
+  @Announces('employee.updated', { ...workspaceFromArg, entity: (employee: EmployeeResponse) => ({ id: employee.userId }) })
   async upsert(actor: Actor, workspaceId: string, userId: string, request: UpsertEmployeeProfileRequest): Promise<EmployeeResponse> {
     await this.unitOfWork.run(async () => {
       const current = await this.getEntry(workspaceId, userId);
@@ -68,8 +74,6 @@ export class EmployeesService {
   }
 
   private async getEntry(workspaceId: string, userId: string): Promise<DirectoryEntry> {
-    const entry = await this.profiles.findEntry(workspaceId, userId);
-    if (!entry) throw DomainError.notFound('Employee');
-    return entry;
+    return found(await this.profiles.findEntry(workspaceId, userId), 'Employee');
   }
 }

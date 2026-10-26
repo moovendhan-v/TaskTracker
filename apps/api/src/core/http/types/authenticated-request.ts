@@ -14,6 +14,8 @@ export interface WorkspaceAccess {
   workspaceId: string;
   roleId: string | null;
   permissions: ReadonlySet<Permission>;
+  /** Protected fields (e.g. `member.email`) this caller may read; others come back as null. */
+  readableFields: ReadonlySet<string>;
   /** True when a super admin is acting in a workspace they are not a member of. */
   viaPlatformRole: boolean;
 }

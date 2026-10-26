@@ -15,10 +15,15 @@ Captured from the demo workspace (`pnpm --filter @taskflow/api seed`). All of th
 
 | | |
 |---|---|
-| ![Board view](docs/screenshots/04-board-view.png) | ![Task detail](docs/screenshots/05-task-detail.png) |
-| ![Sprints](docs/screenshots/06-sprints.png) | ![Docs](docs/screenshots/08-docs.png) |
-| ![People directory](docs/screenshots/09-people-directory.png) | ![Leave approvals](docs/screenshots/10-leave-approvals.png) |
-| ![Roles](docs/screenshots/11-roles.png) | ![Board in dark mode](docs/screenshots/15-board-dark.png) |
+| ![Home dashboard](docs/screenshots/ui-01-home.png) | ![Home charts](docs/screenshots/ui-02-home-charts.png) |
+| ![List view grouped by status](docs/screenshots/ui-04-list.png) | ![Bulk actions on selected tasks](docs/screenshots/ui-05-list-bulk.png) |
+| ![Board view](docs/screenshots/ui-06-board.png) | ![Table view built from the resource schema](docs/screenshots/ui-07-table.png) |
+| ![Calendar](docs/screenshots/ui-08-calendar.png) | ![Timeline](docs/screenshots/ui-09-timeline.png) |
+| ![Team planner](docs/screenshots/ui-10-team-planner.png) | ![Time report](docs/screenshots/ui-11-time-report.png) |
+| ![Project dashboard](docs/screenshots/ui-12-project-dashboard.png) | ![Task detail](docs/screenshots/ui-14-task-detail.png) |
+| ![Timesheets](docs/screenshots/ui-15-timesheets.png) | ![Log time](docs/screenshots/ui-16-log-time.png) |
+| ![Daily log](docs/screenshots/ui-17-daily-log.png) | ![My tasks](docs/screenshots/ui-18-my-tasks.png) |
+| ![Sprints](docs/screenshots/ui-19-sprints.png) | ![List in light mode](docs/screenshots/ui-20-list-light.png) |
 
 ## Repository layout
 
@@ -33,6 +38,27 @@ docs/           plan, architecture (folder structure and rules), research log
 ```
 
 The file-by-file layout and the SOLID and import-boundary rules are in [docs/architecture/FOLDER_STRUCTURE.md](docs/architecture/FOLDER_STRUCTURE.md). ESLint enforces the boundaries.
+
+## Dev environment in one command
+
+Needs only Docker with Compose v2.
+
+```sh
+./scripts/dev.sh          # or: pnpm dev:stack
+```
+
+The first run creates `.env` from `.env.example` with fresh random secrets (git-ignored, `chmod 600`, never printed). Then it starts Postgres, Redis and Mailpit and runs a bootstrap container that installs dependencies, builds the shared packages and the API, applies migrations as the schema owner and seeds the demo workspace. Finally it starts the API and the Vite app with live reload, and follows their logs.
+
+| | |
+|---|---|
+| App | http://localhost:5173 |
+| API | http://localhost:3000/api/graphql |
+| Emails (Mailpit) | http://localhost:8025 |
+| Postgres | localhost:5432 (loopback only) |
+
+Sign in as `avery@example.com` (or jordan@, sam@, kai@) with `SEED_PASSWORD` from `.env`. Every step is idempotent, so running it again only starts things. Other commands: `./scripts/dev.sh down` (stop, keep data), `logs`, `bootstrap` (re-run install, build, migrations and seed), `reset` (delete the database and dependency volumes). Ports and seeding are set in `.env` (`WEB_DEV_PORT`, `API_HOST_PORT`, `POSTGRES_HOST_PORT`, `SEED_DEMO`). Behind a proxy that inspects TLS, put its CA in a git-ignored `infra/docker/docker-compose.dev.override.yml` (mount it into `bootstrap` and set `NODE_EXTRA_CA_CERTS`); the script picks that file up.
+
+The compose file is `infra/docker/docker-compose.dev.yml`. Dependencies live in Docker volumes, so they never mix with `node_modules` on the host, and the API and web containers run as your user, so files they write stay yours.
 
 ## Run the whole stack in Docker
 
@@ -86,6 +112,66 @@ Services publish domain events inside their transaction, and `pg_notify` sends t
 
 Sockets check the `Origin` header against `CORS_ORIGINS` and the session cookie before the connection is accepted. Subscribing needs workspace membership, and the server rechecks the session and membership every 30 seconds and ends the stream when either is gone. Reverse proxies need to pass the WebSocket upgrade for `/api/graphql` (the bundled nginx config and the Vite dev proxy do).
 
+### Validation: one set of rules
+
+Input rules live only on the API's input classes (class-validator), and `@FormSchema('task.create')` publishes them. The public `formSchemas` query returns every form's fields and rules (required, lengths, ranges, patterns, enums, dates, and cross-field rules such as "end on or after start"), each with the message the API itself uses. The web app has no validation library of its own: `useServerForm('task.create')` checks input in the browser with those rules, and when the API rejects a submit anyway, its per-field messages (`extensions.fields`) land next to the same inputs. The sign-in, sign-up and password forms work the same way; Better Auth checks them in a `before` hook.
+
+### Filters, sorting and paging
+
+Every list that grows (tasks, members, the audit log) is a *query resource*: a class in the feature's `infrastructure/` folder that declares which fields exist and how each can be filtered and sorted.
+
+```ts
+@QueryResource({ name: 'tasks', label: 'Tasks', permission: 'task.view', idColumn: 'task.id', defaultSort: [{ field: 'position', direction: 'asc' }] })
+export class TaskQueryResource {
+  @QueryField({ type: 'enum', column: 'task.status_id', sortable: true })   // options: the space's own statuses
+  statusId: string;
+
+  @QueryField({ type: 'json', column: 'task.metadata' })   // filter as metadata.<key>
+  metadata: string;
+}
+```
+
+Clients send filters as a tree (`and`, `or`, `not`, conditions with `eq`, `neq`, `lt`…`gte`, `between`, `in`, `nin`, `contains`, `starts_with`, `ends_with`, `is_null`, `is_not_null`) or as a compact query string:
+
+```graphql
+searchTasks(workspaceId: $w, query: { where: "statusCategory[in]=unstarted,started&metadata[order_id]=6735&assigneeId=@me", sort: [{ field: "dueDate", direction: desc }], pageSize: 50 })
+```
+
+The API checks every field, operator and value against the resource, enforces limits (depth 4, 30 conditions, 100 values per list, page size per resource) and compiles the rest to SQL with bound parameters only. `resourceSchema(workspaceId, resource)` describes each resource (fields, types, operators, enum options, sortable fields, page sizes, which of and/or/not are allowed), trimmed to the fields the caller may see, so the web app builds its tables and filter UI from it instead of hard-coding them.
+
+### Tasks: custom statuses and richer work items
+
+Each space has its own statuses (`statuses`, `createStatus`, `updateStatus`, `reorderStatuses`, `deleteStatus` with a status to move tasks to). New spaces start with To do, In progress, In review, Blocked and Done. Every status has a name, a colour and a category (`unstarted`, `started`, `review`, `blocked`, `done`, `cancelled`), and sprint progress, the backlog, "completed" timestamps and overdue warnings all go by the category, so renaming or adding statuses never breaks them.
+
+Tasks also have a workspace-wide number (`taskByNumber`), a type, subtasks (up to three levels, same list), start date, estimate, progress, watchers (`watchTask`; watchers hear about comments), relations (blocks, relates to, duplicates), an activity history of field changes (`taskActivity`) and custom fields. Custom fields are defined per space (`customFields`, text, number, date, checkbox, select, multi-select, URL) and can be filtered and sorted like built-in fields as `custom.<key>`. Spaces have a status, dates and their own custom fields too.
+
+### Time tracking and dashboards
+
+People with `time.log` start and stop a timer (`startTimer`, `stopTimer`, one running per person), log time against a task or a project (`logTime`), or save a whole day at once (`logTimeBatch`, all or none, at most 24 hours). `timeEntries(from, to)` feeds timesheets and the Time view. Without `time.view_all` a person only ever sees their own entries, and changing someone else's entry needs `time.manage` and is audited. The managed *Time manager* policy grants both.
+
+`dashboard(input: { from, to, timeZone, spaceId?, userIds? })` returns everything the Home and project dashboards show: live task counts (open, closed, overdue, due soon, unassigned), status and priority breakdowns, overdue aging, a due-date forecast, created vs closed per week, hours per day, person, project and task, workload per person, project health, phases (parent tasks with their subtasks) and the overdue, due-soon and recently updated lists. All of it is computed in SQL with bound parameters, and the result is cached until a task, status, space or time entry changes. Hours cover everyone only for callers with `time.view_all`.
+
+### Building blocks for the web app
+
+Screens are assembled from a small kit in `apps/web/src/components/kit`, each piece configured through props rather than copied: `DataTable` (multi-column sort, selection, paging, column show/hide, drag to reorder, drag to resize; the layout goes in and comes out so callers can save it), `Modal` (sizes, header actions, footer, optional side column), `Section` (collapsible, controlled or remembered), `Segmented`, `Panel`, `StatCard`, `StatusPill`, small charts, and `notify` for toasts with shared durations. `ResourceTable` (in the `resources` module) builds a `DataTable` and a filter builder from `resourceSchema`, so a new list in the API shows up as a table with the right filters, operators, sorting and page sizes without front-end changes; the user's column layout, sort and page size are saved to their preferences.
+
+The workspace shell is an icon rail (Home, My tasks, Daily log, Timesheets, Inbox, Docs, People), a resizable sidebar of projects with live counts, and a top bar with task search (Cmd/Ctrl+K), the running timer, notifications and "+ Task". Each project has ten views: List, Board, Table, Calendar, Timeline, Team planner, Time, Sprints, Members and Dashboard. Tasks open over any page (`?task=`), as a modal or a side panel depending on the user's preference.
+
+### Preferences
+
+Each user's settings live on the server (`myPreferences`) and load with the session, so they follow the user to every device: theme (system, light, dark), accent palette, density, sidebar, default task view, where tasks open, date and time formats, the first day of the week, table layouts (column order, hidden columns, widths, paging, sort), saved views (named filter sets, optionally pinned) and the open tabs of the multi-tab workspace. Inputs are validated like every other form, tabs only ever point inside the app, and the row is protected by row-level security so only its owner can read or write it.
+
+### Caching
+
+Reads are cached in Redis (`REDIS_URL`, required in production; without it each instance caches in memory). Service methods opt in with a decorator:
+
+```ts
+@Cached({ entities: ['space'], shared: true })   // shared: same answer for every member
+async list(workspaceId: string): Promise<SpaceResponse[]> { ... }
+```
+
+Keys are scoped to the workspace (and to the user unless `shared`), mutations never read the cache, and every domain event drops the tags it affects, first in the transaction and again on every instance after commit. Membership checks are cached for 60 seconds at most. Writes use `@Audited(...)` and `@Announces(...)` instead of hand-written audit and event code.
+
 ### Typed client (SDK)
 
 The web app never writes queries inline. Operations live in `packages/sdk/operations/*.graphql`, and codegen turns them into typed documents:
@@ -122,6 +208,8 @@ CI (`.github/workflows/ci.yml`) runs all of the above, plus `pnpm audit`, a chec
 [AGENTS.md](AGENTS.md) lists the rules every change must keep. The main mechanisms:
 
 - **Tenant isolation in the database.** Postgres row-level security is forced on every tenant table. The API runs each GraphQL operation in a transaction scoped to one workspace, so a query that forgets its `workspace_id` filter still can't read or write another tenant's rows. The API connects as a role that owns nothing and can't bypass RLS, and it refuses to start in production otherwise.
+- **Policies (IAM).** Roles get their rights from policies: ready-made *managed* policies (Full access, Workspace admin, Contributor, Read only, Sprint planner, People manager, Auditor, Hide member emails), the workspace's own *custom* policies, and an *inline* policy per role. Statements allow or deny permissions (`task.*`) and fields (`member.email`), and deny always wins. Nobody can attach, edit or remove a policy if the role would end up with more than they have themselves, and the Owner role can't be changed.
+- **Field-level access.** Fields marked `@SensitiveField('member.email', ...)` resolve to null for callers whose policies don't allow them; member emails are hidden by default and visible to owners, admins and People managers. The same rules keep those fields out of filters, sorting, search and `resourceSchema`.
 - **Access checks on the server.** A session guard runs on every operation. A workspace guard checks membership and the permission keys of the member's role. Custom roles can't grant permissions their creator doesn't have. Super admins are audited when they write inside someone else's workspace.
 - **GraphQL limits.** Query depth, cost (which stops alias amplification) and token limits; page sizes capped at 100; no batching; CSRF prevention; introspection and "did you mean" hints off in production; generic error messages.
 - **Input.** Every argument is validated on the server, and unknown fields are rejected. Markdown is sanitised on the server and rendered without raw HTML.

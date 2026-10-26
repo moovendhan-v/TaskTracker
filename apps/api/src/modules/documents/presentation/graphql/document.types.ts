@@ -1,5 +1,5 @@
 import { ArgsType, Field, Float, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
+import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import {
   DOC_CONTENT_MAX,
   DOC_TITLE_MAX,
@@ -8,7 +8,8 @@ import {
   type DocumentSummaryResponse,
   type UpdateDocumentRequest,
 } from '@taskflow/shared-types';
-import { IsOmittable } from '../../../../core/graphql/validation.js';
+import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
+import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('DocumentSummary')
 export class DocumentSummaryGql implements DocumentSummaryResponse {
@@ -27,11 +28,12 @@ export class DocumentGql extends DocumentSummaryGql implements DocumentResponse 
   @Field() createdAt: string;
 }
 
+@FormSchema('document.create')
 @InputType()
 export class CreateDocumentInput implements CreateDocumentRequest {
   @Field()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(DOC_TITLE_MAX)
   title: string;
 
@@ -42,24 +44,23 @@ export class CreateDocumentInput implements CreateDocumentRequest {
   content?: string;
 
   @Field(() => ID, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsUUID('4')
   parentId?: string | null;
 
   @Field(() => ID, { nullable: true })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @IsClearable()
   @IsUUID('4')
   spaceId?: string | null;
 }
 
+@FormSchema('document.update')
 @InputType()
 export class UpdateDocumentInput implements UpdateDocumentRequest {
   @Field({ nullable: true })
   @IsOmittable()
   @IsString()
-  @IsNotEmpty()
+  @IsNotBlank()
   @MaxLength(DOC_TITLE_MAX)
   title?: string;
 

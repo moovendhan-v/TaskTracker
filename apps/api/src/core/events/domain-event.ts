@@ -36,6 +36,15 @@ export interface DomainEventFacts {
   roleName?: string;
   /** A short plain-text quote, e.g. the start of a comment. */
   excerpt?: string;
+  /** People following the entity (task watchers). */
+  watcherIds?: readonly string[];
+  /** What changed, in words: { field: 'status', from: 'To do', to: 'Done' }. */
+  changes?: readonly { field: string; from: string | null; to: string | null }[];
+  /** The status category after the change, e.g. 'done'. */
+  statusCategory?: string;
+  number?: number;
+  listId?: string;
+  spaceId?: string;
 }
 
 export function domainEvent(

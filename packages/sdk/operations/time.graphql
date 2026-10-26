@@ -1,0 +1,36 @@
+fragment TimeEntryFields on TimeEntry {
+  id
+  userId
+  userName
+  taskId
+  task { id number title }
+  spaceId
+  spaceName
+  startedAt
+  endedAt
+  minutes
+  note
+  activity
+}
+
+query RunningTimer($workspaceId: ID!) { runningTimer(workspaceId: $workspaceId) { ...TimeEntryFields } }
+
+query TimeEntries($workspaceId: ID!, $query: TimeEntryQueryInput!) { timeEntries(workspaceId: $workspaceId, query: $query) { ...TimeEntryFields } }
+
+query TaskTimeSummary($workspaceId: ID!, $taskId: ID!) {
+  taskTimeSummary(workspaceId: $workspaceId, taskId: $taskId) { taskId totalMinutes myMinutes entryCount }
+}
+
+mutation StartTimer($workspaceId: ID!, $input: StartTimerInput!) { startTimer(workspaceId: $workspaceId, input: $input) { ...TimeEntryFields } }
+
+mutation StopTimer($workspaceId: ID!) { stopTimer(workspaceId: $workspaceId) { ...TimeEntryFields } }
+
+mutation LogTime($workspaceId: ID!, $input: LogTimeInput!) { logTime(workspaceId: $workspaceId, input: $input) { ...TimeEntryFields } }
+
+mutation LogTimeBatch($workspaceId: ID!, $input: LogTimeBatchInput!) { logTimeBatch(workspaceId: $workspaceId, input: $input) { ...TimeEntryFields } }
+
+mutation UpdateTimeEntry($workspaceId: ID!, $entryId: ID!, $input: UpdateTimeEntryInput!) {
+  updateTimeEntry(workspaceId: $workspaceId, entryId: $entryId, input: $input) { ...TimeEntryFields }
+}
+
+mutation DeleteTimeEntry($workspaceId: ID!, $entryId: ID!) { deleteTimeEntry(workspaceId: $workspaceId, entryId: $entryId) }

@@ -1,19 +1,11 @@
-import type { TaskPriority, TaskStatus } from '@taskflow/shared-types';
-import { TASK_PRIORITIES, TASK_STATUSES } from '@taskflow/shared-types';
+import { isClosedCategory, TASK_PRIORITIES, type TaskPriority, type TaskResponse, type TaskType } from '@taskflow/shared-types';
 
 interface Meta {
   label: string;
-  /** Tailwind classes using the status/priority tokens from globals.css. */
+  /** Tailwind classes using the priority tokens from globals.css. */
   dot: string;
   text: string;
 }
-
-export const STATUS_META: Record<TaskStatus, Meta> = {
-  todo: { label: 'To do', dot: 'bg-status-todo', text: 'text-status-todo' },
-  in_progress: { label: 'In progress', dot: 'bg-status-in-progress', text: 'text-status-in-progress' },
-  in_review: { label: 'In review', dot: 'bg-status-in-review', text: 'text-status-in-review' },
-  done: { label: 'Done', dot: 'bg-status-done', text: 'text-status-done' },
-};
 
 export const PRIORITY_META: Record<TaskPriority, Meta> = {
   urgent: { label: 'Urgent', dot: 'bg-priority-urgent', text: 'text-priority-urgent' },
@@ -23,8 +15,21 @@ export const PRIORITY_META: Record<TaskPriority, Meta> = {
   none: { label: 'No priority', dot: 'bg-muted-foreground/40', text: 'text-muted-foreground' },
 };
 
-export const STATUS_ORDER = TASK_STATUSES;
 export const PRIORITY_ORDER = TASK_PRIORITIES;
+
+/** Task types as small labels; the background is a fixed, readable tint per type. */
+export const TYPE_META: Record<TaskType, { label: string; className: string }> = {
+  task: { label: 'Task', className: 'bg-chart-1/25 text-foreground' },
+  bug: { label: 'Bug', className: 'bg-critical/25 text-foreground' },
+  feature: { label: 'Feature', className: 'bg-good/25 text-foreground' },
+  phase: { label: 'Phase', className: 'bg-chart-2/30 text-foreground' },
+  milestone: { label: 'Milestone', className: 'bg-warning/30 text-foreground' },
+};
+
+/** Done or cancelled: shown struck through and left out of overdue warnings. */
+export function isClosed(task: Pick<TaskResponse, 'status'>): boolean {
+  return isClosedCategory(task.status.category);
+}
 
 export const POSITION_STEP = 1024;
 
