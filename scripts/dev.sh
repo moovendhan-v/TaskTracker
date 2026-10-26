@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # One command for a local dev environment in Docker.
 #
-#   ./scripts/dev.sh            create .env if missing, free the ports, start everything, follow the logs
-#   ./scripts/dev.sh -y         same, without asking before stopping whatever holds the ports
+#   ./scripts/dev.sh            create .env if missing, pick free ports, start everything, follow the logs
 #   ./scripts/dev.sh down       stop the stack (keeps the database)
 #   ./scripts/dev.sh reset      stop and delete the database and dependency volumes
 #   ./scripts/dev.sh logs       follow the API and web logs
@@ -60,14 +59,12 @@ create_env() {
 complete_env() {
   local key value added=() tmp
   tmp="$(mktemp)"
-  local -a keys=(BETTER_AUTH_SECRET POSTGRES_PASSWORD APP_DB_OWNER_PASSWORD APP_DB_PASSWORD REDIS_PASSWORD SEED_PASSWORD SEED_DEMO WEB_DEV_PORT API_HOST_PORT)
+  local -a keys=(BETTER_AUTH_SECRET POSTGRES_PASSWORD APP_DB_OWNER_PASSWORD APP_DB_PASSWORD REDIS_PASSWORD SEED_PASSWORD SEED_DEMO)
   generated() {
     case "$1" in
       BETTER_AUTH_SECRET) echo "$(secret)$(secret)" ;;
       SEED_PASSWORD) secret | head -c 20 ;;
       SEED_DEMO) echo true ;;
-      WEB_DEV_PORT) echo 5173 ;;
-      API_HOST_PORT) echo 3000 ;;
       *) secret ;;
     esac
   }
@@ -89,69 +86,43 @@ complete_env() {
   fi
 }
 
-env_value() { grep -E "^$1=" "$ENV_FILE" | tail -1 | cut -d= -f2-; }
+env_value() { grep -E "^$1=" "$ENV_FILE" | tail -1 | cut -d= -f2- || true; }
 
-ASSUME_YES=false
-confirm() {
-  $ASSUME_YES && return 0
-  local answer
-  printf '%s [Y/n] ' "$1"
-  read -r answer || answer=n
-  [[ -z "$answer" || "$answer" =~ ^[Yy] ]]
+env_set() {
+  local tmp
+  tmp="$(mktemp)"
+  grep -vE "^$1=" "$ENV_FILE" >"$tmp" || true
+  printf '%s=%s\n' "$1" "$2" >>"$tmp"
+  mv "$tmp" "$ENV_FILE"; chmod 600 "$ENV_FILE"
 }
 
-# Frees the ports the stack publishes. Another TaskFlow stack (e.g. `pnpm infra:up`)
-# is stopped without asking (its data is kept); anything else is shown and stopped
-# only after you agree.
-free_ports() {
-  local port rows row project name pids pid
-  local -a ports=("$(env_value POSTGRES_HOST_PORT)" "$(env_value API_HOST_PORT)" "$(env_value WEB_DEV_PORT)" "$(env_value MAILPIT_UI_PORT)")
-  ports=("${ports[0]:-5432}" "${ports[1]:-3000}" "${ports[2]:-5173}" "${ports[3]:-8025}")
-  for port in "${ports[@]}"; do
-    # Containers publishing the port, other than this dev stack's own.
-    # (Collected first, so the prompts below read from the keyboard.)
-    rows="$(docker ps --filter "publish=$port" --format '{{.Names}}|{{.Label "com.docker.compose.project"}}')"
-    for row in $rows; do
-      name="${row%%|*}"; project="${row#*|}"
-      [[ "$project" == "taskflow-dev" ]] && continue
-      if [[ "$project" == "taskflow" ]]; then
-        echo "Port $port is used by the other TaskFlow stack ($name); stopping that stack (its data is kept)."
-        docker ps -q --filter "label=com.docker.compose.project=taskflow" | xargs docker stop >/dev/null
-      elif confirm "Port $port is used by container '$name'. Stop it?"; then
-        docker stop "$name" >/dev/null
-      else
-        echo "Port $port is still in use; set a different port in .env and try again." >&2; exit 1
-      fi
-    done
+# True when something on this machine accepts connections on the port.
+port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
-    # Programs on this machine listening on the port (e.g. a Homebrew Postgres).
-    command -v lsof >/dev/null 2>&1 || continue
-    pids="$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | sort -u || true)"
-    for pid in $pids; do
-      name="$(ps -p "$pid" -o comm= 2>/dev/null || echo unknown)"
-      # Docker's own port forwarders belong to the containers handled above.
-      [[ "$name" =~ (com\.docker|vpnkit|docker-proxy|dockerd) ]] && continue
-      if confirm "Port $port is used by '$name' (pid $pid). Stop it?"; then
-        kill "$pid" 2>/dev/null || true
-        sleep 1
-        kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
-      else
-        echo "Port $port is still in use; set a different port in .env and try again." >&2; exit 1
-      fi
-    done
+# Gives each published port a free number. Nothing that already runs is stopped:
+# a taken port just moves to the next free one, saved in .env. Skipped while
+# this stack is running, since its own containers hold the ports then.
+pick_ports() {
+  if [[ -n "$("${COMPOSE[@]}" ps -q 2>/dev/null)" ]]; then return; fi
+  local entry key port start
+  for entry in DEV_WEB_PORT:5180 DEV_API_PORT:3100 DEV_POSTGRES_PORT:55432 DEV_MAIL_PORT:8125; do
+    key="${entry%%:*}"
+    port="$(env_value "$key")"; port="${port:-${entry#*:}}"
+    start="$port"
+    while port_busy "$port"; do port=$((port + 1)); done
+    if [[ "$port" != "$start" ]]; then echo "Port $start is taken; using $port for $key."; fi
+    if [[ "$port" != "$(env_value "$key")" ]]; then env_set "$key" "$port"; fi
   done
 }
 
 urls() {
-  # Read the port overrides the stack uses, if any.
-  local web api mail
-  web="$(grep -E '^WEB_DEV_PORT=' "$ENV_FILE" | cut -d= -f2)"; api="$(grep -E '^API_HOST_PORT=' "$ENV_FILE" | cut -d= -f2)"; mail="$(grep -E '^MAILPIT_UI_PORT=' "$ENV_FILE" | cut -d= -f2)"
   cat <<INFO
 
 TaskFlow dev stack is up:
-  App      http://localhost:${web:-5173}
-  API      http://localhost:${api:-3000}/api/graphql
-  Mail     http://localhost:${mail:-8025}
+  App      http://localhost:$(env_value DEV_WEB_PORT)
+  API      http://localhost:$(env_value DEV_API_PORT)/api/graphql
+  Mail     http://localhost:$(env_value DEV_MAIL_PORT)
+  Postgres localhost:$(env_value DEV_POSTGRES_PORT)
 Demo accounts: avery@example.com, jordan@example.com, sam@example.com, kai@example.com
   (password: SEED_PASSWORD in .env)
 
@@ -159,14 +130,13 @@ Following logs; Ctrl+C stops following, the stack keeps running. Stop it with: .
 INFO
 }
 
-if [[ "${1:-}" == "-y" || "${1:-}" == "--yes" ]]; then ASSUME_YES=true; shift; fi
 cmd="${1:-up}"
 case "$cmd" in
   env)
     create_env ;;
   up)
     create_env
-    free_ports
+    pick_ports
     "${COMPOSE[@]}" up -d --wait postgres redis mailpit
     # Bootstrap prints its progress; the API and web start once it succeeds.
     "${COMPOSE[@]}" run --rm bootstrap

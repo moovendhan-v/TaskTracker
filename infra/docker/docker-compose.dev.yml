@@ -5,10 +5,14 @@
 # Start it with `./scripts/dev.sh` (creates .env on first run), or:
 #   docker compose -f infra/docker/docker-compose.dev.yml --env-file .env up
 #
-#   web     http://localhost:5173   (proxies /api to the API, like production)
-#   api     http://localhost:3000/api/graphql
-#   mail    http://localhost:8025   (every email the app sends lands here)
-#   db      localhost:5432          (loopback only)
+#   web     http://localhost:5180   (proxies /api to the API, like production)
+#   api     http://localhost:3100/api/graphql
+#   mail    http://localhost:8125   (every email the app sends lands here)
+#   db      localhost:55432         (loopback only)
+#
+# The ports are DEV_*_PORT in .env. They differ from the other stack's
+# (docker-compose.yml), so both can run at once; scripts/dev.sh moves to the
+# next free port if one is taken.
 name: taskflow-dev
 
 x-node: &node
@@ -34,8 +38,8 @@ x-api-env: &api-env
   DATABASE_SSL: "false"
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?run ./scripts/dev.sh to create .env}
   # The browser talks to the Vite server, which proxies /api, so both share this origin.
-  BETTER_AUTH_URL: http://localhost:${WEB_DEV_PORT:-5173}
-  CORS_ORIGINS: http://localhost:${WEB_DEV_PORT:-5173}
+  BETTER_AUTH_URL: http://localhost:${DEV_WEB_PORT:-5180}
+  CORS_ORIGINS: http://localhost:${DEV_WEB_PORT:-5180}
   TRUST_PROXY: "0"
   SMTP_URL: smtp://mailpit:1025
   MAIL_FROM: TaskFlow <no-reply@taskflow.localhost>
@@ -57,7 +61,7 @@ services:
       # Creates the schema-owner and least-privilege API roles on first start.
       - ./postgres/01-app-role.sh:/docker-entrypoint-initdb.d/01-app-role.sh:ro
     ports:
-      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+      - "127.0.0.1:${DEV_POSTGRES_PORT:-55432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 3s
@@ -80,7 +84,7 @@ services:
   mailpit:
     image: axllent/mailpit:v1.31.4
     ports:
-      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+      - "127.0.0.1:${DEV_MAIL_PORT:-8125}:8025"
     networks: [dev]
 
   # Runs once per `up`: installs dependencies, builds the shared packages and
@@ -117,7 +121,7 @@ services:
         cd apps/api && node_modules/.bin/tsc -p tsconfig.build.json --watch --preserveWatchOutput &
         cd apps/api && exec node --watch --enable-source-maps dist/main.js
     ports:
-      - "127.0.0.1:${API_HOST_PORT:-3000}:3000"
+      - "127.0.0.1:${DEV_API_PORT:-3100}:3000"
     depends_on:
       bootstrap:
         condition: service_completed_successfully
@@ -137,7 +141,7 @@ services:
       VITE_TURNSTILE_SITE_KEY: ""
     command: ["sh", "-c", "cd apps/web && exec node_modules/.bin/vite --host 0.0.0.0 --port 5173 --strictPort"]
     ports:
-      - "127.0.0.1:${WEB_DEV_PORT:-5173}:5173"
+      - "127.0.0.1:${DEV_WEB_PORT:-5180}:5173"
     depends_on:
       bootstrap:
         condition: service_completed_successfully
