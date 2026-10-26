@@ -60,10 +60,10 @@ fragment SprintFields on Sprint {
   id spaceId name goal status startDate endDate completedAt totalTasks doneTasks
 }
 
-fragment DocumentSummaryFields on DocumentSummary { id spaceId parentId title position createdById updatedAt }
+fragment DocumentSummaryFields on DocumentSummary { id spaceId parentId kind title position createdById updatedAt }
 
 fragment DocumentFields on Document {
-  id spaceId parentId title content position createdById createdAt updatedAt
+  id spaceId parentId kind title content position createdById createdAt updatedAt
 }
 
 fragment DepartmentFields on Department { id name headUserId memberCount }

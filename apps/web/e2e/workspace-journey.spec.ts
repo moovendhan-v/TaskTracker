@@ -195,13 +195,52 @@ test('writes a doc with autosave and a preview that drops unsafe markup', async 
 test('adds a sub-page that survives a reload', async () => {
   const parentUrl = page.url();
   await page.getByRole('treeitem', { name: /Team handbook/ }).hover();
-  await page.getByRole('button', { name: 'Add a page inside Team handbook' }).click();
+  await page.getByRole('button', { name: 'Add inside Team handbook' }).click();
+  await page.getByRole('menuitem', { name: 'New page' }).click();
   await expect(page).not.toHaveURL(parentUrl);
   await expect(page.getByLabel('Page title')).toHaveValue('Untitled');
   await page.getByLabel('Page title').fill('First week');
   await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 10_000 });
   await page.reload();
   await expect(page.getByRole('treeitem', { name: /First week/ })).toBeVisible();
+});
+
+test('makes a folder and drags a page into it', async () => {
+  await page.getByRole('button', { name: 'New folder' }).first().click();
+  await expect(page.getByLabel('Folder name')).toHaveValue('New folder');
+  await page.getByLabel('Folder name').fill('Handbooks');
+  await page.getByLabel('Folder name').press('Enter');
+  const folder = page.getByRole('treeitem', { name: /Handbooks/ });
+  await expect(folder).toBeVisible();
+  await expect(page.getByText('This folder is empty.', { exact: false })).toBeVisible();
+
+  const handbookRow = page.getByRole('treeitem', { name: /Team handbook/ }).locator('> div');
+  await handbookRow.dragTo(folder.locator('> div'));
+  await expect(folder.getByRole('treeitem', { name: /Team handbook/ })).toBeVisible();
+  await expect(page.getByRole('article').getByRole('link', { name: /Team handbook/ })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('treeitem', { name: /Handbooks/ }).getByRole('treeitem', { name: /Team handbook/ })).toBeVisible();
+});
+
+test('creates a task in a project that has no lists yet', async () => {
+  await page.getByRole('button', { name: 'New space' }).click();
+  await page.getByRole('dialog').getByLabel('Name').fill('Ops');
+  await page.getByRole('button', { name: 'Create space' }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await page.getByRole('button', { name: /^Task$|New task/ }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'New task' });
+  await dialog.getByRole('button', { name: /^Project:/ }).click();
+  await page.getByRole('option', { name: 'Ops' }).click();
+  await dialog.getByLabel('Task name').fill('Renew the TLS certificate');
+  await dialog.getByRole('button', { name: /^Priority:/ }).click();
+  await page.getByRole('option', { name: 'High' }).click();
+  await dialog.getByRole('button', { name: 'Create Task' }).click();
+  await expect(dialog).toBeHidden();
+  const task = page.getByRole('dialog', { name: 'Renew the TLS certificate' });
+  await expect(task.getByLabel('Task title')).toHaveValue('Renew the TLS certificate');
+  await page.keyboard.press('Escape');
+  await page.getByRole('complementary', { name: 'Workspace navigation' }).getByText('Ops', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Renew the TLS certificate' })).toBeVisible();
 });
 
 test('sets up leave types, a department and a profile', async () => {

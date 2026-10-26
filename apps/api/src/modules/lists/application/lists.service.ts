@@ -11,6 +11,8 @@ import type { TaskList } from '../domain/task-list.js';
 import { TaskListRepository } from '../domain/task-list.repository.js';
 import { TaskListMapper } from './task-list.mapper.js';
 
+const DEFAULT_LIST_NAME = 'Tasks';
+
 const change = { ...workspaceFromArg, metadata: (list: TaskListResponse) => ({ name: list.name, spaceId: list.spaceId }) };
 
 @Injectable()
@@ -48,6 +50,19 @@ export class ListsService {
     const list = await this.getInWorkspace(workspaceId, listId);
     await this.lists.delete(workspaceId, listId);
     return TaskListMapper.toResponse(list);
+  }
+
+  /**
+   * Where a task created straight in a space goes: its first list, or a new
+   * "Tasks" list when the space has none yet (created, audited and announced
+   * like any other list).
+   */
+  async defaultFor(actor: Actor, workspaceId: string, spaceId: string): Promise<TaskList> {
+    await this.spacesService.getInWorkspace(workspaceId, spaceId);
+    const existing = await this.lists.firstInSpace(workspaceId, spaceId);
+    if (existing) return existing;
+    const created = await this.create(actor, workspaceId, spaceId, { name: DEFAULT_LIST_NAME });
+    return this.getInWorkspace(workspaceId, created.id);
   }
 
   async getInWorkspace(workspaceId: string, listId: string): Promise<TaskList> {

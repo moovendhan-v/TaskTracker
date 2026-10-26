@@ -1,5 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
-import { FilePlusIcon, FileTextIcon, SearchIcon } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { ChevronRightIcon, FilePlusIcon, FileTextIcon, FolderPlusIcon, SearchIcon } from 'lucide-react';
+import type { DocKind } from '@taskflow/shared-types';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
 import { ErrorState } from '@/components/common/error-state';
@@ -10,8 +12,9 @@ import { useCurrentUser } from '@/core/auth/use-current-user';
 import { usePermissions } from '@/modules/workspaces';
 import { DocEditor } from '../components/doc-editor';
 import { DocTree } from '../components/doc-tree';
+import { FolderView } from '../components/folder-view';
 import { useDocument, useDocumentMutations, useDocumentTree } from '../hooks/use-documents';
-import { buildDocumentTree, pathTo, type DocumentNode } from '../lib/build-tree';
+import { buildDocumentTree, findNode, pathTo, type DocumentNode } from '../lib/build-tree';
 
 interface DocumentsPageProps {
   workspaceId: string;
@@ -33,8 +36,10 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
   const canEdit = (doc: { createdById: string }) => can('doc.manage') || (can('doc.create') && doc.createdById === me?.id);
 
   const open = (id: string) => void navigate({ to: '/w/$workspaceId/docs/$documentId', params: { workspaceId, documentId: id } });
-  const createPage = (parentId: string | null) =>
-    mutations.create.mutate({ title: 'Untitled', parentId }, { onSuccess: (created) => open(created.id) });
+  const createPage = (parentId: string | null, kind: DocKind = 'page') =>
+    mutations.create.mutate({ title: kind === 'folder' ? 'New folder' : 'Untitled', kind, parentId }, { onSuccess: (created) => open(created.id) });
+  const rename = (id: string, title: string) => mutations.update.mutate({ documentId: id, body: { title } });
+  const titleOf = new Map((tree.data ?? []).map((doc) => [doc.id, doc.title]));
   const deletePage = (node: DocumentNode) =>
     mutations.remove.mutateAsync(node.id).then(() => {
       if (expandedPath.includes(node.id)) void navigate({ to: '/w/$workspaceId/docs', params: { workspaceId } });
@@ -56,12 +61,17 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
             />
           </div>
           {can('doc.create') ? (
-            <Button size="icon-sm" variant="outline" onClick={() => createPage(null)} aria-label="New page" disabled={mutations.create.isPending}>
-              <FilePlusIcon />
-            </Button>
+            <>
+              <Button size="icon-sm" variant="outline" onClick={() => createPage(null, 'folder')} aria-label="New folder" title="New folder" disabled={mutations.create.isPending}>
+                <FolderPlusIcon />
+              </Button>
+              <Button size="icon-sm" variant="outline" onClick={() => createPage(null)} aria-label="New page" title="New page" disabled={mutations.create.isPending}>
+                <FilePlusIcon />
+              </Button>
+            </>
           ) : null}
         </div>
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="flex flex-1 flex-col overflow-y-auto p-2">
           {tree.isLoading ? <FullPageSpinner /> : null}
           {tree.data?.length === 0 ? (
             <p className="p-2 text-sm text-muted-foreground">{deferredSearch ? 'No pages match.' : 'No pages yet.'}</p>
@@ -69,11 +79,14 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
           <DocTree
             workspaceId={workspaceId}
             nodes={nodes}
+            documents={tree.data ?? []}
             activeId={documentId}
             expandedPath={expandedPath}
             canCreate={can('doc.create')}
             canEdit={canEdit}
-            onAddChild={(parentId) => createPage(parentId)}
+            onAdd={createPage}
+            onRename={(node, title) => rename(node.id, title)}
+            onMove={(id, placement) => mutations.move.mutate({ documentId: id, body: placement })}
             onDelete={deletePage}
           />
         </div>
@@ -84,12 +97,17 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
             <EmptyState
               icon={<FileTextIcon />}
               title="Docs live next to the work"
-              description="Write specs, meeting notes and how-tos. Nest pages to keep them organised."
+              description="Write specs, meeting notes and how-tos. Group them in folders, and drag pages between folders to reorganise."
               action={
                 can('doc.create') ? (
-                  <Button onClick={() => createPage(null)}>
-                    <FilePlusIcon /> New page
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => createPage(null, 'folder')}>
+                      <FolderPlusIcon /> New folder
+                    </Button>
+                    <Button onClick={() => createPage(null)}>
+                      <FilePlusIcon /> New page
+                    </Button>
+                  </div>
                 ) : undefined
               }
             />
@@ -99,7 +117,34 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
         ) : document.isError || !document.data ? (
           <ErrorState error={document.error} />
         ) : (
-          <DocEditor key={document.data.id} workspaceId={workspaceId} document={document.data} canEdit={canEdit(document.data)} />
+          <>
+            {expandedPath.length > 1 ? (
+              <nav aria-label="Breadcrumb" className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-1 px-8 pt-6 text-xs text-muted-foreground">
+                {expandedPath.slice(0, -1).map((id) => (
+                  <span key={id} className="flex items-center gap-1">
+                    <Link to="/w/$workspaceId/docs/$documentId" params={{ workspaceId, documentId: id }} className="hover:text-foreground">
+                      {titleOf.get(id)}
+                    </Link>
+                    <ChevronRightIcon className="size-3" />
+                  </span>
+                ))}
+              </nav>
+            ) : null}
+            {document.data.kind === 'folder' ? (
+              <FolderView
+                key={document.data.id}
+                workspaceId={workspaceId}
+                folder={document.data}
+                items={findNode(nodes, document.data.id)?.children ?? []}
+                canEdit={canEdit(document.data)}
+                canCreate={can('doc.create')}
+                onRename={(title) => rename(document.data.id, title)}
+                onAdd={(kind) => createPage(document.data.id, kind)}
+              />
+            ) : (
+              <DocEditor key={document.data.id} workspaceId={workspaceId} document={document.data} canEdit={canEdit(document.data)} />
+            )}
+          </>
         )}
       </section>
     </div>

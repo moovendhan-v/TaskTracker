@@ -7,6 +7,13 @@ import { tasksApi } from '../api/tasks.api';
 type TaskPage = Paginated<TaskResponse>;
 type Cached = TaskPage | TaskResponse | TaskResponse[] | InfiniteData<TaskPage>;
 
+/** Where a new task goes: a list, or a space when no list is chosen. */
+export interface CreateVariables {
+  listId?: string;
+  spaceId?: string;
+  body: CreateTaskRequest;
+}
+
 interface UpdateVariables {
   taskId: string;
   body: UpdateTaskRequest;
@@ -35,9 +42,17 @@ export function useTaskMutations(workspaceId: string) {
   };
   const onError = (error: unknown) => notify.error(error);
 
+  /** Into a list, or straight into a space (its first list, added if it has none). */
   const create = useMutation({
-    mutationFn: ({ listId, body }: { listId: string; body: CreateTaskRequest }) => tasksApi.create(workspaceId, listId, body),
-    onSuccess: invalidate,
+    mutationFn: ({ listId, spaceId, body }: CreateVariables) => {
+      if (listId) return tasksApi.create(workspaceId, listId, body);
+      if (spaceId) return tasksApi.createInSpace(workspaceId, spaceId, body);
+      throw new Error('Choose a project');
+    },
+    onSuccess: (_task, { listId }) => {
+      if (!listId) void queryClient.invalidateQueries({ queryKey: queryKeys.lists(workspaceId) });
+      return invalidate();
+    },
     onError,
   });
 

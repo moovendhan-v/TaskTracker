@@ -8,6 +8,8 @@ const SIZES = {
   md: 'max-w-xl',
   lg: 'max-w-3xl',
   xl: 'max-w-6xl',
+  /** The task window. */
+  wide: 'max-w-[1320px]',
   full: 'max-w-[calc(100vw-2rem)]',
 } as const;
 
@@ -43,7 +45,7 @@ export function Modal({ open, onOpenChange, title, description, eyebrow, headerA
           className={cn(
             'fixed top-1/2 left-1/2 z-50 flex w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             SIZES[size],
-            tall ? 'h-[88dvh]' : 'max-h-[88dvh]',
+            tall ? (size === 'wide' ? 'h-[92dvh]' : 'h-[88dvh]') : 'max-h-[88dvh]',
             className,
           )}
         >
@@ -60,7 +62,7 @@ export function Modal({ open, onOpenChange, title, description, eyebrow, headerA
           </header>
           <div className={cn('flex min-h-0 flex-1', aside ? 'flex-col lg:flex-row' : 'flex-col')}>
             <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</div>
-            {aside ? <aside className="flex min-h-0 flex-col border-t lg:w-96 lg:border-t-0 lg:border-l">{aside}</aside> : null}
+            {aside ? <aside className="flex min-h-0 flex-col border-t bg-muted/20 lg:w-[400px] lg:shrink-0 lg:border-t-0 lg:border-l">{aside}</aside> : null}
           </div>
           {footer ? <footer className="flex shrink-0 items-center justify-end gap-2 border-t px-5 py-3">{footer}</footer> : null}
         </DialogPrimitive.Content>

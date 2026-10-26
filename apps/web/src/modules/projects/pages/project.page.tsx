@@ -196,7 +196,7 @@ export function ProjectPage({ workspaceId, spaceId, view, listId }: ProjectPageP
         {isTaskView && view !== 'table' && tasks.isLoading ? <FullPageSpinner /> : null}
         {tasks.isError ? <ErrorState error={tasks.error} onRetry={() => void tasks.refetch()} /> : null}
         {view === 'list' && tasks.data ? (
-          <ListView workspaceId={workspaceId} tasks={items} statuses={statuses} groupBy={settings.groupBy} defaultListId={defaultListId} scopeKey={`project:${spaceId}`} onOpen={openTask} />
+          <ListView workspaceId={workspaceId} tasks={items} statuses={statuses} groupBy={settings.groupBy} defaultListId={defaultListId} spaceId={spaceId} scopeKey={`project:${spaceId}`} onOpen={openTask} />
         ) : null}
         {view === 'board' && tasks.data ? <TaskBoardView workspaceId={workspaceId} spaceId={spaceId} statuses={statuses} listId={defaultListId} tasks={items} onOpen={openTask} /> : null}
         {view === 'table' ? <TaskTableView workspaceId={workspaceId} spaceId={spaceId} listId={listId} baseFilter={filter} search={deferredSearch} onOpen={openTask} /> : null}

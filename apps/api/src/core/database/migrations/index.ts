@@ -9,6 +9,7 @@ import { Notifications1729610000000 } from './1729610000000-notifications.js';
 import { TaskMetadata1729620000000 } from './1729620000000-task-metadata.js';
 import { IamPolicies1729630000000 } from './1729630000000-iam-policies.js';
 import { UserPreferences1729640000000 } from './1729640000000-user-preferences.js';
+import { DocumentFolders1729670000000 } from './1729670000000-document-folders.js';
 import { TimeTracking1729660000000 } from './1729660000000-time-tracking.js';
 import { TaskModelV21729650000000 } from './1729650000000-task-model-v2.js';
 
@@ -27,4 +28,5 @@ export const MIGRATIONS = [
   UserPreferences1729640000000,
   TaskModelV21729650000000,
   TimeTracking1729660000000,
+  DocumentFolders1729670000000,
 ];

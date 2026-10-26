@@ -6,7 +6,9 @@ import { useTaskMutations } from '../../hooks/use-task-mutations';
 
 interface QuickAddTaskProps {
   workspaceId: string;
-  listId: string;
+  /** The list new tasks go in; without one, the space's first list. */
+  listId?: string;
+  spaceId?: string;
   /** Status for new tasks; the space's first status when left out. */
   statusId?: string;
   /** Other fields new tasks start with, e.g. the group's priority or assignee. */
@@ -17,7 +19,7 @@ interface QuickAddTaskProps {
 }
 
 /** Inline "add a task" row. Enter saves and keeps the field open for the next one. */
-export function QuickAddTask({ workspaceId, listId, statusId, defaults, startOpen = false, onClose, className }: QuickAddTaskProps) {
+export function QuickAddTask({ workspaceId, listId, spaceId, statusId, defaults, startOpen = false, onClose, className }: QuickAddTaskProps) {
   const [editing, setOpen] = useState(startOpen);
   const setEditing = (open: boolean) => {
     setOpen(open);
@@ -30,7 +32,7 @@ export function QuickAddTask({ workspaceId, listId, statusId, defaults, startOpe
     event.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return setEditing(false);
-    create.mutate({ listId, body: { ...defaults, title: trimmed, ...(statusId && { statusId }) } }, { onSuccess: () => setTitle('') });
+    create.mutate({ listId, spaceId, body: { ...defaults, title: trimmed, ...(statusId && { statusId }) } }, { onSuccess: () => setTitle('') });
   }
 
   if (!editing) {

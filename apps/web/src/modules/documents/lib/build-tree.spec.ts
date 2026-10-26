@@ -6,6 +6,7 @@ const doc = (id: string, parentId: string | null, position: number): DocumentSum
   id,
   parentId,
   spaceId: null,
+  kind: 'page',
   title: id,
   position,
   createdById: 'u',

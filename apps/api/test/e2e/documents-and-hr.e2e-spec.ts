@@ -42,6 +42,23 @@ describe('documents', () => {
     expect(moveDocument.parentId).toBeNull();
   });
 
+  it('keeps folders for organising: no content, and only inside other folders', async () => {
+    const folderOf = async (title: string, parentId?: string) =>
+      (await ws.owner.data<{ createDocument: { id: string } }>(create, vars({ input: { title, kind: 'folder', parentId } }))).createDocument.id;
+    ids['specs'] = await folderOf('Specs');
+    ids['api'] = await folderOf('API', ids['specs']);
+    const move = 'mutation($w: ID!, $d: ID!, $p: ID) { moveDocument(workspaceId: $w, documentId: $d, parentId: $p) { parentId kind } }';
+    // A page goes into a folder; a folder doesn't go into a page.
+    expect((await ws.owner.data<{ moveDocument: { parentId: string } }>(move, vars({ d: ids['week'], p: ids['api'] }))).moveDocument.parentId).toBe(ids['api']);
+    expect((await ws.owner.error(move, vars({ d: ids['specs'], p: ids['onboarding'] }))).message).toMatch(/only go inside another folder/);
+    expect((await ws.owner.error(move, vars({ d: ids['specs'], p: ids['api'] }))).message).toMatch(/inside itself/);
+    const update = 'mutation($w: ID!, $d: ID!, $input: UpdateDocumentInput!) { updateDocument(workspaceId: $w, documentId: $d, input: $input) { title } }';
+    expect((await ws.owner.error(update, vars({ d: ids['specs'], input: { content: 'text' } }))).message).toMatch(/no content/);
+    expect((await ws.owner.data<{ updateDocument: { title: string } }>(update, vars({ d: ids['specs'], input: { title: 'Specifications' } }))).updateDocument.title).toBe('Specifications');
+    await ws.owner.data(move, vars({ d: ids['week'], p: null }));
+    await ws.owner.data('mutation($w: ID!, $d: ID!) { deleteDocument(workspaceId: $w, documentId: $d) }', vars({ d: ids['specs'] }));
+  });
+
   it("lets members edit their own pages but not other people's", async () => {
     const update = 'mutation($w: ID!, $d: ID!, $input: UpdateDocumentInput!) { updateDocument(workspaceId: $w, documentId: $d, input: $input) { content } }';
     expect((await member.error(update, vars({ d: ids['handbook'], input: { title: 'Mine now' } }))).message).toMatch(/pages you created/);

@@ -6,11 +6,10 @@ import { toast } from '@/components/ui/sonner';
 import { describeNotification, inboxApi, useUnreadCount } from '@/modules/inbox';
 import { TaskDetail, useOpenTask } from '@/modules/tasks';
 import { AppTopbar } from './app-topbar';
-import { IconRail } from './icon-rail';
 import { WorkspaceSidebar } from './workspace-sidebar';
 
 /**
- * Composition root for a workspace: icon rail, context sidebar, top bar and
+ * Composition root for a workspace: sidebar, top bar and
  * the page. The open task (`?task=`) shows over any page.
  */
 export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: string; openTaskId: string | undefined }) {
@@ -31,8 +30,7 @@ export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: stri
 
   return (
     <div className="flex h-full overflow-hidden">
-      <IconRail workspaceId={workspaceId} unread={unread} />
-      <WorkspaceSidebar workspaceId={workspaceId} />
+      <WorkspaceSidebar workspaceId={workspaceId} unread={unread} />
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AppTopbar workspaceId={workspaceId} unread={unread} />
         <VerifyEmailBanner />

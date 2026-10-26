@@ -1,19 +1,23 @@
+import { Dialog as DialogPrimitive } from 'radix-ui';
+import { FlagIcon, Loader2Icon, TagIcon, UserRoundIcon, XIcon } from 'lucide-react';
 import { useState } from 'react';
-import { TASK_PRIORITIES, TASK_TYPES, type TaskPriority, type TaskType } from '@taskflow/shared-types';
-import { Modal } from '@/components/kit/modal';
+import { useWatch } from 'react-hook-form';
+import { TASK_DESCRIPTION_MAX, TASK_PRIORITIES, TASK_TITLE_MAX, TASK_TYPES, type TaskPriority, type TaskType } from '@taskflow/shared-types';
+import { UserAvatar } from '@/components/common/user-avatar';
 import { notify } from '@/components/kit/notify';
-import { Button } from '@/components/ui/button';
-import { FormField } from '@/components/ui/form-field';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { OptionPicker } from '@/components/kit/option-picker';
+import { DateRangeField } from '@/components/kit/range-calendar';
+import { StatusPill } from '@/components/kit/status-pill';
 import { useServerForm } from '@/core/forms/use-server-form';
-import { fromDateInputValue } from '@/lib/dates';
+import { cn } from '@/lib/cn';
+import { dayToIso, type Day } from '@/lib/days';
 import { useLists } from '@/modules/lists';
 import { useMembers } from '@/modules/members';
 import { useSpaces } from '@/modules/spaces';
 import { useStatuses } from '../hooks/use-tasks';
 import { useTaskMutations } from '../hooks/use-task-mutations';
 import { PRIORITY_META, TYPE_META } from '../lib/task-meta';
+import { PriorityIcon } from './shared/priority-picker';
 
 interface Values {
   title: string;
@@ -33,146 +37,257 @@ interface NewTaskDialogProps {
   /** Preselects a list (and so its project). */
   listId?: string;
   spaceId?: string;
+  /** Creates a subtask of this task. */
+  parent?: { id: string; number: number };
   onCreated?: (taskId: string) => void;
 }
 
-const select = 'h-9 w-full rounded-md border border-input bg-card px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const chip = 'flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
 
 /**
- * Creates a task anywhere: pick the list, then the rest. Checks the input with
- * the API's own `task.create` rules and shows the API's messages if it refuses.
+ * Creates a task in a project: name, description and a row of chips for the
+ * rest. The project's first list is used unless a list was given, and the API
+ * adds one if the project has none. Input is checked with the API's own
+ * `task.create` rules.
  */
-export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initialList, spaceId: initialSpace, onCreated }: NewTaskDialogProps) {
+export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initialList, spaceId: initialSpace, parent, onCreated }: NewTaskDialogProps) {
   const { data: lists = [] } = useLists(workspaceId);
   const { data: spaces = [] } = useSpaces(workspaceId);
   const { data: members = [] } = useMembers(workspaceId);
-  const [chosenList, setListId] = useState<string | null>(initialList ?? null);
-  // Until a list is picked, the first one in the given project (lists may still be loading).
-  const listId = chosenList ?? lists.find((item) => !initialSpace || item.spaceId === initialSpace)?.id ?? '';
-  const list = lists.find((item) => item.id === listId);
-  const { data: statuses = [] } = useStatuses(workspaceId, list?.spaceId);
+  const listSpace = lists.find((item) => item.id === initialList)?.spaceId;
+  const [chosenSpace, setSpaceId] = useState<string | null>(initialSpace ?? null);
+  const spaceId = chosenSpace ?? listSpace ?? spaces[0]?.id ?? null;
+  const space = spaces.find((item) => item.id === spaceId);
+  // A given list only applies while its project is the chosen one.
+  const listId = initialList && listSpace === spaceId ? initialList : undefined;
+  const { data: statuses = [] } = useStatuses(workspaceId, spaceId ?? undefined);
   const { create } = useTaskMutations(workspaceId);
-  // Mounted fresh for each use, so defaults are set once here.
-  const { form, applyServerErrors } = useServerForm<Values>('task.create', {
-    defaultValues: { title: '', description: '', type: 'task', priority: 'normal', statusId: '', assigneeId: '', startDate: '', dueDate: '' },
-  });
-  const { errors } = form.formState;
+  const [more, setMore] = useState(false);
+  const [estimate, setEstimate] = useState('');
 
-  const submit = form.handleSubmit(async (values) => {
-    if (!listId) return;
-    try {
-      const task = await create.mutateAsync({
-        listId,
-        body: {
-          title: values.title.trim(),
-          description: values.description,
-          type: values.type,
-          priority: values.priority,
-          ...(values.statusId && { statusId: values.statusId }),
-          assigneeId: values.assigneeId || null,
-          startDate: fromDateInputValue(values.startDate),
-          dueDate: fromDateInputValue(values.dueDate),
-        },
-      });
-      notify.success(`Created #${task.number}`);
-      onOpenChange(false);
-      onCreated?.(task.id);
-    } catch (error) {
-      if (!applyServerErrors(error)) throw error;
-    }
+  // Mounted fresh for each use, so defaults are set once here.
+  const { form, applyServerErrors, hints } = useServerForm<Values>('task.create', {
+    defaultValues: { title: '', description: '', type: 'task', priority: 'none', statusId: '', assigneeId: '', startDate: '', dueDate: '' },
   });
+  const values = useWatch({ control: form.control });
+  const { errors } = form.formState;
+  const set = <K extends keyof Values>(key: K, value: Values[K]) => form.setValue(key, value as never, { shouldDirty: true });
+  const status = statuses.find((item) => item.id === values.statusId) ?? statuses.find((item) => item.category === 'unstarted') ?? statuses[0];
+  const assignee = members.find((member) => member.userId === values.assigneeId);
+  const firstError = Object.values(errors)[0]?.message;
+
+  const submit = (another: boolean) =>
+    form.handleSubmit(async (input) => {
+      if (!spaceId) return notify.error(new Error('Choose a project'));
+      const hours = Number(estimate);
+      try {
+        const task = await create.mutateAsync({
+          listId,
+          spaceId,
+          body: {
+            title: input.title.trim(),
+            description: input.description,
+            type: input.type,
+            priority: input.priority,
+            ...(input.statusId && { statusId: input.statusId }),
+            assigneeId: input.assigneeId || null,
+            startDate: input.startDate ? dayToIso(input.startDate) : null,
+            dueDate: input.dueDate ? dayToIso(input.dueDate) : null,
+            ...(parent && { parentId: parent.id }),
+            ...(estimate && Number.isFinite(hours) && hours >= 0 && { estimateMinutes: Math.round(hours * 60) }),
+          },
+        });
+        notify.success('Task created', { action: { label: 'Open', onClick: () => onCreated?.(task.id) } });
+        if (another) {
+          form.reset({ ...input, title: '', description: '' });
+          form.setFocus('title');
+        } else {
+          onOpenChange(false);
+          onCreated?.(task.id);
+        }
+      } catch (error) {
+        if (!applyServerErrors(error)) throw error;
+      }
+    })();
+
+  const busy = form.formState.isSubmitting;
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={onOpenChange}
-      title="New task"
-      size="md"
-      footer={
-        <>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" form="new-task-form" disabled={form.formState.isSubmitting || !listId}>
-            Create task
-          </Button>
-        </>
-      }
-    >
-      <form id="new-task-form" onSubmit={submit} noValidate className="grid gap-4 p-5">
-        <FormField id="new-task-title" label="Name" error={errors.title?.message}>
-          <Input id="new-task-title" autoFocus placeholder="What needs doing?" {...form.register('title')} />
-        </FormField>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <FormField id="new-task-list" label="List">
-            <select id="new-task-list" value={listId} onChange={(event) => setListId(event.target.value)} className={select}>
-              <option value="" disabled>
-                Choose a list
-              </option>
-              {spaces.map((space) => (
-                <optgroup key={space.id} label={space.name}>
-                  {lists
-                    .filter((item) => item.spaceId === space.id)
-                    .map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                </optgroup>
-              ))}
-            </select>
-          </FormField>
-          <FormField id="new-task-status" label="Status" error={errors.statusId?.message}>
-            <select id="new-task-status" className={select} {...form.register('statusId')}>
-              <option value="">First status</option>
-              {statuses.map((status) => (
-                <option key={status.id} value={status.id}>
-                  {status.name}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField id="new-task-type" label="Type">
-            <select id="new-task-type" className={select} {...form.register('type')}>
-              {TASK_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {TYPE_META[type].label}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField id="new-task-priority" label="Priority">
-            <select id="new-task-priority" className={select} {...form.register('priority')}>
-              {TASK_PRIORITIES.map((priority) => (
-                <option key={priority} value={priority}>
-                  {PRIORITY_META[priority].label}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField id="new-task-assignee" label="Assignee" error={errors.assigneeId?.message}>
-            <select id="new-task-assignee" className={select} {...form.register('assigneeId')}>
-              <option value="">Unassigned</option>
-              {members.map((member) => (
-                <option key={member.userId} value={member.userId}>
-                  {member.name}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <div className="grid grid-cols-2 gap-2">
-            <FormField id="new-task-start" label="Start" error={errors.startDate?.message}>
-              <Input id="new-task-start" type="date" {...form.register('startDate')} />
-            </FormField>
-            <FormField id="new-task-due" label="Due" error={errors.dueDate?.message}>
-              <Input id="new-task-due" type="date" {...form.register('dueDate')} />
-            </FormField>
-          </div>
-        </div>
-        <FormField id="new-task-description" label="Description" error={errors.description?.message}>
-          <Textarea id="new-task-description" rows={3} {...form.register('description')} />
-        </FormField>
-      </form>
-    </Modal>
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          className="fixed top-[10vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-[720px] -translate-x-1/2 rounded-xl border bg-popover text-popover-foreground shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+        >
+          <DialogPrimitive.Title className="sr-only">New task</DialogPrimitive.Title>
+          <form
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submit(false);
+            }}
+          >
+            <div className="flex items-center gap-2 px-5 pt-4">
+              <OptionPicker
+                label="Project"
+                placeholder="Search projects"
+                width="w-72"
+                options={spaces.map((item) => ({ value: item.id, label: item.name, color: item.color }))}
+                value={spaceId}
+                onChange={(next) => {
+                  if (!next) return;
+                  setSpaceId(next);
+                  // Statuses belong to a project.
+                  set('statusId', '');
+                }}
+                trigger={
+                  <button type="button" aria-label={`Project: ${space?.name ?? 'none'}`} className="flex items-center gap-2 rounded-md bg-muted px-2.5 py-1 text-sm hover:bg-accent">
+                    <span className="flex size-4 items-center justify-center rounded text-[9px] font-bold text-white" style={{ backgroundColor: space?.color ?? '#7b68ee' }}>
+                      {space?.name.slice(0, 1).toUpperCase() ?? '?'}
+                    </span>
+                    {space?.name ?? 'Select a project'}
+                  </button>
+                }
+              />
+              {parent ? <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">Subtask of #{parent.number}</span> : null}
+              <DialogPrimitive.Close className="ml-auto rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Close">
+                <XIcon className="size-4" />
+              </DialogPrimitive.Close>
+            </div>
+
+            <div className="px-5 pt-3 pb-2">
+              <input
+                autoFocus
+                placeholder="Task name"
+                aria-label="Task name"
+                maxLength={hints('title').maxLength ?? TASK_TITLE_MAX}
+                aria-invalid={Boolean(errors.title)}
+                className="w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-muted-foreground/60"
+                {...form.register('title')}
+              />
+              <textarea
+                rows={(values.description ?? '').split('\n').length > 3 ? 8 : 3}
+                placeholder="Add description"
+                aria-label="Description"
+                maxLength={TASK_DESCRIPTION_MAX}
+                className="mt-2 w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                {...form.register('description')}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 px-5 pb-4">
+              <OptionPicker
+                label="Status"
+                searchable={false}
+                width="w-56"
+                options={statuses.map((item) => ({ value: item.id, label: item.name, color: item.color }))}
+                value={status?.id}
+                onChange={(next) => set('statusId', next ?? '')}
+                trigger={
+                  <button type="button" className="rounded-[5px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={`Status: ${status?.name ?? 'first status'}`}>
+                    <StatusPill status={status ?? { name: 'Status', color: '#6b7280' }} />
+                  </button>
+                }
+              />
+              <OptionPicker
+                label="Assignee"
+                placeholder="Search people"
+                clearLabel="Unassigned"
+                options={members.map((member) => ({ value: member.userId, label: member.name, person: true }))}
+                value={values.assigneeId || null}
+                onChange={(next) => set('assigneeId', next ?? '')}
+                trigger={
+                  <button type="button" className={cn(chip, assignee && 'text-foreground')} aria-label={`Assignee: ${assignee?.name ?? 'unassigned'}`}>
+                    {assignee ? <UserAvatar name={assignee.name} className="size-4 text-[8px]" /> : <UserRoundIcon className="size-3.5" />}
+                    {assignee?.name ?? 'Assignee'}
+                  </button>
+                }
+              />
+              <span className={cn(chip, 'px-1')}>
+                <DateRangeField
+                  className="px-1 py-0 text-xs"
+                  placeholder="Dates"
+                  start={(values.startDate as Day) || null}
+                  due={(values.dueDate as Day) || null}
+                  onChange={({ start, due }) => {
+                    set('startDate', start ?? '');
+                    set('dueDate', due ?? '');
+                  }}
+                />
+              </span>
+              <OptionPicker
+                label="Priority"
+                searchable={false}
+                width="w-44"
+                options={TASK_PRIORITIES.map((priority) => ({ value: priority, label: PRIORITY_META[priority].label, icon: <PriorityIcon priority={priority} className="size-3.5" /> }))}
+                value={values.priority}
+                onChange={(next) => set('priority', next ?? 'none')}
+                trigger={
+                  <button type="button" className={cn(chip, values.priority !== 'none' && 'text-foreground')} aria-label={`Priority: ${PRIORITY_META[values.priority ?? 'none'].label}`}>
+                    {values.priority && values.priority !== 'none' ? (
+                      <>
+                        <PriorityIcon priority={values.priority} className="size-3.5" />
+                        {PRIORITY_META[values.priority].label}
+                      </>
+                    ) : (
+                      <>
+                        <FlagIcon className="size-3.5" /> Priority
+                      </>
+                    )}
+                  </button>
+                }
+              />
+              <OptionPicker
+                label="Type"
+                searchable={false}
+                width="w-44"
+                options={TASK_TYPES.map((type) => ({ value: type, label: TYPE_META[type].label }))}
+                value={values.type}
+                onChange={(next) => set('type', next ?? 'task')}
+                trigger={
+                  <button type="button" className={cn(chip, values.type !== 'task' && 'text-foreground')} aria-label={`Type: ${TYPE_META[values.type ?? 'task'].label}`}>
+                    <TagIcon className="size-3.5" />
+                    {values.type === 'task' ? 'Type' : TYPE_META[values.type ?? 'task'].label}
+                  </button>
+                }
+              />
+              <button type="button" className={chip} onClick={() => setMore((value) => !value)} aria-expanded={more}>
+                {more ? 'Fewer fields' : 'More fields'}
+              </button>
+            </div>
+
+            {more ? (
+              <div className="grid grid-cols-2 gap-3 border-t px-5 py-3 text-sm">
+                <label className="text-xs text-muted-foreground">
+                  Time estimate (hours)
+                  <input
+                    value={estimate}
+                    onChange={(event) => setEstimate(event.target.value.replace(/[^\d.]/g, '').slice(0, 6))}
+                    inputMode="decimal"
+                    className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </label>
+              </div>
+            ) : null}
+
+            <div className="flex items-center justify-end gap-2 border-t px-5 py-3">
+              {firstError ? (
+                <p role="alert" className="mr-auto text-sm text-destructive">
+                  {firstError}
+                </p>
+              ) : null}
+              <button type="button" disabled={busy || !spaceId} onClick={() => void submit(true)} className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50">
+                Create and add another
+              </button>
+              <button type="submit" disabled={busy || !spaceId} className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                {busy ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
+                Create Task
+              </button>
+            </div>
+          </form>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
