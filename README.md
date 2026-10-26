@@ -53,12 +53,12 @@ The first run creates `.env` from `.env.example` with fresh random secrets (git-
 
 | | |
 |---|---|
-| App | http://localhost:5173 |
-| API | http://localhost:3000/api/graphql |
-| Emails (Mailpit) | http://localhost:8025 |
-| Postgres | localhost:5432 (loopback only) |
+| App | http://localhost:5180 |
+| API | http://localhost:3100/api/graphql |
+| Emails (Mailpit) | http://localhost:8125 |
+| Postgres | localhost:55432 (loopback only) |
 
-Sign in as `avery@example.com` (or jordan@, sam@, kai@) with `SEED_PASSWORD` from `.env`. Every step is idempotent, so running it again only starts things. Before starting, the script frees the ports it needs: another TaskFlow stack (such as `pnpm infra:up`) is stopped with its data kept, and any other container or program on those ports is shown and stopped once you confirm (`./scripts/dev.sh -y` skips the question). An older `.env` gets any settings it lacks added. Other commands: `./scripts/dev.sh down` (stop, keep data), `logs`, `bootstrap` (re-run install, build, migrations and seed), `reset` (delete the database and dependency volumes). Ports and seeding are set in `.env` (`WEB_DEV_PORT`, `API_HOST_PORT`, `POSTGRES_HOST_PORT`, `SEED_DEMO`). Behind a proxy that inspects TLS, put its CA in a git-ignored `infra/docker/docker-compose.dev.override.yml` (mount it into `bootstrap` and set `NODE_EXTRA_CA_CERTS`); the script picks that file up.
+Sign in as `avery@example.com` (or jordan@, sam@, kai@) with `SEED_PASSWORD` from `.env`. Every step is idempotent, so running it again only starts things. The dev ports differ from the other stack's (`pnpm infra:up`), so both can run at once, and the script never stops anything: if a port is taken it moves to the next free one, saves it in `.env` and prints the addresses it used. An older `.env` gets any settings it lacks added. Other commands: `./scripts/dev.sh down` (stop, keep data), `logs`, `bootstrap` (re-run install, build, migrations and seed), `reset` (delete the database and dependency volumes). Ports and seeding are set in `.env` (`DEV_WEB_PORT`, `DEV_API_PORT`, `DEV_POSTGRES_PORT`, `DEV_MAIL_PORT`, `SEED_DEMO`). Behind a proxy that inspects TLS, put its CA in a git-ignored `infra/docker/docker-compose.dev.override.yml` (mount it into `bootstrap` and set `NODE_EXTRA_CA_CERTS`); the script picks that file up.
 
 The compose file is `infra/docker/docker-compose.dev.yml`. Dependencies live in Docker volumes, so they never mix with `node_modules` on the host, and the API and web containers run as your user, so files they write stay yours.
 
