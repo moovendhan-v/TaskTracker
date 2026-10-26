@@ -1,6 +1,7 @@
 import {
-  CalendarIcon,
+  CalendarDaysIcon,
   CheckIcon,
+  ClockIcon,
   CircleDotIcon,
   EyeIcon,
   EyeOffIcon,
@@ -12,9 +13,9 @@ import {
   MessageSquareIcon,
   MoreHorizontalIcon,
   PercentIcon,
-  TimerIcon,
+  PlusIcon,
   TrashIcon,
-  UserIcon,
+  UserRoundIcon,
   XIcon,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -31,9 +32,9 @@ import {
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { UserAvatar } from '@/components/common/user-avatar';
-import { Meter } from '@/components/kit/charts';
 import { Modal } from '@/components/kit/modal';
 import { Section } from '@/components/kit/section';
+import { DateRangeField } from '@/components/kit/range-calendar';
 import { StatusPill } from '@/components/kit/status-pill';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
@@ -41,6 +42,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCurrentUser } from '@/core/auth/use-current-user';
 import { usePreferences } from '@/core/preferences/use-preferences';
 import { cn } from '@/lib/cn';
+import { dayOf, dayToIso } from '@/lib/days';
 import { formatNumericDate } from '@/lib/periods';
 import { useResettableState } from '@/lib/use-resettable-state';
 import { CommentThread } from '@/modules/comments';
@@ -52,7 +54,6 @@ import { useSubtasks, useTask, useTaskActivity, useTaskRelations, useTaskWatcher
 import { useTaskMutations } from '../../hooks/use-task-mutations';
 import { TYPE_META } from '../../lib/task-meta';
 import { AssigneePicker } from '../shared/assignee-picker';
-import { DueDateInput } from '../shared/due-date';
 import { PriorityPicker } from '../shared/priority-picker';
 import { StatusDot, StatusPicker } from '../shared/status-picker';
 import { TypeBadge } from '../shared/type-badge';
@@ -72,6 +73,7 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
   const memberName = useMemberName(workspaceId);
   const open = Boolean(taskId);
   const space = spaces.find((item) => item.id === task?.spaceId);
+  const { data: parent } = useTask(workspaceId, task?.parentId ?? undefined);
 
   if (taskDetailMode === 'side') {
     return (
@@ -94,7 +96,7 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
     <Modal
       open={open}
       onOpenChange={(next) => !next && onClose()}
-      size="xl"
+      size="wide"
       tall
       hideTitle
       title={task?.title ?? 'Task'}
@@ -102,7 +104,15 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
         task ? (
           <>
             <span className="rounded bg-muted px-2 py-0.5 font-medium text-foreground">{space?.name ?? 'Project'}</span>
-            <span className="tabular-nums">#{task.number}</span>
+            {parent ? (
+              <>
+                <span aria-hidden>/</span>
+                <button type="button" className="max-w-64 truncate hover:text-primary" onClick={() => onOpen(parent.id)}>
+                  {parent.title}
+                </button>
+              </>
+            ) : null}
+            <span className="ml-1 tabular-nums text-muted-foreground/70">#{task.number}</span>
           </>
         ) : null
       }
@@ -110,10 +120,10 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
       aside={
         task ? (
           <div className="flex min-h-0 flex-1 flex-col">
-            <h2 className="flex items-center gap-2 border-b px-4 py-3 text-sm font-semibold">
-              <MessageSquareIcon className="size-4" /> Activity
+            <h2 className="flex items-center gap-2 border-b px-5 py-3 text-sm font-semibold">
+              <MessageSquareIcon className="size-4 text-muted-foreground" /> Activity
             </h2>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
               <CommentThread workspaceId={workspaceId} taskId={task.id} />
             </div>
           </div>
@@ -127,8 +137,8 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
 
 function Property({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="grid min-h-9 grid-cols-[8.5rem_minmax(0,1fr)] items-center gap-2 text-sm">
-      <dt className="flex items-center gap-2 text-muted-foreground [&_svg]:size-4">
+    <div className="grid min-h-10 grid-cols-[120px_minmax(0,1fr)] items-center gap-2 text-sm">
+      <dt className="flex items-center gap-2 text-[13px] text-muted-foreground [&_svg]:size-4">
         {icon}
         {label}
       </dt>
@@ -137,7 +147,7 @@ function Property({ icon, label, children }: { icon: ReactNode; label: string; c
   );
 }
 
-const inputClass = 'h-8 rounded-md border border-input bg-card px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60';
+const inputClass = 'h-8 rounded-md bg-transparent px-1.5 text-sm outline-none placeholder:text-muted-foreground hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none';
 
 function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: string; task: TaskResponse; onOpen: (taskId: string) => void; onDeleted: () => void }) {
   const { update, remove } = useTaskMutations(workspaceId);
@@ -151,11 +161,14 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
   const save = (body: UpdateTaskRequest) => update.mutate({ taskId: task.id, body });
 
   return (
-    <div className="grid gap-6 p-6">
+    <div className="grid gap-6 px-8 py-6">
       <div className="grid gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger disabled={!canEdit} className="w-fit rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={`Type: ${TYPE_META[task.type].label}`}>
-            <TypeBadge type={task.type} className="h-6 px-2 text-xs" />
+            <span className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs hover:bg-muted">
+              <CircleDotIcon className="size-3.5 text-primary" />
+              {TYPE_META[task.type].label}
+            </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             {TASK_TYPES.map((type) => (
@@ -175,7 +188,7 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
             onBlur={() => title.trim() && title.trim() !== task.title && save({ title: title.trim() })}
             onKeyDown={(event) => event.key === 'Enter' && (event.preventDefault(), event.currentTarget.blur())}
             aria-label="Task title"
-            className="field-sizing-content min-w-0 flex-1 resize-none rounded-md bg-transparent px-1 text-2xl leading-tight font-bold outline-none hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
+            className="field-sizing-content min-w-0 flex-1 resize-none rounded-md bg-transparent px-1 text-[28px] leading-tight font-bold outline-none hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
           />
           {can('task.delete') ? (
             <DropdownMenu>
@@ -200,10 +213,19 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
         </div>
       </div>
 
-      <dl className="grid gap-x-10 gap-y-1 md:grid-cols-2">
-        <div className="grid gap-1">
+      <dl className="grid gap-x-10 gap-y-0.5 lg:grid-cols-2">
+        <div className="grid content-start gap-0.5">
           <Property icon={<CircleDotIcon />} label="Status">
             <StatusPicker variant="pill" workspaceId={workspaceId} value={task.status} disabled={!canEdit} onChange={(status) => update.mutate({ taskId: task.id, body: { statusId: status.id }, status })} />
+          </Property>
+          <Property icon={<CalendarDaysIcon />} label="Dates">
+            <DateRangeField
+              start={dayOf(task.startDate)}
+              due={dayOf(task.dueDate)}
+              closed={isClosedCategory(task.status.category)}
+              disabled={!canEdit}
+              onChange={({ start, due }) => save({ startDate: start ? dayToIso(start) : null, dueDate: due ? dayToIso(due) : null })}
+            />
           </Property>
           <Property icon={<HourglassIcon />} label="Work">
             <span className="flex items-center gap-2">
@@ -217,17 +239,17 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
                 aria-label="Estimate in hours"
                 onChange={(event) => setEstimate(event.target.value)}
                 onBlur={() => save({ estimateMinutes: estimate === '' ? null : Math.round(Number(estimate) * 60) })}
-                className={cn(inputClass, 'w-24')}
+                className={cn(inputClass, 'w-16')}
               />
               <span className="text-muted-foreground">hours</span>
             </span>
           </Property>
-          <Property icon={<TimerIcon />} label="Track time">
+          <Property icon={<ClockIcon />} label="Track time">
             <TaskTimeControls workspaceId={workspaceId} task={{ id: task.id, number: task.number, title: task.title, spaceId: task.spaceId }} />
           </Property>
         </div>
-        <div className="grid gap-1">
-          <Property icon={<UserIcon />} label="Assignee">
+        <div className="grid content-start gap-0.5">
+          <Property icon={<UserRoundIcon />} label="Assignee">
             <AssigneePicker showName workspaceId={workspaceId} value={task.assigneeId} disabled={!can('task.assign')} onChange={(assigneeId) => save({ assigneeId })} />
           </Property>
           <Property icon={<FlagIcon />} label="Priority">
@@ -245,22 +267,16 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
                 aria-label="Percent complete"
                 onChange={(event) => setProgress(event.target.value)}
                 onBlur={() => save({ progress: progress === '' ? null : Math.max(0, Math.min(100, Math.round(Number(progress)))) })}
-                className={cn(inputClass, 'w-20')}
+                className={cn(inputClass, 'w-14')}
               />
-              <Meter value={Number(progress) || 0} label="Percent complete" className="w-24" />
+              <span className="text-muted-foreground">%</span>
+              <span role="meter" aria-label="Percent complete" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number(progress) || 0} className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                <span className="block h-full rounded-full bg-good" style={{ width: `${Math.max(0, Math.min(100, Number(progress) || 0))}%` }} />
+              </span>
             </span>
           </Property>
           <Property icon={<EyeIcon />} label="Watchers">
             <Watchers workspaceId={workspaceId} taskId={task.id} />
-          </Property>
-        </div>
-        <div className="md:col-span-2">
-          <Property icon={<CalendarIcon />} label="Dates">
-            <span className="flex items-center gap-1.5">
-              <DueDateInput id="task-start-date" value={task.startDate} disabled={!canEdit} onChange={(startDate) => save({ startDate })} />
-              <span aria-hidden className="text-muted-foreground">→</span>
-              <DueDateInput id="task-due-date" value={task.dueDate} disabled={!canEdit} onChange={(dueDate) => save({ dueDate })} />
-            </span>
           </Property>
         </div>
       </dl>
@@ -336,6 +352,7 @@ function Subtasks({ workspaceId, task, onOpen }: { workspaceId: string; task: Ta
   const { data: subtasks = [] } = useSubtasks(workspaceId, task.id);
   const { create, update } = useTaskMutations(workspaceId);
   const { can } = usePermissions(workspaceId);
+  const memberName = useMemberName(workspaceId);
   const [title, setTitle] = useState('');
   const done = subtasks.filter((item) => isClosedCategory(item.status.category)).length;
 
@@ -354,26 +371,28 @@ function Subtasks({ workspaceId, task, onOpen }: { workspaceId: string; task: Ta
     >
       <ul className="grid gap-0.5 pt-1">
         {subtasks.map((subtask) => (
-          <li key={subtask.id} className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/50">
-            <StatusPicker compact workspaceId={workspaceId} value={subtask.status} disabled={!can('task.update')} onChange={(status) => update.mutate({ taskId: subtask.id, body: { statusId: status.id }, status })} />
+          <li key={subtask.id} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/50">
+            <StatusPicker variant="ring" workspaceId={workspaceId} value={subtask.status} disabled={!can('task.update')} onChange={(status) => update.mutate({ taskId: subtask.id, body: { statusId: status.id }, status })} />
             <span className="text-xs tabular-nums text-muted-foreground">#{subtask.number}</span>
             <button type="button" className={cn('min-w-0 flex-1 truncate text-left text-sm hover:text-primary', isClosedCategory(subtask.status.category) && 'text-muted-foreground line-through')} onClick={() => onOpen(subtask.id)}>
               {subtask.title}
             </button>
-            <StatusPill status={subtask.status} />
+            <StatusPill status={subtask.status} size="xs" />
+            {subtask.assigneeId ? <UserAvatar name={memberName(subtask.assigneeId) ?? 'Member'} className="size-5 text-[9px]" showTooltip /> : null}
           </li>
         ))}
       </ul>
       {can('task.create') ? (
         <form
-          className="px-2 pt-1"
+          className="flex items-center gap-2 px-2 pt-1"
           onSubmit={(event) => {
             event.preventDefault();
             const trimmed = title.trim();
             if (trimmed) create.mutate({ listId: task.listId, body: { title: trimmed, parentId: task.id } }, { onSuccess: () => setTitle('') });
           }}
         >
-          <input value={title} maxLength={TASK_TITLE_MAX} onChange={(event) => setTitle(event.target.value)} placeholder="+ Add subtask (Enter)" aria-label="New subtask" className="h-8 w-full rounded-md bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground focus-visible:bg-muted/50" />
+          <PlusIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+          <input value={title} maxLength={TASK_TITLE_MAX} onChange={(event) => setTitle(event.target.value)} placeholder="Add subtask (Enter)" aria-label="New subtask" className="h-8 w-full rounded-md bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground focus-visible:bg-muted/50" />
         </form>
       ) : null}
     </Section>
@@ -430,7 +449,8 @@ function Relations({ workspaceId, task, onOpen }: { workspaceId: string; task: T
             if (Number.isInteger(value) && value > 0) relateByNumber.mutate({ taskId: task.id, number: value, kind }, { onSuccess: () => setNumber('') });
           }}
         >
-          <select value={kind} onChange={(event) => setKind(event.target.value as TaskRelationKind)} aria-label="Relation" className="h-8 rounded-md border bg-card px-2 text-sm">
+          <PlusIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+          <select value={kind} onChange={(event) => setKind(event.target.value as TaskRelationKind)} aria-label="Relation" className="h-7 rounded-md border bg-background px-1.5 text-xs">
             {TASK_RELATION_KINDS.map((item) => (
               <option key={item} value={item}>
                 {KIND_LABEL[item].outgoing}

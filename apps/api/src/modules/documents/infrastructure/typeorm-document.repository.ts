@@ -27,6 +27,7 @@ export class TypeOrmDocumentRepository extends DocumentRepository {
         'doc.workspaceId',
         'doc.spaceId',
         'doc.parentId',
+        'doc.kind',
         'doc.title',
         'doc.position',
         'doc.createdById',

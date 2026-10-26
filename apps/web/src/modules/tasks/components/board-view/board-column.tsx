@@ -8,6 +8,7 @@ import { TaskCard } from './task-card';
 interface BoardColumnProps {
   workspaceId: string;
   listId: string | undefined;
+  spaceId: string;
   status: TaskStatusResponse;
   tasks: TaskResponse[];
   canEdit: boolean;
@@ -16,7 +17,7 @@ interface BoardColumnProps {
   onDrop: (event: DragEvent, status: TaskStatusResponse, beforeTaskId: string | null) => void;
 }
 
-export function BoardColumn({ workspaceId, listId, status, tasks, canEdit, canCreate, onOpen, onDrop }: BoardColumnProps) {
+export function BoardColumn({ workspaceId, listId, spaceId, status, tasks, canEdit, canCreate, onOpen, onDrop }: BoardColumnProps) {
   const [over, setOver] = useState(false);
 
   return (
@@ -55,7 +56,7 @@ export function BoardColumn({ workspaceId, listId, status, tasks, canEdit, canCr
             }}
           />
         ))}
-        {canCreate && listId ? <QuickAddTask workspaceId={workspaceId} listId={listId} statusId={status.id} /> : null}
+        {canCreate ? <QuickAddTask workspaceId={workspaceId} listId={listId} spaceId={spaceId} statusId={status.id} /> : null}
       </div>
     </section>
   );

@@ -7,6 +7,7 @@ export const DocumentMapper = {
       id: document.id,
       parentId: document.parentId,
       spaceId: document.spaceId,
+      kind: document.kind,
       title: document.title,
       position: document.position,
       createdById: document.createdById,

@@ -115,6 +115,9 @@ input CreateDepartmentInput {
 
 input CreateDocumentInput {
   content: String
+
+  """Defaults to page"""
+  kind: DocKind
   parentId: ID
   spaceId: ID
   title: String!
@@ -409,12 +412,18 @@ type Department {
   name: String!
 }
 
+enum DocKind {
+  folder
+  page
+}
+
 type Document {
   """Markdown; render without raw HTML"""
   content: String!
   createdAt: String!
   createdById: ID!
   id: ID!
+  kind: DocKind!
   parentId: ID
   position: Float!
   spaceId: ID
@@ -425,6 +434,7 @@ type Document {
 type DocumentSummary {
   createdById: ID!
   id: ID!
+  kind: DocKind!
   parentId: ID
   position: Float!
   spaceId: ID
@@ -705,6 +715,11 @@ type Mutation {
   createSprint(input: CreateSprintInput!, spaceId: ID!, workspaceId: ID!): Sprint!
   createStatus(input: CreateTaskStatusInput!, spaceId: ID!, workspaceId: ID!): TaskStatus!
   createTask(input: CreateTaskInput!, listId: ID!, workspaceId: ID!): Task!
+
+  """
+  Creates a task in a space's first list, adding a list if the space has none
+  """
+  createTaskInSpace(input: CreateTaskInput!, spaceId: ID!, workspaceId: ID!): Task!
   createWorkspace(input: CreateWorkspaceInput!): Workspace!
 
   """Approvers cannot decide on their own requests"""

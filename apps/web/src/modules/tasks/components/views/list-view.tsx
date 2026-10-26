@@ -22,8 +22,10 @@ interface ListViewProps {
   tasks: readonly TaskResponse[];
   statuses: readonly TaskStatusResponse[];
   groupBy: GroupBy;
-  /** Where quick-added tasks go; without one there's no quick add (e.g. a whole-workspace view). */
+  /** Where quick-added tasks go; without a list or space there's no quick add (e.g. a whole-workspace view). */
   defaultListId?: string;
+  /** Quick add goes into this space's first list when there's no default list. */
+  spaceId?: string;
   /** Used to remember collapsed groups per project. */
   scopeKey: string;
   onOpen: (taskId: string) => void;
@@ -34,7 +36,7 @@ interface ListViewProps {
 const GRID = 'grid grid-cols-[2rem_minmax(14rem,1fr)_7rem_11rem_8rem_9rem] items-center gap-2';
 
 /** Tasks in groups with column headers, inline editing, quick add and multi-select. */
-export function ListView({ workspaceId, tasks, statuses, groupBy, defaultListId, scopeKey, onOpen, hideEmpty = false }: ListViewProps) {
+export function ListView({ workspaceId, tasks, statuses, groupBy, defaultListId, spaceId, scopeKey, onOpen, hideEmpty = false }: ListViewProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const memberName = useMemberName(workspaceId);
   const { updateMany } = useTaskMutations(workspaceId);
@@ -45,7 +47,7 @@ export function ListView({ workspaceId, tasks, statuses, groupBy, defaultListId,
   return (
     <div className="grid gap-5 pb-24">
       {groups.map((group) => (
-        <GroupBlock key={group.key} workspaceId={workspaceId} group={group} defaultListId={defaultListId} scopeKey={scopeKey} selected={selected} onSelect={setSelected} onOpen={onOpen} />
+        <GroupBlock key={group.key} workspaceId={workspaceId} group={group} defaultListId={defaultListId} spaceId={spaceId} scopeKey={scopeKey} selected={selected} onSelect={setSelected} onOpen={onOpen} />
       ))}
       {selectedIds.length > 0 ? (
         <BulkBar
@@ -67,18 +69,19 @@ interface GroupBlockProps {
   workspaceId: string;
   group: TaskGroup;
   defaultListId?: string;
+  spaceId?: string;
   scopeKey: string;
   selected: Set<string>;
   onSelect: (selected: Set<string>) => void;
   onOpen: (taskId: string) => void;
 }
 
-function GroupBlock({ workspaceId, group, defaultListId, scopeKey, selected, onSelect, onOpen }: GroupBlockProps) {
+function GroupBlock({ workspaceId, group, defaultListId, spaceId, scopeKey, selected, onSelect, onOpen }: GroupBlockProps) {
   const [adding, setAdding] = useState(false);
   const { can } = usePermissions(workspaceId);
   const ids = group.tasks.map((task) => task.id);
   const all = ids.length > 0 && ids.every((id) => selected.has(id));
-  const canAdd = Boolean(defaultListId) && can('task.create');
+  const canAdd = Boolean(defaultListId || spaceId) && can('task.create');
   const toggleAll = (checked: boolean) => {
     const next = new Set(selected);
     for (const id of ids) {
@@ -130,11 +133,12 @@ function GroupBlock({ workspaceId, group, defaultListId, scopeKey, selected, onS
             onOpen={onOpen}
           />
         ))}
-        {canAdd && defaultListId ? (
+        {canAdd ? (
           <QuickAddTask
             key={adding ? 'open' : 'closed'}
             workspaceId={workspaceId}
             listId={defaultListId}
+            spaceId={spaceId}
             statusId={group.status?.id}
             defaults={{ ...(group.priority && { priority: group.priority }), ...(group.assigneeId !== undefined && { assigneeId: group.assigneeId }) }}
             startOpen={adding}

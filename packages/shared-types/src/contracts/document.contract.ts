@@ -1,8 +1,11 @@
+import type { DocKind } from '../domain/document.js';
+
 /** Tree node: everything except the content, so the sidebar loads fast. */
 export interface DocumentSummaryResponse {
   id: string;
   parentId: string | null;
   spaceId: string | null;
+  kind: DocKind;
   title: string;
   position: number;
   createdById: string;
@@ -17,6 +20,8 @@ export interface DocumentResponse extends DocumentSummaryResponse {
 
 export interface CreateDocumentRequest {
   title: string;
+  /** Defaults to a page. */
+  kind?: DocKind;
   content?: string;
   /** Nest under another page; the page inherits that parent's space. */
   parentId?: string | null;

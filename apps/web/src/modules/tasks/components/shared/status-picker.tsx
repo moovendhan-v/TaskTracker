@@ -26,8 +26,8 @@ interface StatusPickerProps {
   value: TaskStatusResponse;
   onChange: (status: TaskStatusResponse) => void;
   disabled?: boolean;
-  /** `dot`: a coloured dot (plus the name unless compact); `pill`: the status pill. */
-  variant?: 'dot' | 'pill';
+  /** `dot`: a coloured dot (plus the name unless compact); `pill`: the status pill; `ring`: a small ring in the status colour. */
+  variant?: 'dot' | 'pill' | 'ring';
   compact?: boolean;
 }
 
@@ -42,6 +42,8 @@ export function StatusPicker({ workspaceId, value, onChange, disabled, variant =
       >
         {variant === 'pill' ? (
           <StatusPill status={value} />
+        ) : variant === 'ring' ? (
+          <span aria-hidden className="size-3 shrink-0 rounded-full border-2" style={{ borderColor: value.color }} />
         ) : (
           <>
             <StatusDot status={value} />

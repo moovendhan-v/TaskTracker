@@ -10,6 +10,10 @@ mutation CreateTask($workspaceId: ID!, $listId: ID!, $input: CreateTaskInput!) {
   createTask(workspaceId: $workspaceId, listId: $listId, input: $input) { ...TaskFields }
 }
 
+mutation CreateTaskInSpace($workspaceId: ID!, $spaceId: ID!, $input: CreateTaskInput!) {
+  createTaskInSpace(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) { ...TaskFields }
+}
+
 mutation UpdateTask($workspaceId: ID!, $taskId: ID!, $input: UpdateTaskInput!) {
   updateTask(workspaceId: $workspaceId, taskId: $taskId, input: $input) { ...TaskFields }
 }

@@ -1,6 +1,7 @@
 import type { CreateTaskRequest, ResourceQuery, TaskRelationKind, UpdateTaskRequest } from '@taskflow/shared-types';
 import {
   CreateTaskDocument,
+  CreateTaskInSpaceDocument,
   DeleteTaskDocument,
   RelateTasksDocument,
   SearchTasksDocument,
@@ -35,6 +36,9 @@ export const tasksApi = {
   watchers: async (workspaceId: string, taskId: string) => (await graphql(TaskWatchersDocument, { workspaceId, taskId })).taskWatchers,
   create: async (workspaceId: string, listId: string, input: CreateTaskRequest) =>
     (await graphql(CreateTaskDocument, { workspaceId, listId, input })).createTask,
+  /** Into the space's first list, which the API adds if the space has none. */
+  createInSpace: async (workspaceId: string, spaceId: string, input: CreateTaskRequest) =>
+    (await graphql(CreateTaskInSpaceDocument, { workspaceId, spaceId, input })).createTaskInSpace,
   update: async (workspaceId: string, taskId: string, input: UpdateTaskRequest) =>
     (await graphql(UpdateTaskDocument, { workspaceId, taskId, input })).updateTask,
   remove: async (workspaceId: string, taskId: string) => (await graphql(DeleteTaskDocument, { workspaceId, taskId })).deleteTask,

@@ -2,6 +2,7 @@ import { registerEnumType } from '@nestjs/graphql';
 import {
   CUSTOM_FIELD_ENTITIES,
   CUSTOM_FIELD_TYPES,
+  DOC_KINDS,
   EMPLOYMENT_TYPES,
   FIELD_TYPES,
   FORECAST_KINDS,
@@ -46,8 +47,10 @@ export const FieldTypeEnum = enumOf(FIELD_TYPES);
 export const LogicOperatorEnum = enumOf(LOGIC_OPERATORS);
 export const SortDirectionEnum = enumOf(['asc', 'desc'] as const);
 export const PolicyEffectEnum = enumOf(POLICY_EFFECTS);
+export const DocKindEnum = enumOf(DOC_KINDS);
 
 registerEnumType(StatusCategoryEnum, { name: 'StatusCategory' });
+registerEnumType(DocKindEnum, { name: 'DocKind' });
 registerEnumType(TaskTypeEnum, { name: 'TaskType' });
 registerEnumType(TaskRelationKindEnum, { name: 'TaskRelationKind' });
 registerEnumType(CustomFieldTypeEnum, { name: 'CustomFieldType' });

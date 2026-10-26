@@ -22,6 +22,10 @@ export class TypeOrmTaskListRepository extends TaskListRepository {
     return this.repository.findOneBy({ id: listId, workspaceId });
   }
 
+  firstInSpace(workspaceId: string, spaceId: string): Promise<TaskList | null> {
+    return this.repository.findOne({ where: { workspaceId, spaceId }, order: { createdAt: 'ASC' } });
+  }
+
   create(list: NewTaskList): Promise<TaskList> {
     return this.repository.save(this.repository.create(list));
   }

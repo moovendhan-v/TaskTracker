@@ -96,6 +96,18 @@ export class TasksResolver {
     return this.tasksService.create(actor, access, listId, input);
   }
 
+  @Mutation(() => TaskGql, { description: "Creates a task in a space's first list, adding a list if the space has none" })
+  @RequirePermissions('task.create')
+  createTaskInSpace(
+    @WorkspaceIdArg() _workspaceId: string,
+    @UuidArg('spaceId') spaceId: string,
+    @Args('input') input: CreateTaskInput,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<TaskGql> {
+    return this.tasksService.createInSpace(actor, access, spaceId, input);
+  }
+
   @Mutation(() => TaskGql)
   @RequirePermissions('task.update')
   updateTask(

@@ -44,6 +44,7 @@ export function TaskBoardView({ workspaceId, spaceId, statuses: given, listId, t
           key={status.id}
           workspaceId={workspaceId}
           listId={listId}
+          spaceId={spaceId}
           status={status}
           tasks={byStatus(status.id)}
           canEdit={can('task.update')}

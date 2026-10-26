@@ -87,6 +87,12 @@ export class TasksService {
     return this.respond(workspaceId, await this.tasks.listSubtasks(workspaceId, taskId, PLANNING_VIEW_LIMIT));
   }
 
+  /** Creates a task straight in a space (project), in its default list. */
+  async createInSpace(actor: Actor, access: WorkspaceAccess, spaceId: string, request: CreateTaskRequest): Promise<TaskResponse> {
+    const list = await this.listsService.defaultFor(actor, access.workspaceId, spaceId);
+    return this.create(actor, access, list.id, request);
+  }
+
   async create(actor: Actor, access: WorkspaceAccess, listId: string, request: CreateTaskRequest): Promise<TaskResponse> {
     const { workspaceId } = access;
     const list = await this.listsService.getInWorkspace(workspaceId, listId);

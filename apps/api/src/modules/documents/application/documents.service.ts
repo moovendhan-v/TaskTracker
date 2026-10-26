@@ -10,6 +10,7 @@ import {
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
+import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
 import { Announces } from '../../../core/events/announces.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
@@ -45,9 +46,10 @@ export class DocumentsService {
   async create(actor: Actor, workspaceId: string, request: CreateDocumentRequest): Promise<DocumentResponse> {
     const document = await this.unitOfWork.run(async () => {
       const parentId = request.parentId ?? null;
+      const kind = request.kind ?? 'page';
       const parent = parentId ? await this.getInWorkspace(workspaceId, parentId) : null;
       const parentChain = parent ? await this.documents.ancestorChain(workspaceId, parent.id) : [];
-      DocumentTreePolicy.assertValidPlacement({ parentChain, subtreeHeight: 1 });
+      DocumentTreePolicy.assertValidPlacement({ kind, parentKind: parent?.kind, parentChain, subtreeHeight: 1 });
 
       // A child page always lives in its parent's space.
       const spaceId = parent ? parent.spaceId : (request.spaceId ?? null);
@@ -57,8 +59,9 @@ export class DocumentsService {
         workspaceId,
         spaceId,
         parentId,
+        kind,
         title: request.title.trim(),
-        content: this.sanitizer.sanitize(request.content ?? ''),
+        content: kind === 'folder' ? '' : this.sanitizer.sanitize(request.content ?? ''),
         position: (await this.documents.maxSiblingPosition(workspaceId, parentId)) + DOC_POSITION_STEP,
         createdById: actor.userId,
         updatedById: actor.userId,
@@ -73,7 +76,10 @@ export class DocumentsService {
     DocumentAccessPolicy.assertCanEdit(document, actor.userId, access.permissions);
 
     if (request.title !== undefined) document.title = request.title.trim();
-    if (request.content !== undefined) document.content = this.sanitizer.sanitize(request.content);
+    if (request.content !== undefined) {
+      if (document.kind === 'folder') throw DomainError.invalid('A folder has no content');
+      document.content = this.sanitizer.sanitize(request.content);
+    }
     document.updatedById = actor.userId;
     return DocumentMapper.toResponse(await this.documents.save(document));
   }
@@ -87,6 +93,8 @@ export class DocumentsService {
       const parent = request.parentId ? await this.getInWorkspace(access.workspaceId, request.parentId) : null;
       const parentChain = parent ? await this.documents.ancestorChain(access.workspaceId, parent.id) : [];
       DocumentTreePolicy.assertValidPlacement({
+        kind: document.kind,
+        parentKind: parent?.kind,
         documentId,
         parentChain,
         subtreeHeight: await this.documents.subtreeHeight(access.workspaceId, documentId),

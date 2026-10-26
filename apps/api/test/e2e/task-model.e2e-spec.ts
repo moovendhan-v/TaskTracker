@@ -33,6 +33,28 @@ describe('task model: statuses, numbers, subtasks, relations, custom fields, act
     await addMember(ws, member, 'Member');
   });
 
+  it('creates a task straight in a space, adding a "Tasks" list only when the space has none', async () => {
+    const createInSpace = `mutation($w: ID!, $s: ID!, $input: CreateTaskInput!) { createTaskInSpace(workspaceId: $w, spaceId: $s, input: $input) { id listId status { name } } }`;
+    const listsIn = async (spaceId: string) =>
+      (await ws.owner.data<{ lists: { id: string; name: string; spaceId: string }[] }>('query($w: ID!) { lists(workspaceId: $w) { id name spaceId } }', vars())).lists.filter((list) => list.spaceId === spaceId);
+
+    // A space with a list uses it.
+    const { createTaskInSpace: inBacklog } = await ws.owner.data<{ createTaskInSpace: { listId: string } }>(createInSpace, vars({ s: ws.spaceId, input: { title: 'Into the backlog' } }));
+    expect(inBacklog.listId).toBe(ws.listId);
+
+    // A space without lists gets one, once.
+    const { createSpace } = await ws.owner.data<{ createSpace: { id: string } }>('mutation($w: ID!) { createSpace(workspaceId: $w, input: { name: "Empty" }) { id } }', vars());
+    const first = await ws.owner.data<{ createTaskInSpace: { listId: string; status: { name: string } } }>(createInSpace, vars({ s: createSpace.id, input: { title: 'First' } }));
+    const second = await ws.owner.data<{ createTaskInSpace: { listId: string } }>(createInSpace, vars({ s: createSpace.id, input: { title: 'Second' } }));
+    expect(second.createTaskInSpace.listId).toBe(first.createTaskInSpace.listId);
+    expect(first.createTaskInSpace.status.name).toBe('To do');
+    expect((await listsIn(createSpace.id)).map((list) => list.name)).toEqual(['Tasks']);
+
+    // Another workspace's space is not found.
+    const other = await createWorkspace('Other owner', 'Elsewhere');
+    expect((await ws.owner.error(createInSpace, vars({ s: other.spaceId, input: { title: 'Nope' } }))).message).toMatch(/not found|access/i);
+  });
+
   it('gives each space default statuses and lets managers customise them', async () => {
     expect(Object.keys(ws.statuses)).toEqual(['To do', 'In progress', 'In review', 'Blocked', 'Done']);
     const createStatus = 'mutation($w: ID!, $s: ID!, $input: CreateTaskStatusInput!) { createStatus(workspaceId: $w, spaceId: $s, input: $input) { id name category position } }';

@@ -1,10 +1,11 @@
-import { useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import {
   Building2Icon,
   CalendarCheckIcon,
   CheckSquareIcon,
   ClipboardCheckIcon,
   FileTextIcon,
+  HomeIcon,
   InboxIcon,
   PalmtreeIcon,
   ScrollTextIcon,
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { PREFERENCE_LIMITS } from '@taskflow/shared-types';
+import { Logo } from '@/components/common/logo';
 import { SidebarLink } from '@/components/layout/sidebar-link';
 import { SidebarSection } from '@/components/layout/sidebar-section';
 import { usePreferenceMutations, usePreferences } from '@/core/preferences/use-preferences';
@@ -37,7 +39,7 @@ const TITLES: [RegExp, string][] = [
 ];
 
 /** The context column: navigation, projects with live counts, workspace and people pages. Drag its edge to resize. */
-export function WorkspaceSidebar({ workspaceId }: { workspaceId: string }) {
+export function WorkspaceSidebar({ workspaceId, unread }: { workspaceId: string; unread: number }) {
   const params = { workspaceId };
   const { can } = usePermissions(workspaceId);
   const preferences = usePreferences();
@@ -71,8 +73,11 @@ export function WorkspaceSidebar({ workspaceId }: { workspaceId: string }) {
 
   return (
     <aside aria-label="Workspace navigation" className="relative flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground" style={{ width }}>
-      <div className="flex h-12 items-center px-4">
-        <h2 className="text-base font-semibold">{title}</h2>
+      <div className="flex h-12 items-center gap-2.5 px-4">
+        <Link to="/w/$workspaceId" params={params} aria-label="TaskFlow home" className="shrink-0">
+          <Logo withWordmark={false} />
+        </Link>
+        <h2 className="truncate text-base font-semibold">{title}</h2>
       </div>
       <div className="px-3 pb-2">
         <div className="relative">
@@ -86,8 +91,17 @@ export function WorkspaceSidebar({ workspaceId }: { workspaceId: string }) {
           />
         </div>
       </div>
-      <nav className="flex-1 overflow-y-auto pb-4">
+      <nav aria-label="Main" className="flex-1 overflow-y-auto pb-4">
         <div className="grid gap-0.5 px-2">
+          <SidebarLink to="/w/$workspaceId" params={params} activeOptions={{ exact: true }} icon={<HomeIcon />}>
+            Home
+          </SidebarLink>
+          <SidebarLink to="/w/$workspaceId/inbox" params={params} icon={<InboxIcon />} badge={unread ? (unread > 99 ? '99+' : String(unread)) : undefined}>
+            Inbox
+          </SidebarLink>
+          <SidebarLink to="/w/$workspaceId/docs" params={params} icon={<FileTextIcon />}>
+            Docs
+          </SidebarLink>
           <SidebarLink to="/w/$workspaceId/my-tasks" params={params} icon={<CheckSquareIcon />}>
             My tasks
           </SidebarLink>
@@ -100,12 +114,6 @@ export function WorkspaceSidebar({ workspaceId }: { workspaceId: string }) {
         </div>
         <SpaceTree workspaceId={workspaceId} stats={stats} filter={filter} defaultView={defaultTaskView} />
         <SidebarSection title="Workspace">
-          <SidebarLink to="/w/$workspaceId/inbox" params={params} icon={<InboxIcon />}>
-            Inbox
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/docs" params={params} icon={<FileTextIcon />}>
-            Docs
-          </SidebarLink>
           <SidebarLink to="/w/$workspaceId/members" params={params} icon={<UsersIcon />}>
             Members
           </SidebarLink>

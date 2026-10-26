@@ -1,5 +1,5 @@
 import { MessageSquareIcon, TrashIcon } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { COMMENT_BODY_MAX } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ export function CommentThread({ workspaceId, taskId }: CommentThreadProps) {
   const { can } = usePermissions(workspaceId);
   const mutations = useCommentMutations(workspaceId, taskId);
 
-  function submit(event: FormEvent) {
+  function submit(event: { preventDefault: () => void }) {
     event.preventDefault();
     if (!draft.trim()) return;
     mutations.create.mutate(draft, { onSuccess: () => setDraft('') });
@@ -36,11 +36,11 @@ export function CommentThread({ workspaceId, taskId }: CommentThreadProps) {
       </h3>
       <ol className="grid gap-3">
         {comments.map((comment) => (
-          <li key={comment.id} className="group flex gap-3">
-            <UserAvatar name={comment.authorName} className="size-7" />
-            <div className="min-w-0 flex-1 rounded-lg bg-muted/60 px-3 py-2">
+          <li key={comment.id} className="group">
+            <div className="min-w-0 rounded-lg border bg-background p-3">
               <div className="flex items-center gap-2 text-xs">
-                <span className="font-semibold">{comment.authorName}</span>
+                <UserAvatar name={comment.authorName} className="size-[22px] text-[9px]" />
+                <span className="text-sm font-semibold">{comment.authorName}</span>
                 <span className="text-muted-foreground">{formatLongDate(comment.createdAt)}</span>
                 <span className="flex-1" />
                 {comment.authorId === me?.id || can('task.delete') ? (
@@ -54,7 +54,7 @@ export function CommentThread({ workspaceId, taskId }: CommentThreadProps) {
                   </button>
                 ) : null}
               </div>
-              <p className="mt-1 text-sm break-words whitespace-pre-wrap">{comment.body}</p>
+              <p className="mt-1.5 text-sm break-words whitespace-pre-wrap">{comment.body}</p>
             </div>
           </li>
         ))}
@@ -65,11 +65,16 @@ export function CommentThread({ workspaceId, taskId }: CommentThreadProps) {
             value={draft}
             maxLength={COMMENT_BODY_MAX}
             onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') submit(event);
+            }}
             placeholder="Write a comment…"
             aria-label="New comment"
             rows={3}
+            className="resize-none bg-background"
           />
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-muted-foreground">⌘/Ctrl + Enter to send</span>
             <Button type="submit" size="sm" disabled={!draft.trim() || mutations.create.isPending}>
               Comment
             </Button>

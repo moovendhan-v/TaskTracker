@@ -1,8 +1,11 @@
+import type { DocKind } from '@taskflow/shared-types';
+
 export interface Document {
   id: string;
   workspaceId: string;
   spaceId: string | null;
   parentId: string | null;
+  kind: DocKind;
   title: string;
   /** Markdown, already passed through the ContentSanitizer. */
   content: string;

@@ -31,3 +31,13 @@ export function pathTo(documents: readonly DocumentSummaryResponse[], documentId
   }
   return path;
 }
+
+/** The node with this id anywhere in the tree. */
+export function findNode(nodes: readonly DocumentNode[], id: string): DocumentNode | undefined {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const found = findNode(node.children, id);
+    if (found) return found;
+  }
+  return undefined;
+}

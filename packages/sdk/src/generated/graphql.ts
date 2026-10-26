@@ -38,6 +38,8 @@ export type CreateDepartmentInput = {
 
 export type CreateDocumentInput = {
   content?: string | null | undefined;
+  /** Defaults to page */
+  kind?: DocKind | null | undefined;
   parentId?: string | null | undefined;
   spaceId?: string | null | undefined;
   title: string;
@@ -139,6 +141,10 @@ export type DecideLeaveInput = {
   decision: LeaveDecision;
   note?: string | null | undefined;
 };
+
+export type DocKind =
+  | 'folder'
+  | 'page';
 
 export type EmployeeProfileInput = {
   departmentId?: string | null | undefined;
@@ -644,7 +650,7 @@ export type DocumentsQueryVariables = Exact<{
 }>;
 
 
-export type DocumentsQuery = { documents: Array<{ id: string, spaceId: string | null, parentId: string | null, title: string, position: number, createdById: string, updatedAt: string }> };
+export type DocumentsQuery = { documents: Array<{ id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, position: number, createdById: string, updatedAt: string }> };
 
 export type DocumentQueryVariables = Exact<{
   workspaceId: string;
@@ -652,7 +658,7 @@ export type DocumentQueryVariables = Exact<{
 }>;
 
 
-export type DocumentQuery = { document: { id: string, spaceId: string | null, parentId: string | null, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type DocumentQuery = { document: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type CreateDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -660,7 +666,7 @@ export type CreateDocumentMutationVariables = Exact<{
 }>;
 
 
-export type CreateDocumentMutation = { createDocument: { id: string, spaceId: string | null, parentId: string | null, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type CreateDocumentMutation = { createDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type UpdateDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -669,7 +675,7 @@ export type UpdateDocumentMutationVariables = Exact<{
 }>;
 
 
-export type UpdateDocumentMutation = { updateDocument: { id: string, spaceId: string | null, parentId: string | null, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type UpdateDocumentMutation = { updateDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type MoveDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -679,7 +685,7 @@ export type MoveDocumentMutationVariables = Exact<{
 }>;
 
 
-export type MoveDocumentMutation = { moveDocument: { id: string, spaceId: string | null, parentId: string | null, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type MoveDocumentMutation = { moveDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type DeleteDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -718,9 +724,9 @@ export type CommentFieldsFragment = { id: string, taskId: string, authorId: stri
 
 export type SprintFieldsFragment = { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number };
 
-export type DocumentSummaryFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, title: string, position: number, createdById: string, updatedAt: string };
+export type DocumentSummaryFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, position: number, createdById: string, updatedAt: string };
 
-export type DocumentFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string };
+export type DocumentFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string };
 
 export type DepartmentFieldsFragment = { id: string, name: string, headUserId: string | null, memberCount: number };
 
@@ -1370,6 +1376,15 @@ export type CreateTaskMutationVariables = Exact<{
 
 export type CreateTaskMutation = { createTask: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, estimateMinutes: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number } } };
 
+export type CreateTaskInSpaceMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  input: CreateTaskInput;
+}>;
+
+
+export type CreateTaskInSpaceMutation = { createTaskInSpace: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, sprintId: string | null, position: number, estimateMinutes: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number } } };
+
 export type UpdateTaskMutationVariables = Exact<{
   workspaceId: string;
   taskId: string;
@@ -1769,6 +1784,7 @@ export const DocumentSummaryFieldsFragmentDoc = new TypedDocumentString(`
   id
   spaceId
   parentId
+  kind
   title
   position
   createdById
@@ -1780,6 +1796,7 @@ export const DocumentFieldsFragmentDoc = new TypedDocumentString(`
   id
   spaceId
   parentId
+  kind
   title
   content
   position
@@ -2416,6 +2433,7 @@ export const DocumentsDocument = new TypedDocumentString(`
   id
   spaceId
   parentId
+  kind
   title
   position
   createdById
@@ -2431,6 +2449,7 @@ export const DocumentDocument = new TypedDocumentString(`
   id
   spaceId
   parentId
+  kind
   title
   content
   position
@@ -2448,6 +2467,7 @@ export const CreateDocumentDocument = new TypedDocumentString(`
   id
   spaceId
   parentId
+  kind
   title
   content
   position
@@ -2469,6 +2489,7 @@ export const UpdateDocumentDocument = new TypedDocumentString(`
   id
   spaceId
   parentId
+  kind
   title
   content
   position
@@ -2491,6 +2512,7 @@ export const MoveDocumentDocument = new TypedDocumentString(`
   id
   spaceId
   parentId
+  kind
   title
   content
   position
@@ -4194,6 +4216,49 @@ fragment TaskFields on Task {
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<CreateTaskMutation, CreateTaskMutationVariables>;
+export const CreateTaskInSpaceDocument = new TypedDocumentString(`
+    mutation CreateTaskInSpace($workspaceId: ID!, $spaceId: ID!, $input: CreateTaskInput!) {
+  createTaskInSpace(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...TaskFields
+  }
+}
+    fragment TaskStatusFields on TaskStatus {
+  id
+  spaceId
+  name
+  color
+  category
+  position
+}
+fragment TaskFields on Task {
+  id
+  number
+  listId
+  spaceId
+  parentId
+  type
+  title
+  description
+  statusId
+  status {
+    ...TaskStatusFields
+  }
+  priority
+  startDate
+  dueDate
+  assigneeId
+  sprintId
+  position
+  estimateMinutes
+  progress
+  subtaskCount
+  metadata
+  customFields
+  completedAt
+  createdById
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<CreateTaskInSpaceMutation, CreateTaskInSpaceMutationVariables>;
 export const UpdateTaskDocument = new TypedDocumentString(`
     mutation UpdateTask($workspaceId: ID!, $taskId: ID!, $input: UpdateTaskInput!) {
   updateTask(workspaceId: $workspaceId, taskId: $taskId, input: $input) {
