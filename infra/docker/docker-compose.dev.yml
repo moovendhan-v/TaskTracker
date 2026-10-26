@@ -1,0 +1,155 @@
+# Development stack: Postgres, Redis and Mailpit, then a one-off bootstrap
+# (install, build, migrate, optional demo seed), then the API and the web app
+# with live reload. The repository is mounted, so edits show up at once.
+#
+# Start it with `./scripts/dev.sh` (creates .env on first run), or:
+#   docker compose -f infra/docker/docker-compose.dev.yml --env-file .env up
+#
+#   web     http://localhost:5173   (proxies /api to the API, like production)
+#   api     http://localhost:3000/api/graphql
+#   mail    http://localhost:8025   (every email the app sends lands here)
+#   db      localhost:5432          (loopback only)
+name: taskflow-dev
+
+x-node: &node
+  image: node:22.22-alpine
+  working_dir: /repo
+  volumes:
+    - ../..:/repo
+    # Dependencies live in volumes, not in the mounted checkout, so the
+    # container's Linux packages never mix with the host's.
+    - node_modules:/repo/node_modules
+    - api_node_modules:/repo/apps/api/node_modules
+    - web_node_modules:/repo/apps/web/node_modules
+    - sdk_node_modules:/repo/packages/sdk/node_modules
+    - types_node_modules:/repo/packages/shared-types/node_modules
+    - pnpm_store:/pnpm-store
+  networks: [dev]
+
+x-api-env: &api-env
+  NODE_ENV: development
+  PORT: "3000"
+  # Runtime role: data only, subject to row-level security.
+  DATABASE_URL: postgres://${APP_DB_USER:-taskflow_app}:${APP_DB_PASSWORD:?run ./scripts/dev.sh to create .env}@postgres:5432/${POSTGRES_DB:-taskflow}
+  DATABASE_SSL: "false"
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?run ./scripts/dev.sh to create .env}
+  # The browser talks to the Vite server, which proxies /api, so both share this origin.
+  BETTER_AUTH_URL: http://localhost:${WEB_DEV_PORT:-5173}
+  CORS_ORIGINS: http://localhost:${WEB_DEV_PORT:-5173}
+  TRUST_PROXY: "0"
+  SMTP_URL: smtp://mailpit:1025
+  MAIL_FROM: TaskFlow <no-reply@taskflow.localhost>
+  REDIS_URL: redis://:${REDIS_PASSWORD:?run ./scripts/dev.sh to create .env}@redis:6379/0
+
+services:
+  postgres:
+    image: postgres:16.6-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run ./scripts/dev.sh to create .env}
+      POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+      APP_DB_OWNER: ${APP_DB_OWNER:-taskflow_owner}
+      APP_DB_OWNER_PASSWORD: ${APP_DB_OWNER_PASSWORD:?run ./scripts/dev.sh to create .env}
+      APP_DB_USER: ${APP_DB_USER:-taskflow_app}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?run ./scripts/dev.sh to create .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Creates the schema-owner and least-privilege API roles on first start.
+      - ./postgres/01-app-role.sh:/docker-entrypoint-initdb.d/01-app-role.sh:ro
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks: [dev]
+
+  redis:
+    image: redis:7.4.2-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?run ./scripts/dev.sh to create .env}
+    command: ["sh", "-c", 'exec redis-server --requirepass "$$REDIS_PASSWORD" --save "" --appendonly no']
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep -q PONG"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks: [dev]
+
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    networks: [dev]
+
+  # Runs once per `up`: installs dependencies, builds the shared packages and
+  # the API, applies migrations as the schema owner and (optionally) seeds the
+  # demo workspace. The API and web app wait for it to finish.
+  bootstrap:
+    <<: *node
+    environment:
+      <<: *api-env
+      MIGRATION_DATABASE_URL: postgres://${APP_DB_OWNER:-taskflow_owner}:${APP_DB_OWNER_PASSWORD:?run ./scripts/dev.sh to create .env}@postgres:5432/${POSTGRES_DB:-taskflow}
+      SEED_DEMO: ${SEED_DEMO:-true}
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
+      DEV_UID: ${DEV_UID:-1000}
+      DEV_GID: ${DEV_GID:-1000}
+      CI: "true"
+    command: ["sh", "infra/docker/dev/bootstrap.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *node
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    environment: *api-env
+    # Rebuilds the shared types and the API on change; Node restarts when the build output changes.
+    command:
+      - sh
+      - -c
+      - >-
+        packages/shared-types/node_modules/.bin/tsc -p packages/shared-types/tsconfig.json --watch --preserveWatchOutput &
+        cd apps/api && node_modules/.bin/tsc -p tsconfig.build.json --watch --preserveWatchOutput &
+        cd apps/api && exec node --watch --enable-source-maps dist/main.js
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-3000}:3000"
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  web:
+    <<: *node
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    environment:
+      API_PROXY_TARGET: http://api:3000
+      VITE_TURNSTILE_SITE_KEY: ""
+    command: ["sh", "-c", "cd apps/web && exec node_modules/.bin/vite --host 0.0.0.0 --port 5173 --strictPort"]
+    ports:
+      - "127.0.0.1:${WEB_DEV_PORT:-5173}:5173"
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  node_modules:
+  api_node_modules:
+  web_node_modules:
+  sdk_node_modules:
+  types_node_modules:
+  pnpm_store:
+
+networks:
+  dev:

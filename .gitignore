@@ -18,3 +18,6 @@ apps/web/test-results/
 
 # Local Redis snapshots
 dump.rdb
+
+# Local overrides for the dev stack (proxies, extra CA certificates)
+infra/docker/docker-compose.dev.override.yml
