@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # One command for a local dev environment in Docker.
 #
-#   ./scripts/dev.sh            create .env if missing, start everything, follow the logs
+#   ./scripts/dev.sh            create .env if missing, free the ports, start everything, follow the logs
+#   ./scripts/dev.sh -y         same, without asking before stopping whatever holds the ports
 #   ./scripts/dev.sh down       stop the stack (keeps the database)
 #   ./scripts/dev.sh reset      stop and delete the database and dependency volumes
 #   ./scripts/dev.sh logs       follow the API and web logs
@@ -33,6 +34,7 @@ secret() {
 create_env() {
   if [[ -f "$ENV_FILE" ]]; then
     echo "Using existing .env"
+    complete_env
     return
   fi
   local owner app pg redis auth seed
@@ -54,6 +56,92 @@ create_env() {
   echo "Created .env with fresh random secrets (git-ignored, readable only by you)."
 }
 
+# Fills settings an older .env lacks (or left empty) without touching the rest.
+complete_env() {
+  local key value added=() tmp
+  tmp="$(mktemp)"
+  local -a keys=(BETTER_AUTH_SECRET POSTGRES_PASSWORD APP_DB_OWNER_PASSWORD APP_DB_PASSWORD REDIS_PASSWORD SEED_PASSWORD SEED_DEMO WEB_DEV_PORT API_HOST_PORT)
+  generated() {
+    case "$1" in
+      BETTER_AUTH_SECRET) echo "$(secret)$(secret)" ;;
+      SEED_PASSWORD) secret | head -c 20 ;;
+      SEED_DEMO) echo true ;;
+      WEB_DEV_PORT) echo 5173 ;;
+      API_HOST_PORT) echo 3000 ;;
+      *) secret ;;
+    esac
+  }
+  cp "$ENV_FILE" "$tmp"
+  for key in "${keys[@]}"; do
+    if grep -qE "^${key}=.+" "$tmp"; then continue; fi
+    value="$(generated "$key")"
+    if grep -qE "^${key}=$" "$tmp"; then
+      grep -vE "^${key}=$" "$tmp" >"$tmp.next"; mv "$tmp.next" "$tmp"
+    fi
+    printf '%s=%s\n' "$key" "$value" >>"$tmp"
+    added+=("$key")
+  done
+  if ((${#added[@]})); then
+    mv "$tmp" "$ENV_FILE"; chmod 600 "$ENV_FILE"
+    echo "Added to .env: ${added[*]}"
+  else
+    rm -f "$tmp"
+  fi
+}
+
+env_value() { grep -E "^$1=" "$ENV_FILE" | tail -1 | cut -d= -f2-; }
+
+ASSUME_YES=false
+confirm() {
+  $ASSUME_YES && return 0
+  local answer
+  printf '%s [Y/n] ' "$1"
+  read -r answer || answer=n
+  [[ -z "$answer" || "$answer" =~ ^[Yy] ]]
+}
+
+# Frees the ports the stack publishes. Another TaskFlow stack (e.g. `pnpm infra:up`)
+# is stopped without asking (its data is kept); anything else is shown and stopped
+# only after you agree.
+free_ports() {
+  local port rows row project name pids pid
+  local -a ports=("$(env_value POSTGRES_HOST_PORT)" "$(env_value API_HOST_PORT)" "$(env_value WEB_DEV_PORT)" "$(env_value MAILPIT_UI_PORT)")
+  ports=("${ports[0]:-5432}" "${ports[1]:-3000}" "${ports[2]:-5173}" "${ports[3]:-8025}")
+  for port in "${ports[@]}"; do
+    # Containers publishing the port, other than this dev stack's own.
+    # (Collected first, so the prompts below read from the keyboard.)
+    rows="$(docker ps --filter "publish=$port" --format '{{.Names}}|{{.Label "com.docker.compose.project"}}')"
+    for row in $rows; do
+      name="${row%%|*}"; project="${row#*|}"
+      [[ "$project" == "taskflow-dev" ]] && continue
+      if [[ "$project" == "taskflow" ]]; then
+        echo "Port $port is used by the other TaskFlow stack ($name); stopping that stack (its data is kept)."
+        docker ps -q --filter "label=com.docker.compose.project=taskflow" | xargs docker stop >/dev/null
+      elif confirm "Port $port is used by container '$name'. Stop it?"; then
+        docker stop "$name" >/dev/null
+      else
+        echo "Port $port is still in use; set a different port in .env and try again." >&2; exit 1
+      fi
+    done
+
+    # Programs on this machine listening on the port (e.g. a Homebrew Postgres).
+    command -v lsof >/dev/null 2>&1 || continue
+    pids="$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | sort -u || true)"
+    for pid in $pids; do
+      name="$(ps -p "$pid" -o comm= 2>/dev/null || echo unknown)"
+      # Docker's own port forwarders belong to the containers handled above.
+      [[ "$name" =~ (com\.docker|vpnkit|docker-proxy|dockerd) ]] && continue
+      if confirm "Port $port is used by '$name' (pid $pid). Stop it?"; then
+        kill "$pid" 2>/dev/null || true
+        sleep 1
+        kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
+      else
+        echo "Port $port is still in use; set a different port in .env and try again." >&2; exit 1
+      fi
+    done
+  done
+}
+
 urls() {
   # Read the port overrides the stack uses, if any.
   local web api mail
@@ -71,12 +159,14 @@ Following logs; Ctrl+C stops following, the stack keeps running. Stop it with: .
 INFO
 }
 
+if [[ "${1:-}" == "-y" || "${1:-}" == "--yes" ]]; then ASSUME_YES=true; shift; fi
 cmd="${1:-up}"
 case "$cmd" in
   env)
     create_env ;;
   up)
     create_env
+    free_ports
     "${COMPOSE[@]}" up -d --wait postgres redis mailpit
     # Bootstrap prints its progress; the API and web start once it succeeds.
     "${COMPOSE[@]}" run --rm bootstrap
