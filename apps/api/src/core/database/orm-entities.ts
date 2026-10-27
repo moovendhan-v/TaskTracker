@@ -7,6 +7,7 @@ import { LeaveRequestOrmEntity } from '../../modules/hr/leave/infrastructure/lea
 import { LeaveTypeOrmEntity } from '../../modules/hr/leave/infrastructure/leave-type.orm-entity.js';
 import { ListFolderOrmEntity } from '../../modules/lists/infrastructure/list-folder.orm-entity.js';
 import { AutomationRuleOrmEntity, AutomationRunOrmEntity } from '../../modules/automations/infrastructure/automation.orm-entities.js';
+import { GithubConnectionOrmEntity, PullRequestLinkOrmEntity } from '../../modules/integrations/infrastructure/github.orm-entities.js';
 import { ProjectTemplateOrmEntity } from '../../modules/templates/infrastructure/project-template.orm-entity.js';
 import { TaskListOrmEntity } from '../../modules/lists/infrastructure/task-list.orm-entity.js';
 import { WorkspaceMemberOrmEntity } from '../../modules/members/infrastructure/workspace-member.orm-entity.js';
@@ -44,6 +45,8 @@ export const ORM_ENTITIES = [
   ProjectTemplateOrmEntity,
   AutomationRuleOrmEntity,
   AutomationRunOrmEntity,
+  GithubConnectionOrmEntity,
+  PullRequestLinkOrmEntity,
   TaskOrmEntity,
   TaskStatusOrmEntity,
   TaskWatcherOrmEntity,

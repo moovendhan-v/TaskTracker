@@ -34,6 +34,14 @@ export class AccessService {
     return null;
   }
 
+  /**
+   * A member's own access, never a platform role's: for work done on someone's
+   * behalf without a request, such as automations and integrations.
+   */
+  resolveMember(userId: string, workspaceId: string): Promise<WorkspaceAccess | null> {
+    return this.resolve({ id: userId, email: '', name: '', image: null, platformRole: 'USER', emailVerified: true }, workspaceId);
+  }
+
   static hasAll(access: WorkspaceAccess, required: readonly Permission[]): boolean {
     return required.every((permission) => access.permissions.has(permission));
   }

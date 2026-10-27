@@ -91,7 +91,7 @@ export class AutomationEngine implements OnModuleInit {
     const record = (status: 'succeeded' | 'failed' | 'skipped', message: string) =>
       this.automations.recordRun({ workspaceId: rule.workspaceId, ruleId: rule.id, taskId: task.id, status, message: message.slice(0, 300) });
 
-    const access = rule.createdById ? await this.accessOf(rule.createdById, rule.workspaceId) : null;
+    const access = rule.createdById ? await this.accessService.resolveMember(rule.createdById, rule.workspaceId) : null;
     if (!rule.createdById || !access) return record('skipped', 'The person this automation runs as is no longer in the workspace');
     const missing = ['task.view' as const, ...AutomationPolicy.requiredPermissions(rule.actions)].filter((permission) => !canInSpace(access, rule.spaceId, permission));
     if (missing.length) return record('skipped', `The person this automation runs as no longer has ${missing.join(', ')} here`);
@@ -165,10 +165,5 @@ export class AutomationEngine implements OnModuleInit {
           excerpt: rule.name.slice(0, EXCERPT_MAX),
         })),
     );
-  }
-
-  /** The rule owner's access now, never a platform role's. */
-  private accessOf(userId: string, workspaceId: string): Promise<WorkspaceAccess | null> {
-    return this.accessService.resolve({ id: userId, email: '', name: '', image: null, platformRole: 'USER', emailVerified: true }, workspaceId);
   }
 }

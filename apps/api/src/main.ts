@@ -6,6 +6,7 @@ import { AppModule } from './app.module.js';
 import { API_PREFIX } from './bootstrap/api-prefix.js';
 import { mountAuthRoutes } from './bootstrap/auth-routes.bootstrap.js';
 import { applyBodyParsers } from './bootstrap/body-parsers.bootstrap.js';
+import { mountWebhookParsers } from './bootstrap/webhook-routes.bootstrap.js';
 import { applySecurity } from './bootstrap/security.bootstrap.js';
 import { applyValidation } from './bootstrap/validation.bootstrap.js';
 import { rejectStrayUpgrades } from './bootstrap/websocket.bootstrap.js';
@@ -21,6 +22,7 @@ async function bootstrap(): Promise<void> {
 
   applySecurity(app, env);
   mountAuthRoutes(app);
+  mountWebhookParsers(app);
   applyBodyParsers(app);
   app.setGlobalPrefix(API_PREFIX);
   applyValidation(app, env);

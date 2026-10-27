@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { GithubIntegration } from '@/modules/integrations';
 import { WorkspaceForm } from '../components/workspace-form';
 import { usePermissions } from '../hooks/use-permissions';
 import { useDeleteWorkspace, useUpdateWorkspace } from '../hooks/use-workspace-mutations';
@@ -48,6 +49,15 @@ export function WorkspaceSettingsPage({ workspaceId }: { workspaceId: string }) 
             ) : (
               <p className="text-sm">{workspace.name}</p>
             )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Integrations</CardTitle>
+            <CardDescription>Connect GitHub so pull requests link to tasks and move them along.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GithubIntegration workspaceId={workspaceId} canManage={can('integration.manage')} />
           </CardContent>
         </Card>
         {canManage ? (

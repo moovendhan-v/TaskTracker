@@ -10,6 +10,7 @@ import { DepartmentsResolver } from './modules/hr/departments/presentation/graph
 import { EmployeesResolver } from './modules/hr/employees/presentation/graphql/employees.resolver.js';
 import { LeaveResolver } from './modules/hr/leave/presentation/graphql/leave.resolver.js';
 import { FoldersResolver } from './modules/lists/presentation/graphql/folders.resolver.js';
+import { GithubResolver } from './modules/integrations/presentation/graphql/github.resolver.js';
 import { AutomationsResolver } from './modules/automations/presentation/graphql/automations.resolver.js';
 import { TemplatesResolver } from './modules/templates/presentation/graphql/templates.resolver.js';
 import { ListsResolver } from './modules/lists/presentation/graphql/lists.resolver.js';
@@ -42,6 +43,7 @@ export const RESOLVERS = [
   FoldersResolver,
   TemplatesResolver,
   AutomationsResolver,
+  GithubResolver,
   TasksResolver,
   CommentsResolver,
   SprintsResolver,

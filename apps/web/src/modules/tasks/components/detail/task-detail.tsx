@@ -35,6 +35,7 @@ import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Modal } from '@/components/kit/modal';
 import { Section } from '@/components/kit/section';
+import { PullRequestsSection } from '@/modules/integrations';
 import { DateRangeField } from '@/components/kit/range-calendar';
 import { StatusPill } from '@/components/kit/status-pill';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -320,6 +321,7 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
 
       <Subtasks workspaceId={workspaceId} task={task} onOpen={onOpen} />
       <Relations workspaceId={workspaceId} task={task} onOpen={onOpen} />
+      <PullRequestsSection workspaceId={workspaceId} taskId={task.id} />
       <History workspaceId={workspaceId} taskId={task.id} />
     </div>
   );

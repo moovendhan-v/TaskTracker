@@ -37,3 +37,5 @@ export * from './domain/template.js';
 export * from './contracts/template.contract.js';
 export * from './domain/automation.js';
 export * from './contracts/automation.contract.js';
+export * from './domain/github.js';
+export * from './contracts/github.contract.js';

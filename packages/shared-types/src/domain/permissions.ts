@@ -20,6 +20,8 @@ export const PERMISSIONS = [
   'leave.request',
   'leave.approve',
   'audit.view',
+  /** Connect and manage integrations such as GitHub. */
+  'integration.manage',
   /** Track and log your own time. */
   'time.log',
   /** See everyone's time entries and reports. */

@@ -14,6 +14,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { key: 'members.manage', label: 'Add, remove and change members' },
       { key: 'roles.manage', label: 'Create and edit roles' },
       { key: 'audit.view', label: 'View the audit log' },
+      { key: 'integration.manage', label: 'Connect and manage integrations like GitHub' },
     ],
   },
   {

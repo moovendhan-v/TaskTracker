@@ -196,6 +196,13 @@ input CommentInput {
   body: String!
 }
 
+input ConnectGithubInput {
+  """owner/name"""
+  repo: String!
+  sync: GithubSyncInput
+  taskPrefix: String
+}
+
 input CreateCustomFieldInput {
   entity: CustomFieldEntity
   name: String!
@@ -710,6 +717,41 @@ type FormSchema {
   name: String!
 }
 
+type GithubConnection {
+  createdAt: String!
+
+  """Linked tasks are moved as this person"""
+  createdById: String
+  id: ID!
+  lastDeliveryAt: String
+  lastDeliveryStatus: String
+  repo: String!
+  sync: GithubSync!
+  taskPrefix: String!
+
+  """Prefix with the site origin for the GitHub webhook URL"""
+  webhookPath: String!
+}
+
+"""Shown once; store it in the GitHub webhook settings"""
+type GithubSecret {
+  connection: GithubConnection!
+  webhookSecret: String!
+}
+
+type GithubSync {
+  """Move linked tasks here when a pull request merges"""
+  onMerged: StatusCategory
+
+  """Move linked tasks here when a pull request opens"""
+  onOpened: StatusCategory
+}
+
+input GithubSyncInput {
+  onMerged: StatusCategory
+  onOpened: StatusCategory
+}
+
 """Icons for spaces, folders, lists and docs"""
 enum IconKey {
   book
@@ -918,6 +960,7 @@ type Mutation {
   Unfinished tasks move to another planned sprint in the space, or to the backlog when omitted
   """
   completeSprint(moveOpenTasksToSprintId: ID, sprintId: ID!, workspaceId: ID!): Sprint!
+  connectGithub(input: ConnectGithubInput!, workspaceId: ID!): GithubSecret!
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
   createCustomField(input: CreateCustomFieldInput!, workspaceId: ID!): CustomField!
@@ -986,6 +1029,7 @@ type Mutation {
     roleId: ID!
     workspaceId: ID!
   ): Role!
+  disconnectGithub(connectionId: ID!, workspaceId: ID!): Boolean!
 
   """Adds a template from an exported JSON file"""
   importTemplate(input: ImportTemplateInput!, workspaceId: ID!): ProjectTemplate!
@@ -1027,6 +1071,9 @@ type Mutation {
   """Back to the default settings"""
   resetPreferences: Preferences!
   resetTableLayout(key: String!): Preferences!
+
+  """A new webhook secret; the old one stops working at once"""
+  rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
   saveSpaceAsTemplate(input: SaveAsTemplateInput!, spaceId: ID!, workspaceId: ID!): ProjectTemplate!
 
   """Saves how a table is arranged (columns, widths, paging)"""
@@ -1067,6 +1114,9 @@ type Mutation {
   updateDepartment(departmentId: ID!, input: UpdateDepartmentInput!, workspaceId: ID!): Department!
   updateDocument(documentId: ID!, input: UpdateDocumentInput!, workspaceId: ID!): Document!
   updateFolder(folderId: ID!, input: UpdateFolderInput!, workspaceId: ID!): Folder!
+
+  """Saving takes the connection over: tasks are then moved as you"""
+  updateGithubConnection(connectionId: ID!, input: UpdateGithubConnectionInput!, workspaceId: ID!): GithubConnection!
   updateLeaveType(input: UpdateLeaveTypeInput!, leaveTypeId: ID!, workspaceId: ID!): LeaveType!
   updateList(input: UpdateTaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
   updateMemberRole(roleId: ID!, userId: ID!, workspaceId: ID!): Member!
@@ -1223,6 +1273,25 @@ type ProjectTemplate {
   name: String!
 }
 
+type PullRequestLink {
+  author: String!
+  branch: String!
+  id: ID!
+  number: Int!
+  repo: String!
+  state: PullRequestState!
+  taskId: ID!
+  title: String!
+  updatedAt: String!
+  url: String!
+}
+
+enum PullRequestState {
+  closed
+  merged
+  open
+}
+
 type Query {
   """Platform-wide audit log with IP addresses"""
   adminAuditLog(
@@ -1283,6 +1352,7 @@ type Query {
 
   """Validation rules for the named forms, or all of them"""
   formSchemas(names: [String!]): [FormSchema!]!
+  githubConnections(workspaceId: ID!): [GithubConnection!]!
 
   """Approver queue, oldest first"""
   leaveRequests(
@@ -1382,6 +1452,9 @@ type Query {
 
   """A task by its short number, e.g. 978 for #978"""
   taskByNumber(number: Int!, workspaceId: ID!): Task!
+
+  """Pull requests that mention the task"""
+  taskPullRequests(taskId: ID!, workspaceId: ID!): [PullRequestLink!]!
   taskRelations(taskId: ID!, workspaceId: ID!): [TaskRelation!]!
   taskTimeSummary(taskId: ID!, workspaceId: ID!): TaskTimeSummary!
 
@@ -1431,6 +1504,7 @@ enum RealtimeEntityType {
   document
   employee
   folder
+  integration
   leave_request
   leave_type
   list
@@ -1907,6 +1981,11 @@ input UpdateFolderInput {
   color: String
   icon: IconKey
   name: String
+}
+
+input UpdateGithubConnectionInput {
+  sync: GithubSyncInput
+  taskPrefix: String
 }
 
 input UpdateLeaveTypeInput {

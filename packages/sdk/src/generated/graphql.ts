@@ -68,6 +68,13 @@ export type CommentInput = {
   body: string;
 };
 
+export type ConnectGithubInput = {
+  /** owner/name */
+  repo: string;
+  sync?: GithubSyncInput | null | undefined;
+  taskPrefix?: string | null | undefined;
+};
+
 export type CreateCustomFieldInput = {
   entity?: CustomFieldEntity | null | undefined;
   name: string;
@@ -270,6 +277,11 @@ export type ForecastKind =
   | 'overdue'
   | 'week';
 
+export type GithubSyncInput = {
+  onMerged?: StatusCategory | null | undefined;
+  onOpened?: StatusCategory | null | undefined;
+};
+
 /** Icons for spaces, folders, lists and docs */
 export type IconKey =
   | 'book'
@@ -415,6 +427,11 @@ export type PolicyStatementInput = {
   spaces?: Array<string> | null | undefined;
 };
 
+export type PullRequestState =
+  | 'closed'
+  | 'merged'
+  | 'open';
+
 export type RealtimeEntityType =
   | 'automation'
   | 'comment'
@@ -423,6 +440,7 @@ export type RealtimeEntityType =
   | 'document'
   | 'employee'
   | 'folder'
+  | 'integration'
   | 'leave_request'
   | 'leave_type'
   | 'list'
@@ -609,6 +627,11 @@ export type UpdateFolderInput = {
   color?: string | null | undefined;
   icon?: IconKey | null | undefined;
   name?: string | null | undefined;
+};
+
+export type UpdateGithubConnectionInput = {
+  sync?: GithubSyncInput | null | undefined;
+  taskPrefix?: string | null | undefined;
 };
 
 export type UpdateLeaveTypeInput = {
@@ -1148,6 +1171,56 @@ export type MyLeaveBalancesQueryVariables = Exact<{
 
 
 export type MyLeaveBalancesQuery = { myLeaveBalances: Array<{ leaveTypeId: string, leaveTypeName: string, color: string, year: number, allowanceDays: number | null, usedDays: number, pendingDays: number, remainingDays: number | null }> };
+
+export type GithubConnectionFieldsFragment = { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } };
+
+export type GithubConnectionsQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type GithubConnectionsQuery = { githubConnections: Array<{ id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } }> };
+
+export type TaskPullRequestsQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type TaskPullRequestsQuery = { taskPullRequests: Array<{ id: string, taskId: string, repo: string, number: number, title: string, url: string, state: PullRequestState, author: string, branch: string, updatedAt: string }> };
+
+export type ConnectGithubMutationVariables = Exact<{
+  workspaceId: string;
+  input: ConnectGithubInput;
+}>;
+
+
+export type ConnectGithubMutation = { connectGithub: { webhookSecret: string, connection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } } } };
+
+export type UpdateGithubConnectionMutationVariables = Exact<{
+  workspaceId: string;
+  connectionId: string;
+  input: UpdateGithubConnectionInput;
+}>;
+
+
+export type UpdateGithubConnectionMutation = { updateGithubConnection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } } };
+
+export type RotateGithubSecretMutationVariables = Exact<{
+  workspaceId: string;
+  connectionId: string;
+}>;
+
+
+export type RotateGithubSecretMutation = { rotateGithubSecret: { webhookSecret: string, connection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } } } };
+
+export type DisconnectGithubMutationVariables = Exact<{
+  workspaceId: string;
+  connectionId: string;
+}>;
+
+
+export type DisconnectGithubMutation = { disconnectGithub: boolean };
 
 export type ListsQueryVariables = Exact<{
   workspaceId: string;
@@ -2471,6 +2544,22 @@ export const PreferencesFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"PreferencesFields"}) as unknown as TypedDocumentString<PreferencesFieldsFragment, unknown>;
+export const GithubConnectionFieldsFragmentDoc = new TypedDocumentString(`
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}
+    `, {"fragmentName":"GithubConnectionFields"}) as unknown as TypedDocumentString<GithubConnectionFieldsFragment, unknown>;
 export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
     fragment TemplateFields on ProjectTemplate {
   id
@@ -3461,6 +3550,117 @@ export const MyLeaveBalancesDocument = new TypedDocumentString(`
   pendingDays
   remainingDays
 }`) as unknown as TypedDocumentString<MyLeaveBalancesQuery, MyLeaveBalancesQueryVariables>;
+export const GithubConnectionsDocument = new TypedDocumentString(`
+    query GithubConnections($workspaceId: ID!) {
+  githubConnections(workspaceId: $workspaceId) {
+    ...GithubConnectionFields
+  }
+}
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}`) as unknown as TypedDocumentString<GithubConnectionsQuery, GithubConnectionsQueryVariables>;
+export const TaskPullRequestsDocument = new TypedDocumentString(`
+    query TaskPullRequests($workspaceId: ID!, $taskId: ID!) {
+  taskPullRequests(workspaceId: $workspaceId, taskId: $taskId) {
+    id
+    taskId
+    repo
+    number
+    title
+    url
+    state
+    author
+    branch
+    updatedAt
+  }
+}
+    `) as unknown as TypedDocumentString<TaskPullRequestsQuery, TaskPullRequestsQueryVariables>;
+export const ConnectGithubDocument = new TypedDocumentString(`
+    mutation ConnectGithub($workspaceId: ID!, $input: ConnectGithubInput!) {
+  connectGithub(workspaceId: $workspaceId, input: $input) {
+    webhookSecret
+    connection {
+      ...GithubConnectionFields
+    }
+  }
+}
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}`) as unknown as TypedDocumentString<ConnectGithubMutation, ConnectGithubMutationVariables>;
+export const UpdateGithubConnectionDocument = new TypedDocumentString(`
+    mutation UpdateGithubConnection($workspaceId: ID!, $connectionId: ID!, $input: UpdateGithubConnectionInput!) {
+  updateGithubConnection(
+    workspaceId: $workspaceId
+    connectionId: $connectionId
+    input: $input
+  ) {
+    ...GithubConnectionFields
+  }
+}
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}`) as unknown as TypedDocumentString<UpdateGithubConnectionMutation, UpdateGithubConnectionMutationVariables>;
+export const RotateGithubSecretDocument = new TypedDocumentString(`
+    mutation RotateGithubSecret($workspaceId: ID!, $connectionId: ID!) {
+  rotateGithubSecret(workspaceId: $workspaceId, connectionId: $connectionId) {
+    webhookSecret
+    connection {
+      ...GithubConnectionFields
+    }
+  }
+}
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}`) as unknown as TypedDocumentString<RotateGithubSecretMutation, RotateGithubSecretMutationVariables>;
+export const DisconnectGithubDocument = new TypedDocumentString(`
+    mutation DisconnectGithub($workspaceId: ID!, $connectionId: ID!) {
+  disconnectGithub(workspaceId: $workspaceId, connectionId: $connectionId)
+}
+    `) as unknown as TypedDocumentString<DisconnectGithubMutation, DisconnectGithubMutationVariables>;
 export const ListsDocument = new TypedDocumentString(`
     query Lists($workspaceId: ID!) {
   lists(workspaceId: $workspaceId) {

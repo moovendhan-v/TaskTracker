@@ -7,6 +7,7 @@ import { DataScopeInterceptor } from './core/access/data-scope.interceptor.js';
 import { AuditModule } from './core/audit/audit.module.js';
 import { AuthModule } from './core/auth/auth.module.js';
 import { CacheModule } from './core/cache/cache.module.js';
+import { CryptoModule } from './core/crypto/crypto.module.js';
 import { QueryModule } from './core/query/query.module.js';
 import { SessionGuard } from './core/auth/session.guard.js';
 import { DatabaseModule } from './core/database/database.module.js';
@@ -22,6 +23,7 @@ import { CommentsModule } from './modules/comments/comments.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
 import { TemplatesModule } from './modules/templates/templates.module.js';
 import { AutomationsModule } from './modules/automations/automations.module.js';
+import { IntegrationsModule } from './modules/integrations/integrations.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { HrModule } from './modules/hr/hr.module.js';
 import { ListsModule } from './modules/lists/lists.module.js';
@@ -52,6 +54,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     EventsModule,
     RealtimeModule,
     CacheModule,
+    CryptoModule,
     QueryModule,
     GraphqlApiModule,
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
@@ -71,6 +74,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     DocumentsModule,
     TemplatesModule,
     AutomationsModule,
+    IntegrationsModule,
     HrModule,
     AuditLogModule,
     AdminModule,

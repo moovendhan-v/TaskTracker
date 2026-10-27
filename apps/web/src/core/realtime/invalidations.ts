@@ -35,6 +35,8 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
     case 'status':
     case 'custom_field':
       return [queryKeys.tasksRoot(workspaceId), queryKeys.spaces(workspaceId)];
+    case 'integration':
+      return [queryKeys.integrations(workspaceId)];
     case 'automation':
       return [queryKeys.automationsRoot(workspaceId)];
     case 'time_entry':

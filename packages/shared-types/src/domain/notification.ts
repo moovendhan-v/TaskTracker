@@ -23,5 +23,6 @@ export const REALTIME_ENTITY_TYPES = [
   'custom_field',
   'time_entry',
   'automation',
+  'integration',
 ] as const;
 export type RealtimeEntityType = (typeof REALTIME_ENTITY_TYPES)[number];
