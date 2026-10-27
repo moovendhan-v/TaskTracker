@@ -5,6 +5,7 @@ import { SecretBox } from '../../../core/crypto/secret-box.js';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
+import type { WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { Clock } from '../../../core/time/clock.port.js';
 import { AutomationEngine } from '../../automations/application/automation-engine.js';
 import { StatusesService } from '../../statuses/application/statuses.service.js';
@@ -101,14 +102,20 @@ export class GithubWebhookService {
         await this.note(connection, `ignored: from ${pr.repo.slice(0, 50)}`);
         return 'ignored';
       }
-      const linked = await this.handlePullRequest(connection, pr);
+      // Everything a delivery does is limited to what the connection's owner can see now.
+      const access = connection.createdById ? await this.accessService.resolveMember(connection.createdById, workspaceId) : null;
+      if (!access) {
+        await this.note(connection, 'ignored: the owner left; save the connection again');
+        return 'ignored';
+      }
+      const linked = await this.handlePullRequest(connection, access, pr);
       await this.note(connection, `ok: #${pr.number} ${pr.action}, ${linked} linked`);
       return 'ok';
     });
   }
 
   /** Links the pull request to every task it mentions; returns how many. */
-  private async handlePullRequest(connection: GithubConnection, pr: PullRequestEvent): Promise<number> {
+  private async handlePullRequest(connection: GithubConnection, access: WorkspaceAccess, pr: PullRequestEvent): Promise<number> {
     const { workspaceId } = connection;
     const trigger: AutomationTriggerType | null =
       pr.action === 'closed'
@@ -129,6 +136,7 @@ export class GithubWebhookService {
         if (error instanceof DomainError) continue;
         throw error;
       }
+      if (!canInSpace(access, task.spaceId, 'task.view')) continue;
       await this.github.upsertLink({
         workspaceId,
         connectionId: connection.id,
@@ -142,20 +150,18 @@ export class GithubWebhookService {
         branch: pr.branch,
       });
       linked += 1;
-      if (category) await this.moveTo(connection, task, category);
+      if (category) await this.moveTo(connection, access, task, category);
       if (trigger) await this.automationEngine.run(workspaceId, [trigger], task.id, { actorId: null, pr: `${pr.title} (#${pr.number})` });
     }
     return linked;
   }
 
   /** Moves a task to the first status of its space with this meaning, as the connection's owner. */
-  private async moveTo(connection: GithubConnection, task: TaskResponse, category: StatusCategory): Promise<void> {
+  private async moveTo(connection: GithubConnection, access: WorkspaceAccess, task: TaskResponse, category: StatusCategory): Promise<void> {
     if (task.status.category === category) return;
     // An opened pull request doesn't reopen finished work.
     if (CLOSED.includes(task.status.category) && !CLOSED.includes(category)) return;
-    if (!connection.createdById) return;
-    const access = await this.accessService.resolveMember(connection.createdById, connection.workspaceId);
-    if (!access || !canInSpace(access, task.spaceId, 'task.update')) return;
+    if (!connection.createdById || !canInSpace(access, task.spaceId, 'task.update')) return;
     const target = (await this.statusesService.listForSpace(connection.workspaceId, task.spaceId)).find((status) => status.category === category);
     if (!target) return;
     const actor = { userId: connection.createdById, platformRole: 'USER' as const, ip: null };

@@ -81,11 +81,12 @@ export class GithubConnectionsService {
     return GithubMapper.toResponse(saved);
   }
 
+  /** Whoever holds the secret can drive the connection, so rotating takes it over like saving does. */
   @Audited('integration.github.rotate_secret', secretChange)
-  async rotateSecret(_actor: Actor, access: WorkspaceAccess, connectionId: string): Promise<GithubSecretResponse> {
+  async rotateSecret(actor: Actor, access: WorkspaceAccess, connectionId: string): Promise<GithubSecretResponse> {
     const connection = await this.get(access.workspaceId, connectionId);
     const secret = newSecret();
-    const saved = await this.github.save({ ...connection, secretSealed: this.secretBox.seal(secret) });
+    const saved = await this.github.save({ ...connection, secretSealed: this.secretBox.seal(secret), createdById: actor.userId });
     return { connection: GithubMapper.toResponse(saved), webhookSecret: secret };
   }
 

@@ -124,4 +124,32 @@ describe('GitHub integration', () => {
     secret = rotateGithubSecret.webhookSecret;
     expect((await deliver({ zen: 'x' }, { event: 'ping' })).status).toBe(202);
   });
+
+  it("doesn't let someone kept out of a space reach it through a connection", async () => {
+    const admin = await TestUser.signUp('GitHub admin');
+    await addMember(ws, admin, 'Admin');
+    const { createSpace } = await ws.owner.data<{ createSpace: { id: string } }>('mutation($w: ID!) { createSpace(workspaceId: $w, input: { name: "People ops" }) { id } }', vars());
+    const { createList } = await ws.owner.data<{ createList: { id: string } }>('mutation($w: ID!, $s: ID!) { createList(workspaceId: $w, spaceId: $s, input: { name: "Hiring" }) { id } }', vars({ s: createSpace.id }));
+    const { createTask: hidden } = await ws.owner.data<{ createTask: { id: string; number: number } }>(
+      'mutation($w: ID!, $l: ID!) { createTask(workspaceId: $w, listId: $l, input: { title: "Salary review" }) { id number } }',
+      vars({ l: createList.id }),
+    );
+    const { createPolicy } = await ws.owner.data<{ createPolicy: { id: string } }>(
+      'mutation($w: ID!, $input: SavePolicyInput!) { createPolicy(workspaceId: $w, input: $input) { id } }',
+      vars({ input: { name: 'No People ops', document: { statements: [{ effect: 'deny', permissions: ['*'], spaces: [createSpace.id] }] } } }),
+    );
+    await ws.owner.data('mutation($w: ID!, $r: ID!, $p: String!) { attachRolePolicy(workspaceId: $w, roleId: $r, policy: $p) { id } }', vars({ r: ws.roles.Admin, p: createPolicy.id }));
+
+    // Rotating hands the secret over, so the connection now acts as the admin.
+    const { rotateGithubSecret } = await admin.data<{ rotateGithubSecret: { webhookSecret: string } }>(
+      'mutation($w: ID!, $c: ID!) { rotateGithubSecret(workspaceId: $w, connectionId: $c) { webhookSecret } }',
+      vars({ c: connection.id }),
+    );
+    secret = rotateGithubSecret.webhookSecret;
+    const pr = pullRequest('closed', { number: 18, title: `TF-${hidden.number}: peek`, state: 'closed', merged: true });
+    expect(await (await deliver(pr)).json()).toEqual({ result: 'ok' });
+    const { task: after } = await ws.owner.data<{ task: { status: { category: string } } }>(TASK, vars({ t: hidden.id }));
+    expect(after.status.category).not.toBe('done');
+    expect((await ws.owner.data<{ taskPullRequests: unknown[] }>(LINKS, vars({ t: hidden.id }))).taskPullRequests).toEqual([]);
+  });
 });
