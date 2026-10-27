@@ -55,6 +55,7 @@ test('creates a workspace, a space and a list', async () => {
   await expect(page.getByRole('status').filter({ hasText: 'Confirm your email' })).toBeVisible();
 
   await page.getByRole('button', { name: 'New space' }).click();
+  await page.getByRole('menuitem', { name: 'Blank space' }).click();
   await page.getByRole('dialog').getByLabel('Name').fill('Product');
   await page.getByRole('button', { name: 'Create space' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -225,6 +226,7 @@ test('makes a folder and drags a page into it', async () => {
 
 test('creates a task in a project that has no lists yet', async () => {
   await page.getByRole('button', { name: 'New space' }).click();
+  await page.getByRole('menuitem', { name: 'Blank space' }).click();
   await page.getByRole('dialog').getByLabel('Name').fill('Ops');
   await page.getByRole('button', { name: 'Create space' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();

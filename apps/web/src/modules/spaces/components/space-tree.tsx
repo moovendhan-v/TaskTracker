@@ -7,6 +7,7 @@ import {
   FolderInputIcon,
   FolderPlusIcon,
   LayoutDashboardIcon,
+  LayoutTemplateIcon,
   ListPlusIcon,
   MoreHorizontalIcon,
   PencilIcon,
@@ -38,6 +39,7 @@ import { cn } from '@/lib/cn';
 import { getErrorMessage } from '@/lib/errors';
 import { useDocumentMutations, useDocumentTree } from '@/modules/documents';
 import { useFolderMutations, useFolders, useListMutations, useLists } from '@/modules/lists';
+import { TemplateGallery } from '@/modules/templates';
 import { usePermissions } from '@/modules/workspaces';
 import { useSpaceMutations, useSpaces } from '../hooks/use-spaces';
 
@@ -79,26 +81,41 @@ export function SpaceTree({ workspaceId, stats = {}, filter = '', defaultView }:
   const { data: docs = [] } = useDocumentTree(workspaceId);
   const { can } = usePermissions(workspaceId);
   const spaceMutations = useSpaceMutations(workspaceId);
+  const newMenu = useMenu();
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   return (
     <SidebarSection
       title="Spaces"
       action={
         can('space.manage') ? (
-          <NameDialog
-            formName="space.create"
-            trigger={
-              <button type="button" className="rounded p-0.5 text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground" aria-label="New space">
+          <>
+            <DropdownMenu open={newMenu.open} onOpenChange={newMenu.onOpenChange}>
+              <DropdownMenuTrigger className="rounded p-0.5 text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground" aria-label="New space">
                 <PlusIcon className="size-4" />
-              </button>
-            }
-            title="New space"
-            description="Spaces group related folders, lists and docs, like a team or a client."
-            submitLabel="Create space"
-            placeholder="e.g. Engineering"
-            withIcon
-            onSubmit={(values) => spaceMutations.create.mutateAsync({ name: values.name, color: values.color, icon: values.icon }).catch(onError)}
-          />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <NameDialog
+                  formName="space.create"
+                  trigger={
+                    <DropdownMenuItem onSelect={(event) => event.preventDefault()}>
+                      <PlusIcon /> Blank space
+                    </DropdownMenuItem>
+                  }
+                  title="New space"
+                  description="Spaces group related folders, lists and docs, like a team or a client."
+                  submitLabel="Create space"
+                  placeholder="e.g. Engineering"
+                  withIcon
+                  onSubmit={(values) => spaceMutations.create.mutateAsync({ name: values.name, color: values.color, icon: values.icon }).then(newMenu.done, onError)}
+                />
+                <DropdownMenuItem onSelect={() => setGalleryOpen(true)}>
+                  <LayoutTemplateIcon /> From a template…
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {galleryOpen ? <TemplateGallery workspaceId={workspaceId} open onOpenChange={setGalleryOpen} /> : null}
+          </>
         ) : null
       }
     >

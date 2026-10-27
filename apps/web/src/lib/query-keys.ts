@@ -4,6 +4,7 @@ export const queryKeys = {
   workspaces: ['workspaces'] as const,
   workspace: (workspaceId: string) => ['workspaces', workspaceId] as const,
   members: (workspaceId: string) => ['workspaces', workspaceId, 'members'] as const,
+  templates: (workspaceId: string) => ['workspaces', workspaceId, 'templates'] as const,
   roles: (workspaceId: string) => ['workspaces', workspaceId, 'roles'] as const,
   /** Under `roles`, so role and policy changes refresh each other. */
   policies: (workspaceId: string) => ['workspaces', workspaceId, 'roles', 'policies'] as const,

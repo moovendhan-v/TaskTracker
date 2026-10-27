@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { SaveAsTemplate } from '@/modules/templates';
 import { usePermissions } from '@/modules/workspaces';
 import { useSpaceMutations } from '../../hooks/use-spaces';
 import { CustomFieldSettings } from './custom-field-settings';
@@ -56,6 +57,17 @@ export function SpaceSettings({ workspaceId, space }: SpaceSettingsProps) {
           <CustomFieldSettings workspaceId={workspaceId} spaceId={space.id} canManage={canManage} />
         </CardContent>
       </Card>
+      {canManage ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Template</CardTitle>
+            <CardDescription>Reuse this project’s statuses, fields, folders and lists for new projects, here or in another workspace.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SaveAsTemplate workspaceId={workspaceId} spaceId={space.id} spaceName={space.name} />
+          </CardContent>
+        </Card>
+      ) : null}
       {canManage ? <DangerZone workspaceId={workspaceId} space={space} /> : null}
     </div>
   );

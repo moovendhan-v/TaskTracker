@@ -68,6 +68,11 @@ export class TasksService {
   }
 
   @Cached({ entities: ['task', 'sprint', 'status'], shared: true })
+  /** Unfinished tasks of a space, e.g. to save the space as a template. */
+  async openInSpace(workspaceId: string, spaceId: string, limit: number): Promise<TaskResponse[]> {
+    return this.respond(workspaceId, await this.tasks.openInSpace(workspaceId, spaceId, limit));
+  }
+
   async backlog(workspaceId: string, spaceId: string): Promise<TaskResponse[]> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
     return this.respond(workspaceId, await this.tasks.backlogInSpace(workspaceId, spaceId, PLANNING_VIEW_LIMIT));

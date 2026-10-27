@@ -55,6 +55,17 @@ export class TypeOrmTaskRepository extends TaskRepository {
     return this.repository.find({ where: { workspaceId, sprintId }, order: { position: 'ASC', createdAt: 'ASC' }, take: limit });
   }
 
+  openInSpace(workspaceId: string, spaceId: string, limit: number): Promise<Task[]> {
+    return this.repository
+      .createQueryBuilder('task')
+      .innerJoin('task_list', 'list', 'list.id = task.list_id AND list.workspace_id = task.workspace_id')
+      .where('task.workspace_id = :workspaceId AND list.space_id = :spaceId', { workspaceId, spaceId })
+      .andWhere(`NOT ${CLOSED_STATUS_SQL}`)
+      .orderBy('task.created_at', 'ASC')
+      .limit(limit)
+      .getMany();
+  }
+
   backlogInSpace(workspaceId: string, spaceId: string, limit: number): Promise<Task[]> {
     return this.repository
       .createQueryBuilder('task')

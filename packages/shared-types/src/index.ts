@@ -33,3 +33,5 @@ export * from './contracts/time.contract.js';
 export * from './contracts/analytics.contract.js';
 export * from './domain/time-tracking.js';
 export * from './domain/hierarchy.js';
+export * from './domain/template.js';
+export * from './contracts/template.contract.js';

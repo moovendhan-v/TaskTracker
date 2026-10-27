@@ -24,6 +24,8 @@ export abstract class TaskRepository {
   /** Unfinished tasks in a space's lists that aren't in any sprint. */
   abstract backlogInSpace(workspaceId: string, spaceId: string, limit: number): Promise<Task[]>;
   /** One page of tasks matching a validated resource query, within the scope. */
+  /** Unfinished tasks in a space (subtasks included), oldest first. */
+  abstract openInSpace(workspaceId: string, spaceId: string, limit: number): Promise<Task[]>;
   abstract search(workspaceId: string, scope: TaskSearchScope, query: NormalizedQuery): Promise<TaskPage>;
   /** The next number in the workspace's sequence; locks the counter until the transaction ends. */
   abstract nextNumber(workspaceId: string): Promise<number>;

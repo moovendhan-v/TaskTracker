@@ -133,6 +133,15 @@ input CreateFolderInput {
   parentId: ID
 }
 
+input CreateFromTemplateInput {
+  color: String
+  icon: IconKey
+
+  """Starter tasks and docs (default true)"""
+  includeContent: Boolean
+  name: String!
+}
+
 input CreateLeaveTypeInput {
   """null means unlimited"""
   annualAllowanceDays: Int
@@ -668,6 +677,15 @@ enum IconKey {
   zap
 }
 
+input ImportTemplateInput {
+  category: TemplateCategory
+  description: String
+
+  """An exported template file, as JSON text"""
+  json: String!
+  name: String!
+}
+
 """A JSON object (read-only)"""
 scalar JSONObject
 
@@ -813,6 +831,15 @@ type Mutation {
   createPolicy(input: SavePolicyInput!, workspaceId: ID!): Policy!
   createRole(input: CreateRoleInput!, workspaceId: ID!): Role!
   createSpace(input: CreateSpaceInput!, workspaceId: ID!): Space!
+
+  """Creates a space from a template"""
+  createSpaceFromTemplate(
+    input: CreateFromTemplateInput!
+
+    """builtin:<key> or a template id"""
+    templateId: String!
+    workspaceId: ID!
+  ): Space!
   createSprint(input: CreateSprintInput!, spaceId: ID!, workspaceId: ID!): Sprint!
   createStatus(input: CreateTaskStatusInput!, spaceId: ID!, workspaceId: ID!): TaskStatus!
   createTask(input: CreateTaskInput!, listId: ID!, workspaceId: ID!): Task!
@@ -850,6 +877,7 @@ type Mutation {
 
   """Deletes the task and its subtasks"""
   deleteTask(taskId: ID!, workspaceId: ID!): Boolean!
+  deleteTemplate(templateId: ID!, workspaceId: ID!): Boolean!
   deleteTimeEntry(entryId: ID!, workspaceId: ID!): Boolean!
   deleteView(viewId: ID!): Preferences!
   deleteWorkspace(workspaceId: ID!): Boolean!
@@ -859,6 +887,9 @@ type Mutation {
     roleId: ID!
     workspaceId: ID!
   ): Role!
+
+  """Adds a template from an exported JSON file"""
+  importTemplate(input: ImportTemplateInput!, workspaceId: ID!): ProjectTemplate!
 
   """Leave a workspace. The last owner cannot leave."""
   leaveWorkspace(workspaceId: ID!): Boolean!
@@ -897,6 +928,7 @@ type Mutation {
   """Back to the default settings"""
   resetPreferences: Preferences!
   resetTableLayout(key: String!): Preferences!
+  saveSpaceAsTemplate(input: SaveAsTemplateInput!, spaceId: ID!, workspaceId: ID!): ProjectTemplate!
 
   """Saves how a table is arranged (columns, widths, paging)"""
   saveTableLayout(input: TableLayoutInput!): Preferences!
@@ -1063,6 +1095,23 @@ type Preferences {
   weekStart: Int!
 }
 
+type ProjectTemplate {
+  builtIn: Boolean!
+  category: TemplateCategory!
+  color: String!
+
+  """The template itself (TemplateContent); export it as JSON"""
+  content: JSONObject!
+  counts: TemplateCounts!
+  createdAt: String
+  description: String!
+  icon: IconKey
+
+  """builtin:<key> for templates that ship with the app, otherwise a UUID"""
+  id: String!
+  name: String!
+}
+
 type Query {
   """Platform-wide audit log with IP addresses"""
   adminAuditLog(
@@ -1166,6 +1215,9 @@ type Query {
   """Managed and custom policies, with how many roles use each"""
   policies(workspaceId: ID!): [Policy!]!
 
+  """The built-in gallery and the workspace’s own templates"""
+  projectTemplates(workspaceId: ID!): [ProjectTemplate!]!
+
   """Data fields whose visibility policies control"""
   protectedFields(workspaceId: ID!): [FieldDefinition!]!
 
@@ -1195,6 +1247,9 @@ type Query {
   Audit entries matching filters; see resourceSchema(resource: "audit_log")
   """
   searchWorkspaceAuditLog(query: ResourceQueryInput, workspaceId: ID!): AuditLogPage!
+
+  """A space as template content, to export without saving"""
+  spaceTemplateContent(includeContent: Boolean! = false, spaceId: ID!, workspaceId: ID!): JSONObject!
   spaces(workspaceId: ID!): [Space!]!
   sprint(sprintId: ID!, workspaceId: ID!): Sprint!
   sprintTasks(sprintId: ID!, workspaceId: ID!): [Task!]!
@@ -1352,6 +1407,15 @@ type Role {
 
   """Set for built-in roles"""
   systemKey: String
+}
+
+input SaveAsTemplateInput {
+  category: TemplateCategory
+  description: String
+
+  """Copy open tasks and docs too (default false)"""
+  includeContent: Boolean
+  name: String!
 }
 
 input SavePolicyInput {
@@ -1637,6 +1701,23 @@ enum TaskType {
   milestone
   phase
   task
+}
+
+enum TemplateCategory {
+  engineering
+  general
+  marketing
+  operations
+  people
+}
+
+type TemplateCounts {
+  customFields: Int!
+  docs: Int!
+  folders: Int!
+  lists: Int!
+  statuses: Int!
+  tasks: Int!
 }
 
 type TimeEntry {

@@ -6,6 +6,7 @@ import {
   EMPLOYMENT_TYPES,
   FIELD_TYPES,
   FORECAST_KINDS,
+  TEMPLATE_CATEGORIES,
   ICON_KEYS,
   FILTER_OPERATORS,
   LOGIC_OPERATORS,
@@ -36,6 +37,7 @@ export const CustomFieldTypeEnum = enumOf(CUSTOM_FIELD_TYPES);
 export const CustomFieldEntityEnum = enumOf(CUSTOM_FIELD_ENTITIES);
 export const SpaceStatusEnum = enumOf(SPACE_STATUSES);
 export const IconKeyEnum = enumOf(ICON_KEYS);
+export const TemplateCategoryEnum = enumOf(TEMPLATE_CATEGORIES);
 export const TaskPriorityEnum = enumOf(TASK_PRIORITIES);
 export const SprintStatusEnum = enumOf(SPRINT_STATUSES);
 export const LeaveStatusEnum = enumOf(LEAVE_STATUSES);
@@ -58,6 +60,7 @@ registerEnumType(TaskRelationKindEnum, { name: 'TaskRelationKind' });
 registerEnumType(CustomFieldTypeEnum, { name: 'CustomFieldType' });
 registerEnumType(CustomFieldEntityEnum, { name: 'CustomFieldEntity' });
 registerEnumType(SpaceStatusEnum, { name: 'SpaceStatus' });
+registerEnumType(TemplateCategoryEnum, { name: 'TemplateCategory' });
 registerEnumType(IconKeyEnum, { name: 'IconKey', description: 'Icons for spaces, folders, lists and docs' });
 registerEnumType(ForecastKindEnum, { name: 'ForecastKind' });
 registerEnumType(TaskPriorityEnum, { name: 'TaskPriority' });

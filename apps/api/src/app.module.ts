@@ -20,6 +20,7 @@ import { AdminModule } from './modules/admin/admin.module.js';
 import { AuditLogModule } from './modules/audit-log/audit-log.module.js';
 import { CommentsModule } from './modules/comments/comments.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
+import { TemplatesModule } from './modules/templates/templates.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { HrModule } from './modules/hr/hr.module.js';
 import { ListsModule } from './modules/lists/lists.module.js';
@@ -67,6 +68,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     CommentsModule,
     SprintsModule,
     DocumentsModule,
+    TemplatesModule,
     HrModule,
     AuditLogModule,
     AdminModule,

@@ -54,6 +54,14 @@ export type CreateFolderInput = {
   parentId?: string | null | undefined;
 };
 
+export type CreateFromTemplateInput = {
+  color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
+  /** Starter tasks and docs (default true) */
+  includeContent?: boolean | null | undefined;
+  name: string;
+};
+
 export type CreateLeaveTypeInput = {
   /** null means unlimited */
   annualAllowanceDays?: number | null | undefined;
@@ -279,6 +287,14 @@ export type IconKey =
   | 'wrench'
   | 'zap';
 
+export type ImportTemplateInput = {
+  category?: TemplateCategory | null | undefined;
+  description?: string | null | undefined;
+  /** An exported template file, as JSON text */
+  json: string;
+  name: string;
+};
+
 export type LeaveDecision =
   | 'approved'
   | 'rejected';
@@ -386,6 +402,14 @@ export type ResourceQueryInput = {
   where?: string | null | undefined;
 };
 
+export type SaveAsTemplateInput = {
+  category?: TemplateCategory | null | undefined;
+  description?: string | null | undefined;
+  /** Copy open tasks and docs too (default false) */
+  includeContent?: boolean | null | undefined;
+  name: string;
+};
+
 export type SavePolicyInput = {
   description?: string | null | undefined;
   document: PolicyDocumentInput;
@@ -480,6 +504,13 @@ export type TaskType =
   | 'milestone'
   | 'phase'
   | 'task';
+
+export type TemplateCategory =
+  | 'engineering'
+  | 'general'
+  | 'marketing'
+  | 'operations'
+  | 'people';
 
 export type TimeEntryQueryInput = {
   from: string;
@@ -1631,6 +1662,58 @@ export type UnrelateTasksMutationVariables = Exact<{
 
 export type UnrelateTasksMutation = { unrelateTasks: boolean };
 
+export type TemplateFieldsFragment = { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } };
+
+export type ProjectTemplatesQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ProjectTemplatesQuery = { projectTemplates: Array<{ id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } }> };
+
+export type SpaceTemplateContentQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  includeContent?: boolean | null | undefined;
+}>;
+
+
+export type SpaceTemplateContentQuery = { spaceTemplateContent: Record<string, unknown> };
+
+export type CreateSpaceFromTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  templateId: string;
+  input: CreateFromTemplateInput;
+}>;
+
+
+export type CreateSpaceFromTemplateMutation = { createSpaceFromTemplate: { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
+
+export type SaveSpaceAsTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  input: SaveAsTemplateInput;
+}>;
+
+
+export type SaveSpaceAsTemplateMutation = { saveSpaceAsTemplate: { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } } };
+
+export type ImportTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  input: ImportTemplateInput;
+}>;
+
+
+export type ImportTemplateMutation = { importTemplate: { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } } };
+
+export type DeleteTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  templateId: string;
+}>;
+
+
+export type DeleteTemplateMutation = { deleteTemplate: boolean };
+
 export type TimeEntryFieldsFragment = { id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null };
 
 export type RunningTimerQueryVariables = Exact<{
@@ -2241,6 +2324,27 @@ export const PreferencesFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"PreferencesFields"}) as unknown as TypedDocumentString<PreferencesFieldsFragment, unknown>;
+export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
+    fragment TemplateFields on ProjectTemplate {
+  id
+  name
+  description
+  category
+  builtIn
+  icon
+  color
+  counts {
+    statuses
+    customFields
+    folders
+    lists
+    tasks
+    docs
+  }
+  content
+  createdAt
+}
+    `, {"fragmentName":"TemplateFields"}) as unknown as TypedDocumentString<TemplateFieldsFragment, unknown>;
 export const TimeEntryFieldsFragmentDoc = new TypedDocumentString(`
     fragment TimeEntryFields on TimeEntry {
   id
@@ -4845,6 +4949,118 @@ export const UnrelateTasksDocument = new TypedDocumentString(`
   unrelateTasks(workspaceId: $workspaceId, relationId: $relationId)
 }
     `) as unknown as TypedDocumentString<UnrelateTasksMutation, UnrelateTasksMutationVariables>;
+export const ProjectTemplatesDocument = new TypedDocumentString(`
+    query ProjectTemplates($workspaceId: ID!) {
+  projectTemplates(workspaceId: $workspaceId) {
+    ...TemplateFields
+  }
+}
+    fragment TemplateFields on ProjectTemplate {
+  id
+  name
+  description
+  category
+  builtIn
+  icon
+  color
+  counts {
+    statuses
+    customFields
+    folders
+    lists
+    tasks
+    docs
+  }
+  content
+  createdAt
+}`) as unknown as TypedDocumentString<ProjectTemplatesQuery, ProjectTemplatesQueryVariables>;
+export const SpaceTemplateContentDocument = new TypedDocumentString(`
+    query SpaceTemplateContent($workspaceId: ID!, $spaceId: ID!, $includeContent: Boolean) {
+  spaceTemplateContent(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    includeContent: $includeContent
+  )
+}
+    `) as unknown as TypedDocumentString<SpaceTemplateContentQuery, SpaceTemplateContentQueryVariables>;
+export const CreateSpaceFromTemplateDocument = new TypedDocumentString(`
+    mutation CreateSpaceFromTemplate($workspaceId: ID!, $templateId: String!, $input: CreateFromTemplateInput!) {
+  createSpaceFromTemplate(
+    workspaceId: $workspaceId
+    templateId: $templateId
+    input: $input
+  ) {
+    ...SpaceFields
+  }
+}
+    fragment SpaceFields on Space {
+  id
+  workspaceId
+  name
+  color
+  icon
+  status
+  statusNote
+  startDate
+  dueDate
+  customFields
+  createdAt
+}`) as unknown as TypedDocumentString<CreateSpaceFromTemplateMutation, CreateSpaceFromTemplateMutationVariables>;
+export const SaveSpaceAsTemplateDocument = new TypedDocumentString(`
+    mutation SaveSpaceAsTemplate($workspaceId: ID!, $spaceId: ID!, $input: SaveAsTemplateInput!) {
+  saveSpaceAsTemplate(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...TemplateFields
+  }
+}
+    fragment TemplateFields on ProjectTemplate {
+  id
+  name
+  description
+  category
+  builtIn
+  icon
+  color
+  counts {
+    statuses
+    customFields
+    folders
+    lists
+    tasks
+    docs
+  }
+  content
+  createdAt
+}`) as unknown as TypedDocumentString<SaveSpaceAsTemplateMutation, SaveSpaceAsTemplateMutationVariables>;
+export const ImportTemplateDocument = new TypedDocumentString(`
+    mutation ImportTemplate($workspaceId: ID!, $input: ImportTemplateInput!) {
+  importTemplate(workspaceId: $workspaceId, input: $input) {
+    ...TemplateFields
+  }
+}
+    fragment TemplateFields on ProjectTemplate {
+  id
+  name
+  description
+  category
+  builtIn
+  icon
+  color
+  counts {
+    statuses
+    customFields
+    folders
+    lists
+    tasks
+    docs
+  }
+  content
+  createdAt
+}`) as unknown as TypedDocumentString<ImportTemplateMutation, ImportTemplateMutationVariables>;
+export const DeleteTemplateDocument = new TypedDocumentString(`
+    mutation DeleteTemplate($workspaceId: ID!, $templateId: ID!) {
+  deleteTemplate(workspaceId: $workspaceId, templateId: $templateId)
+}
+    `) as unknown as TypedDocumentString<DeleteTemplateMutation, DeleteTemplateMutationVariables>;
 export const RunningTimerDocument = new TypedDocumentString(`
     query RunningTimer($workspaceId: ID!) {
   runningTimer(workspaceId: $workspaceId) {

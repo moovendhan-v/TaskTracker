@@ -43,6 +43,11 @@ export class TypeOrmTaskStatusRepository extends TaskStatusRepository {
     for (const [index, id] of orderedIds.entries()) await this.repository.update({ id, workspaceId }, { position: index + 1 });
   }
 
+  async countTasks(workspaceId: string, statusId: string): Promise<number> {
+    const rows: { count: string }[] = await this.transactional.manager.query('SELECT count(*) AS count FROM task WHERE workspace_id = $1 AND status_id = $2', [workspaceId, statusId]);
+    return Number(rows[0]?.count ?? 0);
+  }
+
   async moveTasks(workspaceId: string, fromStatusId: string, toStatusId: string): Promise<number> {
     // The task table is addressed by name so this module doesn't import the tasks entity; values are bound.
     const result: unknown = await this.transactional.manager.query(

@@ -14,6 +14,7 @@ import { TimeTracking1729660000000 } from './1729660000000-time-tracking.js';
 import { TaskModelV21729650000000 } from './1729650000000-task-model-v2.js';
 import { SpaceHierarchy1729680000000 } from './1729680000000-space-hierarchy.js';
 import { SpaceAccess1729690000000 } from './1729690000000-space-access.js';
+import { ProjectTemplates1729700000000 } from './1729700000000-project-templates.js';
 
 /** Registered in order. Add new migrations to the end. */
 export const MIGRATIONS = [
@@ -33,4 +34,5 @@ export const MIGRATIONS = [
   DocumentFolders1729670000000,
   SpaceHierarchy1729680000000,
   SpaceAccess1729690000000,
+  ProjectTemplates1729700000000,
 ];

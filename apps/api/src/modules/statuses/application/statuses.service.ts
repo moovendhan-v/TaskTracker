@@ -3,6 +3,7 @@ import { DEFAULT_STATUSES, type SaveTaskStatusRequest, type TaskStatusResponse }
 import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
+import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
 import { Announces } from '../../../core/events/announces.decorator.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
@@ -107,6 +108,20 @@ export class StatusesService implements OnModuleInit {
     StatusPolicy.assertSameSet(current, orderedIds);
     await this.statuses.setPositions(workspaceId, orderedIds);
     return (await this.statuses.listForSpace(workspaceId, spaceId)).map(StatusMapper.toResponse);
+  }
+
+  /**
+   * Gives a brand-new space its own set of statuses instead of the defaults
+   * (templates). Refuses once any task uses the current ones.
+   */
+  async replaceForNewSpace(workspaceId: string, spaceId: string, statuses: readonly Pick<SaveTaskStatusRequest, 'name' | 'color' | 'category'>[]): Promise<TaskStatusResponse[]> {
+    const current = await this.statuses.listForSpace(workspaceId, spaceId);
+    for (const status of current) {
+      if ((await this.statuses.countTasks(workspaceId, status.id)) > 0) throw DomainError.conflict('This space already has tasks');
+    }
+    for (const status of current) await this.statuses.delete(workspaceId, status.id);
+    const created = await this.statuses.createMany(statuses.map((status, index) => ({ workspaceId, spaceId, ...status, position: index + 1 })));
+    return created.map(StatusMapper.toResponse);
   }
 
   private async seedDefaults(workspaceId: string, spaceId: string): Promise<void> {
