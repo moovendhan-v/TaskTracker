@@ -1,5 +1,5 @@
 import { Column, Entity } from 'typeorm';
-import type { CustomFieldValues, SpaceStatus } from '@taskflow/shared-types';
+import type { CustomFieldValues, IconKey, SpaceStatus } from '@taskflow/shared-types';
 import { TenantOrmEntity } from '../../../core/database/base.orm-entity.js';
 import type { Space } from '../domain/space.js';
 
@@ -10,6 +10,9 @@ export class SpaceOrmEntity extends TenantOrmEntity implements Space {
 
   @Column({ type: 'varchar', length: 7 })
   color: string;
+
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  icon: IconKey | null;
 
   @Column({ type: 'varchar', length: 12, default: 'on_track' })
   status: SpaceStatus;

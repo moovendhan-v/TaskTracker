@@ -56,10 +56,11 @@ export class DocumentsResolver {
     @UuidArg('documentId') documentId: string,
     @OptionalUuidArg('parentId') parentId: string | null | undefined,
     @Args('position', { type: () => Float, nullable: true }) position: number | undefined,
+    @OptionalUuidArg('spaceId', 'For a top-level page: its space (null: none, omitted: unchanged)') spaceId: string | null | undefined,
     @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<DocumentGql> {
-    return this.documentsService.move(actor, access, documentId, { parentId: parentId ?? null, position: position ?? undefined });
+    return this.documentsService.move(actor, access, documentId, { parentId: parentId ?? null, position: position ?? undefined, spaceId });
   }
 
   @Mutation(() => Boolean, { description: 'Sub-pages are deleted too' })

@@ -29,6 +29,7 @@ export class SpacesService {
       workspaceId,
       name: request.name.trim(),
       color: request.color ?? DEFAULT_SPACE_COLOR,
+      icon: request.icon ?? null,
     });
     return SpaceMapper.toResponse(space);
   }
@@ -39,6 +40,7 @@ export class SpacesService {
     const space = await this.getInWorkspace(workspaceId, spaceId);
     if (request.name !== undefined) space.name = request.name.trim();
     if (request.color !== undefined) space.color = request.color;
+    if (request.icon !== undefined) space.icon = request.icon;
     if (request.status !== undefined) space.status = request.status;
     if (request.statusNote !== undefined) space.statusNote = request.statusNote.trim();
     if (request.startDate !== undefined) space.startDate = request.startDate;

@@ -12,6 +12,7 @@ import { UserPreferences1729640000000 } from './1729640000000-user-preferences.j
 import { DocumentFolders1729670000000 } from './1729670000000-document-folders.js';
 import { TimeTracking1729660000000 } from './1729660000000-time-tracking.js';
 import { TaskModelV21729650000000 } from './1729650000000-task-model-v2.js';
+import { SpaceHierarchy1729680000000 } from './1729680000000-space-hierarchy.js';
 
 /** Registered in order. Add new migrations to the end. */
 export const MIGRATIONS = [
@@ -29,4 +30,5 @@ export const MIGRATIONS = [
   TaskModelV21729650000000,
   TimeTracking1729660000000,
   DocumentFolders1729670000000,
+  SpaceHierarchy1729680000000,
 ];

@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import type { CreateTaskListRequest, TaskListResponse, UpdateTaskListRequest } from '@taskflow/shared-types';
+import type { CreateTaskListRequest, MoveTaskListRequest, TaskListResponse, UpdateTaskListRequest } from '@taskflow/shared-types';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
+import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
 import { Announces } from '../../../core/events/announces.decorator.js';
 import type { Actor } from '../../../core/http/types/authenticated-request.js';
 import { workspaceFromArg } from '../../../core/runtime/change-target.js';
 import { SpacesService } from '../../spaces/application/spaces.service.js';
+import { ListFolderRepository } from '../domain/list-folder.repository.js';
 import type { TaskList } from '../domain/task-list.js';
 import { TaskListRepository } from '../domain/task-list.repository.js';
 import { TaskListMapper } from './task-list.mapper.js';
@@ -19,6 +21,7 @@ const change = { ...workspaceFromArg, metadata: (list: TaskListResponse) => ({ n
 export class ListsService {
   constructor(
     private readonly lists: TaskListRepository,
+    private readonly folders: ListFolderRepository,
     private readonly spacesService: SpacesService,
   ) {}
 
@@ -33,7 +36,12 @@ export class ListsService {
   @Announces('list.created', workspaceFromArg)
   async create(_actor: Actor, workspaceId: string, spaceId: string, request: CreateTaskListRequest): Promise<TaskListResponse> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
-    return TaskListMapper.toResponse(await this.lists.create({ workspaceId, spaceId, name: request.name.trim() }));
+    const folderId = request.folderId ?? null;
+    await this.assertFolderInSpace(workspaceId, spaceId, folderId);
+    const position = (await this.lists.maxPosition(workspaceId, spaceId, folderId)) + 1;
+    return TaskListMapper.toResponse(
+      await this.lists.create({ workspaceId, spaceId, folderId, name: request.name.trim(), color: request.color ?? null, icon: request.icon ?? null, position }),
+    );
   }
 
   @Audited('list.update', change)
@@ -41,6 +49,19 @@ export class ListsService {
   async update(_actor: Actor, workspaceId: string, listId: string, request: UpdateTaskListRequest): Promise<TaskListResponse> {
     const list = await this.getInWorkspace(workspaceId, listId);
     if (request.name !== undefined) list.name = request.name.trim();
+    if (request.color !== undefined) list.color = request.color;
+    if (request.icon !== undefined) list.icon = request.icon;
+    return TaskListMapper.toResponse(await this.lists.save(list));
+  }
+
+  /** Puts a list into a folder of its own space (or back under the space with null). */
+  @Audited('list.move', change)
+  @Announces('list.updated', workspaceFromArg)
+  async move(_actor: Actor, workspaceId: string, listId: string, request: MoveTaskListRequest): Promise<TaskListResponse> {
+    const list = await this.getInWorkspace(workspaceId, listId);
+    await this.assertFolderInSpace(workspaceId, list.spaceId, request.folderId);
+    list.folderId = request.folderId;
+    list.position = request.position ?? (await this.lists.maxPosition(workspaceId, list.spaceId, request.folderId)) + 1;
     return TaskListMapper.toResponse(await this.lists.save(list));
   }
 
@@ -67,5 +88,11 @@ export class ListsService {
 
   async getInWorkspace(workspaceId: string, listId: string): Promise<TaskList> {
     return found(await this.lists.findInWorkspace(workspaceId, listId), 'List');
+  }
+
+  private async assertFolderInSpace(workspaceId: string, spaceId: string, folderId: string | null): Promise<void> {
+    if (!folderId) return;
+    const folder = found(await this.folders.findInWorkspace(workspaceId, folderId), 'Folder');
+    if (folder.spaceId !== spaceId) throw DomainError.invalid('A list can only go into a folder of its own project');
   }
 }

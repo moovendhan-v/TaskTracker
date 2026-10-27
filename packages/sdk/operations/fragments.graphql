@@ -18,9 +18,11 @@ fragment RoleFields on Role {
   inlinePolicy { statements { effect permissions fields } }
 }
 
-fragment SpaceFields on Space { id workspaceId name color status statusNote startDate dueDate customFields createdAt }
+fragment SpaceFields on Space { id workspaceId name color icon status statusNote startDate dueDate customFields createdAt }
 
-fragment TaskListFields on TaskList { id spaceId name createdAt }
+fragment TaskListFields on TaskList { id spaceId folderId name color icon position createdAt }
+
+fragment FolderFields on Folder { id spaceId parentId name color icon position createdAt }
 
 fragment TaskStatusFields on TaskStatus { id spaceId name color category position }
 
@@ -60,10 +62,10 @@ fragment SprintFields on Sprint {
   id spaceId name goal status startDate endDate completedAt totalTasks doneTasks
 }
 
-fragment DocumentSummaryFields on DocumentSummary { id spaceId parentId kind title position createdById updatedAt }
+fragment DocumentSummaryFields on DocumentSummary { id spaceId parentId kind title icon position createdById updatedAt }
 
 fragment DocumentFields on Document {
-  id spaceId parentId kind title content position createdById createdAt updatedAt
+  id spaceId parentId kind title icon content position createdById createdAt updatedAt
 }
 
 fragment DepartmentFields on Department { id name headUserId memberCount }

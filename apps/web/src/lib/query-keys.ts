@@ -9,6 +9,8 @@ export const queryKeys = {
   // Under spaces, so a space change refreshes its statuses too.
   statuses: (workspaceId: string, spaceId: string) => ['workspaces', workspaceId, 'spaces', spaceId, 'statuses'] as const,
   lists: (workspaceId: string) => ['workspaces', workspaceId, 'lists'] as const,
+  /** Under `lists`, so a list change refreshes the folders too. */
+  folders: (workspaceId: string) => ['workspaces', workspaceId, 'lists', 'folders'] as const,
   tasksRoot: (workspaceId: string) => ['workspaces', workspaceId, 'tasks'] as const,
   tasks: (workspaceId: string, listId: string, query: object = {}) => ['workspaces', workspaceId, 'tasks', 'list', listId, query] as const,
   task: (workspaceId: string, taskId: string) => ['workspaces', workspaceId, 'tasks', 'detail', taskId] as const,

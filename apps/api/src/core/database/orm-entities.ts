@@ -5,6 +5,7 @@ import { DepartmentOrmEntity } from '../../modules/hr/departments/infrastructure
 import { EmployeeProfileOrmEntity } from '../../modules/hr/employees/infrastructure/employee-profile.orm-entity.js';
 import { LeaveRequestOrmEntity } from '../../modules/hr/leave/infrastructure/leave-request.orm-entity.js';
 import { LeaveTypeOrmEntity } from '../../modules/hr/leave/infrastructure/leave-type.orm-entity.js';
+import { ListFolderOrmEntity } from '../../modules/lists/infrastructure/list-folder.orm-entity.js';
 import { TaskListOrmEntity } from '../../modules/lists/infrastructure/task-list.orm-entity.js';
 import { WorkspaceMemberOrmEntity } from '../../modules/members/infrastructure/workspace-member.orm-entity.js';
 import { NotificationOrmEntity } from '../../modules/notifications/infrastructure/notification.orm-entity.js';
@@ -37,6 +38,7 @@ export const ORM_ENTITIES = [
   WorkspaceMemberOrmEntity,
   SpaceOrmEntity,
   TaskListOrmEntity,
+  ListFolderOrmEntity,
   TaskOrmEntity,
   TaskStatusOrmEntity,
   TaskWatcherOrmEntity,

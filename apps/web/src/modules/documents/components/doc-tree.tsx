@@ -1,9 +1,20 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronRightIcon, FilePlusIcon, FileTextIcon, FolderIcon, FolderOpenIcon, FolderPlusIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react';
+import { ChevronRightIcon, FilePlusIcon, FileTextIcon, FolderIcon, FolderOpenIcon, FolderPlusIcon, LayersIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, SmileIcon, TrashIcon } from 'lucide-react';
 import { useState, type DragEvent } from 'react';
-import { DOC_TITLE_MAX, type DocKind, type DocumentSummaryResponse } from '@taskflow/shared-types';
+import { DOC_TITLE_MAX, type DocKind, type DocumentSummaryResponse, type IconKey } from '@taskflow/shared-types';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { EntityIcon } from '@/components/common/entity-icon';
+import { IconGrid } from '@/components/common/icon-picker';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/cn';
 import type { DocumentNode } from '../lib/build-tree';
 import { placementFor, zoneAt, type DropZone, type Placement } from '../lib/drop-target';
@@ -24,6 +35,10 @@ interface DocTreeProps {
   onRename: (node: DocumentNode, title: string) => void;
   onMove: (documentId: string, placement: Placement) => void;
   onDelete: (node: DocumentNode) => Promise<unknown>;
+  onSetIcon: (node: DocumentNode, icon: IconKey | null) => void;
+  /** Projects a top-level page can belong to. */
+  spaces: readonly { id: string; name: string }[];
+  onSetSpace: (node: DocumentNode, spaceId: string | null) => void;
 }
 
 interface DragState {
@@ -75,7 +90,7 @@ export function DocTree(props: DocTreeProps) {
 }
 
 function DocTreeItem({ node, depth, draggedId, setDraggedId, ...props }: DocTreeProps & DragState & { node: DocumentNode; depth: number }) {
-  const { workspaceId, documents, activeId, expandedPath, canCreate, canEdit, onAdd, onRename, onMove, onDelete } = props;
+  const { workspaceId, documents, activeId, expandedPath, canCreate, canEdit, onAdd, onRename, onMove, onDelete, onSetIcon, spaces, onSetSpace } = props;
   const inActivePath = expandedPath.includes(node.id);
   const [expanded, setExpanded] = useState(inActivePath);
   const [wasInActivePath, setWasInActivePath] = useState(inActivePath);
@@ -109,7 +124,7 @@ function DocTreeItem({ node, depth, draggedId, setDraggedId, ...props }: DocTree
   const Icon = isFolder ? (expanded ? FolderOpenIcon : FolderIcon) : FileTextIcon;
   const label = (
     <>
-      <Icon className={cn('size-4 shrink-0', isFolder ? 'text-primary' : 'text-muted-foreground')} />
+      {node.icon ? <EntityIcon icon={node.icon} className={isFolder ? 'text-primary' : 'text-muted-foreground'} /> : <Icon className={cn('size-4 shrink-0', isFolder ? 'text-primary' : 'text-muted-foreground')} />}
       {renaming ? (
         <input
           autoFocus
@@ -226,6 +241,31 @@ function DocTreeItem({ node, depth, draggedId, setDraggedId, ...props }: DocTree
               <DropdownMenuItem onSelect={() => setRenaming(true)}>
                 <PencilIcon /> Rename
               </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <SmileIcon /> Icon
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-72 p-2">
+                  <IconGrid value={{ icon: node.icon, color: null }} withColor={false} onChange={(next) => onSetIcon(node, next.icon)} />
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              {!node.parentId && spaces.length > 0 ? (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <LayersIcon /> Project
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem disabled={node.spaceId === null} onSelect={() => onSetSpace(node, null)}>
+                      No project
+                    </DropdownMenuItem>
+                    {spaces.map((space) => (
+                      <DropdownMenuItem key={space.id} disabled={node.spaceId === space.id} onSelect={() => onSetSpace(node, space.id)}>
+                        {space.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              ) : null}
               {node.parentId ? (
                 <DropdownMenuItem onSelect={() => onMove(node.id, placementFor(documents, node.id, null, 'after') ?? { parentId: null, position: 0 })}>
                   <FolderIcon /> Move to top level

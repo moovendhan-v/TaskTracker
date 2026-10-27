@@ -62,7 +62,8 @@ test('creates a workspace, a space and a list', async () => {
   await expect(nav.getByText('Product')).toBeVisible();
 
   await nav.getByText('Product').hover();
-  await page.getByRole('button', { name: 'New list in Product' }).click();
+  await page.getByRole('button', { name: 'Add to Product' }).click();
+  await page.getByRole('menuitem', { name: 'List' }).click();
   await page.getByRole('dialog').getByLabel('Name').fill('Launch plan');
   await page.getByRole('button', { name: 'Create list' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();

@@ -9,6 +9,7 @@ export const REALTIME_ENTITY_TYPES = [
   'document',
   'space',
   'list',
+  'folder',
   'member',
   'leave_request',
   'notification',

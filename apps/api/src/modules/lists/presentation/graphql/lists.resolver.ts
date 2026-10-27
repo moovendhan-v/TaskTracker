@@ -5,7 +5,7 @@ import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { ListsService } from '../../application/lists.service.js';
-import { TaskListGql, TaskListInput } from './task-list.types.js';
+import { MoveTaskListInput, TaskListGql, TaskListInput, UpdateTaskListInput } from './task-list.types.js';
 
 @Resolver(() => TaskListGql)
 export class ListsResolver {
@@ -34,11 +34,23 @@ export class ListsResolver {
   updateList(
     @WorkspaceIdArg() _workspaceId: string,
     @UuidArg('listId') listId: string,
-    @Args('input') input: TaskListInput,
+    @Args('input') input: UpdateTaskListInput,
     @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<TaskListGql> {
     return this.listsService.update(actor, access.workspaceId, listId, input);
+  }
+
+  @Mutation(() => TaskListGql, { description: 'Moves a list into a folder of its project, or out of it' })
+  @RequirePermissions('list.manage')
+  moveList(
+    @WorkspaceIdArg() _workspaceId: string,
+    @UuidArg('listId') listId: string,
+    @Args('input') input: MoveTaskListInput,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<TaskListGql> {
+    return this.listsService.move(actor, access.workspaceId, listId, input);
   }
 
   @Mutation(() => Boolean)

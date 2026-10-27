@@ -38,11 +38,20 @@ export type CreateDepartmentInput = {
 
 export type CreateDocumentInput = {
   content?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   /** Defaults to page */
   kind?: DocKind | null | undefined;
   parentId?: string | null | undefined;
   spaceId?: string | null | undefined;
   title: string;
+};
+
+export type CreateFolderInput = {
+  color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
+  name: string;
+  /** Nest inside this folder */
+  parentId?: string | null | undefined;
 };
 
 export type CreateLeaveTypeInput = {
@@ -62,6 +71,7 @@ export type CreateRoleInput = {
 
 export type CreateSpaceInput = {
   color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   name: string;
 };
 
@@ -206,6 +216,69 @@ export type ForecastKind =
   | 'overdue'
   | 'week';
 
+/** Icons for spaces, folders, lists and docs */
+export type IconKey =
+  | 'book'
+  | 'box'
+  | 'briefcase'
+  | 'bug'
+  | 'building'
+  | 'calendar'
+  | 'camera'
+  | 'cart'
+  | 'chart'
+  | 'clock'
+  | 'cloud'
+  | 'code'
+  | 'coffee'
+  | 'compass'
+  | 'database'
+  | 'file'
+  | 'flag'
+  | 'folder'
+  | 'gift'
+  | 'globe'
+  | 'graduation'
+  | 'handshake'
+  | 'headset'
+  | 'heart'
+  | 'home'
+  | 'image'
+  | 'leaf'
+  | 'lightbulb'
+  | 'list'
+  | 'lock'
+  | 'mail'
+  | 'map'
+  | 'megaphone'
+  | 'message'
+  | 'moon'
+  | 'music'
+  | 'notebook'
+  | 'palette'
+  | 'pen'
+  | 'phone'
+  | 'pie'
+  | 'puzzle'
+  | 'rocket'
+  | 'server'
+  | 'settings'
+  | 'shield'
+  | 'star'
+  | 'store'
+  | 'sun'
+  | 'target'
+  | 'terminal'
+  | 'trending'
+  | 'trophy'
+  | 'truck'
+  | 'user'
+  | 'users'
+  | 'video'
+  | 'wallet'
+  | 'wrench'
+  | 'zap';
+
 export type LeaveDecision =
   | 'approved'
   | 'rejected';
@@ -233,6 +306,18 @@ export type LogicOperator =
   | 'and'
   | 'not'
   | 'or';
+
+export type MoveFolderInput = {
+  /** Null: directly under the space */
+  parentId?: string | null | undefined;
+  position?: number | null | undefined;
+};
+
+export type MoveTaskListInput = {
+  /** Null: directly under the space */
+  folderId?: string | null | undefined;
+  position?: number | null | undefined;
+};
 
 export type NotificationKind =
   | 'leave_decided'
@@ -265,6 +350,7 @@ export type RealtimeEntityType =
   | 'department'
   | 'document'
   | 'employee'
+  | 'folder'
   | 'leave_request'
   | 'leave_type'
   | 'list'
@@ -367,6 +453,10 @@ export type TableLayoutInput = {
 };
 
 export type TaskListInput = {
+  color?: string | null | undefined;
+  /** Create the list inside this folder */
+  folderId?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   name: string;
 };
 
@@ -416,7 +506,14 @@ export type UpdateDepartmentInput = {
 
 export type UpdateDocumentInput = {
   content?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   title?: string | null | undefined;
+};
+
+export type UpdateFolderInput = {
+  color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
+  name?: string | null | undefined;
 };
 
 export type UpdateLeaveTypeInput = {
@@ -448,6 +545,7 @@ export type UpdateSpaceInput = {
   color?: string | null | undefined;
   /** yyyy-mm-dd; null clears it */
   dueDate?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   name?: string | null | undefined;
   /** yyyy-mm-dd; null clears it */
   startDate?: string | null | undefined;
@@ -481,6 +579,12 @@ export type UpdateTaskInput = {
   statusId?: string | null | undefined;
   title?: string | null | undefined;
   type?: TaskType | null | undefined;
+};
+
+export type UpdateTaskListInput = {
+  color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
+  name?: string | null | undefined;
 };
 
 export type UpdateTaskStatusInput = {
@@ -642,7 +746,7 @@ export type SetSpaceCustomFieldsMutationVariables = Exact<{
 }>;
 
 
-export type SetSpaceCustomFieldsMutation = { setSpaceCustomFields: { id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
+export type SetSpaceCustomFieldsMutation = { setSpaceCustomFields: { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
 
 export type DocumentsQueryVariables = Exact<{
   workspaceId: string;
@@ -650,7 +754,7 @@ export type DocumentsQueryVariables = Exact<{
 }>;
 
 
-export type DocumentsQuery = { documents: Array<{ id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, position: number, createdById: string, updatedAt: string }> };
+export type DocumentsQuery = { documents: Array<{ id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, position: number, createdById: string, updatedAt: string }> };
 
 export type DocumentQueryVariables = Exact<{
   workspaceId: string;
@@ -658,7 +762,7 @@ export type DocumentQueryVariables = Exact<{
 }>;
 
 
-export type DocumentQuery = { document: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type DocumentQuery = { document: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type CreateDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -666,7 +770,7 @@ export type CreateDocumentMutationVariables = Exact<{
 }>;
 
 
-export type CreateDocumentMutation = { createDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type CreateDocumentMutation = { createDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type UpdateDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -675,17 +779,18 @@ export type UpdateDocumentMutationVariables = Exact<{
 }>;
 
 
-export type UpdateDocumentMutation = { updateDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type UpdateDocumentMutation = { updateDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type MoveDocumentMutationVariables = Exact<{
   workspaceId: string;
   documentId: string;
   parentId?: string | null | undefined;
   position?: number | null | undefined;
+  spaceId?: string | null | undefined;
 }>;
 
 
-export type MoveDocumentMutation = { moveDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type MoveDocumentMutation = { moveDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type DeleteDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -710,9 +815,11 @@ export type MemberFieldsFragment = { userId: string, name: string, email: string
 
 export type RoleFieldsFragment = { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } };
 
-export type SpaceFieldsFragment = { id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string };
+export type SpaceFieldsFragment = { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string };
 
-export type TaskListFieldsFragment = { id: string, spaceId: string, name: string, createdAt: string };
+export type TaskListFieldsFragment = { id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string };
+
+export type FolderFieldsFragment = { id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string };
 
 export type TaskStatusFieldsFragment = { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number };
 
@@ -724,9 +831,9 @@ export type CommentFieldsFragment = { id: string, taskId: string, authorId: stri
 
 export type SprintFieldsFragment = { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number };
 
-export type DocumentSummaryFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, position: number, createdById: string, updatedAt: string };
+export type DocumentSummaryFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, position: number, createdById: string, updatedAt: string };
 
-export type DocumentFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string };
+export type DocumentFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string };
 
 export type DepartmentFieldsFragment = { id: string, name: string, headUserId: string | null, memberCount: number };
 
@@ -897,7 +1004,7 @@ export type ListsQueryVariables = Exact<{
 }>;
 
 
-export type ListsQuery = { lists: Array<{ id: string, spaceId: string, name: string, createdAt: string }> };
+export type ListsQuery = { lists: Array<{ id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string }> };
 
 export type CreateListMutationVariables = Exact<{
   workspaceId: string;
@@ -906,16 +1013,25 @@ export type CreateListMutationVariables = Exact<{
 }>;
 
 
-export type CreateListMutation = { createList: { id: string, spaceId: string, name: string, createdAt: string } };
+export type CreateListMutation = { createList: { id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
 
 export type UpdateListMutationVariables = Exact<{
   workspaceId: string;
   listId: string;
-  input: TaskListInput;
+  input: UpdateTaskListInput;
 }>;
 
 
-export type UpdateListMutation = { updateList: { id: string, spaceId: string, name: string, createdAt: string } };
+export type UpdateListMutation = { updateList: { id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
+
+export type MoveListMutationVariables = Exact<{
+  workspaceId: string;
+  listId: string;
+  input: MoveTaskListInput;
+}>;
+
+
+export type MoveListMutation = { moveList: { id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
 
 export type DeleteListMutationVariables = Exact<{
   workspaceId: string;
@@ -924,6 +1040,48 @@ export type DeleteListMutationVariables = Exact<{
 
 
 export type DeleteListMutation = { deleteList: boolean };
+
+export type FoldersQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type FoldersQuery = { folders: Array<{ id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string }> };
+
+export type CreateFolderMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  input: CreateFolderInput;
+}>;
+
+
+export type CreateFolderMutation = { createFolder: { id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
+
+export type UpdateFolderMutationVariables = Exact<{
+  workspaceId: string;
+  folderId: string;
+  input: UpdateFolderInput;
+}>;
+
+
+export type UpdateFolderMutation = { updateFolder: { id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
+
+export type MoveFolderMutationVariables = Exact<{
+  workspaceId: string;
+  folderId: string;
+  input: MoveFolderInput;
+}>;
+
+
+export type MoveFolderMutation = { moveFolder: { id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
+
+export type DeleteFolderMutationVariables = Exact<{
+  workspaceId: string;
+  folderId: string;
+}>;
+
+
+export type DeleteFolderMutation = { deleteFolder: boolean };
 
 export type MembersQueryVariables = Exact<{
   workspaceId: string;
@@ -1206,7 +1364,7 @@ export type SpacesQueryVariables = Exact<{
 }>;
 
 
-export type SpacesQuery = { spaces: Array<{ id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string }> };
+export type SpacesQuery = { spaces: Array<{ id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string }> };
 
 export type CreateSpaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1214,7 +1372,7 @@ export type CreateSpaceMutationVariables = Exact<{
 }>;
 
 
-export type CreateSpaceMutation = { createSpace: { id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
+export type CreateSpaceMutation = { createSpace: { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
 
 export type UpdateSpaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1223,7 +1381,7 @@ export type UpdateSpaceMutationVariables = Exact<{
 }>;
 
 
-export type UpdateSpaceMutation = { updateSpace: { id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
+export type UpdateSpaceMutation = { updateSpace: { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
 
 export type DeleteSpaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1674,6 +1832,7 @@ export const SpaceFieldsFragmentDoc = new TypedDocumentString(`
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate
@@ -1686,10 +1845,26 @@ export const TaskListFieldsFragmentDoc = new TypedDocumentString(`
     fragment TaskListFields on TaskList {
   id
   spaceId
+  folderId
   name
+  color
+  icon
+  position
   createdAt
 }
     `, {"fragmentName":"TaskListFields"}) as unknown as TypedDocumentString<TaskListFieldsFragment, unknown>;
+export const FolderFieldsFragmentDoc = new TypedDocumentString(`
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}
+    `, {"fragmentName":"FolderFields"}) as unknown as TypedDocumentString<FolderFieldsFragment, unknown>;
 export const TaskStatusFieldsFragmentDoc = new TypedDocumentString(`
     fragment TaskStatusFields on TaskStatus {
   id
@@ -1786,6 +1961,7 @@ export const DocumentSummaryFieldsFragmentDoc = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   position
   createdById
   updatedAt
@@ -1798,6 +1974,7 @@ export const DocumentFieldsFragmentDoc = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -2416,6 +2593,7 @@ export const SetSpaceCustomFieldsDocument = new TypedDocumentString(`
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate
@@ -2435,6 +2613,7 @@ export const DocumentsDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   position
   createdById
   updatedAt
@@ -2451,6 +2630,7 @@ export const DocumentDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -2469,6 +2649,7 @@ export const CreateDocumentDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -2491,6 +2672,7 @@ export const UpdateDocumentDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -2498,12 +2680,13 @@ export const UpdateDocumentDocument = new TypedDocumentString(`
   updatedAt
 }`) as unknown as TypedDocumentString<UpdateDocumentMutation, UpdateDocumentMutationVariables>;
 export const MoveDocumentDocument = new TypedDocumentString(`
-    mutation MoveDocument($workspaceId: ID!, $documentId: ID!, $parentId: ID, $position: Float) {
+    mutation MoveDocument($workspaceId: ID!, $documentId: ID!, $parentId: ID, $position: Float, $spaceId: ID) {
   moveDocument(
     workspaceId: $workspaceId
     documentId: $documentId
     parentId: $parentId
     position: $position
+    spaceId: $spaceId
   ) {
     ...DocumentFields
   }
@@ -2514,6 +2697,7 @@ export const MoveDocumentDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -2841,7 +3025,11 @@ export const ListsDocument = new TypedDocumentString(`
     fragment TaskListFields on TaskList {
   id
   spaceId
+  folderId
   name
+  color
+  icon
+  position
   createdAt
 }`) as unknown as TypedDocumentString<ListsQuery, ListsQueryVariables>;
 export const CreateListDocument = new TypedDocumentString(`
@@ -2853,11 +3041,15 @@ export const CreateListDocument = new TypedDocumentString(`
     fragment TaskListFields on TaskList {
   id
   spaceId
+  folderId
   name
+  color
+  icon
+  position
   createdAt
 }`) as unknown as TypedDocumentString<CreateListMutation, CreateListMutationVariables>;
 export const UpdateListDocument = new TypedDocumentString(`
-    mutation UpdateList($workspaceId: ID!, $listId: ID!, $input: TaskListInput!) {
+    mutation UpdateList($workspaceId: ID!, $listId: ID!, $input: UpdateTaskListInput!) {
   updateList(workspaceId: $workspaceId, listId: $listId, input: $input) {
     ...TaskListFields
   }
@@ -2865,14 +3057,103 @@ export const UpdateListDocument = new TypedDocumentString(`
     fragment TaskListFields on TaskList {
   id
   spaceId
+  folderId
   name
+  color
+  icon
+  position
   createdAt
 }`) as unknown as TypedDocumentString<UpdateListMutation, UpdateListMutationVariables>;
+export const MoveListDocument = new TypedDocumentString(`
+    mutation MoveList($workspaceId: ID!, $listId: ID!, $input: MoveTaskListInput!) {
+  moveList(workspaceId: $workspaceId, listId: $listId, input: $input) {
+    ...TaskListFields
+  }
+}
+    fragment TaskListFields on TaskList {
+  id
+  spaceId
+  folderId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<MoveListMutation, MoveListMutationVariables>;
 export const DeleteListDocument = new TypedDocumentString(`
     mutation DeleteList($workspaceId: ID!, $listId: ID!) {
   deleteList(workspaceId: $workspaceId, listId: $listId)
 }
     `) as unknown as TypedDocumentString<DeleteListMutation, DeleteListMutationVariables>;
+export const FoldersDocument = new TypedDocumentString(`
+    query Folders($workspaceId: ID!) {
+  folders(workspaceId: $workspaceId) {
+    ...FolderFields
+  }
+}
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<FoldersQuery, FoldersQueryVariables>;
+export const CreateFolderDocument = new TypedDocumentString(`
+    mutation CreateFolder($workspaceId: ID!, $spaceId: ID!, $input: CreateFolderInput!) {
+  createFolder(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...FolderFields
+  }
+}
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<CreateFolderMutation, CreateFolderMutationVariables>;
+export const UpdateFolderDocument = new TypedDocumentString(`
+    mutation UpdateFolder($workspaceId: ID!, $folderId: ID!, $input: UpdateFolderInput!) {
+  updateFolder(workspaceId: $workspaceId, folderId: $folderId, input: $input) {
+    ...FolderFields
+  }
+}
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<UpdateFolderMutation, UpdateFolderMutationVariables>;
+export const MoveFolderDocument = new TypedDocumentString(`
+    mutation MoveFolder($workspaceId: ID!, $folderId: ID!, $input: MoveFolderInput!) {
+  moveFolder(workspaceId: $workspaceId, folderId: $folderId, input: $input) {
+    ...FolderFields
+  }
+}
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<MoveFolderMutation, MoveFolderMutationVariables>;
+export const DeleteFolderDocument = new TypedDocumentString(`
+    mutation DeleteFolder($workspaceId: ID!, $folderId: ID!) {
+  deleteFolder(workspaceId: $workspaceId, folderId: $folderId)
+}
+    `) as unknown as TypedDocumentString<DeleteFolderMutation, DeleteFolderMutationVariables>;
 export const MembersDocument = new TypedDocumentString(`
     query Members($workspaceId: ID!) {
   members(workspaceId: $workspaceId) {
@@ -3796,6 +4077,7 @@ export const SpacesDocument = new TypedDocumentString(`
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate
@@ -3814,6 +4096,7 @@ export const CreateSpaceDocument = new TypedDocumentString(`
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate
@@ -3832,6 +4115,7 @@ export const UpdateSpaceDocument = new TypedDocumentString(`
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate

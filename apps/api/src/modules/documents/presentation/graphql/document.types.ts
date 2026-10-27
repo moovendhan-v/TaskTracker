@@ -4,13 +4,15 @@ import {
   DOC_CONTENT_MAX,
   DOC_KINDS,
   DOC_TITLE_MAX,
+  ICON_KEYS,
+  type IconKey,
   type CreateDocumentRequest,
   type DocKind,
   type DocumentResponse,
   type DocumentSummaryResponse,
   type UpdateDocumentRequest,
 } from '@taskflow/shared-types';
-import { DocKindEnum } from '../../../../core/graphql/enums.js';
+import { DocKindEnum, IconKeyEnum } from '../../../../core/graphql/enums.js';
 import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
 import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
@@ -21,6 +23,7 @@ export class DocumentSummaryGql implements DocumentSummaryResponse {
   @Field(() => ID, { nullable: true }) spaceId: string | null;
   @Field(() => DocKindEnum) kind: DocKind;
   @Field() title: string;
+  @Field(() => IconKeyEnum, { nullable: true }) icon: IconKey | null;
   @Field(() => Float) position: number;
   @Field(() => ID) createdById: string;
   @Field() updatedAt: string;
@@ -45,6 +48,11 @@ export class CreateDocumentInput implements CreateDocumentRequest {
   @IsOmittable()
   @IsIn(DOC_KINDS)
   kind?: DocKind;
+
+  @Field(() => IconKeyEnum, { nullable: true })
+  @IsClearable()
+  @IsIn(ICON_KEYS)
+  icon?: IconKey | null;
 
   @Field({ nullable: true })
   @IsOmittable()
@@ -72,6 +80,11 @@ export class UpdateDocumentInput implements UpdateDocumentRequest {
   @IsNotBlank()
   @MaxLength(DOC_TITLE_MAX)
   title?: string;
+
+  @Field(() => IconKeyEnum, { nullable: true })
+  @IsClearable()
+  @IsIn(ICON_KEYS)
+  icon?: IconKey | null;
 
   @Field({ nullable: true })
   @IsOmittable()

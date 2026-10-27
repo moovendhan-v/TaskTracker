@@ -9,6 +9,7 @@ export const DocumentMapper = {
       spaceId: document.spaceId,
       kind: document.kind,
       title: document.title,
+      icon: document.icon ?? null,
       position: document.position,
       createdById: document.createdById,
       updatedAt: document.updatedAt.toISOString(),

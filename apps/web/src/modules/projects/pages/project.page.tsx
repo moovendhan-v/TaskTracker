@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { DownloadIcon, LayersIcon, PlusIcon, RefreshCwIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 import type { FilterCondition, FilterNode } from '@taskflow/shared-types';
+import { EntityIcon } from '@/components/common/entity-icon';
 import { ErrorState } from '@/components/common/error-state';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { ProjectDashboard } from '@/modules/dashboard';
 import { useLists } from '@/modules/lists';
 import { MembersPage, useMemberName } from '@/modules/members';
 import { FilterBuilder, fromFilter, toFilter, useResourceSchema, type DraftCondition } from '@/modules/resources';
-import { useSpaces } from '@/modules/spaces';
+import { SpaceSettings, useSpaces } from '@/modules/spaces';
 import { SprintsPage } from '@/modules/sprints';
 import {
   CalendarView,
@@ -49,7 +50,7 @@ interface ProjectPageProps {
 
 const toggle = (active: boolean) => cn('h-8 rounded-md px-2.5 text-sm font-medium transition-colors', active ? 'bg-primary/15 text-foreground ring-1 ring-primary/50' : 'text-muted-foreground hover:bg-muted hover:text-foreground');
 
-/** A project (space): its tasks in ten views, with one shared toolbar for the task views. */
+/** A project (space): its tasks in ten views, plus settings, with one shared toolbar for the task views. */
 export function ProjectPage({ workspaceId, spaceId, view, listId }: ProjectPageProps) {
   const queryClient = useQueryClient();
   const openTask = useOpenTask();
@@ -91,6 +92,7 @@ export function ProjectPage({ workspaceId, spaceId, view, listId }: ProjectPageP
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="px-6 pt-5">
         <div className="flex items-center gap-3">
+          <EntityIcon variant="badge" icon={space.icon} color={space.color} fallback={{ letter: space.name }} className="size-6" />
           <h1 className="truncate text-lg font-semibold">{space.name}</h1>
           {isTaskView && tasks.data ? (
             <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground tabular-nums">
@@ -207,6 +209,7 @@ export function ProjectPage({ workspaceId, spaceId, view, listId }: ProjectPageP
         {view === 'sprints' ? <SprintsPage workspaceId={workspaceId} spaceId={spaceId} /> : null}
         {view === 'members' ? <MembersPage workspaceId={workspaceId} /> : null}
         {view === 'dashboard' ? <ProjectDashboard workspaceId={workspaceId} space={space} /> : null}
+        {view === 'settings' ? <SpaceSettings workspaceId={workspaceId} space={space} /> : null}
       </div>
 
       {isTaskView && view !== 'table' && tasks.data ? (

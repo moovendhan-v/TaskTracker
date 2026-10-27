@@ -15,6 +15,7 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
     case 'space':
       return [queryKeys.spaces(workspaceId), queryKeys.lists(workspaceId)];
     case 'list':
+    case 'folder':
       return [queryKeys.lists(workspaceId)];
     case 'member':
       return [queryKeys.members(workspaceId), queryKeys.workspace(workspaceId), queryKeys.workspaces];

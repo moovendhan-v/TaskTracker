@@ -8,6 +8,7 @@ export const SpaceMapper = {
       workspaceId: space.workspaceId,
       name: space.name,
       color: space.color,
+      icon: space.icon ?? null,
       status: space.status,
       statusNote: space.statusNote,
       startDate: space.startDate,

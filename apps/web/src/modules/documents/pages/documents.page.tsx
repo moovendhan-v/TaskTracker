@@ -9,6 +9,7 @@ import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCurrentUser } from '@/core/auth/use-current-user';
+import { useSpaces } from '@/modules/spaces';
 import { usePermissions } from '@/modules/workspaces';
 import { DocEditor } from '../components/doc-editor';
 import { DocTree } from '../components/doc-tree';
@@ -30,6 +31,7 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
   const mutations = useDocumentMutations(workspaceId);
   const { data: me } = useCurrentUser();
   const { can } = usePermissions(workspaceId);
+  const { data: spaces = [] } = useSpaces(workspaceId);
 
   const nodes = useMemo(() => buildDocumentTree(tree.data ?? []), [tree.data]);
   const expandedPath = useMemo(() => (documentId ? pathTo(tree.data ?? [], documentId) : []), [tree.data, documentId]);
@@ -88,6 +90,9 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
             onRename={(node, title) => rename(node.id, title)}
             onMove={(id, placement) => mutations.move.mutate({ documentId: id, body: placement })}
             onDelete={deletePage}
+            onSetIcon={(node, icon) => mutations.update.mutate({ documentId: node.id, body: { icon } })}
+            spaces={spaces}
+            onSetSpace={(node, spaceId) => mutations.move.mutate({ documentId: node.id, body: { parentId: null, position: node.position, spaceId } })}
           />
         </div>
       </aside>

@@ -2,6 +2,8 @@ import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
 import { IsIn, IsString, Matches, MaxLength } from 'class-validator';
 import {
   COLOR_PATTERN,
+  ICON_KEYS,
+  type IconKey,
   NAME_MAX,
   SPACE_STATUSES,
   type CreateSpaceRequest,
@@ -11,7 +13,7 @@ import {
   type UpdateSpaceRequest,
 } from '@taskflow/shared-types';
 import { CustomFieldValuesScalar } from '../../../../core/graphql/custom-field-values.scalar.js';
-import { SpaceStatusEnum } from '../../../../core/graphql/enums.js';
+import { SpaceStatusEnum, IconKeyEnum } from '../../../../core/graphql/enums.js';
 import { IsCalendarDate, IsClearable, IsNotBlank, IsOmittable, OnOrAfter } from '../../../../core/graphql/validation.js';
 import { SPACE_STATUS_NOTE_MAX } from '../../domain/space.js';
 import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
@@ -22,6 +24,7 @@ export class SpaceGql implements SpaceResponse {
   @Field(() => ID) workspaceId: string;
   @Field() name: string;
   @Field() color: string;
+  @Field(() => IconKeyEnum, { nullable: true, description: 'Icon key; null shows the first letter' }) icon: IconKey | null;
   @Field(() => SpaceStatusEnum, { description: 'Project health' }) status: SpaceStatus;
   @Field() statusNote: string;
   @Field(() => String, { nullable: true, description: 'yyyy-mm-dd' }) startDate: string | null;
@@ -43,6 +46,11 @@ export class CreateSpaceInput implements CreateSpaceRequest {
   @IsOmittable()
   @Matches(new RegExp(COLOR_PATTERN))
   color?: string;
+
+  @Field(() => IconKeyEnum, { nullable: true })
+  @IsClearable()
+  @IsIn(ICON_KEYS)
+  icon?: IconKey | null;
 }
 
 @FormSchema('space.update')
@@ -59,6 +67,11 @@ export class UpdateSpaceInput implements Omit<UpdateSpaceRequest, 'customFields'
   @IsOmittable()
   @Matches(new RegExp(COLOR_PATTERN))
   color?: string;
+
+  @Field(() => IconKeyEnum, { nullable: true })
+  @IsClearable()
+  @IsIn(ICON_KEYS)
+  icon?: IconKey | null;
 
   @Field(() => SpaceStatusEnum, { nullable: true })
   @IsOmittable()

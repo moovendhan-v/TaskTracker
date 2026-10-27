@@ -14,8 +14,8 @@ mutation UpdateDocument($workspaceId: ID!, $documentId: ID!, $input: UpdateDocum
   updateDocument(workspaceId: $workspaceId, documentId: $documentId, input: $input) { ...DocumentFields }
 }
 
-mutation MoveDocument($workspaceId: ID!, $documentId: ID!, $parentId: ID, $position: Float) {
-  moveDocument(workspaceId: $workspaceId, documentId: $documentId, parentId: $parentId, position: $position) {
+mutation MoveDocument($workspaceId: ID!, $documentId: ID!, $parentId: ID, $position: Float, $spaceId: ID) {
+  moveDocument(workspaceId: $workspaceId, documentId: $documentId, parentId: $parentId, position: $position, spaceId: $spaceId) {
     ...DocumentFields
   }
 }

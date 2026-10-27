@@ -115,12 +115,22 @@ input CreateDepartmentInput {
 
 input CreateDocumentInput {
   content: String
+  icon: IconKey
 
   """Defaults to page"""
   kind: DocKind
   parentId: ID
   spaceId: ID
   title: String!
+}
+
+input CreateFolderInput {
+  color: String
+  icon: IconKey
+  name: String!
+
+  """Nest inside this folder"""
+  parentId: ID
 }
 
 input CreateLeaveTypeInput {
@@ -142,6 +152,7 @@ input CreateRoleInput {
 
 input CreateSpaceInput {
   color: String
+  icon: IconKey
   name: String!
 }
 
@@ -422,6 +433,7 @@ type Document {
   content: String!
   createdAt: String!
   createdById: ID!
+  icon: IconKey
   id: ID!
   kind: DocKind!
   parentId: ID
@@ -433,6 +445,7 @@ type Document {
 
 type DocumentSummary {
   createdById: ID!
+  icon: IconKey
   id: ID!
   kind: DocKind!
   parentId: ID
@@ -550,6 +563,17 @@ enum FilterOperator {
   starts_with
 }
 
+type Folder {
+  color: String
+  createdAt: String!
+  icon: IconKey
+  id: ID!
+  name: String!
+  parentId: ID
+  position: Float!
+  spaceId: ID!
+}
+
 enum ForecastKind {
   later
   none
@@ -578,6 +602,70 @@ type FormRule {
 type FormSchema {
   fields: [FormFieldSchema!]!
   name: String!
+}
+
+"""Icons for spaces, folders, lists and docs"""
+enum IconKey {
+  book
+  box
+  briefcase
+  bug
+  building
+  calendar
+  camera
+  cart
+  chart
+  clock
+  cloud
+  code
+  coffee
+  compass
+  database
+  file
+  flag
+  folder
+  gift
+  globe
+  graduation
+  handshake
+  headset
+  heart
+  home
+  image
+  leaf
+  lightbulb
+  list
+  lock
+  mail
+  map
+  megaphone
+  message
+  moon
+  music
+  notebook
+  palette
+  pen
+  phone
+  pie
+  puzzle
+  rocket
+  server
+  settings
+  shield
+  star
+  store
+  sun
+  target
+  terminal
+  trending
+  trophy
+  truck
+  user
+  users
+  video
+  wallet
+  wrench
+  zap
 }
 
 """A JSON object (read-only)"""
@@ -689,6 +777,18 @@ Flat key/value data: up to 50 keys, values are text, numbers, booleans or null
 """
 scalar Metadata
 
+input MoveFolderInput {
+  """Null: directly under the space"""
+  parentId: ID
+  position: Float
+}
+
+input MoveTaskListInput {
+  """Null: directly under the space"""
+  folderId: ID
+  position: Float
+}
+
 type Mutation {
   addMember(input: AddMemberInput!, workspaceId: ID!): AddMemberResult!
   attachRolePolicy(
@@ -707,6 +807,7 @@ type Mutation {
   createCustomField(input: CreateCustomFieldInput!, workspaceId: ID!): CustomField!
   createDepartment(input: CreateDepartmentInput!, workspaceId: ID!): Department!
   createDocument(input: CreateDocumentInput!, workspaceId: ID!): Document!
+  createFolder(input: CreateFolderInput!, spaceId: ID!, workspaceId: ID!): Folder!
   createLeaveType(input: CreateLeaveTypeInput!, workspaceId: ID!): LeaveType!
   createList(input: TaskListInput!, spaceId: ID!, workspaceId: ID!): TaskList!
   createPolicy(input: SavePolicyInput!, workspaceId: ID!): Policy!
@@ -734,6 +835,9 @@ type Mutation {
 
   """Sub-pages are deleted too"""
   deleteDocument(documentId: ID!, workspaceId: ID!): Boolean!
+
+  """Deletes the folder only; its lists and sub-folders move up a level"""
+  deleteFolder(folderId: ID!, workspaceId: ID!): Boolean!
   deleteLeaveType(leaveTypeId: ID!, workspaceId: ID!): Boolean!
   deleteList(listId: ID!, workspaceId: ID!): Boolean!
   deletePolicy(policyId: ID!, workspaceId: ID!): Boolean!
@@ -772,7 +876,19 @@ type Mutation {
   markNotificationsRead(ids: [ID!]!, workspaceId: ID!): Int!
 
   """parentId null moves the page to the top level"""
-  moveDocument(documentId: ID!, parentId: ID, position: Float, workspaceId: ID!): Document!
+  moveDocument(
+    documentId: ID!
+    parentId: ID
+    position: Float
+
+    """For a top-level page: its space (null: none, omitted: unchanged)"""
+    spaceId: ID
+    workspaceId: ID!
+  ): Document!
+  moveFolder(folderId: ID!, input: MoveFolderInput!, workspaceId: ID!): Folder!
+
+  """Moves a list into a folder of its project, or out of it"""
+  moveList(input: MoveTaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
   relateTasks(kind: TaskRelationKind!, relatedTaskId: ID!, taskId: ID!, workspaceId: ID!): [TaskRelation!]!
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
@@ -815,8 +931,9 @@ type Mutation {
   updateCustomField(fieldId: ID!, input: UpdateCustomFieldInput!, workspaceId: ID!): CustomField!
   updateDepartment(departmentId: ID!, input: UpdateDepartmentInput!, workspaceId: ID!): Department!
   updateDocument(documentId: ID!, input: UpdateDocumentInput!, workspaceId: ID!): Document!
+  updateFolder(folderId: ID!, input: UpdateFolderInput!, workspaceId: ID!): Folder!
   updateLeaveType(input: UpdateLeaveTypeInput!, leaveTypeId: ID!, workspaceId: ID!): LeaveType!
-  updateList(input: TaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
+  updateList(input: UpdateTaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
   updateMemberRole(roleId: ID!, userId: ID!, workspaceId: ID!): Member!
   updatePolicy(input: SavePolicyInput!, policyId: ID!, workspaceId: ID!): Policy!
   updatePreferences(input: UpdatePreferencesInput!): Preferences!
@@ -986,6 +1103,9 @@ type Query {
   """Current members with their HR profiles"""
   employees(workspaceId: ID!): [Employee!]!
 
+  """Every folder in the workspace, for the sidebar tree"""
+  folders(workspaceId: ID!): [Folder!]!
+
   """Validation rules for the named forms, or all of them"""
   formSchemas(names: [String!]): [FormSchema!]!
 
@@ -1128,6 +1248,7 @@ enum RealtimeEntityType {
   department
   document
   employee
+  folder
   leave_request
   leave_type
   list
@@ -1284,6 +1405,9 @@ type Space {
 
   """yyyy-mm-dd"""
   dueDate: String
+
+  """Icon key; null shows the first letter"""
+  icon: IconKey
   id: ID!
   name: String!
 
@@ -1416,13 +1540,24 @@ type TaskActivity {
 }
 
 type TaskList {
+  color: String
   createdAt: String!
+
+  """Null: directly under the space"""
+  folderId: ID
+  icon: IconKey
   id: ID!
   name: String!
+  position: Float!
   spaceId: ID!
 }
 
 input TaskListInput {
+  color: String
+
+  """Create the list inside this folder"""
+  folderId: ID
+  icon: IconKey
   name: String!
 }
 
@@ -1538,7 +1673,14 @@ input UpdateDepartmentInput {
 
 input UpdateDocumentInput {
   content: String
+  icon: IconKey
   title: String
+}
+
+input UpdateFolderInput {
+  color: String
+  icon: IconKey
+  name: String
 }
 
 input UpdateLeaveTypeInput {
@@ -1571,6 +1713,7 @@ input UpdateSpaceInput {
 
   """yyyy-mm-dd; null clears it"""
   dueDate: String
+  icon: IconKey
   name: String
 
   """yyyy-mm-dd; null clears it"""
@@ -1609,6 +1752,12 @@ input UpdateTaskInput {
   statusId: ID
   title: String
   type: TaskType
+}
+
+input UpdateTaskListInput {
+  color: String
+  icon: IconKey
+  name: String
 }
 
 input UpdateTaskStatusInput {

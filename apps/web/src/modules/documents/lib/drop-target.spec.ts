@@ -6,6 +6,7 @@ const doc = (id: string, parentId: string | null, position: number, kind: DocKin
   id,
   parentId,
   spaceId: null,
+  icon: null,
   kind,
   title: id,
   position,

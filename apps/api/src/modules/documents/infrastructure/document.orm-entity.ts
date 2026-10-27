@@ -1,6 +1,6 @@
 import { Column, Entity, Index } from 'typeorm';
 import { TenantOrmEntity } from '../../../core/database/base.orm-entity.js';
-import type { DocKind } from '@taskflow/shared-types';
+import type { DocKind, IconKey } from '@taskflow/shared-types';
 import type { Document } from '../domain/document.js';
 
 @Entity({ name: 'document' })
@@ -17,6 +17,9 @@ export class DocumentOrmEntity extends TenantOrmEntity implements Document {
 
   @Column({ type: 'varchar', length: 200 })
   title: string;
+
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  icon: IconKey | null;
 
   @Column({ type: 'text', default: '' })
   content: string;

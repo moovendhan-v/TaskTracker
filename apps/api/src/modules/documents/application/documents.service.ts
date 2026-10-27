@@ -61,6 +61,7 @@ export class DocumentsService {
         parentId,
         kind,
         title: request.title.trim(),
+        icon: request.icon ?? null,
         content: kind === 'folder' ? '' : this.sanitizer.sanitize(request.content ?? ''),
         position: (await this.documents.maxSiblingPosition(workspaceId, parentId)) + DOC_POSITION_STEP,
         createdById: actor.userId,
@@ -76,6 +77,7 @@ export class DocumentsService {
     DocumentAccessPolicy.assertCanEdit(document, actor.userId, access.permissions);
 
     if (request.title !== undefined) document.title = request.title.trim();
+    if (request.icon !== undefined) document.icon = request.icon;
     if (request.content !== undefined) {
       if (document.kind === 'folder') throw DomainError.invalid('A folder has no content');
       document.content = this.sanitizer.sanitize(request.content);
@@ -101,7 +103,11 @@ export class DocumentsService {
       });
 
       document.parentId = parent?.id ?? null;
-      if (parent) document.spaceId = parent.spaceId;
+      // A page lives in its parent's space; a top-level page can be given one (or taken out of it with null).
+      const spaceId = parent ? parent.spaceId : request.spaceId === undefined ? document.spaceId : request.spaceId;
+      if (spaceId && !parent && spaceId !== document.spaceId) await this.spacesService.getInWorkspace(access.workspaceId, spaceId);
+      if (spaceId !== document.spaceId) await this.documents.setSubtreeSpace(access.workspaceId, documentId, spaceId);
+      document.spaceId = spaceId;
       document.position =
         request.position ?? (await this.documents.maxSiblingPosition(access.workspaceId, document.parentId)) + DOC_POSITION_STEP;
       document.updatedById = actor.userId;
