@@ -15,6 +15,7 @@ TaskTracker/
 ├── README.md                         ✅ quick start, scripts, testing, security overview
 ├── .env.example                      ✅ every env var name, no values
 ├── .gitignore                        ✅
+├── .dockerignore                     ✅ keeps node_modules, build output and .env files out of image builds
 ├── .nvmrc                            ✅ Node 22
 ├── package.json                      ✅ root scripts only (build, lint, typecheck, test, test:e2e, sdk:generate, db:up, infra:*)
 ├── pnpm-workspace.yaml               ✅ apps/* and packages/*, plus security overrides with a reason each
@@ -38,11 +39,13 @@ TaskTracker/
 │   └── terraform/                    ✅ the same stack via the Docker provider (section 6)
 ├── scripts/
 │   ├── rea-browser.sh                ✅
+│   ├── dev.sh                        ✅ one-command dev stack in Docker (creates .env, picks free ports, up/down)
 │   └── create-e2e-database.sh        ✅ throwaway taskflow_test database in local Docker Postgres; writes .env.e2e
 └── docs/
     ├── architecture/FOLDER_STRUCTURE.md  ✅ this file
     ├── plan/TASKFLOW_PLAN.md         ✅ phases and scope
-    └── research/                     ✅ REA protocol and log
+    ├── research/                     ✅ REA protocol and log
+    └── screenshots/                  ✅ UI screenshots
 ```
 
 Each app and package has its own `package.json`, `tsconfig.json` and (for apps) `Dockerfile`, so any of them can move to its own repo later without changes.
@@ -65,7 +68,8 @@ apps/api/
 │   ├── tsconfig.json
 │   └── e2e/                          ✅ black box: migrates a *test* database, starts dist/main.js, talks GraphQL over HTTP
 │       ├── support/                  global setup (API + SMTP catcher), cookie-keeping TestUser, fixtures, mailbox, DB access
-│       └── *.e2e-spec.ts             tenancy, password reset, tasks and sprints, docs and HR, roles and admin, GraphQL hardening, RLS
+│       └── *.e2e-spec.ts             tenancy, password reset, tasks and sprints, docs and HR, roles and admin, IAM policies,
+│                                     space access and hierarchy, templates, automations, GitHub, GraphQL hardening, RLS, …
 └── src/
     ├── main.ts                       starts the app; delegates every concern to bootstrap/*
     ├── app.module.ts                 imports core and feature modules; registers global guards, interceptor and filter
@@ -77,7 +81,7 @@ apps/api/
     └── cli/                          operator scripts (migrations, schema export, promote admin, demo seed)
 ```
 
-The API is GraphQL only (`/api/graphql`). The only other HTTP routes are Better Auth's handler (`/api/auth/*`) and the `/api/health` liveness probe.
+The API is GraphQL only (`/api/graphql`). The only other HTTP routes are Better Auth's handler (`/api/auth/*`), the `/api/health` liveness probe and the signed GitHub webhook (`/api/integrations/github/webhook/:id`).
 
 ### 2.2 `bootstrap/`, `config/`, `cli/`
 
@@ -87,7 +91,9 @@ src/bootstrap/
 ├── security.bootstrap.ts             helmet (CSP, HSTS, frame-ancestors, referrer, permissions policy), CORS
 ├── body-parsers.bootstrap.ts         JSON parser with a size limit (GraphQL takes JSON only)
 ├── auth-routes.bootstrap.ts          mounts the Better Auth handler before the body parsers
-└── validation.bootstrap.ts           global ValidationPipe (whitelist, forbidNonWhitelisted)
+├── webhook-routes.bootstrap.ts       raw, size-limited JSON body for /api/integrations/* (signatures cover the exact bytes)
+├── validation.bootstrap.ts           global ValidationPipe (whitelist, forbidNonWhitelisted)
+└── websocket.bootstrap.ts            closes WebSocket upgrades on any path but /api/graphql
 
 src/config/
 ├── env.schema.ts                     zod schema; fails fast on bad config (CAPTCHA secret required in production)
@@ -119,6 +125,7 @@ src/core/
 │   ├── better-auth.factory.ts        builds the Better Auth instance (plugins, rate limits, cookies)
 │   ├── auth.service.ts               turns request headers into a SessionUser
 │   ├── session.guard.ts              global guard: valid session or 401 (fails closed)
+│   ├── auth-forms.ts                 password and name limits for the auth forms
 │   └── mailer/
 │       ├── mailer.port.ts            abstract class Mailer { sendPasswordReset(...) }
 │       ├── console.mailer.ts         development adapter (prints links in dev only)
@@ -129,7 +136,8 @@ src/core/
 │   ├── access.service.ts             resolves (user, workspace) → role + permissions
 │   ├── workspace-access.guard.ts     checks membership and permissions for operations with a workspaceId argument
 │   ├── platform-admin.guard.ts       SUPER_ADMIN-only operations; everyone else gets NOT_FOUND
-│   ├── data-scope.interceptor.ts     runs each operation in one transaction with its row-level security scope
+│   ├── data-scope.interceptor.ts     runs each operation in one transaction with its row-level security scope (incl. space limits)
+│   ├── space-guard.ts                SpaceGuard.assert(spaceId, permission): the caller's space-limited denies, for services
 │   ├── sensitive-field.decorator.ts  @SensitiveField('member.email', ...): null unless the caller's policies allow it
 │   ├── require-platform-admin.decorator.ts
 │   ├── require-permissions.decorator.ts
@@ -147,10 +155,11 @@ src/core/
 │   ├── base.orm-entity.ts            BaseOrmEntity, TenantOrmEntity (workspaceId)
 │   ├── orm-entities.ts               single list of every ORM entity
 │   ├── pg-pool.provider.ts           pg pool for Better Auth
-│   ├── data-scope.ts                 DataScope (workspace | user | platform) and the SQL that applies it
+│   ├── data-scope.ts                 DataScope (workspace | user | platform, plus space rules) and the SQL that applies it
 │   ├── unit-of-work.port.ts          abstract class UnitOfWork { run(work), runInScope(scope, work) }
 │   ├── typeorm-unit-of-work.ts       adapter; nested calls join the outer transaction
-│   ├── transactional-manager.ts      the current transaction's EntityManager and scope (AsyncLocalStorage)
+│   ├── transactional-manager.ts      the current transaction's EntityManager and scope (AsyncLocalStorage);
+│   │                                 savepoint(work) undoes only the work's changes when it throws (automations)
 │   ├── row-level-security.check.ts   startup check: no superuser/BYPASSRLS role, RLS forced on every tenant table
 │   ├── database-health.indicator.ts  SELECT 1 for /health
 │   └── migrations/
@@ -162,6 +171,7 @@ src/core/
 │   ├── memory.cache-store.ts         per-instance adapter for development and tests (bounded)
 │   ├── cache-keys.ts                 tf:v1 prefix, workspace/user scoped keys, hashed arguments
 │   ├── cached.decorator.ts           @Cached({ entities, shared?, ttlSeconds? }) for read methods; mutations always bypass it
+│   ├── evicts-user-cache.decorator.ts    drops one user's cached entries after the method succeeds (pairs with @Cached({ user }))
 │   ├── cache-invalidator.ts          drops tags on every domain event, in the transaction and again after commit on every instance
 │   └── cache.module.ts
 ├── forms/                            ✅ validation rules published to clients
@@ -197,6 +207,10 @@ src/core/
 │   ├── event-stream.ts               per-subscriber async iterators with a bounded queue
 │   ├── websocket-auth.ts             origin allowlist and session check for graphql-ws connections
 │   └── realtime.module.ts
+├── crypto/                           ✅ secrets the API must read back
+│   ├── secret-box.ts                 SecretBox: AES-256-GCM seal/open, key derived from BETTER_AUTH_SECRET (HKDF); never in the DB
+│   ├── secret-box.spec.ts
+│   └── crypto.module.ts              global module exporting SecretBox
 ├── storage/                          🔜 [4] document attachments and HR files
 │   ├── storage.port.ts               abstract class FileStorage { put, signedUrl, delete }
 │   ├── s3.storage.ts                 adapter (MinIO locally), private bucket, short-lived URLs
@@ -210,7 +224,10 @@ src/core/
 │   ├── args.ts                       WorkspaceIdArg, UuidArg, OptionalUuidArg (null means "none")
 │   ├── validation.ts                 @IsOmittable(): input fields that may be left out but never set to null
 │   ├── enums.ts                      registerEnumType for shared-types enums
-│   └── json-object.scalar.ts         output-only JSONObject scalar (audit metadata)
+│   ├── json-object.scalar.ts         output-only JSONObject scalar (audit metadata)
+│   ├── metadata.scalar.ts            flat key/value task metadata, checked on input
+│   ├── custom-field-values.scalar.ts field id → value map; types checked by the service
+│   └── resource-query.types.ts       GraphQL types for resource queries (filter tree, sort, paging) and ResourceSchema
 └── http/
     ├── request-context.ts            the Express request, workspaceId argument and write detection for guards
     ├── types/authenticated-request.ts    SessionUser, WorkspaceAccess, Actor
@@ -257,13 +274,15 @@ Tests sit next to the code they test: `application/<feature>.service.spec.ts` (u
 
 ### 2.5 Data access and row-level security
 
-Every tenant table has Postgres row-level security, forced even for the table owner (migration `row-level-security`). Policies read three transaction-local settings, which `DataScope` sets:
+Every tenant table has Postgres row-level security, forced even for the table owner (migration `row-level-security`). Tenant policies read three transaction-local settings (`app.workspace_id`, `app.user_id`, `app.scope`), which `DataScope` sets:
 
 | Scope | Set by | Can see |
 |-------|--------|---------|
 | `workspace` | `DataScopeInterceptor` after `WorkspaceAccessGuard` allowed the call | that workspace's rows |
 | `user` | the interceptor for signed-in calls outside a workspace; the membership lookup in the guard | the caller's memberships and the workspaces and roles they point to |
 | `platform` | the interceptor, only for SUPER_ADMIN on `@RequirePlatformAdmin` operations; operator CLIs | every row |
+
+Space limits (IAM deny statements with `spaces` / `notSpaces`) travel in four more settings, set from the workspace scope's `spaceRules`: `app.space_task_deny` and `app.space_task_only` (spaces where `task.view` is denied, or the only ones allowed; `*` no limit, `-` none), and `app.space_doc_deny` / `app.space_doc_only` for `doc.view`. Migration `space-access` adds RESTRICTIVE `space_access` policies, which must pass alongside the tenant policy: on `space` and every table with a `space_id` (lists, folders, sprints, statuses, tasks, custom fields, time entries), on `document` (doc limits), and on task children (comments, activity, watchers, relations) through their task. Tasks carry a trigger-maintained `space_id`, so no join is needed. What RLS can't tell apart (editing versus viewing) is checked in services with `SpaceGuard`.
 
 No scope means no tenant rows (fail closed). Repositories still filter by `workspaceId`; RLS is the second line of defence. The API connects as a role that owns nothing (`DATABASE_URL`), and migrations run as the schema owner (`MIGRATION_DATABASE_URL`). Within one operation, queries share one connection, so run them one after another, not with `Promise.all`.
 
@@ -274,7 +293,7 @@ src/modules/
 ├── health/                                       ✅
 │   ├── health.module.ts
 │   └── presentation/
-│       └── health.controller.ts                  GET /api/health, @Public liveness probe for Docker (the only non-GraphQL route)
+│       └── health.controller.ts                  GET /api/health, @Public liveness probe for Docker (non-GraphQL, like the GitHub webhook)
 │
 ├── users/                                        ✅
 │   ├── users.module.ts
@@ -301,7 +320,7 @@ src/modules/
 │   ├── domain/system-roles.ts                    built-in roles seeded per workspace (rights from managed policies)
 │   ├── domain/role-grant.policy.ts               no granting permissions or fields you don't hold; owner-only permission
 │   ├── domain/policy.ts                          custom policies, attachments, PolicyRef, effective access of a role
-│   ├── domain/policy-document.policy.ts          validates documents; no granting more than you have
+│   ├── domain/policy-document.policy.ts          validates documents (space limits: deny only, spaces or notSpaces); no granting more than you have
 │   ├── domain/policy.repository.ts
 │   ├── application/roles.service.ts              roles with their policies and effective access
 │   ├── application/role-access.service.ts        effective access per role (cached; used by access checks)
@@ -324,7 +343,17 @@ src/modules/
 │   └── presentation/graphql/{members.resolver.ts,member.types.ts}
 │
 ├── spaces/                                       ✅  (same layout: space.ts, space.repository.ts, spaces.service.ts, …)
-├── lists/                                        ✅  (task-list.ts, task-list.repository.ts, lists.service.ts, …)
+│
+├── lists/                                        ✅ lists and the folders that group them inside a space
+│   ├── lists.module.ts
+│   ├── domain/{task-list.ts,task-list.repository.ts}   a list may sit in a folder
+│   ├── domain/{list-folder.ts,list-folder.repository.ts}   folders can hold folders; optional color and icon
+│   ├── domain/folder-tree.policy.ts              no cycles, parent in the same space, nesting up to FOLDER_MAX_DEPTH
+│   ├── application/{lists.service.ts,task-list.mapper.ts}
+│   ├── application/folders.service.ts            folder CRUD and moves; deleting a folder moves its contents up a level
+│   ├── infrastructure/{task-list,list-folder}.orm-entity.ts
+│   ├── infrastructure/typeorm-{task-list,list-folder}.repository.ts
+│   └── presentation/graphql/{lists.resolver.ts,folders.resolver.ts,task-list.types.ts}
 │
 ├── tasks/                                        ✅
 │   ├── tasks.module.ts
@@ -396,6 +425,43 @@ src/modules/
 │   ├── infrastructure/typeorm-document.repository.ts
 │   ├── infrastructure/markdown.sanitizer.ts      adapter for ContentSanitizer: control chars, unsafe link schemes
 │   └── presentation/graphql/{documents.resolver.ts,document.types.ts}   attachments 🔜 (uploads via signed URLs, core/storage)
+│
+├── templates/                                    ✅ project templates: built-in gallery plus the workspace's own
+│   ├── templates.module.ts
+│   ├── domain/project-template.ts                a saved template (built-in ones live in shared-types, BUILT_IN_TEMPLATES)
+│   ├── domain/project-template.repository.ts
+│   ├── domain/template-content.policy.ts         normalizes untrusted content (built-in, saved or imported): bounded, refs point back
+│   ├── application/templates.service.ts          list, apply (new space through the normal services, one transaction),
+│   │                                             save a space as a template, import/export JSON, delete
+│   ├── infrastructure/{project-template.orm-entity.ts,typeorm-project-template.repository.ts}
+│   └── presentation/graphql/{templates.resolver.ts,template.types.ts}
+│
+├── automations/                                  ✅ per-space "when … then …" rules on tasks
+│   ├── automations.module.ts
+│   ├── domain/automation-rule.ts                 rule (trigger, conditions, actions) and its runs
+│   ├── domain/automation.repository.ts
+│   ├── domain/automation.policy.ts               normalizes triggers, conditions and actions; matches a task; permissions each action needs
+│   ├── application/automations.service.ts        CRUD and enable; saving checks the saver may do every action in that space
+│   ├── application/automation-engine.ts          runs rules on EventBus task events (and GitHub triggers) as the rule's saver,
+│   │                                             each in its own savepoint; rule changes never fire other rules
+│   ├── application/automation.mapper.ts
+│   ├── infrastructure/{automation.orm-entities.ts,typeorm-automation.repository.ts}   automation_rule, automation_run
+│   └── presentation/graphql/{automations.resolver.ts,automation.types.ts}   needs automation.manage to change
+│
+├── integrations/                                 ✅ GitHub through repository webhooks
+│   ├── integrations.module.ts
+│   ├── domain/github.ts                          connection (repo, task prefix, sync settings, sealed secret) and pull request links
+│   ├── domain/github.repository.ts
+│   ├── domain/github-webhook.policy.ts           HMAC-SHA256 signature check in constant time; parses pull_request events
+│   ├── application/github-connections.service.ts connect, update, rotate secret (shown once, stored with SecretBox), remove; PRs per task
+│   ├── application/github-webhook.service.ts     one delivery per transaction: signature, dedupe by delivery id,
+│   │                                             link PRs to tasks they mention (TF-42), move tasks, fire automation triggers
+│   ├── application/github.mapper.ts
+│   ├── infrastructure/{github.orm-entities.ts,typeorm-github.repository.ts}
+│   └── presentation/
+│       ├── graphql/{github.resolver.ts,github.types.ts}   needs integration.manage
+│       └── http/github-webhook.controller.ts     POST /api/integrations/github/webhook/:connectionId, @Public (signed),
+│                                                 throttled; the only non-GraphQL feature route besides health
 │
 ├── hr/                                           ✅ one parent module, three sub-features
 │   ├── hr.module.ts
@@ -506,18 +572,23 @@ src/app/                              composition root (like app.module.ts on th
 ├── routes.tsx                        the whole typed route tree; session guards; pages come from module index.ts files
 ├── query-client.ts                   retries (none on client error codes), stale times, UNAUTHENTICATED → sign-in
 └── layouts/
-    ├── workspace-layout.tsx          builds the sidebar from feature modules and renders <Outlet/>
-    └── user-menu.tsx                 account menu, theme toggle, sign out
+    ├── workspace-layout.tsx          sidebar, top bar and <Outlet/>; the open task (?task=) shows over any page
+    ├── workspace-sidebar.tsx         navigation, projects with live counts, workspace and people pages; resizable
+    ├── app-topbar.tsx                sidebar toggle, workspace switcher, search, timer, live status, inbox, new task
+    └── user-menu.tsx                 account menu, theme toggle, sign out (sidebar row or top-bar avatar)
 
 src/core/
 ├── config/env.ts                     reads VITE_* values (nothing secret)
 ├── api/graphql-client.ts             the single createGraphQLClient() instance
 ├── api/realtime-client.ts            the single createRealtimeClient() instance (lazy WebSocket, reconnects)
 ├── api/current-user.api.ts           MeDocument, used by route guards and useCurrentUser
+├── api/form-schemas.api.ts           every form's validation rules from the API (unknown rule kinds skipped)
+├── api/preferences.api.ts            personal preferences, in the shared shape
 ├── auth/
 │   ├── auth-client.ts                Better Auth React client + captcha header helper
 │   ├── session.ts                    hasSession() for route guards
 │   ├── use-current-user.ts           query me
+│   ├── verify-email-banner.tsx       shown until the signed-in user confirms their email
 │   └── turnstile-widget.tsx          CAPTCHA widget for public forms (off when no site key)
 ├── forms/
 │   ├── use-form-schema.ts            all form rules, loaded once
@@ -539,26 +610,34 @@ src/components/
 │   ├── button.tsx  input.tsx  textarea.tsx  label.tsx  select.tsx  checkbox.tsx
 │   ├── dialog.tsx  sheet.tsx  dropdown-menu.tsx  popover.tsx  tooltip.tsx
 │   ├── badge.tsx  avatar.tsx  card.tsx  separator.tsx  skeleton.tsx  tabs.tsx
-│   ├── table.tsx  calendar.tsx  sonner.tsx
+│   ├── sonner.tsx
 │   └── form-field.tsx                label, control and error, wired for screen readers
 ├── common/                           built from ui/, still feature-agnostic
-│   ├── page-header.tsx  empty-state.tsx  error-state.tsx  confirm-dialog.tsx
+│   ├── page-header.tsx  empty-state.tsx  error-state.tsx  confirm-dialog.tsx  full-page-spinner.tsx
 │   ├── name-dialog.tsx               "name this thing" dialog checked by an API form schema
-│   └── user-avatar.tsx  color-picker.tsx  logo.tsx
+│   ├── entity-icon.tsx               ICONS for every icon key the API accepts; the icon of a space, folder, list or doc
+│   ├── icon-picker.tsx               IconGrid and IconPicker: an icon grid plus a colour row
+│   └── user-avatar.tsx  color-picker.tsx  color-dot.tsx  logo.tsx
 ├── kit/                              configurable building blocks used across features
 │   ├── data-table.tsx                sort (multi), select, page, show/hide, reorder and resize columns; layout comes in and goes out
 │   ├── modal.tsx                     sizes, eyebrow, header actions, footer, optional side column
 │   ├── section.tsx                   collapsible block (accordion item), controlled or remembered per browser
+│   ├── option-picker.tsx             popover list with search, optional clear row and a check on the current value
+│   ├── range-calendar.tsx            day-range picker
 │   ├── segmented.tsx  panel.tsx  stat-card.tsx  status-pill.tsx
-│   ├── charts.tsx                    columns, grouped columns, stacked bar, bar list, meter (no chart library)
+│   ├── charts.tsx                    columns, grouped columns, stacked bar, bar list, meter, line chart (no chart library)
 │   └── notify.ts                     toast presets: success, info, error, undoable, promise
 └── layout/
+    ├── app-shell.tsx                 two-column frame: sidebar and page, content through props
     ├── sidebar-link.tsx
     └── sidebar-section.tsx
 
 src/lib/
 ├── cn.ts                             clsx + tailwind-merge
 ├── dates.ts
+├── days.ts                           calendar-day arithmetic on yyyy-mm-dd strings
+├── periods.ts                        date windows for dashboards and time views ([from, to))
+├── export-csv.ts                     CSV download built in the browser; defuses spreadsheet formulas
 ├── errors.ts                         safe user-facing messages from GraphQL error codes
 ├── use-resettable-state.ts           local draft of a value that resets when the source changes
 ├── initials.ts
@@ -585,12 +664,25 @@ src/modules/<feature>/
 
 ```
 src/modules/
-├── auth/            pages/{sign-in,sign-up,forgot-password,reset-password}.page.tsx, components/auth-form-card.tsx
-├── workspaces/      pages/{workspace-home,workspace-settings}.page.tsx, components/{workspace-switcher,create-workspace-dialog}.tsx
-├── members/         pages/members.page.tsx, components/{member-table,add-member-dialog,role-select}.tsx
-├── roles/           pages/roles.page.tsx, components/{role-list,role-editor,permission-matrix}.tsx
-├── spaces/          components/space-tree.tsx (projects with live counts and quick links), hooks/use-spaces.ts (incl. custom field definitions)
-├── lists/           hooks/use-lists.ts, api/lists.api.ts
+├── auth/            pages/{sign-in,sign-up,forgot-password,reset-password}.page.tsx, components/{auth-layout,form-error}.tsx, components/auth-schemas.ts
+├── workspaces/      pages/{onboarding,workspace-settings}.page.tsx (settings include the GitHub integration)
+│                    components/{workspace-switcher,create-workspace-dialog,workspace-form,can}.tsx, store/workspace-ui.store.ts
+├── members/         pages/members.page.tsx, components/{add-member-dialog,role-select}.tsx
+├── roles/           pages/roles.page.tsx, lib/permission-groups.ts
+│                    components/{role-editor-dialog,role-access-dialog,policy-dialog,statement-editor}.tsx
+│                      role-access-dialog: attached policies, inline statements and the space limits they add up to
+│                      statement-editor: allow/deny statements, optionally limited to spaces (deny only)
+│                    api/{roles,policies}.api.ts, hooks/{use-roles,use-policies}.ts
+├── spaces/          components/space-tree.tsx (projects, folders and lists with icons and live counts; opens the template gallery)
+│                    components/settings/{space-settings,status-settings,custom-field-settings}.tsx   a project's Settings view
+│                    hooks/use-spaces.ts (incl. custom field definitions)
+├── lists/           api/lists.api.ts, hooks/use-lists.ts (lists and folders)
+├── templates/       components/template-gallery.tsx (built-in, saved or imported file), components/save-as-template.tsx,
+│                    lib/download-template.ts (export as JSON)
+├── automations/     components/{automations-panel,automation-builder}.tsx (a project's Automations view; "when" and "then" halves),
+│                    lib/describe-rule.ts (trigger, action and audience labels)
+├── integrations/    components/github-integration.tsx (repositories, webhook URL and secret, sync settings),
+│                    components/pull-requests-section.tsx (linked pull requests in task detail)
 ├── tasks/           components/
 │                      views/{list-view,bulk-bar,calendar-view,timeline-view,planner-view}.tsx
 │                      board-view/{task-board-view,board-column,task-card}.tsx
@@ -598,21 +690,30 @@ src/modules/
 │                      shared/{status-picker,priority-picker,assignee-picker,due-date,task-dates,type-badge,quick-add-task}.tsx
 │                      {command-search,new-task-dialog}.tsx
 │                    hooks/{use-tasks,use-task-mutations,use-open-task}.ts, lib/{group-tasks,task-meta,export-tasks}.ts
-├── projects/        pages/{project,my-tasks}.page.tsx: one page per project with ten views and a shared toolbar
+├── projects/        pages/{project,my-tasks}.page.tsx: one page per project with twelve views (lib/views.ts) and a shared toolbar
 │                    components/{project-tabs,saved-views-menu,task-table-view}.tsx, store/project-view.store.ts
-├── resources/       components/{resource-table,filter-builder}.tsx: tables and filters built from `resourceSchema`
-├── dashboard/       pages/home.page.tsx, components/{project-dashboard,dashboard-panels,projects-table,dashboard-filters}.tsx
-├── time/            pages/{timesheets,daily-log}.page.tsx, components/{log-time-dialog,task-time-controls,timer-indicator,time-report}.tsx
-├── comments/        components/{comment-thread,comment-composer}.tsx
-├── sprints/         pages/{sprints,sprint-board}.page.tsx, components/{sprint-card,backlog-panel,start-sprint-dialog,complete-sprint-dialog}.tsx
-├── documents/       pages/document.page.tsx, components/{doc-tree,doc-editor,markdown-preview}.tsx
-├── hr/              pages/{directory,departments,leave,leave-approvals}.page.tsx
-│                    components/{employee-card,department-form,leave-request-form,leave-balance-card,approval-queue}.tsx
+├── resources/       components/{resource-table,filter-builder}.tsx: tables and filters built from `resourceSchema`; lib/filters.ts
+├── dashboard/       pages/home.page.tsx (workspace overview), lib/dashboard-input.ts
+│                    components/{project-dashboard,dashboard-panels,projects-table,dashboard-filters,dashboard-task-list,space-status-chip}.tsx
+├── time/            pages/{timesheets,daily-log}.page.tsx, components/{log-time-dialog,task-time-controls,timer-indicator,time-report}.tsx,
+│                    lib/time-format.ts
+├── comments/        components/comment-thread.tsx
+├── sprints/         pages/{sprints,sprint-board}.page.tsx
+│                    components/active-sprint-panel.tsx   running sprint: time elapsed, done, burndown, workload
+│                    components/{sprint-lane,sprint-task-row,backlog-panel}.tsx   drag-and-drop planning
+│                    components/{sprint-form-dialog,complete-sprint-dialog,sprint-progress}.tsx
+│                    lib/sprint-metrics.ts (timing, burndown, summary, workload), lib/sprint-dates.ts
+├── documents/       pages/documents.page.tsx
+│                    components/{doc-tree,folder-view,doc-editor,markdown-preview}.tsx   tree with drag to move; folder contents; autosave editor
+│                    lib/build-tree.ts (flat list → tree), lib/drop-target.ts (before | inside | after a row)
+├── hr/              pages/{directory,departments,time-off,approvals,leave-types}.page.tsx, lib/{hr-labels,working-days}.ts
+│                    components/{profile-dialog,leave-request-dialog,leave-type-dialog,leave-balance-card,leave-status-badge}.tsx
 ├── inbox/           pages/inbox.page.tsx, components/notification-item.tsx, lib/describe-notification.ts
-└── admin/           pages/{admin-users,admin-workspaces,admin-audit}.page.tsx
+├── audit-log/       pages/workspace-audit-log.page.tsx, components/{audit-log-table,audit-filter}.tsx
+└── admin/           pages/{admin-users,admin-workspaces,admin-audit-log}.page.tsx, components/{admin-layout,pager,search-box}.tsx
 ```
 
-Each module above also has its own `index.ts`, `api/` and `hooks/` (and `store/` where it keeps UI state). `workspaces/` also owns `usePermissions` and `<Can>`, since permissions are per workspace. `home/` holds the workspace overview page. Route paths live in `app/routes.tsx`, not in modules, so TanStack Router can type-check every link.
+Each module above also has its own `index.ts`, `api/` and `hooks/` (and `store/` where it keeps UI state). `workspaces/` also owns `usePermissions` and `<Can>`, since permissions are per workspace. Route paths live in `app/routes.tsx`, not in modules, so TanStack Router can type-check every link.
 
 ---
 
@@ -628,23 +729,42 @@ packages/shared-types/
     ├── index.ts                      re-exports everything
     ├── domain/                       values with meaning across the stack
     │   ├── permissions.ts            ✅ PERMISSIONS, PLATFORM_ROLES, SYSTEM_ROLE_PERMISSIONS
+    │   ├── iam.ts                    ✅ policy statements and documents, SPACE_SCOPED_PERMISSIONS, SpaceRule, space visibility
     │   ├── workspace.ts              ✅ NAME_MAX, COLOR_PATTERN
+    │   ├── hierarchy.ts              ✅ FOLDER_MAX_DEPTH, FOLDERS_PER_SPACE_MAX, ICON_KEYS for spaces, folders, lists and docs
     │   ├── task.ts                   ✅ TASK_STATUSES, TASK_PRIORITIES, limits
+    │   ├── custom-field.ts           ✅ CUSTOM_FIELD_TYPES, SPACE_STATUSES, limits
+    │   ├── time-tracking.ts          ✅ TIME_LIMITS, minute helpers
     │   ├── pagination.ts             ✅ PAGE_SIZE_MAX, Paginated<T>
     │   ├── sprint.ts                 ✅ SPRINT_STATUSES, limits
     │   ├── document.ts               ✅ limits
+    │   ├── template.ts               ✅ TemplateContent, TEMPLATE_CATEGORIES, TEMPLATE_LIMITS, BUILT_IN_TEMPLATES
+    │   ├── automation.ts             ✅ AUTOMATION_TRIGGERS, AUTOMATION_ACTIONS, NOTIFY_AUDIENCES, run statuses, limits
+    │   ├── github.ts                 ✅ repo and task prefix patterns, PR states, sync settings, taskReferences() (TF-42)
+    │   ├── notification.ts           ✅ NOTIFICATION_KINDS, REALTIME_ENTITY_TYPES
+    │   ├── preferences.ts            ✅ themes, accents, densities, task views
     │   └── hr.ts                     ✅ LEAVE_STATUSES, EMPLOYMENT_TYPES, limits
+    ├── forms/                        ✅ form schema shape and validateForm (same rules as the API)
+    ├── query/                        ✅ filter language, query-string parser, ResourceSchema
     └── contracts/                    request and response shapes, one file per feature
         ├── user.contract.ts          ✅
         ├── workspace.contract.ts     ✅
         ├── member.contract.ts        ✅
         ├── role.contract.ts          ✅
+        ├── policy.contract.ts        ✅
         ├── space.contract.ts         ✅
-        ├── list.contract.ts          ✅
+        ├── list.contract.ts          ✅ lists and folders
         ├── task.contract.ts          ✅
+        ├── custom-field.contract.ts  ✅
         ├── comment.contract.ts       ✅
         ├── sprint.contract.ts        ✅
+        ├── time.contract.ts          ✅
+        ├── analytics.contract.ts     ✅
         ├── document.contract.ts      ✅
+        ├── template.contract.ts      ✅
+        ├── automation.contract.ts    ✅
+        ├── github.contract.ts        ✅
+        ├── notification.contract.ts  ✅
         ├── hr.contract.ts            ✅
         └── admin.contract.ts         ✅
 ```
@@ -660,14 +780,18 @@ packages/sdk/
 ├── schema.graphql                    ✅ written by `pnpm --filter @taskflow/api graphql:export`
 ├── operations/                       ✅ every operation the clients run, one file per feature
 │   ├── fragments.graphql             one fragment per object type, selecting every field
-│   └── <feature>.graphql             queries and mutations (Tasks, CreateTask, …)
+│   ├── <feature>.graphql             queries and mutations (Tasks, CreateTask, …)
+│   ├── templates.graphql             template gallery, apply, save from space, import/export
+│   ├── automations.graphql           automation rules and their runs
+│   └── integrations.graphql          GitHub connections, secret rotation, pull requests of a task
 ├── scripts/
 │   └── generate-graphql-types.mjs    ✅ @graphql-codegen/core: validates operations against the schema, then
 │                                        typescript-operations + typed-document-node (documents as plain strings)
 └── src/
-    ├── index.ts                      ✅ the client plus everything generated
+    ├── index.ts                      ✅ both clients plus everything generated
     ├── graphql-client.ts             ✅ createGraphQLClient(): typed request(document, variables), cookie auth,
     │                                    JSON only (passes CSRF prevention), GraphQLRequestError with the error code
+    ├── realtime-client.ts            ✅ createRealtimeClient(): graphql-ws subscriptions, lazy connect, reconnects, status
     ├── graphql-error.ts              ✅ the error shape, kept local so there's no runtime graphql dependency
     └── generated/graphql.ts          ✅ enums, inputs, fragment and operation types, typed documents; never edit by hand
 ```
@@ -681,8 +805,11 @@ Flow: resolver types → `schema.graphql` → `operations/*.graphql` are validat
 ```
 infra/
 ├── docker/
-│   ├── docker-compose.yml            postgres, migrate (one-off, owner role), api (runtime role), web, mailpit (local inbox);
+│   ├── docker-compose.yml            postgres, redis, migrate (one-off, owner role), api (runtime role), web, mailpit (local inbox);
 │   │                                 private network; only web, Mailpit UI and Postgres (for local tools) on 127.0.0.1
+│   ├── docker-compose.dev.yml        dev stack: postgres, redis, mailpit, one-off bootstrap, then api and web with live reload
+│   ├── dev/
+│   │   └── bootstrap.sh              idempotent install, build, migrate, optional demo seed for the dev stack
 │   └── postgres/
 │       └── 01-app-role.sh            schema owner (migrations) and runtime role (data only); neither superuser nor BYPASSRLS
 └── terraform/                        the same local stack, via the kreuzwerker/docker provider
@@ -691,6 +818,7 @@ infra/
     ├── variables.tf                  secrets marked sensitive, no defaults (Turnstile defaults to Cloudflare's test keys)
     ├── network.tf
     ├── postgres.tf                   container + named volume
+    ├── redis.tf                      shared cache: memory only, password protected, backend network only
     ├── api.tf                        image built from apps/api/Dockerfile
     ├── web.tf                        image built from apps/web/Dockerfile
     ├── mail.tf                       Mailpit container, the default SMTP target
