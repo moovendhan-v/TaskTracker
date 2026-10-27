@@ -13,6 +13,7 @@ import { DocumentFolders1729670000000 } from './1729670000000-document-folders.j
 import { TimeTracking1729660000000 } from './1729660000000-time-tracking.js';
 import { TaskModelV21729650000000 } from './1729650000000-task-model-v2.js';
 import { SpaceHierarchy1729680000000 } from './1729680000000-space-hierarchy.js';
+import { SpaceAccess1729690000000 } from './1729690000000-space-access.js';
 
 /** Registered in order. Add new migrations to the end. */
 export const MIGRATIONS = [
@@ -31,4 +32,5 @@ export const MIGRATIONS = [
   TimeTracking1729660000000,
   DocumentFolders1729670000000,
   SpaceHierarchy1729680000000,
+  SpaceAccess1729690000000,
 ];

@@ -1,6 +1,6 @@
 import { GitBranchIcon, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
-import { isClosedCategory, type TaskResponse, type TaskStatusResponse } from '@taskflow/shared-types';
+import { isClosedCategory, type Permission, type TaskResponse, type TaskStatusResponse } from '@taskflow/shared-types';
 import { Section } from '@/components/kit/section';
 import { StatusPill } from '@/components/kit/status-pill';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -78,10 +78,10 @@ interface GroupBlockProps {
 
 function GroupBlock({ workspaceId, group, defaultListId, spaceId, scopeKey, selected, onSelect, onOpen }: GroupBlockProps) {
   const [adding, setAdding] = useState(false);
-  const { can } = usePermissions(workspaceId);
+  const { can, canIn } = usePermissions(workspaceId);
   const ids = group.tasks.map((task) => task.id);
   const all = ids.length > 0 && ids.every((id) => selected.has(id));
-  const canAdd = Boolean(defaultListId || spaceId) && can('task.create');
+  const canAdd = Boolean(defaultListId || spaceId) && (spaceId ? canIn(spaceId, 'task.create') : can('task.create'));
   const toggleAll = (checked: boolean) => {
     const next = new Set(selected);
     for (const id of ids) {
@@ -161,7 +161,8 @@ interface TaskRowProps {
 
 function TaskRow({ workspaceId, task, selected, onSelect, onOpen }: TaskRowProps) {
   const { update } = useTaskMutations(workspaceId);
-  const { can } = usePermissions(workspaceId);
+  const { canIn } = usePermissions(workspaceId);
+  const can = (permission: Permission) => canIn(task.spaceId, permission);
   const canEdit = can('task.update');
   const closed = isClosedCategory(task.status.category);
   const setStatus = (status: TaskStatusResponse) => update.mutate({ taskId: task.id, body: { statusId: status.id }, status });

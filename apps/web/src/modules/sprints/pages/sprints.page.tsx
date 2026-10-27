@@ -20,8 +20,8 @@ export function SprintsPage({ workspaceId, spaceId }: SprintsPageProps) {
   const { data: spaces = [] } = useSpaces(workspaceId);
   const sprints = useSprints(workspaceId, spaceId);
   const mutations = useSprintMutations(workspaceId, spaceId);
-  const { can } = usePermissions(workspaceId);
-  const canManage = can('sprint.manage');
+  const { canIn } = usePermissions(workspaceId);
+  const canManage = canIn(spaceId, 'sprint.manage');
   const space = spaces.find((item) => item.id === spaceId);
 
   const all = sprints.data ?? [];

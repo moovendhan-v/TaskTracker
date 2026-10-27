@@ -341,7 +341,9 @@ export type PolicyEffect =
 export type PolicyStatementInput = {
   effect: PolicyEffect;
   fields?: Array<string> | null | undefined;
+  notSpaces?: Array<string> | null | undefined;
   permissions?: Array<string> | null | undefined;
+  spaces?: Array<string> | null | undefined;
 };
 
 export type RealtimeEntityType =
@@ -809,11 +811,13 @@ export type FormSchemasQuery = { formSchemas: Array<{ name: string, fields: Arra
 
 export type CurrentUserFieldsFragment = { id: string, email: string, name: string, image: string | null, platformRole: PlatformRole, emailVerified: boolean };
 
-export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string };
+export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> };
+
+export type SpaceRuleFieldsFragment = { spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> };
 
 export type MemberFieldsFragment = { userId: string, name: string, email: string | null, roleId: string, roleName: string, joinedAt: string };
 
-export type RoleFieldsFragment = { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } };
+export type RoleFieldsFragment = { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } };
 
 export type SpaceFieldsFragment = { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string };
 
@@ -857,7 +861,7 @@ export type ResourceSchemaFieldsFragment = { resource: string, label: string, lo
 
 export type FormSchemaFieldsFragment = { name: string, fields: Array<{ name: string, label: string | null, type: string, required: boolean, nullable: boolean, rules: Array<{ kind: string, value: string | null, values: Array<string> | null, field: string | null, message: string }> }> };
 
-export type PolicyFieldsFragment = { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } };
+export type PolicyFieldsFragment = { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } };
 
 export type PreferencesFieldsFragment = { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> };
 
@@ -1166,7 +1170,7 @@ export type PoliciesQueryVariables = Exact<{
 }>;
 
 
-export type PoliciesQuery = { policies: Array<{ id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } }> };
+export type PoliciesQuery = { policies: Array<{ id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } }> };
 
 export type ProtectedFieldsQueryVariables = Exact<{
   workspaceId: string;
@@ -1180,7 +1184,7 @@ export type MyAccessQueryVariables = Exact<{
 }>;
 
 
-export type MyAccessQuery = { myAccess: { permissions: Array<string>, readableFields: Array<string> } };
+export type MyAccessQuery = { myAccess: { permissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type CreatePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1188,7 +1192,7 @@ export type CreatePolicyMutationVariables = Exact<{
 }>;
 
 
-export type CreatePolicyMutation = { createPolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type CreatePolicyMutation = { createPolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type UpdatePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1197,7 +1201,7 @@ export type UpdatePolicyMutationVariables = Exact<{
 }>;
 
 
-export type UpdatePolicyMutation = { updatePolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type UpdatePolicyMutation = { updatePolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type DeletePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1214,7 +1218,7 @@ export type AttachRolePolicyMutationVariables = Exact<{
 }>;
 
 
-export type AttachRolePolicyMutation = { attachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type AttachRolePolicyMutation = { attachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type DetachRolePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1223,7 +1227,7 @@ export type DetachRolePolicyMutationVariables = Exact<{
 }>;
 
 
-export type DetachRolePolicyMutation = { detachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type DetachRolePolicyMutation = { detachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type SetRoleInlinePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1232,7 +1236,7 @@ export type SetRoleInlinePolicyMutationVariables = Exact<{
 }>;
 
 
-export type SetRoleInlinePolicyMutation = { setRoleInlinePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type SetRoleInlinePolicyMutation = { setRoleInlinePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type MyPreferencesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1332,7 +1336,7 @@ export type RolesQueryVariables = Exact<{
 }>;
 
 
-export type RolesQuery = { roles: Array<{ id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } }> };
+export type RolesQuery = { roles: Array<{ id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } }> };
 
 export type CreateRoleMutationVariables = Exact<{
   workspaceId: string;
@@ -1340,7 +1344,7 @@ export type CreateRoleMutationVariables = Exact<{
 }>;
 
 
-export type CreateRoleMutation = { createRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type CreateRoleMutation = { createRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type UpdateRoleMutationVariables = Exact<{
   workspaceId: string;
@@ -1349,7 +1353,7 @@ export type UpdateRoleMutationVariables = Exact<{
 }>;
 
 
-export type UpdateRoleMutation = { updateRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type UpdateRoleMutation = { updateRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type DeleteRoleMutationVariables = Exact<{
   workspaceId: string;
@@ -1708,21 +1712,21 @@ export type MeQuery = { me: { id: string, email: string, name: string, image: st
 export type WorkspacesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type WorkspacesQuery = { workspaces: Array<{ id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string }> };
+export type WorkspacesQuery = { workspaces: Array<{ id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> }> };
 
 export type WorkspaceQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type WorkspaceQuery = { workspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string } };
+export type WorkspaceQuery = { workspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type CreateWorkspaceMutationVariables = Exact<{
   input: CreateWorkspaceInput;
 }>;
 
 
-export type CreateWorkspaceMutation = { createWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string } };
+export type CreateWorkspaceMutation = { createWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type UpdateWorkspaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1730,7 +1734,7 @@ export type UpdateWorkspaceMutationVariables = Exact<{
 }>;
 
 
-export type UpdateWorkspaceMutation = { updateWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string } };
+export type UpdateWorkspaceMutation = { updateWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type DeleteWorkspaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1784,6 +1788,13 @@ export const CurrentUserFieldsFragmentDoc = new TypedDocumentString(`
   emailVerified
 }
     `, {"fragmentName":"CurrentUserFields"}) as unknown as TypedDocumentString<CurrentUserFieldsFragment, unknown>;
+export const SpaceRuleFieldsFragmentDoc = new TypedDocumentString(`
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+    `, {"fragmentName":"SpaceRuleFields"}) as unknown as TypedDocumentString<SpaceRuleFieldsFragment, unknown>;
 export const WorkspaceFieldsFragmentDoc = new TypedDocumentString(`
     fragment WorkspaceFields on Workspace {
   id
@@ -1791,9 +1802,16 @@ export const WorkspaceFieldsFragmentDoc = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
 }
-    `, {"fragmentName":"WorkspaceFields"}) as unknown as TypedDocumentString<WorkspaceFieldsFragment, unknown>;
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}`, {"fragmentName":"WorkspaceFields"}) as unknown as TypedDocumentString<WorkspaceFieldsFragment, unknown>;
 export const MemberFieldsFragmentDoc = new TypedDocumentString(`
     fragment MemberFields on Member {
   userId
@@ -1812,6 +1830,9 @@ export const RoleFieldsFragmentDoc = new TypedDocumentString(`
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -1822,10 +1843,16 @@ export const RoleFieldsFragmentDoc = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }
-    `, {"fragmentName":"RoleFields"}) as unknown as TypedDocumentString<RoleFieldsFragment, unknown>;
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}`, {"fragmentName":"RoleFields"}) as unknown as TypedDocumentString<RoleFieldsFragment, unknown>;
 export const SpaceFieldsFragmentDoc = new TypedDocumentString(`
     fragment SpaceFields on Space {
   id
@@ -2159,6 +2186,8 @@ export const PolicyFieldsFragmentDoc = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }
@@ -3271,6 +3300,8 @@ export const PoliciesDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<PoliciesQuery, PoliciesQueryVariables>;
@@ -3289,9 +3320,16 @@ export const MyAccessDocument = new TypedDocumentString(`
   myAccess(workspaceId: $workspaceId) {
     permissions
     readableFields
+    spaceRules {
+      ...SpaceRuleFields
+    }
   }
 }
-    `) as unknown as TypedDocumentString<MyAccessQuery, MyAccessQueryVariables>;
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}`) as unknown as TypedDocumentString<MyAccessQuery, MyAccessQueryVariables>;
 export const CreatePolicyDocument = new TypedDocumentString(`
     mutation CreatePolicy($workspaceId: ID!, $input: SavePolicyInput!) {
   createPolicy(workspaceId: $workspaceId, input: $input) {
@@ -3309,6 +3347,8 @@ export const CreatePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<CreatePolicyMutation, CreatePolicyMutationVariables>;
@@ -3329,6 +3369,8 @@ export const UpdatePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<UpdatePolicyMutation, UpdatePolicyMutationVariables>;
@@ -3343,13 +3385,21 @@ export const AttachRolePolicyDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -3360,6 +3410,8 @@ export const AttachRolePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<AttachRolePolicyMutation, AttachRolePolicyMutationVariables>;
@@ -3369,13 +3421,21 @@ export const DetachRolePolicyDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -3386,6 +3446,8 @@ export const DetachRolePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<DetachRolePolicyMutation, DetachRolePolicyMutationVariables>;
@@ -3399,13 +3461,21 @@ export const SetRoleInlinePolicyDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -3416,6 +3486,8 @@ export const SetRoleInlinePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<SetRoleInlinePolicyMutation, SetRoleInlinePolicyMutationVariables>;
@@ -3989,13 +4061,21 @@ export const RolesDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -4006,6 +4086,8 @@ export const RolesDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<RolesQuery, RolesQueryVariables>;
@@ -4015,13 +4097,21 @@ export const CreateRoleDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -4032,6 +4122,8 @@ export const CreateRoleDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<CreateRoleMutation, CreateRoleMutationVariables>;
@@ -4041,13 +4133,21 @@ export const UpdateRoleDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -4058,6 +4158,8 @@ export const UpdateRoleDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<UpdateRoleMutation, UpdateRoleMutationVariables>;
@@ -4952,7 +5054,15 @@ export const WorkspacesDocument = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
+}
+fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
 }`) as unknown as TypedDocumentString<WorkspacesQuery, WorkspacesQueryVariables>;
 export const WorkspaceDocument = new TypedDocumentString(`
     query Workspace($workspaceId: ID!) {
@@ -4966,7 +5076,15 @@ export const WorkspaceDocument = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
+}
+fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
 }`) as unknown as TypedDocumentString<WorkspaceQuery, WorkspaceQueryVariables>;
 export const CreateWorkspaceDocument = new TypedDocumentString(`
     mutation CreateWorkspace($input: CreateWorkspaceInput!) {
@@ -4980,7 +5098,15 @@ export const CreateWorkspaceDocument = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
+}
+fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
 }`) as unknown as TypedDocumentString<CreateWorkspaceMutation, CreateWorkspaceMutationVariables>;
 export const UpdateWorkspaceDocument = new TypedDocumentString(`
     mutation UpdateWorkspace($workspaceId: ID!, $input: UpdateWorkspaceInput!) {
@@ -4994,7 +5120,15 @@ export const UpdateWorkspaceDocument = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
+}
+fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
 }`) as unknown as TypedDocumentString<UpdateWorkspaceMutation, UpdateWorkspaceMutationVariables>;
 export const DeleteWorkspaceDocument = new TypedDocumentString(`
     mutation DeleteWorkspace($workspaceId: ID!) {

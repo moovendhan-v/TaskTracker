@@ -1,4 +1,4 @@
-import { parsePermissions, type CreateWorkspaceRequest, type UpdateWorkspaceRequest } from '@taskflow/shared-types';
+import { parsePermissions, parseSpaceRules, type CreateWorkspaceRequest, type UpdateWorkspaceRequest } from '@taskflow/shared-types';
 import {
   CreateWorkspaceDocument,
   DeleteWorkspaceDocument,
@@ -10,7 +10,11 @@ import {
 import { graphql } from '@/core/api/graphql-client';
 
 /** Permission keys arrive as strings; unknown keys are dropped rather than trusted. */
-const toWorkspace = (workspace: WorkspaceFieldsFragment) => ({ ...workspace, permissions: parsePermissions(workspace.permissions) });
+const toWorkspace = (workspace: WorkspaceFieldsFragment) => ({
+  ...workspace,
+  permissions: parsePermissions(workspace.permissions),
+  spaceRules: parseSpaceRules(workspace.spaceRules),
+});
 
 export const workspacesApi = {
   list: async () => (await graphql(WorkspacesDocument, {})).workspaces.map(toWorkspace),

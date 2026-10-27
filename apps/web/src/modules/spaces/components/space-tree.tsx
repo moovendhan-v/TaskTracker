@@ -157,11 +157,11 @@ function SpaceNode({ workspaceId, space, stats, defaultView, lists, folders, doc
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const inside = pathname.includes(`/p/${space.id}`);
   const [expanded, setExpanded] = useState(inside);
-  const { can } = usePermissions(workspaceId);
   const navigate = useNavigate();
   const spaceMutations = useSpaceMutations(workspaceId);
   const docMutations = useDocumentMutations(workspaceId);
-  const context: TreeContext = { workspaceId, space, defaultView, lists, folders, canManage: can('list.manage') };
+  const { canIn } = usePermissions(workspaceId);
+  const context: TreeContext = { workspaceId, space, defaultView, lists, folders, canManage: canIn(space.id, 'list.manage') };
   const addMenu = useMenu();
   const optionsMenu = useMenu();
 
@@ -186,14 +186,14 @@ function SpaceNode({ workspaceId, space, stats, defaultView, lists, folders, doc
           <EntityIcon variant="badge" icon={space.icon} color={space.color} fallback={{ letter: space.name }} />
           <span className="truncate font-medium">{space.name}</span>
         </Link>
-        {can('list.manage') || can('doc.create') ? (
+        {canIn(space.id, 'list.manage') || canIn(space.id, 'doc.create') ? (
           <DropdownMenu open={addMenu.open} onOpenChange={addMenu.onOpenChange}>
             <DropdownMenuTrigger className={iconButton} aria-label={`Add to ${space.name}`}>
               <PlusIcon className="size-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuLabel>Add to {space.name}</DropdownMenuLabel>
-              {can('list.manage') ? (
+              {canIn(space.id, 'list.manage') ? (
                 <>
                   <NewListDialog context={context} folderId={null} onCreated={() => {
                     setExpanded(true);
@@ -205,7 +205,7 @@ function SpaceNode({ workspaceId, space, stats, defaultView, lists, folders, doc
                   }} />
                 </>
               ) : null}
-              {can('doc.create') ? (
+              {canIn(space.id, 'doc.create') ? (
                 <DropdownMenuItem
                   onSelect={() => {
                     setExpanded(true);
@@ -218,7 +218,7 @@ function SpaceNode({ workspaceId, space, stats, defaultView, lists, folders, doc
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
-        {can('space.manage') ? (
+        {canIn(space.id, 'space.manage') ? (
           <DropdownMenu open={optionsMenu.open} onOpenChange={optionsMenu.onOpenChange}>
             <DropdownMenuTrigger className={iconButton} aria-label={`${space.name} options`}>
               <MoreHorizontalIcon className="size-3.5" />

@@ -4,11 +4,16 @@ import { resolveDataScope } from './data-scope.interceptor.js';
 
 const user: SessionUser = { id: 'user-1', email: 'a@example.com', name: 'A', image: null, platformRole: 'USER', emailVerified: true };
 const admin: SessionUser = { ...user, id: 'admin-1', platformRole: 'SUPER_ADMIN' };
-const access: WorkspaceAccess = { workspaceId: 'ws-1', roleId: 'role-1', permissions: new Set(), readableFields: new Set(), viaPlatformRole: false };
+const access: WorkspaceAccess = { workspaceId: 'ws-1', roleId: 'role-1', permissions: new Set(), readableFields: new Set(), spaceRules: [], viaPlatformRole: false };
 
 describe('resolveDataScope', () => {
   it('limits workspace operations to that workspace', () => {
     expect(resolveDataScope({ user, workspaceAccess: access }, false)).toEqual({ kind: 'workspace', workspaceId: 'ws-1', userId: 'user-1' });
+  });
+
+  it('carries the caller\'s space limits into the workspace scope', () => {
+    const spaceRules = [{ spaces: ['space-1'], notSpaces: null, permissions: ['task.view' as const] }];
+    expect(resolveDataScope({ user, workspaceAccess: { ...access, spaceRules } }, false)).toEqual({ kind: 'workspace', workspaceId: 'ws-1', userId: 'user-1', spaceRules });
   });
 
   it('keeps a super admin acting in a workspace inside that workspace', () => {

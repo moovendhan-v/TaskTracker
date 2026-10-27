@@ -17,6 +17,7 @@ export const RoleMapper = {
       }),
       effectivePermissions: access.permissions,
       readableFields: access.readableFields,
+      spaceRules: access.spaceRules,
     };
   },
 };

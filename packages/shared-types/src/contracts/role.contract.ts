@@ -1,4 +1,4 @@
-import type { PolicyDocument } from '../domain/iam.js';
+import type { PolicyDocument, SpaceRule } from '../domain/iam.js';
 import type { Permission } from '../domain/permissions.js';
 
 /** A policy attached to a role: a managed one (by key) or one of the workspace's own. */
@@ -23,6 +23,8 @@ export interface RoleResponse {
   effectivePermissions: Permission[];
   /** Protected fields members with this role can read. */
   readableFields: string[];
+  /** Where in the workspace's spaces the role is limited. */
+  spaceRules: SpaceRule[];
 }
 
 export interface CreateRoleRequest {

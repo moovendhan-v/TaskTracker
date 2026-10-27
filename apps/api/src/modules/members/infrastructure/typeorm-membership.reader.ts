@@ -32,7 +32,7 @@ export class TypeOrmMembershipReader extends MembershipReader {
       if (!membership) return null;
       // Row-level security lets a user read the role and policies they hold, nothing else.
       const access = await this.roleAccess.forRole(workspaceId, membership.roleId);
-      return access ? { roleId: membership.roleId, permissions: access.permissions, readableFields: access.readableFields } : null;
+      return access ? { roleId: membership.roleId, permissions: access.permissions, readableFields: access.readableFields, spaceRules: access.spaceRules } : null;
     });
   }
 

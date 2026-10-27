@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { CreateFolderRequest, FolderResponse, MoveFolderRequest, UpdateFolderRequest } from '@taskflow/shared-types';
+import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { found } from '../../../core/domain/found.js';
@@ -33,6 +34,7 @@ export class FoldersService {
   @Announces('folder.created', workspaceFromArg)
   async create(_actor: Actor, workspaceId: string, spaceId: string, request: CreateFolderRequest): Promise<FolderResponse> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
+    SpaceGuard.assert(spaceId, 'list.manage');
     const siblings = await this.folders.listBySpace(workspaceId, spaceId);
     FolderTreePolicy.assertRoomFor(siblings.length);
     const parent = request.parentId ? await this.getInWorkspace(workspaceId, request.parentId) : null;
@@ -54,6 +56,7 @@ export class FoldersService {
   @Announces('folder.updated', workspaceFromArg)
   async update(_actor: Actor, workspaceId: string, folderId: string, request: UpdateFolderRequest): Promise<FolderResponse> {
     const folder = await this.getInWorkspace(workspaceId, folderId);
+    SpaceGuard.assert(folder.spaceId, 'list.manage');
     if (request.name !== undefined) folder.name = request.name.trim();
     if (request.color !== undefined) folder.color = request.color;
     if (request.icon !== undefined) folder.icon = request.icon;
@@ -64,6 +67,7 @@ export class FoldersService {
   @Announces('folder.updated', workspaceFromArg)
   async move(_actor: Actor, workspaceId: string, folderId: string, request: MoveFolderRequest): Promise<FolderResponse> {
     const folder = await this.getInWorkspace(workspaceId, folderId);
+    SpaceGuard.assert(folder.spaceId, 'list.manage');
     const parent = request.parentId ? await this.getInWorkspace(workspaceId, request.parentId) : null;
     const folders = await this.folders.listBySpace(workspaceId, folder.spaceId);
     FolderTreePolicy.assertValidPlacement({ folderId, spaceId: folder.spaceId, parent, folders });
@@ -78,6 +82,7 @@ export class FoldersService {
   @Announces('folder.deleted', workspaceFromArg)
   async remove(_actor: Actor, workspaceId: string, folderId: string): Promise<FolderResponse> {
     const folder = await this.getInWorkspace(workspaceId, folderId);
+    SpaceGuard.assert(folder.spaceId, 'list.manage');
     await this.lists.moveAllFromFolder(workspaceId, folderId, folder.parentId);
     for (const child of (await this.folders.listBySpace(workspaceId, folder.spaceId)).filter((item) => item.parentId === folderId)) {
       child.parentId = folder.parentId;

@@ -43,6 +43,14 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
+    label: 'Time',
+    permissions: [
+      { key: 'time.log', label: 'Track and log their own time' },
+      { key: 'time.view_all', label: 'See everyone’s time and reports' },
+      { key: 'time.manage', label: 'Correct or delete anyone’s time entries' },
+    ],
+  },
+  {
     label: 'People',
     permissions: [
       { key: 'hr.view', label: 'View the team directory' },

@@ -54,7 +54,7 @@ const toggle = (active: boolean) => cn('h-8 rounded-md px-2.5 text-sm font-mediu
 export function ProjectPage({ workspaceId, spaceId, view, listId }: ProjectPageProps) {
   const queryClient = useQueryClient();
   const openTask = useOpenTask();
-  const { can } = usePermissions(workspaceId);
+  const { canIn } = usePermissions(workspaceId);
   const { data: spaces = [], isLoading: spacesLoading } = useSpaces(workspaceId);
   const { data: lists = [] } = useLists(workspaceId);
   const { data: statuses = [] } = useStatuses(workspaceId, spaceId);
@@ -186,7 +186,7 @@ export function ProjectPage({ workspaceId, spaceId, view, listId }: ProjectPageP
           <Button variant="outline" size="sm" onClick={() => exportTasks(items, memberName, `${space.name}.csv`)} disabled={items.length === 0}>
             <DownloadIcon /> Export
           </Button>
-          {can('task.create') ? (
+          {canIn(spaceId, 'task.create') ? (
             <Button size="sm" onClick={() => setCreating(true)}>
               <PlusIcon /> Task
             </Button>

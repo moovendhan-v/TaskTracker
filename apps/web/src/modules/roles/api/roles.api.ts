@@ -1,4 +1,4 @@
-import { parsePermissions, type CreateRoleRequest, type UpdateRoleRequest } from '@taskflow/shared-types';
+import { parsePermissions, parseSpaceRules, type CreateRoleRequest, type UpdateRoleRequest } from '@taskflow/shared-types';
 import { CreateRoleDocument, DeleteRoleDocument, RolesDocument, UpdateRoleDocument, type RoleFieldsFragment } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
 
@@ -7,6 +7,7 @@ const toRole = (role: RoleFieldsFragment) => ({
   ...role,
   permissions: parsePermissions(role.permissions),
   effectivePermissions: parsePermissions(role.effectivePermissions),
+  spaceRules: parseSpaceRules(role.spaceRules),
 });
 
 export const rolesApi = {

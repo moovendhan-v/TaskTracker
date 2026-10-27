@@ -5,6 +5,8 @@ export const queryKeys = {
   workspace: (workspaceId: string) => ['workspaces', workspaceId] as const,
   members: (workspaceId: string) => ['workspaces', workspaceId, 'members'] as const,
   roles: (workspaceId: string) => ['workspaces', workspaceId, 'roles'] as const,
+  /** Under `roles`, so role and policy changes refresh each other. */
+  policies: (workspaceId: string) => ['workspaces', workspaceId, 'roles', 'policies'] as const,
   spaces: (workspaceId: string) => ['workspaces', workspaceId, 'spaces'] as const,
   // Under spaces, so a space change refreshes its statuses too.
   statuses: (workspaceId: string, spaceId: string) => ['workspaces', workspaceId, 'spaces', spaceId, 'statuses'] as const,

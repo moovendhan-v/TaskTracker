@@ -21,8 +21,8 @@ interface SpaceSettingsProps {
 
 /** One project's settings: how it looks, the statuses its tasks move through, and its custom fields. */
 export function SpaceSettings({ workspaceId, space }: SpaceSettingsProps) {
-  const { can } = usePermissions(workspaceId);
-  const canManage = can('space.manage');
+  const { canIn } = usePermissions(workspaceId);
+  const canManage = canIn(space.id, 'space.manage');
 
   return (
     <div className="mx-auto grid max-w-3xl gap-6 pb-10">
@@ -53,7 +53,7 @@ export function SpaceSettings({ workspaceId, space }: SpaceSettingsProps) {
           <CardDescription>Extra information on this project’s tasks.</CardDescription>
         </CardHeader>
         <CardContent>
-          <CustomFieldSettings workspaceId={workspaceId} spaceId={space.id} canManage={can('space.manage')} />
+          <CustomFieldSettings workspaceId={workspaceId} spaceId={space.id} canManage={canManage} />
         </CardContent>
       </Card>
       {canManage ? <DangerZone workspaceId={workspaceId} space={space} /> : null}

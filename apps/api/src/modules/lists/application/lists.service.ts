@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { CreateTaskListRequest, MoveTaskListRequest, TaskListResponse, UpdateTaskListRequest } from '@taskflow/shared-types';
+import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
@@ -36,6 +37,7 @@ export class ListsService {
   @Announces('list.created', workspaceFromArg)
   async create(_actor: Actor, workspaceId: string, spaceId: string, request: CreateTaskListRequest): Promise<TaskListResponse> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
+    SpaceGuard.assert(spaceId, 'list.manage');
     const folderId = request.folderId ?? null;
     await this.assertFolderInSpace(workspaceId, spaceId, folderId);
     const position = (await this.lists.maxPosition(workspaceId, spaceId, folderId)) + 1;
@@ -48,6 +50,7 @@ export class ListsService {
   @Announces('list.updated', workspaceFromArg)
   async update(_actor: Actor, workspaceId: string, listId: string, request: UpdateTaskListRequest): Promise<TaskListResponse> {
     const list = await this.getInWorkspace(workspaceId, listId);
+    SpaceGuard.assert(list.spaceId, 'list.manage');
     if (request.name !== undefined) list.name = request.name.trim();
     if (request.color !== undefined) list.color = request.color;
     if (request.icon !== undefined) list.icon = request.icon;
@@ -59,6 +62,7 @@ export class ListsService {
   @Announces('list.updated', workspaceFromArg)
   async move(_actor: Actor, workspaceId: string, listId: string, request: MoveTaskListRequest): Promise<TaskListResponse> {
     const list = await this.getInWorkspace(workspaceId, listId);
+    SpaceGuard.assert(list.spaceId, 'list.manage');
     await this.assertFolderInSpace(workspaceId, list.spaceId, request.folderId);
     list.folderId = request.folderId;
     list.position = request.position ?? (await this.lists.maxPosition(workspaceId, list.spaceId, request.folderId)) + 1;
@@ -69,6 +73,7 @@ export class ListsService {
   @Announces('list.deleted', workspaceFromArg)
   async remove(_actor: Actor, workspaceId: string, listId: string): Promise<TaskListResponse> {
     const list = await this.getInWorkspace(workspaceId, listId);
+    SpaceGuard.assert(list.spaceId, 'list.manage');
     await this.lists.delete(workspaceId, listId);
     return TaskListMapper.toResponse(list);
   }

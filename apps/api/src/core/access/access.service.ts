@@ -17,6 +17,7 @@ export class AccessService {
         roleId: grant.roleId,
         permissions: new Set(grant.permissions),
         readableFields: new Set(grant.readableFields),
+        spaceRules: grant.spaceRules,
         viaPlatformRole: false,
       };
     }
@@ -26,6 +27,7 @@ export class AccessService {
         roleId: null,
         permissions: new Set(PERMISSIONS),
         readableFields: new Set(PROTECTED_FIELDS.map((field) => field.key)),
+        spaceRules: [],
         viaPlatformRole: true,
       };
     }

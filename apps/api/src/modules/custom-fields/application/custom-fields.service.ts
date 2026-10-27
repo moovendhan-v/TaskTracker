@@ -11,6 +11,7 @@ import {
   type SaveCustomFieldRequest,
   type SpaceResponse,
 } from '@taskflow/shared-types';
+import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
@@ -74,7 +75,10 @@ export class CustomFieldsService implements OnModuleInit {
   @Audited('custom_field.create', change)
   @Announces('custom_field.created', workspaceFromArg)
   async create(_actor: Actor, workspaceId: string, request: SaveCustomFieldRequest): Promise<CustomFieldResponse> {
-    if (request.spaceId) await this.spacesService.getInWorkspace(workspaceId, request.spaceId);
+    if (request.spaceId) {
+      await this.spacesService.getInWorkspace(workspaceId, request.spaceId);
+      SpaceGuard.assert(request.spaceId, 'space.manage');
+    }
     const existing = await this.fields.list(workspaceId);
     if (existing.length >= CUSTOM_FIELD_LIMITS.perWorkspace) throw DomainError.invalid(`A workspace can have at most ${CUSTOM_FIELD_LIMITS.perWorkspace} custom fields`);
     const field = await this.fields.create({
@@ -94,6 +98,7 @@ export class CustomFieldsService implements OnModuleInit {
   @Announces('custom_field.updated', workspaceFromArg)
   async update(_actor: Actor, workspaceId: string, fieldId: string, request: Partial<Omit<SaveCustomFieldRequest, 'type' | 'entity' | 'spaceId'>>): Promise<CustomFieldResponse> {
     const field = await this.get(workspaceId, fieldId);
+    if (field.spaceId) SpaceGuard.assert(field.spaceId, 'space.manage');
     if (request.name !== undefined) field.name = request.name.trim();
     if (request.required !== undefined) field.required = request.required;
     // Options keep their ids, so values that point at them stay valid; removed options simply stop matching.
@@ -105,6 +110,7 @@ export class CustomFieldsService implements OnModuleInit {
   @Announces('custom_field.deleted', workspaceFromArg)
   async remove(_actor: Actor, workspaceId: string, fieldId: string): Promise<CustomFieldResponse> {
     const field = await this.get(workspaceId, fieldId);
+    if (field.spaceId) SpaceGuard.assert(field.spaceId, 'space.manage');
     await this.fields.clearValues(workspaceId, fieldId);
     await this.fields.delete(workspaceId, fieldId);
     return toResponse(field);
@@ -138,6 +144,7 @@ export class CustomFieldsService implements OnModuleInit {
   @Announces('space.updated', workspaceFromArg)
   async updateSpaceValues(_actor: Actor, workspaceId: string, spaceId: string, patch: CustomFieldValues): Promise<SpaceResponse> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
+    SpaceGuard.assert(spaceId, 'space.manage');
     return this.spacesService.mergeCustomFields(workspaceId, spaceId, await this.normalizePatch(workspaceId, 'space', spaceId, patch));
   }
 

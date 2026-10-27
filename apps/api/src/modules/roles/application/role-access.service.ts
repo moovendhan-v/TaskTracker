@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { EffectiveAccess, Permission } from '@taskflow/shared-types';
+import type { EffectiveAccess, Permission, SpaceRule } from '@taskflow/shared-types';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { effectiveAccessForRole, type CustomPolicy, type PolicyAttachment } from '../domain/policy.js';
 import { PolicyDocumentPolicy } from '../domain/policy-document.policy.js';
@@ -11,6 +11,8 @@ import { WorkspaceRoleRepository } from '../domain/workspace-role.repository.js'
 export interface RoleAccess {
   permissions: Permission[];
   readableFields: string[];
+  /** Space-limited denies on top of `permissions`. */
+  spaceRules: SpaceRule[];
 }
 
 /** Works out what roles can do from their permissions, inline statements and attached policies. */
@@ -53,5 +55,5 @@ export class RoleAccessService {
 }
 
 function toRoleAccess(access: EffectiveAccess): RoleAccess {
-  return { permissions: access.permissions, readableFields: PolicyDocumentPolicy.readableFields(access) };
+  return { permissions: access.permissions, readableFields: PolicyDocumentPolicy.readableFields(access), spaceRules: access.spaceRules };
 }

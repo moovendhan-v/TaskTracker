@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import type { Permission, PlatformRole } from '@taskflow/shared-types';
+import type { Permission, PlatformRole, SpaceRule } from '@taskflow/shared-types';
 
 export interface SessionUser {
   id: string;
@@ -16,6 +16,8 @@ export interface WorkspaceAccess {
   permissions: ReadonlySet<Permission>;
   /** Protected fields (e.g. `member.email`) this caller may read; others come back as null. */
   readableFields: ReadonlySet<string>;
+  /** Spaces where some of `permissions` are taken away. Row-level security hides the spaces whose task.view is denied. */
+  spaceRules: readonly SpaceRule[];
   /** True when a super admin is acting in a workspace they are not a member of. */
   viaPlatformRole: boolean;
 }

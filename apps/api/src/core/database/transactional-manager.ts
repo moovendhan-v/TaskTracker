@@ -91,5 +91,5 @@ export class TransactionalManager {
 }
 
 async function applyScope(manager: EntityManager, scope: DataScope | null): Promise<void> {
-  await manager.query(APPLY_SCOPE_SQL, scope ? toScopeSettings(scope) : ['', '', '']);
+  await manager.query(APPLY_SCOPE_SQL, toScopeSettings(scope));
 }

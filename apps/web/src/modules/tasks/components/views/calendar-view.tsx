@@ -22,8 +22,8 @@ export function CalendarView({ workspaceId, tasks, onOpen }: CalendarViewProps) 
   const { weekStart } = usePreferences();
   const [month, setMonth] = useState(() => today().slice(0, 7));
   const { update } = useTaskMutations(workspaceId);
-  const { can } = usePermissions(workspaceId);
-  const canEdit = can('task.update');
+  const { canIn } = usePermissions(workspaceId);
+  const canEditTask = (task: { spaceId: string }) => canIn(task.spaceId, 'task.update');
 
   const firstOfMonth: Day = `${month}-01`;
   const gridStart = startOfWeekDay(firstOfMonth, weekStart);
@@ -76,7 +76,7 @@ export function CalendarView({ workspaceId, tasks, onOpen }: CalendarViewProps) 
           return (
             <div
               key={day}
-              onDragOver={(event) => canEdit && event.preventDefault()}
+              onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault();
                 const taskId = event.dataTransfer.getData(TASK_DRAG_TYPE);
@@ -91,7 +91,7 @@ export function CalendarView({ workspaceId, tasks, onOpen }: CalendarViewProps) 
                 <button
                   key={task.id}
                   type="button"
-                  draggable={canEdit}
+                  draggable={canEditTask(task)}
                   onDragStart={(event) => event.dataTransfer.setData(TASK_DRAG_TYPE, task.id)}
                   onClick={() => onOpen(task.id)}
                   className={cn('flex items-center gap-1.5 truncate rounded border-l-2 bg-card px-1.5 py-0.5 text-left text-xs hover:bg-muted', isClosedCategory(task.status.category) && 'text-muted-foreground line-through')}

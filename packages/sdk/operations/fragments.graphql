@@ -3,7 +3,9 @@
 
 fragment CurrentUserFields on CurrentUser { id email name image platformRole emailVerified }
 
-fragment WorkspaceFields on Workspace { id name color roleName permissions createdAt }
+fragment WorkspaceFields on Workspace { id name color roleName permissions spaceRules { ...SpaceRuleFields } createdAt }
+
+fragment SpaceRuleFields on SpaceRule { spaces notSpaces permissions }
 
 fragment MemberFields on Member { userId name email roleId roleName joinedAt }
 
@@ -14,8 +16,9 @@ fragment RoleFields on Role {
   permissions
   effectivePermissions
   readableFields
+  spaceRules { ...SpaceRuleFields }
   policies { ref name managed }
-  inlinePolicy { statements { effect permissions fields } }
+  inlinePolicy { statements { effect permissions fields spaces notSpaces } }
 }
 
 fragment SpaceFields on Space { id workspaceId name color icon status statusNote startDate dueDate customFields createdAt }
@@ -120,7 +123,7 @@ fragment PolicyFields on Policy {
   description
   managed
   attachedRoleCount
-  document { statements { effect permissions fields } }
+  document { statements { effect permissions fields spaces notSpaces } }
 }
 
 fragment PreferencesFields on Preferences {

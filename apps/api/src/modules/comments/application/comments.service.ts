@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { CommentResponse, CreateCommentRequest, UpdateCommentRequest } from '@taskflow/shared-types';
+import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { found } from '../../../core/domain/found.js';
 import { Announces } from '../../../core/events/announces.decorator.js';
@@ -33,6 +34,7 @@ export class CommentsService {
 
   async create(actor: Actor, workspaceId: string, taskId: string, request: CreateCommentRequest): Promise<CommentResponse> {
     const task = await this.tasksService.participants(workspaceId, taskId);
+    SpaceGuard.assert(await this.tasksService.spaceIdOf(workspaceId, taskId), 'task.update');
     const created = await this.comments.create({ workspaceId, taskId, authorId: actor.userId, body: request.body.trim() });
     await this.eventBus.publish(
       domainEvent('comment', 'created', {
@@ -49,6 +51,7 @@ export class CommentsService {
   async update(actor: Actor, workspaceId: string, commentId: string, request: UpdateCommentRequest): Promise<CommentResponse> {
     const comment = await this.getInWorkspace(workspaceId, commentId);
     CommentOwnershipPolicy.assertCanEdit(comment, actor.userId);
+    SpaceGuard.assert(await this.tasksService.spaceIdOf(workspaceId, comment.taskId), 'task.update');
     comment.body = request.body.trim();
     await this.comments.save(comment);
     return CommentMapper.toResponse(await this.getInWorkspace(workspaceId, commentId));
@@ -57,7 +60,9 @@ export class CommentsService {
   @Announces('comment.deleted', workspaceFromAccess)
   async remove(actor: Actor, access: WorkspaceAccess, commentId: string): Promise<CommentResponse> {
     const comment = await this.getInWorkspace(access.workspaceId, commentId);
-    CommentOwnershipPolicy.assertCanDelete(comment, actor.userId, access.permissions);
+    const spaceId = await this.tasksService.spaceIdOf(access.workspaceId, comment.taskId);
+    const held = new Set([...access.permissions].filter((permission) => permission !== 'task.delete' || SpaceGuard.allowed(spaceId, 'task.delete')));
+    CommentOwnershipPolicy.assertCanDelete(comment, actor.userId, held);
     await this.comments.delete(access.workspaceId, commentId);
     return CommentMapper.toResponse(comment);
   }
