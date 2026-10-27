@@ -1,6 +1,6 @@
 # TaskFlow
 
-TaskFlow is a work-management app: tasks and boards, sprints, docs, and HR (people directory and time off) in one workspace, with built-in and custom roles, live updates, an inbox and a platform admin console. It's built in our own visual style; see [the plan](docs/plan/TASKFLOW_PLAN.md) for scope.
+TaskFlow is a work-management app: tasks and boards, sprints, docs, and HR (people directory and time off) in one workspace, with project templates, automations, a GitHub integration, built-in and custom roles with space-level policies, live updates, an inbox and a platform admin console. It's built in our own visual style; see [the plan](docs/plan/TASKFLOW_PLAN.md) for scope.
 
 | Part | Stack |
 |------|-------|
@@ -102,7 +102,7 @@ The seed creates "Northwind Studio" with three accounts (avery@, jordan@ and sam
 
 ## The API
 
-Everything is GraphQL at `POST /api/graphql`. The only other routes are Better Auth's own handler at `/api/auth/*` (sign-up, sign-in, sessions, password reset) and the `GET /api/health` liveness probe for Docker. Outside production, introspection is on, so any GraphQL client can browse the schema; the schema is also committed at `packages/sdk/schema.graphql`.
+Everything is GraphQL at `POST /api/graphql`. The only other routes are Better Auth's own handler at `/api/auth/*` (sign-up, sign-in, sessions, password reset), the `GET /api/health` liveness probe for Docker, and the signed GitHub webhook at `POST /api/integrations/github/webhook/:id`. Outside production, introspection is on, so any GraphQL client can browse the schema; the schema is also committed at `packages/sdk/schema.graphql`.
 
 Every workspace-scoped operation takes a `workspaceId` argument. A guard checks membership and permissions before the resolver runs, and callers outside the workspace get `NOT_FOUND`.
 
@@ -153,11 +153,31 @@ People with `time.log` start and stop a timer (`startTimer`, `stopTimer`, one ru
 
 `dashboard(input: { from, to, timeZone, spaceId?, userIds? })` returns everything the Home and project dashboards show: live task counts (open, closed, overdue, due soon, unassigned), status and priority breakdowns, overdue aging, a due-date forecast, created vs closed per week, hours per day, person, project and task, workload per person, project health, phases (parent tasks with their subtasks) and the overdue, due-soon and recently updated lists. All of it is computed in SQL with bound parameters, and the result is cached until a task, status, space or time entry changes. Hours cover everyone only for callers with `time.view_all`.
 
+### Spaces, folders, lists and docs
+
+A space (project) holds folders, which hold lists and other folders (`folders`, `createFolder`, `moveFolder`, `deleteFolder`; at most three levels, and deleting a folder moves what it holds up a level). Lists can sit in a folder or directly in the space (`moveList`). Docs can belong to a space (`createDocument` with `spaceId`, or `moveDocument` with `spaceId` for a top-level page, which carries its sub-pages along). Spaces, folders, lists and docs take an `icon` from a fixed set of keys (`IconKey`), so icons never carry markup or URLs.
+
+### Sprints
+
+The Sprints tab shows the running sprint's health (days left, work done against time gone, a burndown against the ideal line, tasks by status and open work per person), planning lanes for the active and planned sprints next to the backlog (drag tasks between them, or select several and move them together), and the completed sprints with a velocity chart.
+
+### Project templates
+
+`projectTemplates` lists a built-in gallery (Scrum, Kanban, bug tracking, marketing campaign, content calendar, product launch, client project, employee onboarding) and the workspace's own templates. `createSpaceFromTemplate` builds a whole space (statuses, custom fields, folders, lists and optional starter tasks, subtasks and docs) through the normal services in one transaction. `saveSpaceAsTemplate` turns a space into a template, and `spaceTemplateContent` returns it as JSON to export; `importTemplate` takes such a file and checks every field (sizes, known icons, colours and enums, references only to earlier entries) before storing it.
+
+### Automations
+
+Each space can have automations (`automations`, `createAutomation`, `updateAutomation`, `setAutomationEnabled`, `deleteAutomation`, `automationRuns`): *when* a task is created, changes status, priority or due date, is assigned or commented on, or a linked pull request opens, merges or closes, *for* tasks in some lists or of some types or priorities, *then* set the status or priority, assign or unassign, and notify people in their inbox with a message that fills in `{{task}}`, `{{status}}`, `{{actor}}` and `{{pr}}`. Rules run in the same transaction as the change, as the person who last saved them, with that person's access re-checked each time (a rule whose owner left or lost a permission is skipped). Each rule runs in its own savepoint, so a failing rule never undoes the user's change, and changes made by rules never trigger rules. Every run is logged. Managing automations needs `automation.manage` in that space.
+
+### GitHub
+
+Workspace settings → Integrations connects a repository (`connectGithub`, needs `integration.manage`) and returns a webhook URL and secret, shown once, to add in GitHub (content type `application/json`, event "Pull requests"). Pull requests that mention a task as `<PREFIX>-<number>` (prefix per connection, `TF` by default) in their title, description or branch link to it (`taskPullRequests`), move it to the first status of a chosen meaning when they open or merge, and fire the GitHub automation triggers. `POST /api/integrations/github/webhook/:connectionId` is the only route outside GraphQL, Better Auth and health: it reads the raw body (JSON only, size limited), checks `X-Hub-Signature-256` in constant time, handles each delivery id once, and treats the payload as untrusted. Secrets are stored encrypted (AES-256-GCM, key derived from `BETTER_AUTH_SECRET`; rotating that secret means making new webhook secrets with `rotateGithubSecret`).
+
 ### Building blocks for the web app
 
 Screens are assembled from a small kit in `apps/web/src/components/kit`, each piece configured through props rather than copied: `DataTable` (multi-column sort, selection, paging, column show/hide, drag to reorder, drag to resize; the layout goes in and comes out so callers can save it), `Modal` (sizes, header actions, footer, optional side column), `Section` (collapsible, controlled or remembered), `Segmented`, `Panel`, `StatCard`, `StatusPill`, small charts, and `notify` for toasts with shared durations. `ResourceTable` (in the `resources` module) builds a `DataTable` and a filter builder from `resourceSchema`, so a new list in the API shows up as a table with the right filters, operators, sorting and page sizes without front-end changes; the user's column layout, sort and page size are saved to their preferences.
 
-The workspace shell is an icon rail (Home, My tasks, Daily log, Timesheets, Inbox, Docs, People), a resizable sidebar of projects with live counts, and a top bar with task search (Cmd/Ctrl+K), the running timer, notifications and "+ Task". Each project has ten views: List, Board, Table, Calendar, Timeline, Team planner, Time, Sprints, Members and Dashboard. Tasks open over any page (`?task=`), as a modal or a side panel depending on the user's preference.
+The workspace shell is a resizable sidebar (Home, Inbox, Docs, My tasks, Daily log, Timesheets, then the spaces tree and the workspace and people pages) and a top bar with task search (Cmd/Ctrl+K), the running timer, notifications and "+ Task". Each space shows its live counts, folders (nested up to three levels), lists and docs, each with its own icon and colour, and everything can be added, renamed, moved between folders or deleted from the tree. Each project has ten task and planning views (List, Board, Table, Calendar, Timeline, Team planner, Time, Sprints, Members, Dashboard) plus Automations and Settings (appearance, statuses, custom fields, save as template). Tasks open over any page (`?task=`), as a modal or a side panel depending on the user's preference.
 
 ### Preferences
 
@@ -210,12 +230,13 @@ CI (`.github/workflows/ci.yml`) runs all of the above, plus `pnpm audit`, a chec
 [AGENTS.md](AGENTS.md) lists the rules every change must keep. The main mechanisms:
 
 - **Tenant isolation in the database.** Postgres row-level security is forced on every tenant table. The API runs each GraphQL operation in a transaction scoped to one workspace, so a query that forgets its `workspace_id` filter still can't read or write another tenant's rows. The API connects as a role that owns nothing and can't bypass RLS, and it refuses to start in production otherwise.
-- **Policies (IAM).** Roles get their rights from policies: ready-made *managed* policies (Full access, Workspace admin, Contributor, Read only, Sprint planner, People manager, Auditor, Hide member emails), the workspace's own *custom* policies, and an *inline* policy per role. Statements allow or deny permissions (`task.*`) and fields (`member.email`), and deny always wins. Nobody can attach, edit or remove a policy if the role would end up with more than they have themselves, and the Owner role can't be changed.
+- **Policies (IAM).** Roles get their rights from policies: ready-made *managed* policies (Full access, Workspace admin, Contributor, Read only, Sprint planner, People manager, Auditor, Hide member emails), the workspace's own *custom* policies, and an *inline* policy per role, all edited in Roles → Policies. Statements allow or deny permissions (`task.*`) and fields (`member.email`), and deny always wins. Nobody can attach, edit or remove a policy if the role would end up with more than they have themselves, and the Owner role can't be changed.
+- **Space-level access.** A deny statement can be limited to some spaces (`spaces`) or to every space except some (`notSpaces`), for permissions that act inside a space. Denying `task.view` in a space hides it completely: the caller's space limits travel with the transaction, and restrictive row-level security policies hide the space and everything in it (folders, lists, tasks, comments, sprints, statuses, automations, pull request links; `doc.view` does the same for its docs). Services check the other permissions per space, so a space can be visible but read-only. Cached reads are keyed by the caller's space limits, and nobody can build or hand out a role that reaches spaces they are kept out of.
 - **Field-level access.** Fields marked `@SensitiveField('member.email', ...)` resolve to null for callers whose policies don't allow them; member emails are hidden by default and visible to owners, admins and People managers. The same rules keep those fields out of filters, sorting, search and `resourceSchema`.
 - **Access checks on the server.** A session guard runs on every operation. A workspace guard checks membership and the permission keys of the member's role. Custom roles can't grant permissions their creator doesn't have. Super admins are audited when they write inside someone else's workspace.
 - **GraphQL limits.** Query depth, cost (which stops alias amplification) and token limits; page sizes capped at 100; no batching; CSRF prevention; introspection and "did you mean" hints off in production; generic error messages.
 - **Input.** Every argument is validated on the server, and unknown fields are rejected. Markdown is sanitised on the server and rendered without raw HTML.
 - **Auth.** Better Auth with secure cookies and rate limits on sign-up, sign-in and password reset. Reset links are single use, expire after 30 minutes and sign out every other session. New accounts get a confirmation email, and workspace invites only reach confirmed addresses, so nobody can sign up with a colleague's email and inherit their access. Turnstile CAPTCHA on public forms, required in production.
-- **Audit.** Admin, role and HR actions go to an append-only audit log (a trigger blocks changes).
+- **Audit.** Admin, role, HR, template, automation and integration actions go to an append-only audit log (a trigger blocks changes).
 
 Operator tasks: `pnpm --filter @taskflow/api admin:promote <email>` makes an existing account a super admin. It needs database access, so it can't be triggered from the web.
