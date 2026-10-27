@@ -22,6 +22,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { key: 'space.manage', label: 'Create, edit and delete spaces' },
       { key: 'list.manage', label: 'Create, edit and delete lists' },
       { key: 'sprint.manage', label: 'Plan, start and complete sprints' },
+      { key: 'automation.manage', label: 'Create and change automations' },
     ],
   },
   {

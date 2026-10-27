@@ -1,5 +1,9 @@
 import { registerEnumType } from '@nestjs/graphql';
 import {
+  AUTOMATION_ACTIONS,
+  AUTOMATION_RUN_STATUSES,
+  AUTOMATION_TRIGGERS,
+  NOTIFY_AUDIENCES,
   CUSTOM_FIELD_ENTITIES,
   CUSTOM_FIELD_TYPES,
   DOC_KINDS,
@@ -38,6 +42,10 @@ export const CustomFieldEntityEnum = enumOf(CUSTOM_FIELD_ENTITIES);
 export const SpaceStatusEnum = enumOf(SPACE_STATUSES);
 export const IconKeyEnum = enumOf(ICON_KEYS);
 export const TemplateCategoryEnum = enumOf(TEMPLATE_CATEGORIES);
+export const AutomationTriggerEnum = enumOf(AUTOMATION_TRIGGERS);
+export const AutomationActionEnum = enumOf(AUTOMATION_ACTIONS);
+export const NotifyAudienceEnum = enumOf(NOTIFY_AUDIENCES);
+export const AutomationRunStatusEnum = enumOf(AUTOMATION_RUN_STATUSES);
 export const TaskPriorityEnum = enumOf(TASK_PRIORITIES);
 export const SprintStatusEnum = enumOf(SPRINT_STATUSES);
 export const LeaveStatusEnum = enumOf(LEAVE_STATUSES);
@@ -61,6 +69,10 @@ registerEnumType(CustomFieldTypeEnum, { name: 'CustomFieldType' });
 registerEnumType(CustomFieldEntityEnum, { name: 'CustomFieldEntity' });
 registerEnumType(SpaceStatusEnum, { name: 'SpaceStatus' });
 registerEnumType(TemplateCategoryEnum, { name: 'TemplateCategory' });
+registerEnumType(AutomationTriggerEnum, { name: 'AutomationTriggerType' });
+registerEnumType(AutomationActionEnum, { name: 'AutomationActionType' });
+registerEnumType(NotifyAudienceEnum, { name: 'NotifyAudience' });
+registerEnumType(AutomationRunStatusEnum, { name: 'AutomationRunStatus' });
 registerEnumType(IconKeyEnum, { name: 'IconKey', description: 'Icons for spaces, folders, lists and docs' });
 registerEnumType(ForecastKindEnum, { name: 'ForecastKind' });
 registerEnumType(TaskPriorityEnum, { name: 'TaskPriority' });

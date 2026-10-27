@@ -1,3 +1,4 @@
+import { ZapIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import type { NotificationResponse } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
@@ -25,6 +26,11 @@ export function NotificationItem({ workspaceId, notification, onOpen }: Notifica
         <span className={cn('block text-sm', unread && 'font-medium')}>{describeNotification(notification)}</span>
         {notification.kind === 'task_commented' && notification.excerpt ? (
           <span className="mt-0.5 block truncate text-sm text-muted-foreground">{notification.excerpt}</span>
+        ) : null}
+        {notification.kind === 'automation' ? (
+          <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
+            <ZapIcon className="size-3" /> Automation: {notification.excerpt}
+          </span>
         ) : null}
         <span className="mt-0.5 block text-xs text-muted-foreground">{formatLongDate(notification.createdAt)}</span>
       </span>

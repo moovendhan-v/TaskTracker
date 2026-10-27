@@ -62,6 +62,30 @@ export class TransactionalManager {
   }
 
   /**
+   * Runs work inside a savepoint of the current transaction: if it throws, only
+   * what it did is undone and the error is rethrown, so the caller can carry on.
+   * Used for side work, such as automations, that must not sink the change
+   * that triggered it.
+   */
+  async savepoint<T>(work: () => Promise<T>): Promise<T> {
+    const current = this.storage.getStore();
+    if (!current) throw new Error('savepoint() needs a transaction');
+    const name = `sp_${(this.savepoints += 1)}`;
+    await current.manager.query(`SAVEPOINT ${name}`);
+    try {
+      const result = await work();
+      await current.manager.query(`RELEASE SAVEPOINT ${name}`);
+      return result;
+    } catch (error) {
+      await current.manager.query(`ROLLBACK TO SAVEPOINT ${name}`);
+      await current.manager.query(`RELEASE SAVEPOINT ${name}`);
+      throw error;
+    }
+  }
+
+  private savepoints = 0;
+
+  /**
    * Runs work in a transaction limited to `scope`. Inside a transaction already,
    * it switches that transaction's scope for the duration of the work, then
    * switches back.

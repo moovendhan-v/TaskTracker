@@ -39,6 +39,7 @@ export const SPACE_SCOPED_PERMISSIONS = [
   'task.delete',
   'task.assign',
   'sprint.manage',
+  'automation.manage',
   'doc.view',
   'doc.create',
   'doc.manage',

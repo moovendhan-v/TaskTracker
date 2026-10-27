@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/cn';
 import { queryKeys } from '@/lib/query-keys';
+import { AutomationsPanel } from '@/modules/automations';
 import { ProjectDashboard } from '@/modules/dashboard';
 import { useLists } from '@/modules/lists';
 import { MembersPage, useMemberName } from '@/modules/members';
@@ -209,6 +210,7 @@ export function ProjectPage({ workspaceId, spaceId, view, listId }: ProjectPageP
         {view === 'sprints' ? <SprintsPage workspaceId={workspaceId} spaceId={spaceId} /> : null}
         {view === 'members' ? <MembersPage workspaceId={workspaceId} /> : null}
         {view === 'dashboard' ? <ProjectDashboard workspaceId={workspaceId} space={space} /> : null}
+        {view === 'automations' ? <AutomationsPanel workspaceId={workspaceId} spaceId={spaceId} onOpenTask={openTask} /> : null}
         {view === 'settings' ? <SpaceSettings workspaceId={workspaceId} space={space} /> : null}
       </div>
 

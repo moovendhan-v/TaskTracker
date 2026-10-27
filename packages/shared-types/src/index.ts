@@ -35,3 +35,5 @@ export * from './domain/time-tracking.js';
 export * from './domain/hierarchy.js';
 export * from './domain/template.js';
 export * from './contracts/template.contract.js';
+export * from './domain/automation.js';
+export * from './contracts/automation.contract.js';

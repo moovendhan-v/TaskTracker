@@ -10,6 +10,8 @@ export const PERMISSIONS = [
   'task.delete',
   'task.assign',
   'sprint.manage',
+  /** Create and change automations in a space. */
+  'automation.manage',
   'doc.view',
   'doc.create',
   'doc.manage',

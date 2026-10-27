@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { domainEvent } from '../../../core/events/domain-event.js';
+import { EventBus } from '../../../core/events/event-bus.port.js';
+import type { NewNotification } from '../domain/notification.js';
 import type { NotificationResponse, Paginated } from '@taskflow/shared-types';
 import { toPageRequest } from '../../../core/domain/page-request.js';
 import type { PageQuery } from '@taskflow/shared-types';
@@ -12,7 +15,23 @@ export class NotificationsService {
   constructor(
     private readonly notifications: NotificationRepository,
     private readonly clock: Clock,
+    private readonly eventBus: EventBus,
   ) {}
+
+  /** Sends one notification per recipient (automations), in the caller's transaction, and announces each. */
+  async send(drafts: readonly NewNotification[]): Promise<void> {
+    for (const draft of drafts) {
+      const notification = await this.notifications.create(draft);
+      await this.eventBus.publish(
+        domainEvent('notification', 'created', {
+          workspaceId: notification.workspaceId,
+          entityId: notification.id,
+          actorId: draft.actorId ?? notification.recipientId,
+          recipientId: notification.recipientId,
+        }),
+      );
+    }
+  }
 
   async inbox(workspaceId: string, userId: string, query: PageQuery & { unreadOnly?: boolean }): Promise<Paginated<NotificationResponse>> {
     const page = toPageRequest(query);

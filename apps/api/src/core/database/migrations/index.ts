@@ -15,6 +15,7 @@ import { TaskModelV21729650000000 } from './1729650000000-task-model-v2.js';
 import { SpaceHierarchy1729680000000 } from './1729680000000-space-hierarchy.js';
 import { SpaceAccess1729690000000 } from './1729690000000-space-access.js';
 import { ProjectTemplates1729700000000 } from './1729700000000-project-templates.js';
+import { Automations1729710000000 } from './1729710000000-automations.js';
 
 /** Registered in order. Add new migrations to the end. */
 export const MIGRATIONS = [
@@ -35,4 +36,5 @@ export const MIGRATIONS = [
   SpaceHierarchy1729680000000,
   SpaceAccess1729690000000,
   ProjectTemplates1729700000000,
+  Automations1729710000000,
 ];

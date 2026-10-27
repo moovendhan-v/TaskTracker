@@ -73,6 +73,103 @@ type AuditLogPage {
   total: Int!
 }
 
+type AutomationAction {
+  audiences: [NotifyAudience!]
+  message: String
+  priority: TaskPriority
+  statusId: ID
+  type: AutomationActionType!
+  userId: String
+  userIds: [String!]
+}
+
+input AutomationActionInput {
+  audiences: [NotifyAudience!]
+  message: String
+  priority: TaskPriority
+  statusId: ID
+  type: AutomationActionType!
+  userId: String
+  userIds: [String!]
+}
+
+enum AutomationActionType {
+  assign
+  notify
+  set_priority
+  set_status
+  unassign
+}
+
+type AutomationConditions {
+  listIds: [ID!]
+  priorities: [TaskPriority!]
+  types: [TaskType!]
+}
+
+input AutomationConditionsInput {
+  listIds: [ID!]
+  priorities: [TaskPriority!]
+  types: [TaskType!]
+}
+
+type AutomationRule {
+  actions: [AutomationAction!]!
+  conditions: AutomationConditions!
+  createdAt: String!
+
+  """Who the rule runs as"""
+  createdById: String
+  enabled: Boolean!
+  id: ID!
+  lastRunAt: String
+  name: String!
+  runCount: Int!
+  spaceId: ID!
+  trigger: AutomationTrigger!
+}
+
+type AutomationRun {
+  createdAt: String!
+  id: ID!
+  message: String!
+  ruleId: ID!
+  status: AutomationRunStatus!
+  taskId: ID
+}
+
+enum AutomationRunStatus {
+  failed
+  skipped
+  succeeded
+}
+
+type AutomationTrigger {
+  categories: [StatusCategory!]
+  priorities: [TaskPriority!]
+  statusIds: [ID!]
+  type: AutomationTriggerType!
+}
+
+input AutomationTriggerInput {
+  categories: [StatusCategory!]
+  priorities: [TaskPriority!]
+  statusIds: [ID!]
+  type: AutomationTriggerType!
+}
+
+enum AutomationTriggerType {
+  github_pull_request_closed
+  github_pull_request_merged
+  github_pull_request_opened
+  task_assigned
+  task_commented
+  task_created
+  task_due_date_changed
+  task_priority_changed
+  task_status_changed
+}
+
 type ColumnWidth {
   column: String!
   width: Int!
@@ -821,6 +918,7 @@ type Mutation {
   Unfinished tasks move to another planned sprint in the space, or to the backlog when omitted
   """
   completeSprint(moveOpenTasksToSprintId: ID, sprintId: ID!, workspaceId: ID!): Sprint!
+  createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
   createCustomField(input: CreateCustomFieldInput!, workspaceId: ID!): CustomField!
   createDepartment(input: CreateDepartmentInput!, workspaceId: ID!): Department!
@@ -852,6 +950,7 @@ type Mutation {
 
   """Approvers cannot decide on their own requests"""
   decideLeaveRequest(input: DecideLeaveInput!, requestId: ID!, workspaceId: ID!): LeaveRequest!
+  deleteAutomation(ruleId: ID!, workspaceId: ID!): Boolean!
 
   """The author, or anyone with task.delete"""
   deleteComment(commentId: ID!, workspaceId: ID!): Boolean!
@@ -935,6 +1034,7 @@ type Mutation {
 
   """Creates or updates a saved view (a named set of filters)"""
   saveView(input: SaveViewInput!): Preferences!
+  setAutomationEnabled(enabled: Boolean!, ruleId: ID!, workspaceId: ID!): AutomationRule!
 
   """
   Replaces a role's inline policy (statements that belong to that role only)
@@ -957,6 +1057,9 @@ type Mutation {
   Suspending signs the user out everywhere. You cannot change your own account.
   """
   updateAdminUser(input: UpdateAdminUserInput!, userId: ID!): AdminUser!
+
+  """Saving takes the rule over: it then runs as you"""
+  updateAutomation(input: SaveAutomationInput!, ruleId: ID!, workspaceId: ID!): AutomationRule!
 
   """Only the author can edit"""
   updateComment(commentId: ID!, input: CommentInput!, workspaceId: ID!): Comment!
@@ -1011,6 +1114,7 @@ type Notification {
 }
 
 enum NotificationKind {
+  automation
   leave_decided
   leave_requested
   member_added
@@ -1023,6 +1127,13 @@ type NotificationPage {
   page: Int!
   pageSize: Int!
   total: Int!
+}
+
+enum NotifyAudience {
+  actor
+  assignee
+  creator
+  watchers
 }
 
 enum PlatformRole {
@@ -1137,6 +1248,12 @@ type Query {
     pageSize: Int
     search: String
   ): AdminWorkspacePage!
+
+  """Recent runs of one automation, newest first"""
+  automationRuns(ruleId: ID!, workspaceId: ID!): [AutomationRun!]!
+
+  """A space’s automations"""
+  automations(spaceId: ID!, workspaceId: ID!): [AutomationRule!]!
 
   """Unfinished tasks in a space that aren't in a sprint"""
   backlog(spaceId: ID!, workspaceId: ID!): [Task!]!
@@ -1307,6 +1424,7 @@ type QueryLimits {
 }
 
 enum RealtimeEntityType {
+  automation
   comment
   custom_field
   department
@@ -1416,6 +1534,14 @@ input SaveAsTemplateInput {
   """Copy open tasks and docs too (default false)"""
   includeContent: Boolean
   name: String!
+}
+
+input SaveAutomationInput {
+  actions: [AutomationActionInput!]!
+  conditions: AutomationConditionsInput
+  enabled: Boolean
+  name: String!
+  trigger: AutomationTriggerInput!
 }
 
 input SavePolicyInput {

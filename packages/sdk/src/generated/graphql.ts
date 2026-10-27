@@ -13,6 +13,52 @@ export type AddMemberInput = {
   roleId: string;
 };
 
+export type AutomationActionInput = {
+  audiences?: Array<NotifyAudience> | null | undefined;
+  message?: string | null | undefined;
+  priority?: TaskPriority | null | undefined;
+  statusId?: string | null | undefined;
+  type: AutomationActionType;
+  userId?: string | null | undefined;
+  userIds?: Array<string> | null | undefined;
+};
+
+export type AutomationActionType =
+  | 'assign'
+  | 'notify'
+  | 'set_priority'
+  | 'set_status'
+  | 'unassign';
+
+export type AutomationConditionsInput = {
+  listIds?: Array<string> | null | undefined;
+  priorities?: Array<TaskPriority> | null | undefined;
+  types?: Array<TaskType> | null | undefined;
+};
+
+export type AutomationRunStatus =
+  | 'failed'
+  | 'skipped'
+  | 'succeeded';
+
+export type AutomationTriggerInput = {
+  categories?: Array<StatusCategory> | null | undefined;
+  priorities?: Array<TaskPriority> | null | undefined;
+  statusIds?: Array<string> | null | undefined;
+  type: AutomationTriggerType;
+};
+
+export type AutomationTriggerType =
+  | 'github_pull_request_closed'
+  | 'github_pull_request_merged'
+  | 'github_pull_request_opened'
+  | 'task_assigned'
+  | 'task_commented'
+  | 'task_created'
+  | 'task_due_date_changed'
+  | 'task_priority_changed'
+  | 'task_status_changed';
+
 export type ColumnWidthInput = {
   column: string;
   width: number;
@@ -336,11 +382,18 @@ export type MoveTaskListInput = {
 };
 
 export type NotificationKind =
+  | 'automation'
   | 'leave_decided'
   | 'leave_requested'
   | 'member_added'
   | 'task_assigned'
   | 'task_commented';
+
+export type NotifyAudience =
+  | 'actor'
+  | 'assignee'
+  | 'creator'
+  | 'watchers';
 
 export type PlatformRole =
   | 'SUPER_ADMIN'
@@ -363,6 +416,7 @@ export type PolicyStatementInput = {
 };
 
 export type RealtimeEntityType =
+  | 'automation'
   | 'comment'
   | 'custom_field'
   | 'department'
@@ -408,6 +462,14 @@ export type SaveAsTemplateInput = {
   /** Copy open tasks and docs too (default false) */
   includeContent?: boolean | null | undefined;
   name: string;
+};
+
+export type SaveAutomationInput = {
+  actions: Array<AutomationActionInput>;
+  conditions?: AutomationConditionsInput | null | undefined;
+  enabled?: boolean | null | undefined;
+  name: string;
+  trigger: AutomationTriggerInput;
 };
 
 export type SavePolicyInput = {
@@ -704,6 +766,59 @@ export type WorkspaceAuditLogQueryVariables = Exact<{
 
 
 export type WorkspaceAuditLogQuery = { workspaceAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string }> } };
+
+export type AutomationRuleFieldsFragment = { id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> };
+
+export type AutomationsQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type AutomationsQuery = { automations: Array<{ id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> }> };
+
+export type AutomationRunsQueryVariables = Exact<{
+  workspaceId: string;
+  ruleId: string;
+}>;
+
+
+export type AutomationRunsQuery = { automationRuns: Array<{ id: string, ruleId: string, taskId: string | null, status: AutomationRunStatus, message: string, createdAt: string }> };
+
+export type CreateAutomationMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  input: SaveAutomationInput;
+}>;
+
+
+export type CreateAutomationMutation = { createAutomation: { id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> } };
+
+export type UpdateAutomationMutationVariables = Exact<{
+  workspaceId: string;
+  ruleId: string;
+  input: SaveAutomationInput;
+}>;
+
+
+export type UpdateAutomationMutation = { updateAutomation: { id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> } };
+
+export type SetAutomationEnabledMutationVariables = Exact<{
+  workspaceId: string;
+  ruleId: string;
+  enabled: boolean;
+}>;
+
+
+export type SetAutomationEnabledMutation = { setAutomationEnabled: { id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> } };
+
+export type DeleteAutomationMutationVariables = Exact<{
+  workspaceId: string;
+  ruleId: string;
+}>;
+
+
+export type DeleteAutomationMutation = { deleteAutomation: boolean };
 
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
@@ -1861,6 +1976,38 @@ export const DashboardTaskFieldsFragmentDoc = new TypedDocumentString(`
   updatedAt
 }
     `, {"fragmentName":"DashboardTaskFields"}) as unknown as TypedDocumentString<DashboardTaskFieldsFragment, unknown>;
+export const AutomationRuleFieldsFragmentDoc = new TypedDocumentString(`
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}
+    `, {"fragmentName":"AutomationRuleFields"}) as unknown as TypedDocumentString<AutomationRuleFieldsFragment, unknown>;
 export const CurrentUserFieldsFragmentDoc = new TypedDocumentString(`
     fragment CurrentUserFields on CurrentUser {
   id
@@ -2596,6 +2743,171 @@ export const WorkspaceAuditLogDocument = new TypedDocumentString(`
   metadata
   createdAt
 }`) as unknown as TypedDocumentString<WorkspaceAuditLogQuery, WorkspaceAuditLogQueryVariables>;
+export const AutomationsDocument = new TypedDocumentString(`
+    query Automations($workspaceId: ID!, $spaceId: ID!) {
+  automations(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...AutomationRuleFields
+  }
+}
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}`) as unknown as TypedDocumentString<AutomationsQuery, AutomationsQueryVariables>;
+export const AutomationRunsDocument = new TypedDocumentString(`
+    query AutomationRuns($workspaceId: ID!, $ruleId: ID!) {
+  automationRuns(workspaceId: $workspaceId, ruleId: $ruleId) {
+    id
+    ruleId
+    taskId
+    status
+    message
+    createdAt
+  }
+}
+    `) as unknown as TypedDocumentString<AutomationRunsQuery, AutomationRunsQueryVariables>;
+export const CreateAutomationDocument = new TypedDocumentString(`
+    mutation CreateAutomation($workspaceId: ID!, $spaceId: ID!, $input: SaveAutomationInput!) {
+  createAutomation(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...AutomationRuleFields
+  }
+}
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}`) as unknown as TypedDocumentString<CreateAutomationMutation, CreateAutomationMutationVariables>;
+export const UpdateAutomationDocument = new TypedDocumentString(`
+    mutation UpdateAutomation($workspaceId: ID!, $ruleId: ID!, $input: SaveAutomationInput!) {
+  updateAutomation(workspaceId: $workspaceId, ruleId: $ruleId, input: $input) {
+    ...AutomationRuleFields
+  }
+}
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}`) as unknown as TypedDocumentString<UpdateAutomationMutation, UpdateAutomationMutationVariables>;
+export const SetAutomationEnabledDocument = new TypedDocumentString(`
+    mutation SetAutomationEnabled($workspaceId: ID!, $ruleId: ID!, $enabled: Boolean!) {
+  setAutomationEnabled(
+    workspaceId: $workspaceId
+    ruleId: $ruleId
+    enabled: $enabled
+  ) {
+    ...AutomationRuleFields
+  }
+}
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}`) as unknown as TypedDocumentString<SetAutomationEnabledMutation, SetAutomationEnabledMutationVariables>;
+export const DeleteAutomationDocument = new TypedDocumentString(`
+    mutation DeleteAutomation($workspaceId: ID!, $ruleId: ID!) {
+  deleteAutomation(workspaceId: $workspaceId, ruleId: $ruleId)
+}
+    `) as unknown as TypedDocumentString<DeleteAutomationMutation, DeleteAutomationMutationVariables>;
 export const CommentsDocument = new TypedDocumentString(`
     query Comments($workspaceId: ID!, $taskId: ID!) {
   comments(workspaceId: $workspaceId, taskId: $taskId) {
