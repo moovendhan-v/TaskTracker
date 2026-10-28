@@ -23,14 +23,14 @@ export function SavedViewsMenu({ scope, filter, onApply }: SavedViewsMenuProps) 
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
-          <BookmarkIcon /> Views
+          <BookmarkIcon /> Saved filters
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel>Saved views</DropdownMenuLabel>
-        {views.length === 0 ? <p className="px-2 py-1.5 text-sm text-muted-foreground">None yet. Filter the list, then save it.</p> : null}
+        <DropdownMenuLabel>Saved filters</DropdownMenuLabel>
+        {views.length === 0 ? <p className="px-2 py-1.5 text-xs text-muted-foreground">No saved filters yet. Add a rule using the "Filter" button first, then save it here.</p> : null}
         {views.map((view) => (
-          <DropdownMenuItem key={view.id} onSelect={() => onApply(view)} className="group">
+          <DropdownMenuItem key={view.id} onSelect={() => onApply(view)} className="group cursor-pointer">
             <BookmarkIcon /> <span className="flex-1 truncate">{view.name}</span>
             <button
               type="button"
@@ -41,26 +41,27 @@ export function SavedViewsMenu({ scope, filter, onApply }: SavedViewsMenuProps) 
                 deleteView.mutate(view.id);
               }}
             >
-              <TrashIcon className="size-3.5" />
+              <TrashIcon className="size-3.5 text-muted-foreground hover:text-destructive" />
             </button>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
         <NameDialog
           formName="view.save"
-          title="Save view"
-          description="Saves the current filters under a name. Views follow you to every device."
-          submitLabel="Save view"
-          placeholder="e.g. My overdue bugs"
+          title="Save filter preset"
+          description="Saves the current filters under a name so you can reapply them anytime."
+          submitLabel="Save filter"
+          placeholder="e.g. High priority bugs"
+          defaultValues={{ name: '', resource: 'tasks', pinned: false }}
           trigger={
-            <DropdownMenuItem onSelect={(event) => event.preventDefault()} disabled={!filter}>
-              <BookmarkPlusIcon /> Save current filters…
+            <DropdownMenuItem onSelect={(event) => event.preventDefault()} disabled={!filter} className="cursor-pointer">
+              <BookmarkPlusIcon /> {filter ? 'Save current filters…' : 'Save current filters (add filter first)'}
             </DropdownMenuItem>
           }
           onSubmit={(values) =>
             saveView
               .mutateAsync({ name: values.name, resource: 'tasks', scope, filter: filter as never, pinned: false })
-              .then(() => notify.success('View saved'))
+              .then(() => notify.success('Filter preset saved'))
           }
         />
       </DropdownMenuContent>

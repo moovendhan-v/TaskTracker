@@ -111,7 +111,10 @@ services:
   api:
     <<: *node
     user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
-    environment: *api-env
+    environment:
+      <<: *api-env
+      TSC_WATCHFILE: UseFsEventsWithFallbackDynamicPolling
+      CHOKIDAR_USEPOLLING: "true"
     # Rebuilds the shared types and the API on change; Node restarts when the build output changes.
     command:
       - sh
@@ -138,6 +141,9 @@ services:
     user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
     environment:
       API_PROXY_TARGET: http://api:3000
+      DEV_WEB_PORT: ${DEV_WEB_PORT:-5180}
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
       VITE_TURNSTILE_SITE_KEY: ""
     command: ["sh", "-c", "cd apps/web && exec node_modules/.bin/vite --host 0.0.0.0 --port 5173 --strictPort"]
     ports:

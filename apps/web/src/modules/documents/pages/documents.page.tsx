@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Link } from '@tanstack/react-router';
-import { ChevronRightIcon, FilePlusIcon, FileTextIcon, FolderPlusIcon, SearchIcon } from 'lucide-react';
+import { ChevronRightIcon, FilePlusIcon, FileTextIcon, FolderPlusIcon, PanelLeftIcon, SearchIcon } from 'lucide-react';
 import type { DocKind } from '@taskflow/shared-types';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
@@ -8,6 +8,7 @@ import { ErrorState } from '@/components/common/error-state';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/cn';
 import { useCurrentUser } from '@/core/auth/use-current-user';
 import { useSpaces } from '@/modules/spaces';
 import { usePermissions } from '@/modules/workspaces';
@@ -24,6 +25,7 @@ interface DocumentsPageProps {
 
 export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
   const navigate = useNavigate();
+  const [treeOpen, setTreeOpen] = useState(true);
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search.trim());
   const tree = useDocumentTree(workspaceId, deferredSearch);
@@ -49,7 +51,13 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
 
   return (
     <div className="flex min-h-0 flex-1">
-      <aside className="flex w-72 shrink-0 flex-col border-r bg-card/50" aria-label="Page tree">
+      <aside
+        className={cn(
+          'flex w-72 shrink-0 flex-col border-r bg-card/50 transition-all duration-200',
+          !treeOpen && 'hidden'
+        )}
+        aria-label="Page tree"
+      >
         <div className="flex items-center gap-2 border-b p-3">
           <div className="relative flex-1">
             <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -99,6 +107,14 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
       <section className="min-w-0 flex-1 overflow-y-auto">
         {!documentId ? (
           <div className="p-10">
+            {!treeOpen ? (
+              <div className="mb-6">
+                <Button variant="outline" size="sm" onClick={() => setTreeOpen(true)} className="gap-1.5 text-xs">
+                  <PanelLeftIcon className="size-3.5" />
+                  <span>Show page tree</span>
+                </Button>
+              </div>
+            ) : null}
             <EmptyState
               icon={<FileTextIcon />}
               title="Docs live next to the work"
@@ -123,8 +139,19 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
           <ErrorState error={document.error} />
         ) : (
           <>
-            {expandedPath.length > 1 ? (
-              <nav aria-label="Breadcrumb" className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-1 px-8 pt-6 text-xs text-muted-foreground">
+            {expandedPath.length > 1 || (!treeOpen && document.data.kind === 'folder') ? (
+              <nav aria-label="Breadcrumb" className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-1.5 px-6 pt-4 text-xs text-muted-foreground">
+                {!treeOpen ? (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="size-6 mr-1"
+                    onClick={() => setTreeOpen(true)}
+                    title="Open sidebar"
+                  >
+                    <PanelLeftIcon className="size-3.5" />
+                  </Button>
+                ) : null}
                 {expandedPath.slice(0, -1).map((id) => (
                   <span key={id} className="flex items-center gap-1">
                     <Link to="/w/$workspaceId/docs/$documentId" params={{ workspaceId, documentId: id }} className="hover:text-foreground">
@@ -147,7 +174,14 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
                 onAdd={(kind) => createPage(document.data.id, kind)}
               />
             ) : (
-              <DocEditor key={document.data.id} workspaceId={workspaceId} document={document.data} canEdit={canEdit(document.data)} />
+              <DocEditor
+                key={document.data.id}
+                workspaceId={workspaceId}
+                document={document.data}
+                canEdit={canEdit(document.data)}
+                treeOpen={treeOpen}
+                onToggleTree={() => setTreeOpen((prev) => !prev)}
+              />
             )}
           </>
         )}

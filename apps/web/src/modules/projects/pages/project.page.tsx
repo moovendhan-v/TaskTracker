@@ -91,107 +91,118 @@ export function ProjectPage({ workspaceId, spaceId, view, listId }: ProjectPageP
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="px-6 pt-5">
-        <div className="flex items-center gap-3">
-          <EntityIcon variant="badge" icon={space.icon} color={space.color} fallback={{ letter: space.name }} className="size-6" />
-          <h1 className="truncate text-lg font-semibold">{space.name}</h1>
-          {isTaskView && tasks.data ? (
-            <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground tabular-nums">
-              {tasks.data.total} {settings.showClosed ? 'tasks' : 'open tasks'}
-            </span>
-          ) : null}
-          {list ? (
-            <span className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs">
-              List: {list.name}
-              <Link to="/w/$workspaceId/p/$spaceId/$view" params={{ workspaceId, spaceId, view }} search={{}} aria-label="Show all lists" className="rounded-full p-0.5 hover:bg-muted">
-                <XIcon className="size-3" />
-              </Link>
-            </span>
-          ) : null}
-        </div>
-        <div className="mt-2">
+      {/* Compact Top Header Bar: Space, Tabs, Search, Refresh, + Task */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-2 bg-card/40">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 shrink-0">
+            <EntityIcon variant="badge" icon={space.icon} color={space.color} fallback={{ letter: space.name }} className="size-5" />
+            <span className="truncate max-w-[160px] font-semibold text-sm">{space.name}</span>
+            {list ? (
+              <span className="inline-flex items-center gap-1 rounded-full border bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">
+                {list.name}
+                <Link to="/w/$workspaceId/p/$spaceId/$view" params={{ workspaceId, spaceId, view }} search={{}} aria-label="Show all lists" className="rounded-full hover:text-foreground">
+                  <XIcon className="size-3" />
+                </Link>
+              </span>
+            ) : null}
+          </div>
+          <div className="h-4 w-px bg-border/60 shrink-0 hidden sm:block" />
           <ProjectTabs workspaceId={workspaceId} spaceId={spaceId} current={view} listId={listId} />
         </div>
-      </div>
 
-      {isTaskView ? (
-        <div className="flex flex-wrap items-center gap-2 px-6 py-3">
-          {view === 'list' ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <LayersIcon /> Group: {GROUP_LABELS[settings.groupBy]}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuLabel>Group by</DropdownMenuLabel>
-                {GROUP_BY.map((groupBy) => (
-                  <DropdownMenuItem key={groupBy} onSelect={() => setSettings({ groupBy })}>
-                    {GROUP_LABELS[groupBy]}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
-          {schema && view !== 'table' ? (
-            <FilterBuilder
-              schema={schema}
-              conditions={conditions}
-              logic={logic}
-              exclude={['statusCategory', 'parentId']}
-              onChange={(next, nextLogic) => {
-                setSavedFilter(null);
-                setConditions(next);
-                setLogic(nextLogic);
-              }}
-            />
-          ) : null}
-          <SavedViewsMenu
-            scope={spaceId}
-            filter={userFilter}
-            onApply={(saved) => {
-              const editable = fromFilter(saved.filter, new Set(schema?.fields.filter((field) => field.keyed).map((field) => field.name)));
-              if (editable) {
-                setSavedFilter(null);
-                setConditions(editable.conditions);
-                setLogic(editable.logic);
-              } else {
-                setSavedFilter(saved.filter ?? null);
-              }
-            }}
-          />
-          <button type="button" aria-pressed={settings.mine} className={toggle(settings.mine)} onClick={() => setSettings({ mine: !settings.mine })}>
-            Me
-          </button>
-          <button type="button" aria-pressed={settings.showClosed} className={toggle(settings.showClosed)} onClick={() => setSettings({ showClosed: !settings.showClosed })}>
-            Show closed
-          </button>
-          <button type="button" aria-pressed={settings.subtasks} className={toggle(settings.subtasks)} onClick={() => setSettings({ subtasks: !settings.subtasks })}>
-            Subtasks
-          </button>
-          <span className="flex-1" />
-          <Button variant="ghost" size="icon-sm" aria-label="Refresh" onClick={() => void queryClient.invalidateQueries({ queryKey: queryKeys.tasksRoot(workspaceId) })}>
-            <RefreshCwIcon className={tasks.isFetching ? 'animate-spin' : undefined} />
-          </Button>
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
           <div className="relative">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search"
+              placeholder="Search tasks…"
               aria-label="Search tasks"
               maxLength={100}
-              className="h-8 w-52 rounded-md border bg-muted/40 pr-2 pl-8 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-7 w-36 sm:w-48 rounded-md border bg-muted/30 pr-2 pl-8 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring transition-all"
             />
           </div>
-          <Button variant="outline" size="sm" onClick={() => exportTasks(items, memberName, `${space.name}.csv`)} disabled={items.length === 0}>
-            <DownloadIcon /> Export
+          <Button variant="ghost" size="icon-sm" className="size-7" aria-label="Refresh tasks" onClick={() => void queryClient.invalidateQueries({ queryKey: queryKeys.tasksRoot(workspaceId) })}>
+            <RefreshCwIcon className={cn('size-3.5', tasks.isFetching && 'animate-spin')} />
           </Button>
           {canIn(spaceId, 'task.create') ? (
-            <Button size="sm" onClick={() => setCreating(true)}>
-              <PlusIcon /> Task
+            <Button size="sm" className="h-7 px-2.5 text-xs gap-1" onClick={() => setCreating(true)}>
+              <PlusIcon className="size-3.5" /> Task
             </Button>
           ) : null}
+        </div>
+      </div>
+
+      {/* Filter and Grouping Toolbar (Only for task views) */}
+      {isTaskView ? (
+        <div className="flex items-center justify-between border-b px-6 py-1.5 bg-muted/10 text-xs gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {view === 'list' ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+                    <LayersIcon className="size-3.5 mr-1 text-muted-foreground" /> Group: {GROUP_LABELS[settings.groupBy]}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuLabel>Group by</DropdownMenuLabel>
+                  {GROUP_BY.map((groupBy) => (
+                    <DropdownMenuItem key={groupBy} onSelect={() => setSettings({ groupBy })}>
+                      {GROUP_LABELS[groupBy]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+            {schema && view !== 'table' ? (
+              <FilterBuilder
+                schema={schema}
+                conditions={conditions}
+                logic={logic}
+                exclude={['statusCategory', 'parentId']}
+                onChange={(next, nextLogic) => {
+                  setSavedFilter(null);
+                  setConditions(next);
+                  setLogic(nextLogic);
+                }}
+              />
+            ) : null}
+            <SavedViewsMenu
+              scope={spaceId}
+              filter={userFilter}
+              onApply={(saved) => {
+                const editable = fromFilter(saved.filter, new Set(schema?.fields.filter((field) => field.keyed).map((field) => field.name)));
+                if (editable) {
+                  setSavedFilter(null);
+                  setConditions(editable.conditions);
+                  setLogic(editable.logic);
+                } else {
+                  setSavedFilter(saved.filter ?? null);
+                }
+              }}
+            />
+            <div className="h-3.5 w-px bg-border/60 mx-1 hidden sm:block" />
+            <button type="button" aria-pressed={settings.mine} className={toggle(settings.mine)} onClick={() => setSettings({ mine: !settings.mine })}>
+              Me
+            </button>
+            <button type="button" aria-pressed={settings.showClosed} className={toggle(settings.showClosed)} onClick={() => setSettings({ showClosed: !settings.showClosed })}>
+              Show closed
+            </button>
+            <button type="button" aria-pressed={settings.subtasks} className={toggle(settings.subtasks)} onClick={() => setSettings({ subtasks: !settings.subtasks })}>
+              Subtasks
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {tasks.data ? (
+              <span className="text-[11px] text-muted-foreground tabular-nums hidden sm:inline">
+                {tasks.data.total} {settings.showClosed ? 'tasks' : 'open'}
+              </span>
+            ) : null}
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground" onClick={() => exportTasks(items, memberName, `${space.name}.csv`)} disabled={items.length === 0}>
+              <DownloadIcon className="size-3.5 mr-1" /> Export
+            </Button>
+          </div>
         </div>
       ) : null}
 

@@ -148,18 +148,6 @@ interface SpaceNodeProps {
   docs: DocumentSummaryResponse[];
 }
 
-function QuickLink({ to, children }: { to: { workspaceId: string; spaceId: string; view: string }; children: ReactNode }) {
-  return (
-    <Link
-      to="/w/$workspaceId/p/$spaceId/$view"
-      params={to}
-      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground [&_svg]:size-3.5"
-    >
-      {children}
-    </Link>
-  );
-}
-
 /** Everything a node needs to render its children and act on them. */
 interface TreeContext {
   workspaceId: string;
@@ -280,22 +268,37 @@ function SpaceNode({ workspaceId, space, stats, defaultView, lists, folders, doc
       {expanded ? (
         <div className="ml-4 grid gap-0.5 border-l border-sidebar-border pl-2">
           {stats ? (
-            <p className="px-2 pt-0.5 text-xs text-sidebar-muted">
-              {stats.open} open
-              {stats.overdue ? <span className="ml-2 text-critical">{stats.overdue} overdue</span> : null}
-              {stats.dueSoon ? <span className="ml-2 text-warning">{stats.dueSoon} due soon</span> : null}
-            </p>
+            <div className="flex items-center gap-2 px-2 py-1 text-xs text-sidebar-muted">
+              <span>{stats.open} open</span>
+              {stats.overdue ? <span className="text-critical">{stats.overdue} overdue</span> : null}
+              {stats.dueSoon ? <span className="text-warning">{stats.dueSoon} due soon</span> : null}
+            </div>
           ) : null}
-          <div className="flex flex-wrap gap-0.5 px-1 pb-1">
-            <QuickLink to={{ workspaceId, spaceId: space.id, view: 'dashboard' }}>
-              <LayoutDashboardIcon /> Dashboard
-            </QuickLink>
-            <QuickLink to={{ workspaceId, spaceId: space.id, view: 'sprints' }}>
-              <RocketIcon /> Sprints
-            </QuickLink>
-            <QuickLink to={{ workspaceId, spaceId: space.id, view: 'time' }}>
-              <ClockIcon /> Time
-            </QuickLink>
+          <div className="grid gap-0.5 pb-1">
+            <SidebarLink
+              to="/w/$workspaceId/p/$spaceId/$view"
+              params={{ workspaceId, spaceId: space.id, view: 'dashboard' }}
+              icon={<LayoutDashboardIcon className="size-4 text-primary" />}
+              className="py-1 text-xs"
+            >
+              Dashboard
+            </SidebarLink>
+            <SidebarLink
+              to="/w/$workspaceId/p/$spaceId/$view"
+              params={{ workspaceId, spaceId: space.id, view: 'sprints' }}
+              icon={<RocketIcon className="size-4 text-chart-1" />}
+              className="py-1 text-xs"
+            >
+              Sprints
+            </SidebarLink>
+            <SidebarLink
+              to="/w/$workspaceId/p/$spaceId/$view"
+              params={{ workspaceId, spaceId: space.id, view: 'time' }}
+              icon={<ClockIcon className="size-4 text-warning" />}
+              className="py-1 text-xs"
+            >
+              Time
+            </SidebarLink>
           </div>
           <FolderChildren context={context} parentId={null} />
           {lists.length === 0 && folders.length === 0 ? <p className="px-2 py-1 text-xs text-sidebar-muted">No lists</p> : null}

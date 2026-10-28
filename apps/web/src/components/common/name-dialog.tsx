@@ -13,6 +13,7 @@ export interface NameDialogValues {
   name: string;
   color: string;
   icon: IconKey | null;
+  [key: string]: unknown;
 }
 
 interface NameDialogProps {
@@ -26,7 +27,7 @@ interface NameDialogProps {
   withColor?: boolean;
   /** Pick an icon (and colour) from the icon grid. `optional-color` allows "no colour". */
   withIcon?: boolean | 'optional-color';
-  defaultValues?: Partial<NameDialogValues>;
+  defaultValues?: Partial<NameDialogValues> & Record<string, unknown>;
   onSubmit: (values: NameDialogValues) => Promise<unknown>;
 }
 
@@ -35,21 +36,26 @@ export function NameDialog({ trigger, title, description, submitLabel, formName,
   const blankColor = withIcon === 'optional-color' ? '' : PALETTE[1];
   const [open, setOpen] = useState(false);
   const { form, applyServerErrors, hints } = useServerForm<NameDialogValues>(formName, {
-    defaultValues: { name: '', color: blankColor, icon: null, ...defaultValues },
+    defaultValues: { name: '', color: blankColor, icon: null, ...defaultValues } as NameDialogValues,
   });
 
   useEffect(() => {
-    if (open) form.reset({ name: '', color: blankColor, icon: null, ...defaultValues });
+    if (open) form.reset({ name: '', color: blankColor, icon: null, ...defaultValues } as NameDialogValues);
   }, [open, defaultValues, form, blankColor]);
 
-  const submit = form.handleSubmit(async (values) => {
-    try {
-      await onSubmit(values);
-      setOpen(false);
-    } catch (error) {
-      if (!applyServerErrors(error)) throw error;
-    }
-  });
+  const submit = form.handleSubmit(
+    async (values) => {
+      try {
+        await onSubmit(values);
+        setOpen(false);
+      } catch (error) {
+        if (!applyServerErrors(error)) throw error;
+      }
+    },
+    (errors) => {
+      console.warn('Form validation failed:', errors);
+    },
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

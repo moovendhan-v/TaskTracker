@@ -151,7 +151,7 @@ export class TableLayoutInput implements TableLayout {
 export class SaveViewInput implements Omit<SavedView, 'id'> {
   @Field(() => ID, { nullable: true, description: 'Leave out to create a view' }) @IsClearable() @IsUUID('4') id?: string | null;
   @Field() @IsString() @IsNotBlank() @MaxLength(PREFERENCE_LIMITS.nameMax) name: string;
-  @Field() @IsString() @Matches(/^[a-z][a-z_]{0,63}$/) resource: string;
+  @Field({ defaultValue: 'tasks' }) @IsOptional() @IsString() @Matches(/^[a-z][a-z_]{0,63}$/) resource: string = 'tasks';
   @Field(() => String, { nullable: true }) @IsClearable() @IsString() @MaxLength(PREFERENCE_LIMITS.keyMax) scope?: string | null;
   @Field(() => String, { nullable: true }) @IsClearable() @IsString() @MaxLength(4000) where?: string | null;
 
@@ -177,7 +177,7 @@ export class SaveViewInput implements Omit<SavedView, 'id'> {
   @MaxLength(64, { each: true })
   columns?: string[] | null;
 
-  @Field({ defaultValue: false }) @IsBoolean() pinned: boolean;
+  @Field({ defaultValue: false }) @IsOptional() @IsBoolean() pinned: boolean = false;
   @Field(() => String, { nullable: true }) @IsClearable() @Matches(new RegExp(COLOR_PATTERN)) color?: string | null;
 }
 
