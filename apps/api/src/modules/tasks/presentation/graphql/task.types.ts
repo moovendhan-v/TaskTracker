@@ -1,5 +1,5 @@
 import { Field, Float, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { IsDateString, IsIn, IsInt, IsNumber, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { IsArray, IsDateString, IsIn, IsInt, IsNumber, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import {
   ESTIMATE_MINUTES_MAX,
   TASK_DESCRIPTION_MAX,
@@ -42,6 +42,7 @@ export class TaskGql implements TaskResponse {
   @Field(() => String, { nullable: true }) startDate: string | null;
   @Field(() => String, { nullable: true }) dueDate: string | null;
   @Field(() => ID, { nullable: true }) assigneeId: string | null;
+  @Field(() => [ID], { description: 'All assigned user IDs' }) assigneeIds: string[];
   @Field(() => ID, { nullable: true }) sprintId: string | null;
   @Field(() => Float) position: number;
   @Field(() => Int, { nullable: true }) estimateMinutes: number | null;
@@ -109,6 +110,12 @@ export class CreateTaskInput implements CreateTaskRequest {
 
   @Field(() => ID, { nullable: true }) @IsClearable() @IsString() @MaxLength(64) assigneeId?: string | null;
 
+  @Field(() => [ID], { nullable: true, description: 'All assigned user IDs' })
+  @IsOmittable()
+  @IsArray()
+  @IsString({ each: true })
+  assigneeIds?: string[];
+
   @Field(() => ID, { nullable: true, description: 'Makes it a subtask of another task in the same list' })
   @IsClearable()
   @IsUUID('4')
@@ -139,6 +146,12 @@ export class UpdateTaskInput implements UpdateTaskRequest {
   @Field(() => String, { nullable: true }) @IsClearable() @IsDateString() dueDate?: string | null;
 
   @Field(() => ID, { nullable: true }) @IsClearable() @IsString() @MaxLength(64) assigneeId?: string | null;
+
+  @Field(() => [ID], { nullable: true, description: 'All assigned user IDs' })
+  @IsOmittable()
+  @IsArray()
+  @IsString({ each: true })
+  assigneeIds?: string[];
 
   @Field(() => Float, { nullable: true }) @IsOmittable() @IsNumber({ allowNaN: false, allowInfinity: false }) position?: number;
 

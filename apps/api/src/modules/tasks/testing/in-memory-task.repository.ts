@@ -81,13 +81,23 @@ export class InMemoryTaskRepository extends TaskRepository {
 
   async create(task: NewTask): Promise<Task> {
     const now = new Date();
-    const created: Task = { ...task, id: randomUUID(), createdAt: now, updatedAt: now };
+    const created: Task = {
+      ...task,
+      assigneeIds: task.assigneeIds ?? (task.assigneeId ? [task.assigneeId] : []),
+      id: randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+    };
     this.rows.set(created.id, created);
     return { ...created };
   }
 
   async save(task: Task): Promise<Task> {
-    const saved = { ...task, updatedAt: new Date() };
+    const saved = {
+      ...task,
+      assigneeIds: task.assigneeIds ?? (task.assigneeId ? [task.assigneeId] : []),
+      updatedAt: new Date(),
+    };
     this.rows.set(task.id, saved);
     return { ...saved };
   }

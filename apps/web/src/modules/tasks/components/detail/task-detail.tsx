@@ -252,8 +252,14 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
           </Property>
         </div>
         <div className="grid content-start gap-0.5">
-          <Property icon={<UserRoundIcon />} label="Assignee">
-            <AssigneePicker showName workspaceId={workspaceId} value={task.assigneeId} disabled={!can('task.assign')} onChange={(assigneeId) => save({ assigneeId })} />
+          <Property icon={<UserRoundIcon />} label="Assignees">
+            <AssigneePicker
+              showName
+              workspaceId={workspaceId}
+              values={task.assigneeIds?.length ? task.assigneeIds : (task.assigneeId ? [task.assigneeId] : [])}
+              disabled={!can('task.assign')}
+              onChangeMultiple={(assigneeIds) => save({ assigneeIds })}
+            />
           </Property>
           <Property icon={<FlagIcon />} label="Priority">
             <PriorityPicker showLabel value={task.priority} disabled={!canEdit} onChange={(priority) => save({ priority })} />
@@ -382,8 +388,25 @@ function Subtasks({ workspaceId, task, onOpen }: { workspaceId: string; task: Ta
             <button type="button" className={cn('min-w-0 flex-1 truncate text-left text-sm hover:text-primary', isClosedCategory(subtask.status.category) && 'text-muted-foreground line-through')} onClick={() => onOpen(subtask.id)}>
               {subtask.title}
             </button>
-            <StatusPill status={subtask.status} size="xs" />
-            {subtask.assigneeId ? <UserAvatar name={memberName(subtask.assigneeId) ?? 'Member'} className="size-5 text-[9px]" showTooltip /> : null}
+            {(() => {
+              const ids: string[] = subtask.assigneeIds?.length ? subtask.assigneeIds : (subtask.assigneeId ? [subtask.assigneeId] : []);
+              if (ids.length > 1) {
+                return (
+                  <div className="flex -space-x-1.5 items-center">
+                    {ids.slice(0, 2).map((id: string) => (
+                      <UserAvatar key={id} name={memberName(id) ?? 'Member'} className="size-5 ring-1 ring-background text-[9px]" showTooltip />
+                    ))}
+                    {ids.length > 2 && (
+                      <span className="flex size-5 items-center justify-center rounded-full bg-muted text-[8px] font-semibold ring-1 ring-background">
+                        +{ids.length - 2}
+                      </span>
+                    )}
+                  </div>
+                );
+              }
+              if (ids[0]) return <UserAvatar name={memberName(ids[0]) ?? 'Member'} className="size-5 text-[9px]" showTooltip />;
+              return null;
+            })()}
           </li>
         ))}
       </ul>

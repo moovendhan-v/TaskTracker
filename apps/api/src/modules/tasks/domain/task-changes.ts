@@ -29,7 +29,9 @@ export function describeChanges(before: Task, after: Task, names: Names): TaskCh
   add('status', names.status(before.statusId), names.status(after.statusId));
   add('priority', before.priority, after.priority);
   add('type', before.type, after.type);
-  add('assignee', names.user(before.assigneeId), names.user(after.assigneeId));
+  const beforeAssignees = (before.assigneeIds?.length ? before.assigneeIds : (before.assigneeId ? [before.assigneeId] : [])).map(names.user).filter(Boolean).join(', ') || null;
+  const afterAssignees = (after.assigneeIds?.length ? after.assigneeIds : (after.assigneeId ? [after.assigneeId] : [])).map(names.user).filter(Boolean).join(', ') || null;
+  add('assignee', beforeAssignees, afterAssignees);
   add('start date', day(before.startDate), day(after.startDate));
   add('due date', day(before.dueDate), day(after.dueDate));
   add('estimate', text(before.estimateMinutes), text(after.estimateMinutes));

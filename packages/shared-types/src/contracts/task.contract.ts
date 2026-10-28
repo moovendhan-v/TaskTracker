@@ -31,6 +31,7 @@ export interface TaskResponse {
   startDate: string | null;
   dueDate: string | null;
   assigneeId: string | null;
+  assigneeIds: string[];
   /** Sprint the task is planned into; null when it's in the backlog. */
   sprintId: string | null;
   position: number;
@@ -56,6 +57,7 @@ export interface CreateTaskRequest {
   startDate?: string | null;
   dueDate?: string | null;
   assigneeId?: string | null;
+  assigneeIds?: string[];
   parentId?: string | null;
   estimateMinutes?: number | null;
   metadata?: TaskMetadata;

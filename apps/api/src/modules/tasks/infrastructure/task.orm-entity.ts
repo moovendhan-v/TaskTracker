@@ -38,6 +38,9 @@ export class TaskOrmEntity extends TenantOrmEntity implements Task {
   @Column({ type: 'text', nullable: true })
   assigneeId: string | null;
 
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  assigneeIds: string[];
+
   @Column({ type: 'uuid', nullable: true })
   sprintId: string | null;
 

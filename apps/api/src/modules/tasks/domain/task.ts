@@ -15,6 +15,7 @@ export interface Task {
   startDate: Date | null;
   dueDate: Date | null;
   assigneeId: string | null;
+  assigneeIds: string[];
   sprintId: string | null;
   position: number;
   estimateMinutes: number | null;

@@ -113,7 +113,7 @@ export function useTaskMutations(workspaceId: string) {
 }
 
 function applyPatch(task: TaskResponse, body: UpdateTaskRequest, status: TaskStatusResponse | undefined): TaskResponse {
-  const { title, description, priority, startDate, dueDate, assigneeId, position, sprintId, type, estimateMinutes, progress } = body;
+  const { title, description, priority, startDate, dueDate, assigneeId, assigneeIds, position, sprintId, type, estimateMinutes, progress } = body;
   return {
     ...task,
     ...(title !== undefined && { title }),
@@ -123,6 +123,10 @@ function applyPatch(task: TaskResponse, body: UpdateTaskRequest, status: TaskSta
     ...(startDate !== undefined && { startDate }),
     ...(dueDate !== undefined && { dueDate }),
     ...(assigneeId !== undefined && { assigneeId }),
+    ...(assigneeIds !== undefined && {
+      assigneeIds,
+      assigneeId: assigneeIds[0] ?? null,
+    }),
     ...(position !== undefined && { position }),
     ...(sprintId !== undefined && { sprintId }),
     ...(type !== undefined && { type }),

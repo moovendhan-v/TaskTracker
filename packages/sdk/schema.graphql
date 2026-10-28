@@ -281,6 +281,7 @@ input CreateSprintInput {
 
 input CreateTaskInput {
   assigneeId: ID
+  assigneeIds: [ID!]
 
   """Values keyed by custom field id"""
   customFields: CustomFieldValues
@@ -1774,6 +1775,7 @@ input TableLayoutInput {
 
 type Task {
   assigneeId: ID
+  assigneeIds: [ID!]!
   completedAt: String
   createdAt: String!
   createdById: ID!
@@ -2036,6 +2038,7 @@ input UpdateSprintInput {
 
 input UpdateTaskInput {
   assigneeId: ID
+  assigneeIds: [ID!]
 
   """Merged into the current values; null clears a field"""
   customFields: CustomFieldValues

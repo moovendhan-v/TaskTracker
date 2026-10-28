@@ -44,6 +44,7 @@ fragment TaskFields on Task {
   startDate
   dueDate
   assigneeId
+  assigneeIds
   sprintId
   position
   estimateMinutes

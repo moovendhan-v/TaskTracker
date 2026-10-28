@@ -18,6 +18,7 @@ import { useStatuses } from '../hooks/use-tasks';
 import { useTaskMutations } from '../hooks/use-task-mutations';
 import { PRIORITY_META, TYPE_META } from '../lib/task-meta';
 import { PriorityIcon } from './shared/priority-picker';
+import { AssigneePicker } from './shared/assignee-picker';
 
 interface Values {
   title: string;
@@ -26,6 +27,7 @@ interface Values {
   priority: TaskPriority;
   statusId: string;
   assigneeId: string;
+  assigneeIds: string[];
   startDate: string;
   dueDate: string;
 }
@@ -67,7 +69,7 @@ export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initial
 
   // Mounted fresh for each use, so defaults are set once here.
   const { form, applyServerErrors, hints } = useServerForm<Values>('task.create', {
-    defaultValues: { title: '', description: '', type: 'task', priority: 'none', statusId: '', assigneeId: '', startDate: '', dueDate: '' },
+    defaultValues: { title: '', description: '', type: 'task', priority: 'none', statusId: '', assigneeId: '', assigneeIds: [], startDate: '', dueDate: '' },
   });
   const values = useWatch({ control: form.control });
   const { errors } = form.formState;
@@ -90,7 +92,8 @@ export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initial
             type: input.type,
             priority: input.priority,
             ...(input.statusId && { statusId: input.statusId }),
-            assigneeId: input.assigneeId || null,
+            assigneeId: (input.assigneeIds && input.assigneeIds[0]) ? input.assigneeIds[0] : (input.assigneeId || null),
+            assigneeIds: input.assigneeIds?.length ? input.assigneeIds : (input.assigneeId ? [input.assigneeId] : []),
             startDate: input.startDate ? dayToIso(input.startDate) : null,
             dueDate: input.dueDate ? dayToIso(input.dueDate) : null,
             ...(parent && { parentId: parent.id }),
@@ -190,19 +193,14 @@ export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initial
                   </button>
                 }
               />
-              <OptionPicker
-                label="Assignee"
-                placeholder="Search people"
-                clearLabel="Unassigned"
-                options={members.map((member) => ({ value: member.userId, label: member.name, person: true }))}
-                value={values.assigneeId || null}
-                onChange={(next) => set('assigneeId', next ?? '')}
-                trigger={
-                  <button type="button" className={cn(chip, assignee && 'text-foreground')} aria-label={`Assignee: ${assignee?.name ?? 'unassigned'}`}>
-                    {assignee ? <UserAvatar name={assignee.name} className="size-4 text-[8px]" /> : <UserRoundIcon className="size-3.5" />}
-                    {assignee?.name ?? 'Assignee'}
-                  </button>
-                }
+              <AssigneePicker
+                workspaceId={workspaceId}
+                values={values.assigneeIds?.length ? values.assigneeIds : (values.assigneeId ? [values.assigneeId] : [])}
+                showName
+                onChangeMultiple={(ids) => {
+                  set('assigneeIds', ids);
+                  set('assigneeId', ids[0] ?? '');
+                }}
               />
               <span className={cn(chip, 'px-1')}>
                 <DateRangeField

@@ -117,6 +117,22 @@ describe('TasksService', () => {
     expect(await watchers.list(WORKSPACE, task.id)).toEqual(['user-1', 'user-2']);
   });
 
+  it('supports assigning multiple members and keeps all as watchers', async () => {
+    const task = await service.create(actor, accessWith('task.create', 'task.assign'), LIST, {
+      title: 'Pair programming',
+      assigneeIds: ['user-1', 'user-2'],
+    });
+    expect(task.assigneeIds).toEqual(['user-1', 'user-2']);
+    expect(task.assigneeId).toBe('user-1');
+    expect(await watchers.list(WORKSPACE, task.id)).toEqual(expect.arrayContaining(['user-1', 'user-2']));
+
+    const updated = await service.update(actor, accessWith('task.update', 'task.assign'), task.id, {
+      assigneeIds: ['user-2'],
+    });
+    expect(updated.assigneeIds).toEqual(['user-2']);
+    expect(updated.assigneeId).toBe('user-2');
+  });
+
   it('keeps subtasks in their parent list and limits nesting', async () => {
     const parent = await service.create(actor, accessWith('task.create'), LIST, { title: 'Parent' });
     await expect(service.create(actor, accessWith('task.create'), OTHER_LIST, { title: 'Wrong list', parentId: parent.id })).rejects.toThrow(/same list/);

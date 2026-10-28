@@ -104,9 +104,18 @@ export class TasksService {
     const { workspaceId } = access;
     const list = await this.listsService.getInWorkspace(workspaceId, listId);
     SpaceGuard.assert(list.spaceId, 'task.create');
-    if (request.assigneeId) {
+    let assigneeIds: string[] = [];
+    if (request.assigneeIds !== undefined) {
+      assigneeIds = Array.from(new Set(request.assigneeIds.filter((id): id is string => Boolean(id))));
+    } else if (request.assigneeId) {
+      assigneeIds = [request.assigneeId];
+    }
+
+    if (assigneeIds.length > 0) {
       SpaceGuard.assert(list.spaceId, 'task.assign');
-      await this.assertAssignable(access, request.assigneeId);
+      for (const uid of assigneeIds) {
+        await this.assertAssignable(access, uid);
+      }
     }
     if (request.parentId) {
       const parent = await this.getInWorkspace(workspaceId, request.parentId);
@@ -132,7 +141,8 @@ export class TasksService {
       priority: request.priority ?? 'none',
       startDate,
       dueDate,
-      assigneeId: request.assigneeId ?? null,
+      assigneeId: assigneeIds[0] ?? null,
+      assigneeIds,
       sprintId: null,
       position: (await this.tasks.maxPosition(workspaceId, listId)) + TASK_POSITION_STEP,
       estimateMinutes: request.estimateMinutes ?? null,
@@ -142,7 +152,7 @@ export class TasksService {
       completedAt: isClosedCategory(status.category) ? new Date() : null,
       createdById: actor.userId,
     });
-    await this.watchers.add(workspaceId, task.id, [actor.userId, task.assigneeId].filter((id): id is string => !!id));
+    await this.watchers.add(workspaceId, task.id, [actor.userId, ...assigneeIds].filter((id): id is string => !!id));
     await this.activity.record([{ workspaceId, taskId: task.id, actorId: actor.userId, kind: 'created', field: null, fromValue: null, toValue: null }]);
     await this.publish('created', actor, task, { spaceId: list.spaceId, statusCategory: status.category });
     return this.respondOne(workspaceId, task);
@@ -155,11 +165,29 @@ export class TasksService {
     const list = await this.listsService.getInWorkspace(workspaceId, task.listId);
     SpaceGuard.assert(list.spaceId, 'task.update');
 
-    if (request.assigneeId !== undefined && request.assigneeId !== task.assigneeId) {
+    if (request.assigneeIds !== undefined) {
       SpaceGuard.assert(list.spaceId, 'task.assign');
-      if (request.assigneeId === null) TaskAssignmentPolicy.assertCanChangeAssignee(access.permissions);
-      else await this.assertAssignable(access, request.assigneeId);
-      task.assigneeId = request.assigneeId;
+      const uniqueAssigneeIds: string[] = Array.from(new Set(request.assigneeIds.filter((id): id is string => Boolean(id))));
+      if (uniqueAssigneeIds.length === 0) {
+        TaskAssignmentPolicy.assertCanChangeAssignee(access.permissions);
+      } else {
+        for (const uid of uniqueAssigneeIds) {
+          await this.assertAssignable(access, uid);
+        }
+      }
+      task.assigneeIds = uniqueAssigneeIds;
+      task.assigneeId = uniqueAssigneeIds[0] ?? null;
+    } else if (request.assigneeId !== undefined && request.assigneeId !== task.assigneeId) {
+      SpaceGuard.assert(list.spaceId, 'task.assign');
+      if (request.assigneeId === null) {
+        TaskAssignmentPolicy.assertCanChangeAssignee(access.permissions);
+        task.assigneeId = null;
+        task.assigneeIds = [];
+      } else {
+        await this.assertAssignable(access, request.assigneeId);
+        task.assigneeId = request.assigneeId;
+        task.assigneeIds = [request.assigneeId];
+      }
     }
     if (request.sprintId !== undefined && request.sprintId !== task.sprintId) {
       SpaceGuard.assert(list.spaceId, 'sprint.manage');
@@ -193,7 +221,10 @@ export class TasksService {
     const saved = await this.tasks.save(task);
     const changes = describeChanges(before, saved, await this.names(workspaceId));
     await this.activity.record(changes.map((change) => ({ workspaceId, taskId, actorId: actor.userId, kind: 'changed', field: change.field, fromValue: change.from, toValue: change.to })));
-    if (saved.assigneeId && saved.assigneeId !== before.assigneeId) await this.watchers.add(workspaceId, taskId, [saved.assigneeId]);
+    const beforeList = before.assigneeIds?.length ? before.assigneeIds : (before.assigneeId ? [before.assigneeId] : []);
+    const savedList = saved.assigneeIds?.length ? saved.assigneeIds : (saved.assigneeId ? [saved.assigneeId] : []);
+    const newAssignees = savedList.filter((id) => !beforeList.includes(id));
+    if (newAssignees.length > 0) await this.watchers.add(workspaceId, taskId, newAssignees);
     await this.publish('updated', actor, saved, { previousAssigneeId: before.assigneeId, changes, spaceId: list.spaceId, statusCategory });
     return this.respondOne(workspaceId, saved);
   }
@@ -215,9 +246,9 @@ export class TasksService {
   }
 
   /** Who cares about a task: for notifying people about comments on it. */
-  async participants(workspaceId: string, taskId: string): Promise<{ title: string; assigneeId: string | null; createdById: string; watcherIds: string[] }> {
-    const { title, assigneeId, createdById } = await this.getInWorkspace(workspaceId, taskId);
-    return { title, assigneeId, createdById, watcherIds: await this.watchers.list(workspaceId, taskId) };
+  async participants(workspaceId: string, taskId: string): Promise<{ title: string; assigneeId: string | null; assigneeIds: string[]; createdById: string; watcherIds: string[] }> {
+    const { title, assigneeId, assigneeIds, createdById } = await this.getInWorkspace(workspaceId, taskId);
+    return { title, assigneeId, assigneeIds: assigneeIds ?? (assigneeId ? [assigneeId] : []), createdById, watcherIds: await this.watchers.list(workspaceId, taskId) };
   }
 
   async listWatchers(workspaceId: string, taskId: string): Promise<string[]> {

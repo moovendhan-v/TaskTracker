@@ -17,6 +17,7 @@ import { SpaceAccess1729690000000 } from './1729690000000-space-access.js';
 import { ProjectTemplates1729700000000 } from './1729700000000-project-templates.js';
 import { Automations1729710000000 } from './1729710000000-automations.js';
 import { GithubIntegration1729720000000 } from './1729720000000-github-integration.js';
+import { MultipleAssignees1729730000000 } from './1729730000000-multiple-assignees.js';
 
 /** Registered in order. Add new migrations to the end. */
 export const MIGRATIONS = [
@@ -39,4 +40,5 @@ export const MIGRATIONS = [
   ProjectTemplates1729700000000,
   Automations1729710000000,
   GithubIntegration1729720000000,
+  MultipleAssignees1729730000000,
 ];

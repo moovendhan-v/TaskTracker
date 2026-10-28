@@ -22,7 +22,7 @@ export const TASK_DRAG_TYPE = 'application/x-taskflow-task';
 
 export function TaskCard({ workspaceId, task, context, draggable, onOpen, onDropBefore }: TaskCardProps) {
   const memberName = useMemberName(workspaceId);
-  const assignee = memberName(task.assigneeId);
+  const assigneeIds = task.assigneeIds?.length ? task.assigneeIds : (task.assigneeId ? [task.assigneeId] : []);
   const closed = isClosedCategory(task.status.category);
 
   return (
@@ -49,7 +49,20 @@ export function TaskCard({ workspaceId, task, context, draggable, onOpen, onDrop
         {task.title}
       </button>
       <div className="mt-3 flex items-center gap-2">
-        {assignee ? <UserAvatar name={assignee} className="size-6" showTooltip /> : null}
+        {assigneeIds.length > 1 ? (
+          <div className="flex -space-x-1.5 items-center">
+            {assigneeIds.slice(0, 3).map((id) => (
+              <UserAvatar key={id} name={memberName(id) ?? 'Member'} className="size-5 ring-2 ring-card shrink-0 text-[9px]" showTooltip />
+            ))}
+            {assigneeIds.length > 3 && (
+              <span className="flex size-5 items-center justify-center rounded-full bg-muted text-[9px] font-semibold ring-2 ring-card shrink-0">
+                +{assigneeIds.length - 3}
+              </span>
+            )}
+          </div>
+        ) : assigneeIds.length === 1 && assigneeIds[0] ? (
+          <UserAvatar name={memberName(assigneeIds[0]) ?? 'Member'} className="size-5 text-[9px]" showTooltip />
+        ) : null}
         {task.dueDate ? (
           <span className={cn('text-xs tabular-nums', !closed && isOverdue(task.dueDate) ? 'text-critical' : 'text-muted-foreground')}>{formatNumericDate(task.dueDate)}</span>
         ) : null}

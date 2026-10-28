@@ -185,7 +185,12 @@ function TaskRow({ workspaceId, task, selected, onSelect, onOpen }: TaskRowProps
         ) : null}
       </span>
       <span role="cell">
-        <AssigneePicker workspaceId={workspaceId} value={task.assigneeId} disabled={!can('task.assign')} onChange={(assigneeId) => update.mutate({ taskId: task.id, body: { assigneeId } })} />
+        <AssigneePicker
+          workspaceId={workspaceId}
+          values={task.assigneeIds?.length ? task.assigneeIds : (task.assigneeId ? [task.assigneeId] : [])}
+          disabled={!can('task.assign')}
+          onChangeMultiple={(assigneeIds) => update.mutate({ taskId: task.id, body: { assigneeIds } })}
+        />
       </span>
       <span role="cell">
         <TaskDates startDate={task.startDate} dueDate={task.dueDate} closed={closed} />
