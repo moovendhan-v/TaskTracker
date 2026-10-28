@@ -5,6 +5,7 @@ import type {
   SprintResponse,
   UpdateSprintRequest,
 } from '@taskflow/shared-types';
+import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
@@ -48,6 +49,7 @@ export class SprintsService {
   @Announces('sprint.created', workspaceFromArg)
   async create(_actor: Actor, workspaceId: string, spaceId: string, request: CreateSprintRequest): Promise<SprintResponse> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
+    SpaceGuard.assert(spaceId, 'sprint.manage');
     SprintLifecyclePolicy.assertValidRange(request.startDate, request.endDate);
     const created = await this.sprints.create({
       workspaceId,
@@ -64,6 +66,7 @@ export class SprintsService {
   @Announces('sprint.updated', workspaceFromArg)
   async update(_actor: Actor, workspaceId: string, sprintId: string, request: UpdateSprintRequest): Promise<SprintResponse> {
     const sprint = await this.getInWorkspace(workspaceId, sprintId);
+    SpaceGuard.assert(sprint.spaceId, 'sprint.manage');
     SprintLifecyclePolicy.assertEditable(sprint);
     const startDate = request.startDate ?? sprint.startDate;
     const endDate = request.endDate ?? sprint.endDate;
@@ -83,6 +86,7 @@ export class SprintsService {
   @Announces('sprint.deleted', workspaceFromArg)
   async remove(_actor: Actor, workspaceId: string, sprintId: string): Promise<SprintResponse> {
     const sprint = await this.getInWorkspace(workspaceId, sprintId);
+    SpaceGuard.assert(sprint.spaceId, 'sprint.manage');
     SprintLifecyclePolicy.assertDeletable(sprint);
     // Tasks return to the backlog through ON DELETE SET NULL.
     await this.sprints.delete(workspaceId, sprintId);
@@ -94,6 +98,7 @@ export class SprintsService {
   async start(_actor: Actor, workspaceId: string, sprintId: string): Promise<SprintResponse> {
     await this.unitOfWork.run(async () => {
       const sprint = await this.getInWorkspace(workspaceId, sprintId);
+      SpaceGuard.assert(sprint.spaceId, 'sprint.manage');
       SprintLifecyclePolicy.assertCanStart(sprint, await this.sprints.hasActiveSprint(workspaceId, sprint.spaceId));
       await this.sprints.save({ ...toSprint(sprint), status: 'active' });
     });
@@ -105,6 +110,7 @@ export class SprintsService {
   async complete(actor: Actor, workspaceId: string, sprintId: string, request: CompleteSprintRequest): Promise<SprintResponse> {
     await this.unitOfWork.run(async () => {
       const sprint = await this.getInWorkspace(workspaceId, sprintId);
+      SpaceGuard.assert(sprint.spaceId, 'sprint.manage');
       SprintLifecyclePolicy.assertCanComplete(sprint);
       const target = request.moveOpenTasksToSprintId
         ? await this.getInWorkspace(workspaceId, request.moveOpenTasksToSprintId)

@@ -4,12 +4,14 @@ import {
   PLANNING_VIEW_LIMIT,
   type CreateTaskRequest,
   type Paginated,
+  type SpaceScopedPermission,
   type TaskActivityResponse,
   type TaskRelationKind,
   type TaskRelationResponse,
   type TaskResponse,
   type UpdateTaskRequest,
 } from '@taskflow/shared-types';
+import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
@@ -65,6 +67,11 @@ export class TasksService {
     return this.respond(workspaceId, await this.tasks.listInSprint(workspaceId, sprintId, PLANNING_VIEW_LIMIT));
   }
 
+  /** Unfinished tasks of a space, e.g. to save the space as a template. */
+  async openInSpace(workspaceId: string, spaceId: string, limit: number): Promise<TaskResponse[]> {
+    return this.respond(workspaceId, await this.tasks.openInSpace(workspaceId, spaceId, limit));
+  }
+
   @Cached({ entities: ['task', 'sprint', 'status'], shared: true })
   async backlog(workspaceId: string, spaceId: string): Promise<TaskResponse[]> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
@@ -96,7 +103,11 @@ export class TasksService {
   async create(actor: Actor, access: WorkspaceAccess, listId: string, request: CreateTaskRequest): Promise<TaskResponse> {
     const { workspaceId } = access;
     const list = await this.listsService.getInWorkspace(workspaceId, listId);
-    if (request.assigneeId) await this.assertAssignable(access, request.assigneeId);
+    SpaceGuard.assert(list.spaceId, 'task.create');
+    if (request.assigneeId) {
+      SpaceGuard.assert(list.spaceId, 'task.assign');
+      await this.assertAssignable(access, request.assigneeId);
+    }
     if (request.parentId) {
       const parent = await this.getInWorkspace(workspaceId, request.parentId);
       TaskStructurePolicy.assertValidParent(listId, parent, await this.tasks.depthOf(workspaceId, parent.id));
@@ -142,13 +153,16 @@ export class TasksService {
     const before = await this.getInWorkspace(workspaceId, taskId);
     const task: Task = { ...before };
     const list = await this.listsService.getInWorkspace(workspaceId, task.listId);
+    SpaceGuard.assert(list.spaceId, 'task.update');
 
     if (request.assigneeId !== undefined && request.assigneeId !== task.assigneeId) {
+      SpaceGuard.assert(list.spaceId, 'task.assign');
       if (request.assigneeId === null) TaskAssignmentPolicy.assertCanChangeAssignee(access.permissions);
       else await this.assertAssignable(access, request.assigneeId);
       task.assigneeId = request.assigneeId;
     }
     if (request.sprintId !== undefined && request.sprintId !== task.sprintId) {
+      SpaceGuard.assert(list.spaceId, 'sprint.manage');
       await this.assertPlannable(access, task, request.sprintId);
       task.sprintId = request.sprintId;
     }
@@ -187,10 +201,17 @@ export class TasksService {
   /** Deletes the task and its subtasks. */
   async remove(actor: Actor, workspaceId: string, taskId: string): Promise<TaskResponse> {
     const task = await this.getInWorkspace(workspaceId, taskId);
+    await this.assertInSpace(workspaceId, task, 'task.delete');
     const response = await this.respondOne(workspaceId, task);
     await this.tasks.delete(workspaceId, taskId);
     await this.publish('deleted', actor, task, {});
     return response;
+  }
+
+  /** The space a task sits in, for space-level checks in other modules. */
+  async spaceIdOf(workspaceId: string, taskId: string): Promise<string> {
+    const task = await this.getInWorkspace(workspaceId, taskId);
+    return (await this.listsService.getInWorkspace(workspaceId, task.listId)).spaceId;
   }
 
   /** Who cares about a task: for notifying people about comments on it. */
@@ -229,6 +250,7 @@ export class TasksService {
   async addRelation(actor: Actor, workspaceId: string, taskId: string, relatedTaskId: string, kind: TaskRelationKind): Promise<TaskRelationResponse[]> {
     TaskStructurePolicy.assertNotSelf(taskId, relatedTaskId);
     const task = await this.getInWorkspace(workspaceId, taskId);
+    await this.assertInSpace(workspaceId, task, 'task.update');
     const related = await this.getInWorkspace(workspaceId, relatedTaskId);
     if (!(await this.relations.create({ workspaceId, taskId, relatedTaskId, kind, createdById: actor.userId }))) throw DomainError.conflict('Those tasks are already related that way');
     await this.activity.record([{ workspaceId, taskId, actorId: actor.userId, kind: 'related', field: kind, fromValue: null, toValue: `#${related.number}` }]);
@@ -238,6 +260,7 @@ export class TasksService {
 
   async removeRelation(actor: Actor, workspaceId: string, relationId: string): Promise<boolean> {
     const relation = found(await this.relations.findInWorkspace(workspaceId, relationId), 'Relation');
+    await this.assertInSpace(workspaceId, await this.getInWorkspace(workspaceId, relation.taskId), 'task.update');
     await this.relations.delete(workspaceId, relationId);
     await this.publish('updated', actor, await this.getInWorkspace(workspaceId, relation.taskId), {});
     return true;
@@ -282,6 +305,11 @@ export class TasksService {
         facts: { title: task.title, assigneeId: task.assigneeId, createdById: task.createdById, number: task.number, listId: task.listId, ...extra },
       }),
     );
+  }
+
+  /** Applies the caller's space limits to a task's space. */
+  private async assertInSpace(workspaceId: string, task: Task, permission: SpaceScopedPermission): Promise<void> {
+    SpaceGuard.assert((await this.listsService.getInWorkspace(workspaceId, task.listId)).spaceId, permission);
   }
 
   private async getInWorkspace(workspaceId: string, taskId: string): Promise<Task> {

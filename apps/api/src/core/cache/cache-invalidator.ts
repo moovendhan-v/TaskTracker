@@ -15,6 +15,7 @@ const ALSO_INVALIDATES: Partial<Record<CacheTopic, readonly CacheTopic[]>> = {
   workspace: ['access'],
   space: ['list', 'task', 'status'],
   list: ['task'],
+  folder: ['list'],
   status: ['task'],
   custom_field: ['task', 'space'],
   time_entry: ['task'],

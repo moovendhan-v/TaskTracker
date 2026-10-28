@@ -36,6 +36,7 @@ export class RolesService {
   @Announces('role.created', workspaceFromAccess)
   async create(_actor: Actor, access: WorkspaceAccess, request: CreateRoleRequest): Promise<RoleResponse> {
     RoleGrantPolicy.assertCanDefine(access.permissions, request.permissions);
+    RoleGrantPolicy.assertKeepsSpaceRules(access, effectiveAccessForRole({ permissions: request.permissions, inlinePolicy: { statements: [] } }, [], new Map()));
     const role = await this.roles.create({
       workspaceId: access.workspaceId,
       name: request.name.trim(),
@@ -52,6 +53,7 @@ export class RolesService {
     if (request.permissions) {
       RoleGrantPolicy.assertCanDefine(access.permissions, request.permissions);
       role.permissions = request.permissions;
+      await this.assertKeepsSpaceRules(access, role);
     }
     if (request.name !== undefined) role.name = request.name.trim();
     return this.describeOne(access.workspaceId, await this.roles.save(role));
@@ -91,8 +93,20 @@ export class RolesService {
     return roles.map((role) => {
       const own = attachments.filter((attachment) => attachment.roleId === role.id);
       const effective = effectiveAccessForRole(role, own, custom);
-      return RoleMapper.toResponse(role, own, custom, { permissions: effective.permissions, readableFields: PolicyDocumentPolicy.readableFields(effective) });
+      return RoleMapper.toResponse(role, own, custom, {
+        permissions: effective.permissions,
+        readableFields: PolicyDocumentPolicy.readableFields(effective),
+        spaceRules: effective.spaceRules,
+      });
     });
+  }
+
+  /** The role after a permission change, with its policies, must stay out of the spaces the actor is kept out of. */
+  private async assertKeepsSpaceRules(access: WorkspaceAccess, role: WorkspaceRole): Promise<void> {
+    if (access.spaceRules.length === 0) return;
+    const attachments = await this.policies.listAttachments(access.workspaceId, [role.id]);
+    const custom = new Map((await this.policies.list(access.workspaceId)).map((policy) => [policy.id, policy]));
+    RoleGrantPolicy.assertKeepsSpaceRules(access, effectiveAccessForRole(role, attachments, custom));
   }
 
   async getInWorkspace(workspaceId: string, roleId: string): Promise<WorkspaceRole> {

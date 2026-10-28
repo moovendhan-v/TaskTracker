@@ -13,6 +13,52 @@ export type AddMemberInput = {
   roleId: string;
 };
 
+export type AutomationActionInput = {
+  audiences?: Array<NotifyAudience> | null | undefined;
+  message?: string | null | undefined;
+  priority?: TaskPriority | null | undefined;
+  statusId?: string | null | undefined;
+  type: AutomationActionType;
+  userId?: string | null | undefined;
+  userIds?: Array<string> | null | undefined;
+};
+
+export type AutomationActionType =
+  | 'assign'
+  | 'notify'
+  | 'set_priority'
+  | 'set_status'
+  | 'unassign';
+
+export type AutomationConditionsInput = {
+  listIds?: Array<string> | null | undefined;
+  priorities?: Array<TaskPriority> | null | undefined;
+  types?: Array<TaskType> | null | undefined;
+};
+
+export type AutomationRunStatus =
+  | 'failed'
+  | 'skipped'
+  | 'succeeded';
+
+export type AutomationTriggerInput = {
+  categories?: Array<StatusCategory> | null | undefined;
+  priorities?: Array<TaskPriority> | null | undefined;
+  statusIds?: Array<string> | null | undefined;
+  type: AutomationTriggerType;
+};
+
+export type AutomationTriggerType =
+  | 'github_pull_request_closed'
+  | 'github_pull_request_merged'
+  | 'github_pull_request_opened'
+  | 'task_assigned'
+  | 'task_commented'
+  | 'task_created'
+  | 'task_due_date_changed'
+  | 'task_priority_changed'
+  | 'task_status_changed';
+
 export type ColumnWidthInput = {
   column: string;
   width: number;
@@ -20,6 +66,13 @@ export type ColumnWidthInput = {
 
 export type CommentInput = {
   body: string;
+};
+
+export type ConnectGithubInput = {
+  /** owner/name */
+  repo: string;
+  sync?: GithubSyncInput | null | undefined;
+  taskPrefix?: string | null | undefined;
 };
 
 export type CreateCustomFieldInput = {
@@ -38,11 +91,28 @@ export type CreateDepartmentInput = {
 
 export type CreateDocumentInput = {
   content?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   /** Defaults to page */
   kind?: DocKind | null | undefined;
   parentId?: string | null | undefined;
   spaceId?: string | null | undefined;
   title: string;
+};
+
+export type CreateFolderInput = {
+  color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
+  name: string;
+  /** Nest inside this folder */
+  parentId?: string | null | undefined;
+};
+
+export type CreateFromTemplateInput = {
+  color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
+  /** Starter tasks and docs (default true) */
+  includeContent?: boolean | null | undefined;
+  name: string;
 };
 
 export type CreateLeaveTypeInput = {
@@ -62,6 +132,7 @@ export type CreateRoleInput = {
 
 export type CreateSpaceInput = {
   color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   name: string;
 };
 
@@ -206,6 +277,82 @@ export type ForecastKind =
   | 'overdue'
   | 'week';
 
+export type GithubSyncInput = {
+  onMerged?: StatusCategory | null | undefined;
+  onOpened?: StatusCategory | null | undefined;
+};
+
+/** Icons for spaces, folders, lists and docs */
+export type IconKey =
+  | 'book'
+  | 'box'
+  | 'briefcase'
+  | 'bug'
+  | 'building'
+  | 'calendar'
+  | 'camera'
+  | 'cart'
+  | 'chart'
+  | 'clock'
+  | 'cloud'
+  | 'code'
+  | 'coffee'
+  | 'compass'
+  | 'database'
+  | 'file'
+  | 'flag'
+  | 'folder'
+  | 'gift'
+  | 'globe'
+  | 'graduation'
+  | 'handshake'
+  | 'headset'
+  | 'heart'
+  | 'home'
+  | 'image'
+  | 'leaf'
+  | 'lightbulb'
+  | 'list'
+  | 'lock'
+  | 'mail'
+  | 'map'
+  | 'megaphone'
+  | 'message'
+  | 'moon'
+  | 'music'
+  | 'notebook'
+  | 'palette'
+  | 'pen'
+  | 'phone'
+  | 'pie'
+  | 'puzzle'
+  | 'rocket'
+  | 'server'
+  | 'settings'
+  | 'shield'
+  | 'star'
+  | 'store'
+  | 'sun'
+  | 'target'
+  | 'terminal'
+  | 'trending'
+  | 'trophy'
+  | 'truck'
+  | 'user'
+  | 'users'
+  | 'video'
+  | 'wallet'
+  | 'wrench'
+  | 'zap';
+
+export type ImportTemplateInput = {
+  category?: TemplateCategory | null | undefined;
+  description?: string | null | undefined;
+  /** An exported template file, as JSON text */
+  json: string;
+  name: string;
+};
+
 export type LeaveDecision =
   | 'approved'
   | 'rejected';
@@ -234,12 +381,31 @@ export type LogicOperator =
   | 'not'
   | 'or';
 
+export type MoveFolderInput = {
+  /** Null: directly under the space */
+  parentId?: string | null | undefined;
+  position?: number | null | undefined;
+};
+
+export type MoveTaskListInput = {
+  /** Null: directly under the space */
+  folderId?: string | null | undefined;
+  position?: number | null | undefined;
+};
+
 export type NotificationKind =
+  | 'automation'
   | 'leave_decided'
   | 'leave_requested'
   | 'member_added'
   | 'task_assigned'
   | 'task_commented';
+
+export type NotifyAudience =
+  | 'actor'
+  | 'assignee'
+  | 'creator'
+  | 'watchers';
 
 export type PlatformRole =
   | 'SUPER_ADMIN'
@@ -256,15 +422,25 @@ export type PolicyEffect =
 export type PolicyStatementInput = {
   effect: PolicyEffect;
   fields?: Array<string> | null | undefined;
+  notSpaces?: Array<string> | null | undefined;
   permissions?: Array<string> | null | undefined;
+  spaces?: Array<string> | null | undefined;
 };
 
+export type PullRequestState =
+  | 'closed'
+  | 'merged'
+  | 'open';
+
 export type RealtimeEntityType =
+  | 'automation'
   | 'comment'
   | 'custom_field'
   | 'department'
   | 'document'
   | 'employee'
+  | 'folder'
+  | 'integration'
   | 'leave_request'
   | 'leave_type'
   | 'list'
@@ -296,6 +472,22 @@ export type ResourceQueryInput = {
   sort?: Array<SortInput> | null | undefined;
   /** Filters as a query string, e.g. status[in]=todo,done&metadata[order_id]=6735 */
   where?: string | null | undefined;
+};
+
+export type SaveAsTemplateInput = {
+  category?: TemplateCategory | null | undefined;
+  description?: string | null | undefined;
+  /** Copy open tasks and docs too (default false) */
+  includeContent?: boolean | null | undefined;
+  name: string;
+};
+
+export type SaveAutomationInput = {
+  actions: Array<AutomationActionInput>;
+  conditions?: AutomationConditionsInput | null | undefined;
+  enabled?: boolean | null | undefined;
+  name: string;
+  trigger: AutomationTriggerInput;
 };
 
 export type SavePolicyInput = {
@@ -367,6 +559,10 @@ export type TableLayoutInput = {
 };
 
 export type TaskListInput = {
+  color?: string | null | undefined;
+  /** Create the list inside this folder */
+  folderId?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   name: string;
 };
 
@@ -388,6 +584,13 @@ export type TaskType =
   | 'milestone'
   | 'phase'
   | 'task';
+
+export type TemplateCategory =
+  | 'engineering'
+  | 'general'
+  | 'marketing'
+  | 'operations'
+  | 'people';
 
 export type TimeEntryQueryInput = {
   from: string;
@@ -416,7 +619,19 @@ export type UpdateDepartmentInput = {
 
 export type UpdateDocumentInput = {
   content?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   title?: string | null | undefined;
+};
+
+export type UpdateFolderInput = {
+  color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
+  name?: string | null | undefined;
+};
+
+export type UpdateGithubConnectionInput = {
+  sync?: GithubSyncInput | null | undefined;
+  taskPrefix?: string | null | undefined;
 };
 
 export type UpdateLeaveTypeInput = {
@@ -448,6 +663,7 @@ export type UpdateSpaceInput = {
   color?: string | null | undefined;
   /** yyyy-mm-dd; null clears it */
   dueDate?: string | null | undefined;
+  icon?: IconKey | null | undefined;
   name?: string | null | undefined;
   /** yyyy-mm-dd; null clears it */
   startDate?: string | null | undefined;
@@ -481,6 +697,12 @@ export type UpdateTaskInput = {
   statusId?: string | null | undefined;
   title?: string | null | undefined;
   type?: TaskType | null | undefined;
+};
+
+export type UpdateTaskListInput = {
+  color?: string | null | undefined;
+  icon?: IconKey | null | undefined;
+  name?: string | null | undefined;
 };
 
 export type UpdateTaskStatusInput = {
@@ -568,6 +790,59 @@ export type WorkspaceAuditLogQueryVariables = Exact<{
 
 export type WorkspaceAuditLogQuery = { workspaceAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string }> } };
 
+export type AutomationRuleFieldsFragment = { id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> };
+
+export type AutomationsQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type AutomationsQuery = { automations: Array<{ id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> }> };
+
+export type AutomationRunsQueryVariables = Exact<{
+  workspaceId: string;
+  ruleId: string;
+}>;
+
+
+export type AutomationRunsQuery = { automationRuns: Array<{ id: string, ruleId: string, taskId: string | null, status: AutomationRunStatus, message: string, createdAt: string }> };
+
+export type CreateAutomationMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  input: SaveAutomationInput;
+}>;
+
+
+export type CreateAutomationMutation = { createAutomation: { id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> } };
+
+export type UpdateAutomationMutationVariables = Exact<{
+  workspaceId: string;
+  ruleId: string;
+  input: SaveAutomationInput;
+}>;
+
+
+export type UpdateAutomationMutation = { updateAutomation: { id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> } };
+
+export type SetAutomationEnabledMutationVariables = Exact<{
+  workspaceId: string;
+  ruleId: string;
+  enabled: boolean;
+}>;
+
+
+export type SetAutomationEnabledMutation = { setAutomationEnabled: { id: string, spaceId: string, name: string, enabled: boolean, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null }> } };
+
+export type DeleteAutomationMutationVariables = Exact<{
+  workspaceId: string;
+  ruleId: string;
+}>;
+
+
+export type DeleteAutomationMutation = { deleteAutomation: boolean };
+
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
   taskId: string;
@@ -642,7 +917,7 @@ export type SetSpaceCustomFieldsMutationVariables = Exact<{
 }>;
 
 
-export type SetSpaceCustomFieldsMutation = { setSpaceCustomFields: { id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
+export type SetSpaceCustomFieldsMutation = { setSpaceCustomFields: { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
 
 export type DocumentsQueryVariables = Exact<{
   workspaceId: string;
@@ -650,7 +925,7 @@ export type DocumentsQueryVariables = Exact<{
 }>;
 
 
-export type DocumentsQuery = { documents: Array<{ id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, position: number, createdById: string, updatedAt: string }> };
+export type DocumentsQuery = { documents: Array<{ id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, position: number, createdById: string, updatedAt: string }> };
 
 export type DocumentQueryVariables = Exact<{
   workspaceId: string;
@@ -658,7 +933,7 @@ export type DocumentQueryVariables = Exact<{
 }>;
 
 
-export type DocumentQuery = { document: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type DocumentQuery = { document: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type CreateDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -666,7 +941,7 @@ export type CreateDocumentMutationVariables = Exact<{
 }>;
 
 
-export type CreateDocumentMutation = { createDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type CreateDocumentMutation = { createDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type UpdateDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -675,17 +950,18 @@ export type UpdateDocumentMutationVariables = Exact<{
 }>;
 
 
-export type UpdateDocumentMutation = { updateDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type UpdateDocumentMutation = { updateDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type MoveDocumentMutationVariables = Exact<{
   workspaceId: string;
   documentId: string;
   parentId?: string | null | undefined;
   position?: number | null | undefined;
+  spaceId?: string | null | undefined;
 }>;
 
 
-export type MoveDocumentMutation = { moveDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
+export type MoveDocumentMutation = { moveDocument: { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string } };
 
 export type DeleteDocumentMutationVariables = Exact<{
   workspaceId: string;
@@ -704,15 +980,19 @@ export type FormSchemasQuery = { formSchemas: Array<{ name: string, fields: Arra
 
 export type CurrentUserFieldsFragment = { id: string, email: string, name: string, image: string | null, platformRole: PlatformRole, emailVerified: boolean };
 
-export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string };
+export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> };
+
+export type SpaceRuleFieldsFragment = { spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> };
 
 export type MemberFieldsFragment = { userId: string, name: string, email: string | null, roleId: string, roleName: string, joinedAt: string };
 
-export type RoleFieldsFragment = { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } };
+export type RoleFieldsFragment = { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } };
 
-export type SpaceFieldsFragment = { id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string };
+export type SpaceFieldsFragment = { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string };
 
-export type TaskListFieldsFragment = { id: string, spaceId: string, name: string, createdAt: string };
+export type TaskListFieldsFragment = { id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string };
+
+export type FolderFieldsFragment = { id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string };
 
 export type TaskStatusFieldsFragment = { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number };
 
@@ -724,9 +1004,9 @@ export type CommentFieldsFragment = { id: string, taskId: string, authorId: stri
 
 export type SprintFieldsFragment = { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number };
 
-export type DocumentSummaryFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, position: number, createdById: string, updatedAt: string };
+export type DocumentSummaryFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, position: number, createdById: string, updatedAt: string };
 
-export type DocumentFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, content: string, position: number, createdById: string, createdAt: string, updatedAt: string };
+export type DocumentFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, content: string, position: number, createdById: string, createdAt: string, updatedAt: string };
 
 export type DepartmentFieldsFragment = { id: string, name: string, headUserId: string | null, memberCount: number };
 
@@ -750,7 +1030,7 @@ export type ResourceSchemaFieldsFragment = { resource: string, label: string, lo
 
 export type FormSchemaFieldsFragment = { name: string, fields: Array<{ name: string, label: string | null, type: string, required: boolean, nullable: boolean, rules: Array<{ kind: string, value: string | null, values: Array<string> | null, field: string | null, message: string }> }> };
 
-export type PolicyFieldsFragment = { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } };
+export type PolicyFieldsFragment = { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } };
 
 export type PreferencesFieldsFragment = { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> };
 
@@ -892,12 +1172,62 @@ export type MyLeaveBalancesQueryVariables = Exact<{
 
 export type MyLeaveBalancesQuery = { myLeaveBalances: Array<{ leaveTypeId: string, leaveTypeName: string, color: string, year: number, allowanceDays: number | null, usedDays: number, pendingDays: number, remainingDays: number | null }> };
 
+export type GithubConnectionFieldsFragment = { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } };
+
+export type GithubConnectionsQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type GithubConnectionsQuery = { githubConnections: Array<{ id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } }> };
+
+export type TaskPullRequestsQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type TaskPullRequestsQuery = { taskPullRequests: Array<{ id: string, taskId: string, repo: string, number: number, title: string, url: string, state: PullRequestState, author: string, branch: string, updatedAt: string }> };
+
+export type ConnectGithubMutationVariables = Exact<{
+  workspaceId: string;
+  input: ConnectGithubInput;
+}>;
+
+
+export type ConnectGithubMutation = { connectGithub: { webhookSecret: string, connection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } } } };
+
+export type UpdateGithubConnectionMutationVariables = Exact<{
+  workspaceId: string;
+  connectionId: string;
+  input: UpdateGithubConnectionInput;
+}>;
+
+
+export type UpdateGithubConnectionMutation = { updateGithubConnection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } } };
+
+export type RotateGithubSecretMutationVariables = Exact<{
+  workspaceId: string;
+  connectionId: string;
+}>;
+
+
+export type RotateGithubSecretMutation = { rotateGithubSecret: { webhookSecret: string, connection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } } } };
+
+export type DisconnectGithubMutationVariables = Exact<{
+  workspaceId: string;
+  connectionId: string;
+}>;
+
+
+export type DisconnectGithubMutation = { disconnectGithub: boolean };
+
 export type ListsQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type ListsQuery = { lists: Array<{ id: string, spaceId: string, name: string, createdAt: string }> };
+export type ListsQuery = { lists: Array<{ id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string }> };
 
 export type CreateListMutationVariables = Exact<{
   workspaceId: string;
@@ -906,16 +1236,25 @@ export type CreateListMutationVariables = Exact<{
 }>;
 
 
-export type CreateListMutation = { createList: { id: string, spaceId: string, name: string, createdAt: string } };
+export type CreateListMutation = { createList: { id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
 
 export type UpdateListMutationVariables = Exact<{
   workspaceId: string;
   listId: string;
-  input: TaskListInput;
+  input: UpdateTaskListInput;
 }>;
 
 
-export type UpdateListMutation = { updateList: { id: string, spaceId: string, name: string, createdAt: string } };
+export type UpdateListMutation = { updateList: { id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
+
+export type MoveListMutationVariables = Exact<{
+  workspaceId: string;
+  listId: string;
+  input: MoveTaskListInput;
+}>;
+
+
+export type MoveListMutation = { moveList: { id: string, spaceId: string, folderId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
 
 export type DeleteListMutationVariables = Exact<{
   workspaceId: string;
@@ -924,6 +1263,48 @@ export type DeleteListMutationVariables = Exact<{
 
 
 export type DeleteListMutation = { deleteList: boolean };
+
+export type FoldersQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type FoldersQuery = { folders: Array<{ id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string }> };
+
+export type CreateFolderMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  input: CreateFolderInput;
+}>;
+
+
+export type CreateFolderMutation = { createFolder: { id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
+
+export type UpdateFolderMutationVariables = Exact<{
+  workspaceId: string;
+  folderId: string;
+  input: UpdateFolderInput;
+}>;
+
+
+export type UpdateFolderMutation = { updateFolder: { id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
+
+export type MoveFolderMutationVariables = Exact<{
+  workspaceId: string;
+  folderId: string;
+  input: MoveFolderInput;
+}>;
+
+
+export type MoveFolderMutation = { moveFolder: { id: string, spaceId: string, parentId: string | null, name: string, color: string | null, icon: IconKey | null, position: number, createdAt: string } };
+
+export type DeleteFolderMutationVariables = Exact<{
+  workspaceId: string;
+  folderId: string;
+}>;
+
+
+export type DeleteFolderMutation = { deleteFolder: boolean };
 
 export type MembersQueryVariables = Exact<{
   workspaceId: string;
@@ -1008,7 +1389,7 @@ export type PoliciesQueryVariables = Exact<{
 }>;
 
 
-export type PoliciesQuery = { policies: Array<{ id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } }> };
+export type PoliciesQuery = { policies: Array<{ id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } }> };
 
 export type ProtectedFieldsQueryVariables = Exact<{
   workspaceId: string;
@@ -1022,7 +1403,7 @@ export type MyAccessQueryVariables = Exact<{
 }>;
 
 
-export type MyAccessQuery = { myAccess: { permissions: Array<string>, readableFields: Array<string> } };
+export type MyAccessQuery = { myAccess: { permissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type CreatePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1030,7 +1411,7 @@ export type CreatePolicyMutationVariables = Exact<{
 }>;
 
 
-export type CreatePolicyMutation = { createPolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type CreatePolicyMutation = { createPolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type UpdatePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1039,7 +1420,7 @@ export type UpdatePolicyMutationVariables = Exact<{
 }>;
 
 
-export type UpdatePolicyMutation = { updatePolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type UpdatePolicyMutation = { updatePolicy: { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type DeletePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1056,7 +1437,7 @@ export type AttachRolePolicyMutationVariables = Exact<{
 }>;
 
 
-export type AttachRolePolicyMutation = { attachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type AttachRolePolicyMutation = { attachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type DetachRolePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1065,7 +1446,7 @@ export type DetachRolePolicyMutationVariables = Exact<{
 }>;
 
 
-export type DetachRolePolicyMutation = { detachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type DetachRolePolicyMutation = { detachRolePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type SetRoleInlinePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -1074,7 +1455,7 @@ export type SetRoleInlinePolicyMutationVariables = Exact<{
 }>;
 
 
-export type SetRoleInlinePolicyMutation = { setRoleInlinePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type SetRoleInlinePolicyMutation = { setRoleInlinePolicy: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type MyPreferencesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1174,7 +1555,7 @@ export type RolesQueryVariables = Exact<{
 }>;
 
 
-export type RolesQuery = { roles: Array<{ id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } }> };
+export type RolesQuery = { roles: Array<{ id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } }> };
 
 export type CreateRoleMutationVariables = Exact<{
   workspaceId: string;
@@ -1182,7 +1563,7 @@ export type CreateRoleMutationVariables = Exact<{
 }>;
 
 
-export type CreateRoleMutation = { createRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type CreateRoleMutation = { createRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type UpdateRoleMutationVariables = Exact<{
   workspaceId: string;
@@ -1191,7 +1572,7 @@ export type UpdateRoleMutationVariables = Exact<{
 }>;
 
 
-export type UpdateRoleMutation = { updateRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null }> } } };
+export type UpdateRoleMutation = { updateRole: { id: string, name: string, systemKey: string | null, permissions: Array<string>, effectivePermissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }>, policies: Array<{ ref: string, name: string, managed: boolean }>, inlinePolicy: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } } };
 
 export type DeleteRoleMutationVariables = Exact<{
   workspaceId: string;
@@ -1206,7 +1587,7 @@ export type SpacesQueryVariables = Exact<{
 }>;
 
 
-export type SpacesQuery = { spaces: Array<{ id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string }> };
+export type SpacesQuery = { spaces: Array<{ id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string }> };
 
 export type CreateSpaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1214,7 +1595,7 @@ export type CreateSpaceMutationVariables = Exact<{
 }>;
 
 
-export type CreateSpaceMutation = { createSpace: { id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
+export type CreateSpaceMutation = { createSpace: { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
 
 export type UpdateSpaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1223,7 +1604,7 @@ export type UpdateSpaceMutationVariables = Exact<{
 }>;
 
 
-export type UpdateSpaceMutation = { updateSpace: { id: string, workspaceId: string, name: string, color: string, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
+export type UpdateSpaceMutation = { updateSpace: { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
 
 export type DeleteSpaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1469,6 +1850,58 @@ export type UnrelateTasksMutationVariables = Exact<{
 
 export type UnrelateTasksMutation = { unrelateTasks: boolean };
 
+export type TemplateFieldsFragment = { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } };
+
+export type ProjectTemplatesQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ProjectTemplatesQuery = { projectTemplates: Array<{ id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } }> };
+
+export type SpaceTemplateContentQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  includeContent?: boolean | null | undefined;
+}>;
+
+
+export type SpaceTemplateContentQuery = { spaceTemplateContent: Record<string, unknown> };
+
+export type CreateSpaceFromTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  templateId: string;
+  input: CreateFromTemplateInput;
+}>;
+
+
+export type CreateSpaceFromTemplateMutation = { createSpaceFromTemplate: { id: string, workspaceId: string, name: string, color: string, icon: IconKey | null, status: SpaceStatus, statusNote: string, startDate: string | null, dueDate: string | null, customFields: Record<string, string | number | boolean | string[] | null>, createdAt: string } };
+
+export type SaveSpaceAsTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  input: SaveAsTemplateInput;
+}>;
+
+
+export type SaveSpaceAsTemplateMutation = { saveSpaceAsTemplate: { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } } };
+
+export type ImportTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  input: ImportTemplateInput;
+}>;
+
+
+export type ImportTemplateMutation = { importTemplate: { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } } };
+
+export type DeleteTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  templateId: string;
+}>;
+
+
+export type DeleteTemplateMutation = { deleteTemplate: boolean };
+
 export type TimeEntryFieldsFragment = { id: string, userId: string, userName: string | null, taskId: string | null, spaceId: string | null, spaceName: string | null, startedAt: string, endedAt: string | null, minutes: number, note: string, activity: string, task: { id: string, number: number, title: string } | null };
 
 export type RunningTimerQueryVariables = Exact<{
@@ -1550,21 +1983,21 @@ export type MeQuery = { me: { id: string, email: string, name: string, image: st
 export type WorkspacesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type WorkspacesQuery = { workspaces: Array<{ id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string }> };
+export type WorkspacesQuery = { workspaces: Array<{ id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> }> };
 
 export type WorkspaceQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type WorkspaceQuery = { workspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string } };
+export type WorkspaceQuery = { workspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type CreateWorkspaceMutationVariables = Exact<{
   input: CreateWorkspaceInput;
 }>;
 
 
-export type CreateWorkspaceMutation = { createWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string } };
+export type CreateWorkspaceMutation = { createWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type UpdateWorkspaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1572,7 +2005,7 @@ export type UpdateWorkspaceMutationVariables = Exact<{
 }>;
 
 
-export type UpdateWorkspaceMutation = { updateWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string } };
+export type UpdateWorkspaceMutation = { updateWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type DeleteWorkspaceMutationVariables = Exact<{
   workspaceId: string;
@@ -1616,6 +2049,38 @@ export const DashboardTaskFieldsFragmentDoc = new TypedDocumentString(`
   updatedAt
 }
     `, {"fragmentName":"DashboardTaskFields"}) as unknown as TypedDocumentString<DashboardTaskFieldsFragment, unknown>;
+export const AutomationRuleFieldsFragmentDoc = new TypedDocumentString(`
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}
+    `, {"fragmentName":"AutomationRuleFields"}) as unknown as TypedDocumentString<AutomationRuleFieldsFragment, unknown>;
 export const CurrentUserFieldsFragmentDoc = new TypedDocumentString(`
     fragment CurrentUserFields on CurrentUser {
   id
@@ -1626,6 +2091,13 @@ export const CurrentUserFieldsFragmentDoc = new TypedDocumentString(`
   emailVerified
 }
     `, {"fragmentName":"CurrentUserFields"}) as unknown as TypedDocumentString<CurrentUserFieldsFragment, unknown>;
+export const SpaceRuleFieldsFragmentDoc = new TypedDocumentString(`
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+    `, {"fragmentName":"SpaceRuleFields"}) as unknown as TypedDocumentString<SpaceRuleFieldsFragment, unknown>;
 export const WorkspaceFieldsFragmentDoc = new TypedDocumentString(`
     fragment WorkspaceFields on Workspace {
   id
@@ -1633,9 +2105,16 @@ export const WorkspaceFieldsFragmentDoc = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
 }
-    `, {"fragmentName":"WorkspaceFields"}) as unknown as TypedDocumentString<WorkspaceFieldsFragment, unknown>;
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}`, {"fragmentName":"WorkspaceFields"}) as unknown as TypedDocumentString<WorkspaceFieldsFragment, unknown>;
 export const MemberFieldsFragmentDoc = new TypedDocumentString(`
     fragment MemberFields on Member {
   userId
@@ -1654,6 +2133,9 @@ export const RoleFieldsFragmentDoc = new TypedDocumentString(`
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -1664,16 +2146,23 @@ export const RoleFieldsFragmentDoc = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }
-    `, {"fragmentName":"RoleFields"}) as unknown as TypedDocumentString<RoleFieldsFragment, unknown>;
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}`, {"fragmentName":"RoleFields"}) as unknown as TypedDocumentString<RoleFieldsFragment, unknown>;
 export const SpaceFieldsFragmentDoc = new TypedDocumentString(`
     fragment SpaceFields on Space {
   id
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate
@@ -1686,10 +2175,26 @@ export const TaskListFieldsFragmentDoc = new TypedDocumentString(`
     fragment TaskListFields on TaskList {
   id
   spaceId
+  folderId
   name
+  color
+  icon
+  position
   createdAt
 }
     `, {"fragmentName":"TaskListFields"}) as unknown as TypedDocumentString<TaskListFieldsFragment, unknown>;
+export const FolderFieldsFragmentDoc = new TypedDocumentString(`
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}
+    `, {"fragmentName":"FolderFields"}) as unknown as TypedDocumentString<FolderFieldsFragment, unknown>;
 export const TaskStatusFieldsFragmentDoc = new TypedDocumentString(`
     fragment TaskStatusFields on TaskStatus {
   id
@@ -1786,6 +2291,7 @@ export const DocumentSummaryFieldsFragmentDoc = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   position
   createdById
   updatedAt
@@ -1798,6 +2304,7 @@ export const DocumentFieldsFragmentDoc = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -1982,6 +2489,8 @@ export const PolicyFieldsFragmentDoc = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }
@@ -2035,6 +2544,43 @@ export const PreferencesFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"PreferencesFields"}) as unknown as TypedDocumentString<PreferencesFieldsFragment, unknown>;
+export const GithubConnectionFieldsFragmentDoc = new TypedDocumentString(`
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}
+    `, {"fragmentName":"GithubConnectionFields"}) as unknown as TypedDocumentString<GithubConnectionFieldsFragment, unknown>;
+export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
+    fragment TemplateFields on ProjectTemplate {
+  id
+  name
+  description
+  category
+  builtIn
+  icon
+  color
+  counts {
+    statuses
+    customFields
+    folders
+    lists
+    tasks
+    docs
+  }
+  content
+  createdAt
+}
+    `, {"fragmentName":"TemplateFields"}) as unknown as TypedDocumentString<TemplateFieldsFragment, unknown>;
 export const TimeEntryFieldsFragmentDoc = new TypedDocumentString(`
     fragment TimeEntryFields on TimeEntry {
   id
@@ -2286,6 +2832,171 @@ export const WorkspaceAuditLogDocument = new TypedDocumentString(`
   metadata
   createdAt
 }`) as unknown as TypedDocumentString<WorkspaceAuditLogQuery, WorkspaceAuditLogQueryVariables>;
+export const AutomationsDocument = new TypedDocumentString(`
+    query Automations($workspaceId: ID!, $spaceId: ID!) {
+  automations(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...AutomationRuleFields
+  }
+}
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}`) as unknown as TypedDocumentString<AutomationsQuery, AutomationsQueryVariables>;
+export const AutomationRunsDocument = new TypedDocumentString(`
+    query AutomationRuns($workspaceId: ID!, $ruleId: ID!) {
+  automationRuns(workspaceId: $workspaceId, ruleId: $ruleId) {
+    id
+    ruleId
+    taskId
+    status
+    message
+    createdAt
+  }
+}
+    `) as unknown as TypedDocumentString<AutomationRunsQuery, AutomationRunsQueryVariables>;
+export const CreateAutomationDocument = new TypedDocumentString(`
+    mutation CreateAutomation($workspaceId: ID!, $spaceId: ID!, $input: SaveAutomationInput!) {
+  createAutomation(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...AutomationRuleFields
+  }
+}
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}`) as unknown as TypedDocumentString<CreateAutomationMutation, CreateAutomationMutationVariables>;
+export const UpdateAutomationDocument = new TypedDocumentString(`
+    mutation UpdateAutomation($workspaceId: ID!, $ruleId: ID!, $input: SaveAutomationInput!) {
+  updateAutomation(workspaceId: $workspaceId, ruleId: $ruleId, input: $input) {
+    ...AutomationRuleFields
+  }
+}
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}`) as unknown as TypedDocumentString<UpdateAutomationMutation, UpdateAutomationMutationVariables>;
+export const SetAutomationEnabledDocument = new TypedDocumentString(`
+    mutation SetAutomationEnabled($workspaceId: ID!, $ruleId: ID!, $enabled: Boolean!) {
+  setAutomationEnabled(
+    workspaceId: $workspaceId
+    ruleId: $ruleId
+    enabled: $enabled
+  ) {
+    ...AutomationRuleFields
+  }
+}
+    fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger {
+    type
+    statusIds
+    categories
+    priorities
+  }
+  conditions {
+    listIds
+    priorities
+    types
+  }
+  actions {
+    type
+    statusId
+    priority
+    userId
+    audiences
+    userIds
+    message
+  }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}`) as unknown as TypedDocumentString<SetAutomationEnabledMutation, SetAutomationEnabledMutationVariables>;
+export const DeleteAutomationDocument = new TypedDocumentString(`
+    mutation DeleteAutomation($workspaceId: ID!, $ruleId: ID!) {
+  deleteAutomation(workspaceId: $workspaceId, ruleId: $ruleId)
+}
+    `) as unknown as TypedDocumentString<DeleteAutomationMutation, DeleteAutomationMutationVariables>;
 export const CommentsDocument = new TypedDocumentString(`
     query Comments($workspaceId: ID!, $taskId: ID!) {
   comments(workspaceId: $workspaceId, taskId: $taskId) {
@@ -2416,6 +3127,7 @@ export const SetSpaceCustomFieldsDocument = new TypedDocumentString(`
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate
@@ -2435,6 +3147,7 @@ export const DocumentsDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   position
   createdById
   updatedAt
@@ -2451,6 +3164,7 @@ export const DocumentDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -2469,6 +3183,7 @@ export const CreateDocumentDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -2491,6 +3206,7 @@ export const UpdateDocumentDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -2498,12 +3214,13 @@ export const UpdateDocumentDocument = new TypedDocumentString(`
   updatedAt
 }`) as unknown as TypedDocumentString<UpdateDocumentMutation, UpdateDocumentMutationVariables>;
 export const MoveDocumentDocument = new TypedDocumentString(`
-    mutation MoveDocument($workspaceId: ID!, $documentId: ID!, $parentId: ID, $position: Float) {
+    mutation MoveDocument($workspaceId: ID!, $documentId: ID!, $parentId: ID, $position: Float, $spaceId: ID) {
   moveDocument(
     workspaceId: $workspaceId
     documentId: $documentId
     parentId: $parentId
     position: $position
+    spaceId: $spaceId
   ) {
     ...DocumentFields
   }
@@ -2514,6 +3231,7 @@ export const MoveDocumentDocument = new TypedDocumentString(`
   parentId
   kind
   title
+  icon
   content
   position
   createdById
@@ -2832,6 +3550,117 @@ export const MyLeaveBalancesDocument = new TypedDocumentString(`
   pendingDays
   remainingDays
 }`) as unknown as TypedDocumentString<MyLeaveBalancesQuery, MyLeaveBalancesQueryVariables>;
+export const GithubConnectionsDocument = new TypedDocumentString(`
+    query GithubConnections($workspaceId: ID!) {
+  githubConnections(workspaceId: $workspaceId) {
+    ...GithubConnectionFields
+  }
+}
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}`) as unknown as TypedDocumentString<GithubConnectionsQuery, GithubConnectionsQueryVariables>;
+export const TaskPullRequestsDocument = new TypedDocumentString(`
+    query TaskPullRequests($workspaceId: ID!, $taskId: ID!) {
+  taskPullRequests(workspaceId: $workspaceId, taskId: $taskId) {
+    id
+    taskId
+    repo
+    number
+    title
+    url
+    state
+    author
+    branch
+    updatedAt
+  }
+}
+    `) as unknown as TypedDocumentString<TaskPullRequestsQuery, TaskPullRequestsQueryVariables>;
+export const ConnectGithubDocument = new TypedDocumentString(`
+    mutation ConnectGithub($workspaceId: ID!, $input: ConnectGithubInput!) {
+  connectGithub(workspaceId: $workspaceId, input: $input) {
+    webhookSecret
+    connection {
+      ...GithubConnectionFields
+    }
+  }
+}
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}`) as unknown as TypedDocumentString<ConnectGithubMutation, ConnectGithubMutationVariables>;
+export const UpdateGithubConnectionDocument = new TypedDocumentString(`
+    mutation UpdateGithubConnection($workspaceId: ID!, $connectionId: ID!, $input: UpdateGithubConnectionInput!) {
+  updateGithubConnection(
+    workspaceId: $workspaceId
+    connectionId: $connectionId
+    input: $input
+  ) {
+    ...GithubConnectionFields
+  }
+}
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}`) as unknown as TypedDocumentString<UpdateGithubConnectionMutation, UpdateGithubConnectionMutationVariables>;
+export const RotateGithubSecretDocument = new TypedDocumentString(`
+    mutation RotateGithubSecret($workspaceId: ID!, $connectionId: ID!) {
+  rotateGithubSecret(workspaceId: $workspaceId, connectionId: $connectionId) {
+    webhookSecret
+    connection {
+      ...GithubConnectionFields
+    }
+  }
+}
+    fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync {
+    onOpened
+    onMerged
+  }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}`) as unknown as TypedDocumentString<RotateGithubSecretMutation, RotateGithubSecretMutationVariables>;
+export const DisconnectGithubDocument = new TypedDocumentString(`
+    mutation DisconnectGithub($workspaceId: ID!, $connectionId: ID!) {
+  disconnectGithub(workspaceId: $workspaceId, connectionId: $connectionId)
+}
+    `) as unknown as TypedDocumentString<DisconnectGithubMutation, DisconnectGithubMutationVariables>;
 export const ListsDocument = new TypedDocumentString(`
     query Lists($workspaceId: ID!) {
   lists(workspaceId: $workspaceId) {
@@ -2841,7 +3670,11 @@ export const ListsDocument = new TypedDocumentString(`
     fragment TaskListFields on TaskList {
   id
   spaceId
+  folderId
   name
+  color
+  icon
+  position
   createdAt
 }`) as unknown as TypedDocumentString<ListsQuery, ListsQueryVariables>;
 export const CreateListDocument = new TypedDocumentString(`
@@ -2853,11 +3686,15 @@ export const CreateListDocument = new TypedDocumentString(`
     fragment TaskListFields on TaskList {
   id
   spaceId
+  folderId
   name
+  color
+  icon
+  position
   createdAt
 }`) as unknown as TypedDocumentString<CreateListMutation, CreateListMutationVariables>;
 export const UpdateListDocument = new TypedDocumentString(`
-    mutation UpdateList($workspaceId: ID!, $listId: ID!, $input: TaskListInput!) {
+    mutation UpdateList($workspaceId: ID!, $listId: ID!, $input: UpdateTaskListInput!) {
   updateList(workspaceId: $workspaceId, listId: $listId, input: $input) {
     ...TaskListFields
   }
@@ -2865,14 +3702,103 @@ export const UpdateListDocument = new TypedDocumentString(`
     fragment TaskListFields on TaskList {
   id
   spaceId
+  folderId
   name
+  color
+  icon
+  position
   createdAt
 }`) as unknown as TypedDocumentString<UpdateListMutation, UpdateListMutationVariables>;
+export const MoveListDocument = new TypedDocumentString(`
+    mutation MoveList($workspaceId: ID!, $listId: ID!, $input: MoveTaskListInput!) {
+  moveList(workspaceId: $workspaceId, listId: $listId, input: $input) {
+    ...TaskListFields
+  }
+}
+    fragment TaskListFields on TaskList {
+  id
+  spaceId
+  folderId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<MoveListMutation, MoveListMutationVariables>;
 export const DeleteListDocument = new TypedDocumentString(`
     mutation DeleteList($workspaceId: ID!, $listId: ID!) {
   deleteList(workspaceId: $workspaceId, listId: $listId)
 }
     `) as unknown as TypedDocumentString<DeleteListMutation, DeleteListMutationVariables>;
+export const FoldersDocument = new TypedDocumentString(`
+    query Folders($workspaceId: ID!) {
+  folders(workspaceId: $workspaceId) {
+    ...FolderFields
+  }
+}
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<FoldersQuery, FoldersQueryVariables>;
+export const CreateFolderDocument = new TypedDocumentString(`
+    mutation CreateFolder($workspaceId: ID!, $spaceId: ID!, $input: CreateFolderInput!) {
+  createFolder(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...FolderFields
+  }
+}
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<CreateFolderMutation, CreateFolderMutationVariables>;
+export const UpdateFolderDocument = new TypedDocumentString(`
+    mutation UpdateFolder($workspaceId: ID!, $folderId: ID!, $input: UpdateFolderInput!) {
+  updateFolder(workspaceId: $workspaceId, folderId: $folderId, input: $input) {
+    ...FolderFields
+  }
+}
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<UpdateFolderMutation, UpdateFolderMutationVariables>;
+export const MoveFolderDocument = new TypedDocumentString(`
+    mutation MoveFolder($workspaceId: ID!, $folderId: ID!, $input: MoveFolderInput!) {
+  moveFolder(workspaceId: $workspaceId, folderId: $folderId, input: $input) {
+    ...FolderFields
+  }
+}
+    fragment FolderFields on Folder {
+  id
+  spaceId
+  parentId
+  name
+  color
+  icon
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<MoveFolderMutation, MoveFolderMutationVariables>;
+export const DeleteFolderDocument = new TypedDocumentString(`
+    mutation DeleteFolder($workspaceId: ID!, $folderId: ID!) {
+  deleteFolder(workspaceId: $workspaceId, folderId: $folderId)
+}
+    `) as unknown as TypedDocumentString<DeleteFolderMutation, DeleteFolderMutationVariables>;
 export const MembersDocument = new TypedDocumentString(`
     query Members($workspaceId: ID!) {
   members(workspaceId: $workspaceId) {
@@ -2990,6 +3916,8 @@ export const PoliciesDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<PoliciesQuery, PoliciesQueryVariables>;
@@ -3008,9 +3936,16 @@ export const MyAccessDocument = new TypedDocumentString(`
   myAccess(workspaceId: $workspaceId) {
     permissions
     readableFields
+    spaceRules {
+      ...SpaceRuleFields
+    }
   }
 }
-    `) as unknown as TypedDocumentString<MyAccessQuery, MyAccessQueryVariables>;
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}`) as unknown as TypedDocumentString<MyAccessQuery, MyAccessQueryVariables>;
 export const CreatePolicyDocument = new TypedDocumentString(`
     mutation CreatePolicy($workspaceId: ID!, $input: SavePolicyInput!) {
   createPolicy(workspaceId: $workspaceId, input: $input) {
@@ -3028,6 +3963,8 @@ export const CreatePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<CreatePolicyMutation, CreatePolicyMutationVariables>;
@@ -3048,6 +3985,8 @@ export const UpdatePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<UpdatePolicyMutation, UpdatePolicyMutationVariables>;
@@ -3062,13 +4001,21 @@ export const AttachRolePolicyDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -3079,6 +4026,8 @@ export const AttachRolePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<AttachRolePolicyMutation, AttachRolePolicyMutationVariables>;
@@ -3088,13 +4037,21 @@ export const DetachRolePolicyDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -3105,6 +4062,8 @@ export const DetachRolePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<DetachRolePolicyMutation, DetachRolePolicyMutationVariables>;
@@ -3118,13 +4077,21 @@ export const SetRoleInlinePolicyDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -3135,6 +4102,8 @@ export const SetRoleInlinePolicyDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<SetRoleInlinePolicyMutation, SetRoleInlinePolicyMutationVariables>;
@@ -3708,13 +4677,21 @@ export const RolesDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -3725,6 +4702,8 @@ export const RolesDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<RolesQuery, RolesQueryVariables>;
@@ -3734,13 +4713,21 @@ export const CreateRoleDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -3751,6 +4738,8 @@ export const CreateRoleDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<CreateRoleMutation, CreateRoleMutationVariables>;
@@ -3760,13 +4749,21 @@ export const UpdateRoleDocument = new TypedDocumentString(`
     ...RoleFields
   }
 }
-    fragment RoleFields on Role {
+    fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
+}
+fragment RoleFields on Role {
   id
   name
   systemKey
   permissions
   effectivePermissions
   readableFields
+  spaceRules {
+    ...SpaceRuleFields
+  }
   policies {
     ref
     name
@@ -3777,6 +4774,8 @@ export const UpdateRoleDocument = new TypedDocumentString(`
       effect
       permissions
       fields
+      spaces
+      notSpaces
     }
   }
 }`) as unknown as TypedDocumentString<UpdateRoleMutation, UpdateRoleMutationVariables>;
@@ -3796,6 +4795,7 @@ export const SpacesDocument = new TypedDocumentString(`
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate
@@ -3814,6 +4814,7 @@ export const CreateSpaceDocument = new TypedDocumentString(`
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate
@@ -3832,6 +4833,7 @@ export const UpdateSpaceDocument = new TypedDocumentString(`
   workspaceId
   name
   color
+  icon
   status
   statusNote
   startDate
@@ -4459,6 +5461,118 @@ export const UnrelateTasksDocument = new TypedDocumentString(`
   unrelateTasks(workspaceId: $workspaceId, relationId: $relationId)
 }
     `) as unknown as TypedDocumentString<UnrelateTasksMutation, UnrelateTasksMutationVariables>;
+export const ProjectTemplatesDocument = new TypedDocumentString(`
+    query ProjectTemplates($workspaceId: ID!) {
+  projectTemplates(workspaceId: $workspaceId) {
+    ...TemplateFields
+  }
+}
+    fragment TemplateFields on ProjectTemplate {
+  id
+  name
+  description
+  category
+  builtIn
+  icon
+  color
+  counts {
+    statuses
+    customFields
+    folders
+    lists
+    tasks
+    docs
+  }
+  content
+  createdAt
+}`) as unknown as TypedDocumentString<ProjectTemplatesQuery, ProjectTemplatesQueryVariables>;
+export const SpaceTemplateContentDocument = new TypedDocumentString(`
+    query SpaceTemplateContent($workspaceId: ID!, $spaceId: ID!, $includeContent: Boolean) {
+  spaceTemplateContent(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    includeContent: $includeContent
+  )
+}
+    `) as unknown as TypedDocumentString<SpaceTemplateContentQuery, SpaceTemplateContentQueryVariables>;
+export const CreateSpaceFromTemplateDocument = new TypedDocumentString(`
+    mutation CreateSpaceFromTemplate($workspaceId: ID!, $templateId: String!, $input: CreateFromTemplateInput!) {
+  createSpaceFromTemplate(
+    workspaceId: $workspaceId
+    templateId: $templateId
+    input: $input
+  ) {
+    ...SpaceFields
+  }
+}
+    fragment SpaceFields on Space {
+  id
+  workspaceId
+  name
+  color
+  icon
+  status
+  statusNote
+  startDate
+  dueDate
+  customFields
+  createdAt
+}`) as unknown as TypedDocumentString<CreateSpaceFromTemplateMutation, CreateSpaceFromTemplateMutationVariables>;
+export const SaveSpaceAsTemplateDocument = new TypedDocumentString(`
+    mutation SaveSpaceAsTemplate($workspaceId: ID!, $spaceId: ID!, $input: SaveAsTemplateInput!) {
+  saveSpaceAsTemplate(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...TemplateFields
+  }
+}
+    fragment TemplateFields on ProjectTemplate {
+  id
+  name
+  description
+  category
+  builtIn
+  icon
+  color
+  counts {
+    statuses
+    customFields
+    folders
+    lists
+    tasks
+    docs
+  }
+  content
+  createdAt
+}`) as unknown as TypedDocumentString<SaveSpaceAsTemplateMutation, SaveSpaceAsTemplateMutationVariables>;
+export const ImportTemplateDocument = new TypedDocumentString(`
+    mutation ImportTemplate($workspaceId: ID!, $input: ImportTemplateInput!) {
+  importTemplate(workspaceId: $workspaceId, input: $input) {
+    ...TemplateFields
+  }
+}
+    fragment TemplateFields on ProjectTemplate {
+  id
+  name
+  description
+  category
+  builtIn
+  icon
+  color
+  counts {
+    statuses
+    customFields
+    folders
+    lists
+    tasks
+    docs
+  }
+  content
+  createdAt
+}`) as unknown as TypedDocumentString<ImportTemplateMutation, ImportTemplateMutationVariables>;
+export const DeleteTemplateDocument = new TypedDocumentString(`
+    mutation DeleteTemplate($workspaceId: ID!, $templateId: ID!) {
+  deleteTemplate(workspaceId: $workspaceId, templateId: $templateId)
+}
+    `) as unknown as TypedDocumentString<DeleteTemplateMutation, DeleteTemplateMutationVariables>;
 export const RunningTimerDocument = new TypedDocumentString(`
     query RunningTimer($workspaceId: ID!) {
   runningTimer(workspaceId: $workspaceId) {
@@ -4668,7 +5782,15 @@ export const WorkspacesDocument = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
+}
+fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
 }`) as unknown as TypedDocumentString<WorkspacesQuery, WorkspacesQueryVariables>;
 export const WorkspaceDocument = new TypedDocumentString(`
     query Workspace($workspaceId: ID!) {
@@ -4682,7 +5804,15 @@ export const WorkspaceDocument = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
+}
+fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
 }`) as unknown as TypedDocumentString<WorkspaceQuery, WorkspaceQueryVariables>;
 export const CreateWorkspaceDocument = new TypedDocumentString(`
     mutation CreateWorkspace($input: CreateWorkspaceInput!) {
@@ -4696,7 +5826,15 @@ export const CreateWorkspaceDocument = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
+}
+fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
 }`) as unknown as TypedDocumentString<CreateWorkspaceMutation, CreateWorkspaceMutationVariables>;
 export const UpdateWorkspaceDocument = new TypedDocumentString(`
     mutation UpdateWorkspace($workspaceId: ID!, $input: UpdateWorkspaceInput!) {
@@ -4710,7 +5848,15 @@ export const UpdateWorkspaceDocument = new TypedDocumentString(`
   color
   roleName
   permissions
+  spaceRules {
+    ...SpaceRuleFields
+  }
   createdAt
+}
+fragment SpaceRuleFields on SpaceRule {
+  spaces
+  notSpaces
+  permissions
 }`) as unknown as TypedDocumentString<UpdateWorkspaceMutation, UpdateWorkspaceMutationVariables>;
 export const DeleteWorkspaceDocument = new TypedDocumentString(`
     mutation DeleteWorkspace($workspaceId: ID!) {

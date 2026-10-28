@@ -1,0 +1,31 @@
+fragment GithubConnectionFields on GithubConnection {
+  id
+  repo
+  taskPrefix
+  sync { onOpened onMerged }
+  webhookPath
+  createdById
+  lastDeliveryAt
+  lastDeliveryStatus
+  createdAt
+}
+
+query GithubConnections($workspaceId: ID!) { githubConnections(workspaceId: $workspaceId) { ...GithubConnectionFields } }
+
+query TaskPullRequests($workspaceId: ID!, $taskId: ID!) {
+  taskPullRequests(workspaceId: $workspaceId, taskId: $taskId) { id taskId repo number title url state author branch updatedAt }
+}
+
+mutation ConnectGithub($workspaceId: ID!, $input: ConnectGithubInput!) {
+  connectGithub(workspaceId: $workspaceId, input: $input) { webhookSecret connection { ...GithubConnectionFields } }
+}
+
+mutation UpdateGithubConnection($workspaceId: ID!, $connectionId: ID!, $input: UpdateGithubConnectionInput!) {
+  updateGithubConnection(workspaceId: $workspaceId, connectionId: $connectionId, input: $input) { ...GithubConnectionFields }
+}
+
+mutation RotateGithubSecret($workspaceId: ID!, $connectionId: ID!) {
+  rotateGithubSecret(workspaceId: $workspaceId, connectionId: $connectionId) { webhookSecret connection { ...GithubConnectionFields } }
+}
+
+mutation DisconnectGithub($workspaceId: ID!, $connectionId: ID!) { disconnectGithub(workspaceId: $workspaceId, connectionId: $connectionId) }

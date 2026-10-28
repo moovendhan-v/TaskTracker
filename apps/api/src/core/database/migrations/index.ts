@@ -12,6 +12,11 @@ import { UserPreferences1729640000000 } from './1729640000000-user-preferences.j
 import { DocumentFolders1729670000000 } from './1729670000000-document-folders.js';
 import { TimeTracking1729660000000 } from './1729660000000-time-tracking.js';
 import { TaskModelV21729650000000 } from './1729650000000-task-model-v2.js';
+import { SpaceHierarchy1729680000000 } from './1729680000000-space-hierarchy.js';
+import { SpaceAccess1729690000000 } from './1729690000000-space-access.js';
+import { ProjectTemplates1729700000000 } from './1729700000000-project-templates.js';
+import { Automations1729710000000 } from './1729710000000-automations.js';
+import { GithubIntegration1729720000000 } from './1729720000000-github-integration.js';
 
 /** Registered in order. Add new migrations to the end. */
 export const MIGRATIONS = [
@@ -29,4 +34,9 @@ export const MIGRATIONS = [
   TaskModelV21729650000000,
   TimeTracking1729660000000,
   DocumentFolders1729670000000,
+  SpaceHierarchy1729680000000,
+  SpaceAccess1729690000000,
+  ProjectTemplates1729700000000,
+  Automations1729710000000,
+  GithubIntegration1729720000000,
 ];

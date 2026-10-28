@@ -15,6 +15,7 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
     case 'space':
       return [queryKeys.spaces(workspaceId), queryKeys.lists(workspaceId)];
     case 'list':
+    case 'folder':
       return [queryKeys.lists(workspaceId)];
     case 'member':
       return [queryKeys.members(workspaceId), queryKeys.workspace(workspaceId), queryKeys.workspaces];
@@ -34,6 +35,10 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
     case 'status':
     case 'custom_field':
       return [queryKeys.tasksRoot(workspaceId), queryKeys.spaces(workspaceId)];
+    case 'integration':
+      return [queryKeys.integrations(workspaceId)];
+    case 'automation':
+      return [queryKeys.automationsRoot(workspaceId)];
     case 'time_entry':
       return [queryKeys.timeRoot(workspaceId), queryKeys.dashboardRoot(workspaceId)];
   }

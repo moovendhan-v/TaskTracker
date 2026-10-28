@@ -14,5 +14,6 @@ import { NotificationsResolver } from './presentation/graphql/notifications.reso
     NotificationsResolver,
     { provide: NotificationRepository, useClass: TypeOrmNotificationRepository },
   ],
+  exports: [NotificationsService],
 })
 export class NotificationsModule {}

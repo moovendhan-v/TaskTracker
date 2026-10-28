@@ -1,4 +1,4 @@
-import type { PolicyDocument } from '../domain/iam.js';
+import type { PolicyDocument, SpaceRule } from '../domain/iam.js';
 
 export interface PolicyResponse {
   /** `managed:<key>` for ready-made policies, otherwise a UUID. */
@@ -21,4 +21,6 @@ export interface SavePolicyRequest {
 export interface MyAccessResponse {
   permissions: string[];
   readableFields: string[];
+  /** Spaces where some of `permissions` are taken away. */
+  spaceRules: SpaceRule[];
 }

@@ -1,4 +1,4 @@
-import type { DocKind } from '@taskflow/shared-types';
+import type { DocKind, IconKey } from '@taskflow/shared-types';
 
 export interface Document {
   id: string;
@@ -7,6 +7,7 @@ export interface Document {
   parentId: string | null;
   kind: DocKind;
   title: string;
+  icon: IconKey | null;
   /** Markdown, already passed through the ContentSanitizer. */
   content: string;
   position: number;

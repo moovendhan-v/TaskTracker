@@ -4,8 +4,28 @@ mutation CreateList($workspaceId: ID!, $spaceId: ID!, $input: TaskListInput!) {
   createList(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) { ...TaskListFields }
 }
 
-mutation UpdateList($workspaceId: ID!, $listId: ID!, $input: TaskListInput!) {
+mutation UpdateList($workspaceId: ID!, $listId: ID!, $input: UpdateTaskListInput!) {
   updateList(workspaceId: $workspaceId, listId: $listId, input: $input) { ...TaskListFields }
 }
 
+mutation MoveList($workspaceId: ID!, $listId: ID!, $input: MoveTaskListInput!) {
+  moveList(workspaceId: $workspaceId, listId: $listId, input: $input) { ...TaskListFields }
+}
+
 mutation DeleteList($workspaceId: ID!, $listId: ID!) { deleteList(workspaceId: $workspaceId, listId: $listId) }
+
+query Folders($workspaceId: ID!) { folders(workspaceId: $workspaceId) { ...FolderFields } }
+
+mutation CreateFolder($workspaceId: ID!, $spaceId: ID!, $input: CreateFolderInput!) {
+  createFolder(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) { ...FolderFields }
+}
+
+mutation UpdateFolder($workspaceId: ID!, $folderId: ID!, $input: UpdateFolderInput!) {
+  updateFolder(workspaceId: $workspaceId, folderId: $folderId, input: $input) { ...FolderFields }
+}
+
+mutation MoveFolder($workspaceId: ID!, $folderId: ID!, $input: MoveFolderInput!) {
+  moveFolder(workspaceId: $workspaceId, folderId: $folderId, input: $input) { ...FolderFields }
+}
+
+mutation DeleteFolder($workspaceId: ID!, $folderId: ID!) { deleteFolder(workspaceId: $workspaceId, folderId: $folderId) }

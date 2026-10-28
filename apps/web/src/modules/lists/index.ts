@@ -1,2 +1,2 @@
-export { useLists, useList, useListMutations } from './hooks/use-lists';
-export { listsApi } from './api/lists.api';
+export { useLists, useList, useListMutations, useFolders, useFolderMutations } from './hooks/use-lists';
+export { listsApi, foldersApi } from './api/lists.api';

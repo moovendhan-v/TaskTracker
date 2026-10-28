@@ -5,6 +5,7 @@ import {
   expandPermissions,
   isKnownFieldPattern,
   isKnownPermissionPattern,
+  isSpaceScoped,
   matchesPattern,
   PROTECTED_FIELDS,
   type EffectiveAccess,
@@ -34,7 +35,27 @@ export const PolicyDocumentPolicy = {
         if (unknownPermission) throw DomainError.invalid(`${where}: unknown permission ${unknownPermission.slice(0, 64)}`);
         const unknownField = fields.find((pattern) => !isKnownFieldPattern(pattern));
         if (unknownField) throw DomainError.invalid(`${where}: unknown field ${unknownField.slice(0, 64)}`);
-        return { effect: statement.effect, ...(permissions.length ? { permissions } : {}), ...(fields.length ? { fields } : {}) };
+        const spaces = unique(statement.spaces ?? []);
+        const notSpaces = unique(statement.notSpaces ?? []);
+        if (spaces.length || notSpaces.length) {
+          if (statement.effect !== 'deny') throw DomainError.invalid(`${where}: only deny statements can be limited to spaces`);
+          if (spaces.length && notSpaces.length) throw DomainError.invalid(`${where}: use spaces or notSpaces, not both`);
+          if (fields.length) throw DomainError.invalid(`${where}: field rules apply to the whole workspace, not to spaces`);
+          if (spaces.length > POLICY_LIMITS.maxSpacesPerStatement || notSpaces.length > POLICY_LIMITS.maxSpacesPerStatement) {
+            throw DomainError.invalid(`${where} names too many spaces`);
+          }
+          if ([...spaces, ...notSpaces].some((id) => !UUID.test(id))) throw DomainError.invalid(`${where}: spaces must be space ids`);
+          if (!expandPermissions(permissions).some(isSpaceScoped)) {
+            throw DomainError.invalid(`${where}: none of these permissions apply inside a space (use space, list, task, sprint or doc permissions)`);
+          }
+        }
+        return {
+          effect: statement.effect,
+          ...(permissions.length ? { permissions } : {}),
+          ...(fields.length ? { fields } : {}),
+          ...(spaces.length ? { spaces } : {}),
+          ...(notSpaces.length ? { notSpaces } : {}),
+        };
       }),
     };
   },
@@ -58,6 +79,13 @@ export const PolicyDocumentPolicy = {
     return PROTECTED_FIELDS.map((field) => field.key).filter((key) => canReadField(access, key));
   },
 };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Space ids a document names, so the caller can check they exist in the workspace. */
+export function spaceIdsIn(document: PolicyDocument): string[] {
+  return [...new Set(document.statements.flatMap((statement) => [...(statement.spaces ?? []), ...(statement.notSpaces ?? [])]))];
+}
 
 function unique(values: readonly string[]): string[] {
   return [...new Set(values.map((value) => String(value).trim()).filter(Boolean))];

@@ -14,6 +14,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { key: 'members.manage', label: 'Add, remove and change members' },
       { key: 'roles.manage', label: 'Create and edit roles' },
       { key: 'audit.view', label: 'View the audit log' },
+      { key: 'integration.manage', label: 'Connect and manage integrations like GitHub' },
     ],
   },
   {
@@ -22,6 +23,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { key: 'space.manage', label: 'Create, edit and delete spaces' },
       { key: 'list.manage', label: 'Create, edit and delete lists' },
       { key: 'sprint.manage', label: 'Plan, start and complete sprints' },
+      { key: 'automation.manage', label: 'Create and change automations' },
     ],
   },
   {
@@ -40,6 +42,14 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { key: 'doc.view', label: 'Read docs' },
       { key: 'doc.create', label: 'Create docs and edit their own' },
       { key: 'doc.manage', label: 'Edit, move and delete any doc' },
+    ],
+  },
+  {
+    label: 'Time',
+    permissions: [
+      { key: 'time.log', label: 'Track and log their own time' },
+      { key: 'time.view_all', label: 'See everyone’s time and reports' },
+      { key: 'time.manage', label: 'Correct or delete anyone’s time entries' },
     ],
   },
   {

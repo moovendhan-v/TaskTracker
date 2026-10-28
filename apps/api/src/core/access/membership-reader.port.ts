@@ -1,4 +1,4 @@
-import type { Permission } from '@taskflow/shared-types';
+import type { Permission, SpaceRule } from '@taskflow/shared-types';
 
 export interface MembershipGrant {
   roleId: string;
@@ -6,6 +6,8 @@ export interface MembershipGrant {
   permissions: readonly Permission[];
   /** Protected fields the member may read. */
   readableFields: readonly string[];
+  /** Space-limited denies (see SpaceRule). */
+  spaceRules: readonly SpaceRule[];
 }
 
 /**

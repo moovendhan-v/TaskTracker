@@ -1,7 +1,7 @@
 import { TransactionalManager } from '../database/transactional-manager.js';
 import { lookupProvider } from '../runtime/decorator-runtime.js';
 import { wrapMethod } from '../runtime/method-decorator.js';
-import { cacheKey, entityTag, userTag, type CacheTopic } from './cache-keys.js';
+import { cacheKey, entityTag, spaceLimitsKey, userTag, type CacheTopic } from './cache-keys.js';
 import { CacheStore } from './cache-store.port.js';
 
 const DEFAULT_TTL_SECONDS = 300;
@@ -60,6 +60,9 @@ export function Cached(options: CachedOptions): MethodDecorator {
       }
 
       let scope = `ws:${workspaceId}`;
+      // Space limits change what row-level security returns, so callers with different limits never share an entry.
+      const limits = spaceLimitsKey(transactional.scope);
+      if (limits) scope += `:sl:${limits}`;
       if (!options.shared) {
         const userId = transactional.scope?.kind === 'workspace' ? transactional.scope.userId : null;
         if (!userId) return original.apply(this, args);

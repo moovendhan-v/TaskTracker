@@ -15,7 +15,8 @@ import { REQUIRES_PLATFORM_ADMIN_KEY } from './require-platform-admin.decorator.
 export function resolveDataScope(request: Pick<AuthenticatedRequest, 'user' | 'workspaceAccess'>, requiresPlatformAdmin: boolean): DataScope | null {
   const user = request.user as AuthenticatedRequest['user'] | undefined;
   if (request.workspaceAccess) {
-    return { kind: 'workspace', workspaceId: request.workspaceAccess.workspaceId, userId: user?.id ?? null };
+    const { workspaceId, spaceRules } = request.workspaceAccess;
+    return { kind: 'workspace', workspaceId, userId: user?.id ?? null, ...(spaceRules.length ? { spaceRules } : {}) };
   }
   if (!user) return null;
   if (requiresPlatformAdmin && user.platformRole === 'SUPER_ADMIN') return { kind: 'platform' };

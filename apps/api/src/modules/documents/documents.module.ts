@@ -15,5 +15,6 @@ import { TypeOrmDocumentRepository } from './infrastructure/typeorm-document.rep
     { provide: DocumentRepository, useClass: TypeOrmDocumentRepository },
     { provide: ContentSanitizer, useClass: MarkdownSanitizer },
   ],
+  exports: [DocumentsService],
 })
 export class DocumentsModule {}

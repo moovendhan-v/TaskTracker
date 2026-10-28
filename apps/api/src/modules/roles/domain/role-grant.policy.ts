@@ -1,4 +1,4 @@
-import type { Permission } from '@taskflow/shared-types';
+import { keepsSpaceRules, type Permission, type SpaceRule } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
 
 /** Only the built-in Owner role may hold this; it controls deleting the workspace. */
@@ -26,13 +26,19 @@ export const RoleGrantPolicy = {
 
   /** Handing out a role is only allowed when the actor already has everything the role grants, fields included. */
   assertCanHandOutAccess(
-    held: { permissions: ReadonlySet<Permission>; readableFields: ReadonlySet<string> },
-    role: { permissions: readonly Permission[]; readableFields: readonly string[] },
+    held: { permissions: ReadonlySet<Permission>; readableFields: ReadonlySet<string>; spaceRules: readonly SpaceRule[] },
+    role: { permissions: readonly Permission[]; readableFields: readonly string[]; spaceRules: readonly SpaceRule[] },
   ): void {
     RoleGrantPolicy.assertCanHandOut(held.permissions, role.permissions);
     if (!role.readableFields.every((field) => held.readableFields.has(field))) {
       throw DomainError.forbidden('That role can see fields you cannot see');
     }
+    RoleGrantPolicy.assertKeepsSpaceRules(held, role);
+  },
+
+  /** A role may not reach into a space (or do something there) that the actor is kept out of. */
+  assertKeepsSpaceRules(held: { spaceRules: readonly SpaceRule[] }, role: { permissions: readonly Permission[]; spaceRules: readonly SpaceRule[] }): void {
+    if (!keepsSpaceRules(held, role)) throw DomainError.forbidden('That role would reach spaces you are kept out of');
   },
 
   holdsAll(held: ReadonlySet<Permission>, permissions: readonly Permission[]): boolean {

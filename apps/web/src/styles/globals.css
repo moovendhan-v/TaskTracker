@@ -45,8 +45,7 @@
   --priority-normal: oklch(0.62 0.12 230);
   --priority-low: oklch(0.65 0.03 257);
 
-  /* Icon rail and chart roles (categorical slots 1 and 2 of the validated chart palette). */
-  --rail: oklch(0.17 0.02 250);
+  /* Chart roles (categorical slots 1 and 2 of the validated chart palette). */
   --chart-1: #2a78d6;
   --chart-2: #eb6834;
   --chart-grid: oklch(0.92 0.006 250);
@@ -79,7 +78,6 @@
   --sidebar-muted: oklch(0.64 0.01 285);
   --sidebar-accent: oklch(0.26 0.012 285);
   --sidebar-border: oklch(0.27 0.006 285);
-  --rail: oklch(0.13 0.004 285);
 
   --chart-1: #3987e5;
   --chart-2: #d95926;
@@ -128,7 +126,6 @@
   --color-priority-high: var(--priority-high);
   --color-priority-normal: var(--priority-normal);
   --color-priority-low: var(--priority-low);
-  --color-rail: var(--rail);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-grid: var(--chart-grid);

@@ -158,7 +158,7 @@ export class MembersService {
 
   private async assertCanHandOut(access: WorkspaceAccess, roleId: string): Promise<void> {
     const role = await this.roleAccess.forRole(access.workspaceId, roleId);
-    RoleGrantPolicy.assertCanHandOutAccess(access, role ?? { permissions: [], readableFields: [] });
+    RoleGrantPolicy.assertCanHandOutAccess(access, role ?? { permissions: [], readableFields: [], spaceRules: [] });
   }
 
   private async getMembership(workspaceId: string, userId: string): Promise<MembershipWithRole> {

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
   DOC_TREE_LIMIT,
+  isSpaceScoped,
+  type Permission,
   type CreateDocumentRequest,
   type DocumentResponse,
   type DocumentSummaryResponse,
@@ -10,6 +12,7 @@ import {
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
+import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
 import { Announces } from '../../../core/events/announces.decorator.js';
@@ -54,6 +57,7 @@ export class DocumentsService {
       // A child page always lives in its parent's space.
       const spaceId = parent ? parent.spaceId : (request.spaceId ?? null);
       if (spaceId && !parent) await this.spacesService.getInWorkspace(workspaceId, spaceId);
+      if (spaceId) SpaceGuard.assert(spaceId, 'doc.create');
 
       return this.documents.create({
         workspaceId,
@@ -61,6 +65,7 @@ export class DocumentsService {
         parentId,
         kind,
         title: request.title.trim(),
+        icon: request.icon ?? null,
         content: kind === 'folder' ? '' : this.sanitizer.sanitize(request.content ?? ''),
         position: (await this.documents.maxSiblingPosition(workspaceId, parentId)) + DOC_POSITION_STEP,
         createdById: actor.userId,
@@ -73,9 +78,10 @@ export class DocumentsService {
   @Announces('document.updated', workspaceFromAccess)
   async update(actor: Actor, access: WorkspaceAccess, documentId: string, request: UpdateDocumentRequest): Promise<DocumentResponse> {
     const document = await this.getInWorkspace(access.workspaceId, documentId);
-    DocumentAccessPolicy.assertCanEdit(document, actor.userId, access.permissions);
+    DocumentAccessPolicy.assertCanEdit(document, actor.userId, inSpace(access.permissions, document.spaceId));
 
     if (request.title !== undefined) document.title = request.title.trim();
+    if (request.icon !== undefined) document.icon = request.icon;
     if (request.content !== undefined) {
       if (document.kind === 'folder') throw DomainError.invalid('A folder has no content');
       document.content = this.sanitizer.sanitize(request.content);
@@ -88,7 +94,7 @@ export class DocumentsService {
   async move(actor: Actor, access: WorkspaceAccess, documentId: string, request: MoveDocumentRequest): Promise<DocumentResponse> {
     const moved = await this.unitOfWork.run(async () => {
       const document = await this.getInWorkspace(access.workspaceId, documentId);
-      DocumentAccessPolicy.assertCanEdit(document, actor.userId, access.permissions);
+      DocumentAccessPolicy.assertCanEdit(document, actor.userId, inSpace(access.permissions, document.spaceId));
 
       const parent = request.parentId ? await this.getInWorkspace(access.workspaceId, request.parentId) : null;
       const parentChain = parent ? await this.documents.ancestorChain(access.workspaceId, parent.id) : [];
@@ -101,7 +107,12 @@ export class DocumentsService {
       });
 
       document.parentId = parent?.id ?? null;
-      if (parent) document.spaceId = parent.spaceId;
+      // A page lives in its parent's space; a top-level page can be given one (or taken out of it with null).
+      const spaceId = parent ? parent.spaceId : request.spaceId === undefined ? document.spaceId : request.spaceId;
+      if (spaceId && !parent && spaceId !== document.spaceId) await this.spacesService.getInWorkspace(access.workspaceId, spaceId);
+      if (spaceId && spaceId !== document.spaceId) SpaceGuard.assert(spaceId, 'doc.create');
+      if (spaceId !== document.spaceId) await this.documents.setSubtreeSpace(access.workspaceId, documentId, spaceId);
+      document.spaceId = spaceId;
       document.position =
         request.position ?? (await this.documents.maxSiblingPosition(access.workspaceId, document.parentId)) + DOC_POSITION_STEP;
       document.updatedById = actor.userId;
@@ -114,7 +125,7 @@ export class DocumentsService {
   @Announces('document.deleted', workspaceFromAccess)
   async remove(actor: Actor, access: WorkspaceAccess, documentId: string): Promise<DocumentResponse> {
     const document = await this.getInWorkspace(access.workspaceId, documentId);
-    DocumentAccessPolicy.assertCanEdit(document, actor.userId, access.permissions);
+    DocumentAccessPolicy.assertCanEdit(document, actor.userId, inSpace(access.permissions, document.spaceId));
     await this.documents.delete(access.workspaceId, documentId);
     return DocumentMapper.toResponse(document);
   }
@@ -122,4 +133,10 @@ export class DocumentsService {
   private async getInWorkspace(workspaceId: string, documentId: string): Promise<Document> {
     return found(await this.documents.findInWorkspace(workspaceId, documentId), 'Page');
   }
+}
+
+/** The permissions that still hold inside a doc's space, after the caller's space limits. */
+function inSpace(held: ReadonlySet<Permission>, spaceId: string | null): ReadonlySet<Permission> {
+  if (!spaceId) return held;
+  return new Set([...held].filter((permission) => !isSpaceScoped(permission) || SpaceGuard.allowed(spaceId, permission)));
 }

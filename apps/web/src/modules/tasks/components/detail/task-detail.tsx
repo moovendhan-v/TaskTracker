@@ -25,6 +25,7 @@ import {
   TASK_RELATION_KINDS,
   TASK_TITLE_MAX,
   TASK_TYPES,
+  type Permission,
   type TaskRelationKind,
   type TaskResponse,
   type UpdateTaskRequest,
@@ -34,6 +35,7 @@ import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Modal } from '@/components/kit/modal';
 import { Section } from '@/components/kit/section';
+import { PullRequestsSection } from '@/modules/integrations';
 import { DateRangeField } from '@/components/kit/range-calendar';
 import { StatusPill } from '@/components/kit/status-pill';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -84,7 +86,7 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
           {isLoading || !task ? <FullPageSpinner /> : <TaskBody key={task.id} workspaceId={workspaceId} task={task} onOpen={onOpen} onDeleted={onClose} />}
           {task ? (
             <div className="border-t p-4">
-              <CommentThread workspaceId={workspaceId} taskId={task.id} />
+              <CommentThread workspaceId={workspaceId} taskId={task.id} spaceId={task.spaceId} />
             </div>
           ) : null}
         </SheetContent>
@@ -124,7 +126,7 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
               <MessageSquareIcon className="size-4 text-muted-foreground" /> Activity
             </h2>
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-              <CommentThread workspaceId={workspaceId} taskId={task.id} />
+              <CommentThread workspaceId={workspaceId} taskId={task.id} spaceId={task.spaceId} />
             </div>
           </div>
         ) : null
@@ -151,7 +153,8 @@ const inputClass = 'h-8 rounded-md bg-transparent px-1.5 text-sm outline-none pl
 
 function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: string; task: TaskResponse; onOpen: (taskId: string) => void; onDeleted: () => void }) {
   const { update, remove } = useTaskMutations(workspaceId);
-  const { can } = usePermissions(workspaceId);
+  const { canIn } = usePermissions(workspaceId);
+  const can = (permission: Permission) => canIn(task.spaceId, permission);
   const canEdit = can('task.update');
   const [title, setTitle] = useResettableState(task.title);
   const [description, setDescription] = useResettableState(task.description);
@@ -318,6 +321,7 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
 
       <Subtasks workspaceId={workspaceId} task={task} onOpen={onOpen} />
       <Relations workspaceId={workspaceId} task={task} onOpen={onOpen} />
+      <PullRequestsSection workspaceId={workspaceId} taskId={task.id} />
       <History workspaceId={workspaceId} taskId={task.id} />
     </div>
   );
@@ -351,7 +355,8 @@ function Watchers({ workspaceId, taskId }: { workspaceId: string; taskId: string
 function Subtasks({ workspaceId, task, onOpen }: { workspaceId: string; task: TaskResponse; onOpen: (taskId: string) => void }) {
   const { data: subtasks = [] } = useSubtasks(workspaceId, task.id);
   const { create, update } = useTaskMutations(workspaceId);
-  const { can } = usePermissions(workspaceId);
+  const { canIn } = usePermissions(workspaceId);
+  const can = (permission: Permission) => canIn(task.spaceId, permission);
   const memberName = useMemberName(workspaceId);
   const [title, setTitle] = useState('');
   const done = subtasks.filter((item) => isClosedCategory(item.status.category)).length;
@@ -408,7 +413,8 @@ const KIND_LABEL: Record<TaskRelationKind, { outgoing: string; incoming: string 
 function Relations({ workspaceId, task, onOpen }: { workspaceId: string; task: TaskResponse; onOpen: (taskId: string) => void }) {
   const { data: relations = [] } = useTaskRelations(workspaceId, task.id);
   const { relateByNumber, unrelate } = useTaskMutations(workspaceId);
-  const { can } = usePermissions(workspaceId);
+  const { canIn } = usePermissions(workspaceId);
+  const can = (permission: Permission) => canIn(task.spaceId, permission);
   const [kind, setKind] = useState<TaskRelationKind>('relates');
   const [number, setNumber] = useState('');
 

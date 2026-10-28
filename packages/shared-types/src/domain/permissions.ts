@@ -10,6 +10,8 @@ export const PERMISSIONS = [
   'task.delete',
   'task.assign',
   'sprint.manage',
+  /** Create and change automations in a space. */
+  'automation.manage',
   'doc.view',
   'doc.create',
   'doc.manage',
@@ -18,6 +20,8 @@ export const PERMISSIONS = [
   'leave.request',
   'leave.approve',
   'audit.view',
+  /** Connect and manage integrations such as GitHub. */
+  'integration.manage',
   /** Track and log your own time. */
   'time.log',
   /** See everyone's time entries and reports. */

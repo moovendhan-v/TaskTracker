@@ -73,6 +73,103 @@ type AuditLogPage {
   total: Int!
 }
 
+type AutomationAction {
+  audiences: [NotifyAudience!]
+  message: String
+  priority: TaskPriority
+  statusId: ID
+  type: AutomationActionType!
+  userId: String
+  userIds: [String!]
+}
+
+input AutomationActionInput {
+  audiences: [NotifyAudience!]
+  message: String
+  priority: TaskPriority
+  statusId: ID
+  type: AutomationActionType!
+  userId: String
+  userIds: [String!]
+}
+
+enum AutomationActionType {
+  assign
+  notify
+  set_priority
+  set_status
+  unassign
+}
+
+type AutomationConditions {
+  listIds: [ID!]
+  priorities: [TaskPriority!]
+  types: [TaskType!]
+}
+
+input AutomationConditionsInput {
+  listIds: [ID!]
+  priorities: [TaskPriority!]
+  types: [TaskType!]
+}
+
+type AutomationRule {
+  actions: [AutomationAction!]!
+  conditions: AutomationConditions!
+  createdAt: String!
+
+  """Who the rule runs as"""
+  createdById: String
+  enabled: Boolean!
+  id: ID!
+  lastRunAt: String
+  name: String!
+  runCount: Int!
+  spaceId: ID!
+  trigger: AutomationTrigger!
+}
+
+type AutomationRun {
+  createdAt: String!
+  id: ID!
+  message: String!
+  ruleId: ID!
+  status: AutomationRunStatus!
+  taskId: ID
+}
+
+enum AutomationRunStatus {
+  failed
+  skipped
+  succeeded
+}
+
+type AutomationTrigger {
+  categories: [StatusCategory!]
+  priorities: [TaskPriority!]
+  statusIds: [ID!]
+  type: AutomationTriggerType!
+}
+
+input AutomationTriggerInput {
+  categories: [StatusCategory!]
+  priorities: [TaskPriority!]
+  statusIds: [ID!]
+  type: AutomationTriggerType!
+}
+
+enum AutomationTriggerType {
+  github_pull_request_closed
+  github_pull_request_merged
+  github_pull_request_opened
+  task_assigned
+  task_commented
+  task_created
+  task_due_date_changed
+  task_priority_changed
+  task_status_changed
+}
+
 type ColumnWidth {
   column: String!
   width: Int!
@@ -99,6 +196,13 @@ input CommentInput {
   body: String!
 }
 
+input ConnectGithubInput {
+  """owner/name"""
+  repo: String!
+  sync: GithubSyncInput
+  taskPrefix: String
+}
+
 input CreateCustomFieldInput {
   entity: CustomFieldEntity
   name: String!
@@ -115,12 +219,31 @@ input CreateDepartmentInput {
 
 input CreateDocumentInput {
   content: String
+  icon: IconKey
 
   """Defaults to page"""
   kind: DocKind
   parentId: ID
   spaceId: ID
   title: String!
+}
+
+input CreateFolderInput {
+  color: String
+  icon: IconKey
+  name: String!
+
+  """Nest inside this folder"""
+  parentId: ID
+}
+
+input CreateFromTemplateInput {
+  color: String
+  icon: IconKey
+
+  """Starter tasks and docs (default true)"""
+  includeContent: Boolean
+  name: String!
 }
 
 input CreateLeaveTypeInput {
@@ -142,6 +265,7 @@ input CreateRoleInput {
 
 input CreateSpaceInput {
   color: String
+  icon: IconKey
   name: String!
 }
 
@@ -422,6 +546,7 @@ type Document {
   content: String!
   createdAt: String!
   createdById: ID!
+  icon: IconKey
   id: ID!
   kind: DocKind!
   parentId: ID
@@ -433,6 +558,7 @@ type Document {
 
 type DocumentSummary {
   createdById: ID!
+  icon: IconKey
   id: ID!
   kind: DocKind!
   parentId: ID
@@ -550,6 +676,17 @@ enum FilterOperator {
   starts_with
 }
 
+type Folder {
+  color: String
+  createdAt: String!
+  icon: IconKey
+  id: ID!
+  name: String!
+  parentId: ID
+  position: Float!
+  spaceId: ID!
+}
+
 enum ForecastKind {
   later
   none
@@ -577,6 +714,114 @@ type FormRule {
 """Validation rules for a form, the same ones the API enforces"""
 type FormSchema {
   fields: [FormFieldSchema!]!
+  name: String!
+}
+
+type GithubConnection {
+  createdAt: String!
+
+  """Linked tasks are moved as this person"""
+  createdById: String
+  id: ID!
+  lastDeliveryAt: String
+  lastDeliveryStatus: String
+  repo: String!
+  sync: GithubSync!
+  taskPrefix: String!
+
+  """Prefix with the site origin for the GitHub webhook URL"""
+  webhookPath: String!
+}
+
+"""Shown once; store it in the GitHub webhook settings"""
+type GithubSecret {
+  connection: GithubConnection!
+  webhookSecret: String!
+}
+
+type GithubSync {
+  """Move linked tasks here when a pull request merges"""
+  onMerged: StatusCategory
+
+  """Move linked tasks here when a pull request opens"""
+  onOpened: StatusCategory
+}
+
+input GithubSyncInput {
+  onMerged: StatusCategory
+  onOpened: StatusCategory
+}
+
+"""Icons for spaces, folders, lists and docs"""
+enum IconKey {
+  book
+  box
+  briefcase
+  bug
+  building
+  calendar
+  camera
+  cart
+  chart
+  clock
+  cloud
+  code
+  coffee
+  compass
+  database
+  file
+  flag
+  folder
+  gift
+  globe
+  graduation
+  handshake
+  headset
+  heart
+  home
+  image
+  leaf
+  lightbulb
+  list
+  lock
+  mail
+  map
+  megaphone
+  message
+  moon
+  music
+  notebook
+  palette
+  pen
+  phone
+  pie
+  puzzle
+  rocket
+  server
+  settings
+  shield
+  star
+  store
+  sun
+  target
+  terminal
+  trending
+  trophy
+  truck
+  user
+  users
+  video
+  wallet
+  wrench
+  zap
+}
+
+input ImportTemplateInput {
+  category: TemplateCategory
+  description: String
+
+  """An exported template file, as JSON text"""
+  json: String!
   name: String!
 }
 
@@ -689,6 +934,18 @@ Flat key/value data: up to 50 keys, values are text, numbers, booleans or null
 """
 scalar Metadata
 
+input MoveFolderInput {
+  """Null: directly under the space"""
+  parentId: ID
+  position: Float
+}
+
+input MoveTaskListInput {
+  """Null: directly under the space"""
+  folderId: ID
+  position: Float
+}
+
 type Mutation {
   addMember(input: AddMemberInput!, workspaceId: ID!): AddMemberResult!
   attachRolePolicy(
@@ -703,15 +960,27 @@ type Mutation {
   Unfinished tasks move to another planned sprint in the space, or to the backlog when omitted
   """
   completeSprint(moveOpenTasksToSprintId: ID, sprintId: ID!, workspaceId: ID!): Sprint!
+  connectGithub(input: ConnectGithubInput!, workspaceId: ID!): GithubSecret!
+  createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
   createCustomField(input: CreateCustomFieldInput!, workspaceId: ID!): CustomField!
   createDepartment(input: CreateDepartmentInput!, workspaceId: ID!): Department!
   createDocument(input: CreateDocumentInput!, workspaceId: ID!): Document!
+  createFolder(input: CreateFolderInput!, spaceId: ID!, workspaceId: ID!): Folder!
   createLeaveType(input: CreateLeaveTypeInput!, workspaceId: ID!): LeaveType!
   createList(input: TaskListInput!, spaceId: ID!, workspaceId: ID!): TaskList!
   createPolicy(input: SavePolicyInput!, workspaceId: ID!): Policy!
   createRole(input: CreateRoleInput!, workspaceId: ID!): Role!
   createSpace(input: CreateSpaceInput!, workspaceId: ID!): Space!
+
+  """Creates a space from a template"""
+  createSpaceFromTemplate(
+    input: CreateFromTemplateInput!
+
+    """builtin:<key> or a template id"""
+    templateId: String!
+    workspaceId: ID!
+  ): Space!
   createSprint(input: CreateSprintInput!, spaceId: ID!, workspaceId: ID!): Sprint!
   createStatus(input: CreateTaskStatusInput!, spaceId: ID!, workspaceId: ID!): TaskStatus!
   createTask(input: CreateTaskInput!, listId: ID!, workspaceId: ID!): Task!
@@ -724,6 +993,7 @@ type Mutation {
 
   """Approvers cannot decide on their own requests"""
   decideLeaveRequest(input: DecideLeaveInput!, requestId: ID!, workspaceId: ID!): LeaveRequest!
+  deleteAutomation(ruleId: ID!, workspaceId: ID!): Boolean!
 
   """The author, or anyone with task.delete"""
   deleteComment(commentId: ID!, workspaceId: ID!): Boolean!
@@ -734,6 +1004,9 @@ type Mutation {
 
   """Sub-pages are deleted too"""
   deleteDocument(documentId: ID!, workspaceId: ID!): Boolean!
+
+  """Deletes the folder only; its lists and sub-folders move up a level"""
+  deleteFolder(folderId: ID!, workspaceId: ID!): Boolean!
   deleteLeaveType(leaveTypeId: ID!, workspaceId: ID!): Boolean!
   deleteList(listId: ID!, workspaceId: ID!): Boolean!
   deletePolicy(policyId: ID!, workspaceId: ID!): Boolean!
@@ -746,6 +1019,7 @@ type Mutation {
 
   """Deletes the task and its subtasks"""
   deleteTask(taskId: ID!, workspaceId: ID!): Boolean!
+  deleteTemplate(templateId: ID!, workspaceId: ID!): Boolean!
   deleteTimeEntry(entryId: ID!, workspaceId: ID!): Boolean!
   deleteView(viewId: ID!): Preferences!
   deleteWorkspace(workspaceId: ID!): Boolean!
@@ -755,6 +1029,10 @@ type Mutation {
     roleId: ID!
     workspaceId: ID!
   ): Role!
+  disconnectGithub(connectionId: ID!, workspaceId: ID!): Boolean!
+
+  """Adds a template from an exported JSON file"""
+  importTemplate(input: ImportTemplateInput!, workspaceId: ID!): ProjectTemplate!
 
   """Leave a workspace. The last owner cannot leave."""
   leaveWorkspace(workspaceId: ID!): Boolean!
@@ -772,7 +1050,19 @@ type Mutation {
   markNotificationsRead(ids: [ID!]!, workspaceId: ID!): Int!
 
   """parentId null moves the page to the top level"""
-  moveDocument(documentId: ID!, parentId: ID, position: Float, workspaceId: ID!): Document!
+  moveDocument(
+    documentId: ID!
+    parentId: ID
+    position: Float
+
+    """For a top-level page: its space (null: none, omitted: unchanged)"""
+    spaceId: ID
+    workspaceId: ID!
+  ): Document!
+  moveFolder(folderId: ID!, input: MoveFolderInput!, workspaceId: ID!): Folder!
+
+  """Moves a list into a folder of its project, or out of it"""
+  moveList(input: MoveTaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
   relateTasks(kind: TaskRelationKind!, relatedTaskId: ID!, taskId: ID!, workspaceId: ID!): [TaskRelation!]!
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
@@ -782,11 +1072,16 @@ type Mutation {
   resetPreferences: Preferences!
   resetTableLayout(key: String!): Preferences!
 
+  """A new webhook secret; the old one stops working at once"""
+  rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
+  saveSpaceAsTemplate(input: SaveAsTemplateInput!, spaceId: ID!, workspaceId: ID!): ProjectTemplate!
+
   """Saves how a table is arranged (columns, widths, paging)"""
   saveTableLayout(input: TableLayoutInput!): Preferences!
 
   """Creates or updates a saved view (a named set of filters)"""
   saveView(input: SaveViewInput!): Preferences!
+  setAutomationEnabled(enabled: Boolean!, ruleId: ID!, workspaceId: ID!): AutomationRule!
 
   """
   Replaces a role's inline policy (statements that belong to that role only)
@@ -810,13 +1105,20 @@ type Mutation {
   """
   updateAdminUser(input: UpdateAdminUserInput!, userId: ID!): AdminUser!
 
+  """Saving takes the rule over: it then runs as you"""
+  updateAutomation(input: SaveAutomationInput!, ruleId: ID!, workspaceId: ID!): AutomationRule!
+
   """Only the author can edit"""
   updateComment(commentId: ID!, input: CommentInput!, workspaceId: ID!): Comment!
   updateCustomField(fieldId: ID!, input: UpdateCustomFieldInput!, workspaceId: ID!): CustomField!
   updateDepartment(departmentId: ID!, input: UpdateDepartmentInput!, workspaceId: ID!): Department!
   updateDocument(documentId: ID!, input: UpdateDocumentInput!, workspaceId: ID!): Document!
+  updateFolder(folderId: ID!, input: UpdateFolderInput!, workspaceId: ID!): Folder!
+
+  """Saving takes the connection over: tasks are then moved as you"""
+  updateGithubConnection(connectionId: ID!, input: UpdateGithubConnectionInput!, workspaceId: ID!): GithubConnection!
   updateLeaveType(input: UpdateLeaveTypeInput!, leaveTypeId: ID!, workspaceId: ID!): LeaveType!
-  updateList(input: TaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
+  updateList(input: UpdateTaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
   updateMemberRole(roleId: ID!, userId: ID!, workspaceId: ID!): Member!
   updatePolicy(input: SavePolicyInput!, policyId: ID!, workspaceId: ID!): Policy!
   updatePreferences(input: UpdatePreferencesInput!): Preferences!
@@ -838,6 +1140,7 @@ type Mutation {
 type MyAccess {
   permissions: [String!]!
   readableFields: [String!]!
+  spaceRules: [SpaceRule!]!
 }
 
 type Notification {
@@ -861,6 +1164,7 @@ type Notification {
 }
 
 enum NotificationKind {
+  automation
   leave_decided
   leave_requested
   member_added
@@ -873,6 +1177,13 @@ type NotificationPage {
   page: Int!
   pageSize: Int!
   total: Int!
+}
+
+enum NotifyAudience {
+  actor
+  assignee
+  creator
+  watchers
 }
 
 enum PlatformRole {
@@ -910,14 +1221,22 @@ type PolicyStatement {
   """Field keys or patterns such as member.email"""
   fields: [String!]
 
+  """Deny only: apply the statement in every space except these"""
+  notSpaces: [ID!]
+
   """Permission keys or patterns such as task.*"""
   permissions: [String!]
+
+  """Deny only: limit the statement to these spaces"""
+  spaces: [ID!]
 }
 
 input PolicyStatementInput {
   effect: PolicyEffect!
   fields: [String!]
+  notSpaces: [ID!]
   permissions: [String!]
+  spaces: [ID!]
 }
 
 """Personal settings; they follow the user to every device"""
@@ -935,6 +1254,42 @@ type Preferences {
   theme: String!
   timeFormat: String!
   weekStart: Int!
+}
+
+type ProjectTemplate {
+  builtIn: Boolean!
+  category: TemplateCategory!
+  color: String!
+
+  """The template itself (TemplateContent); export it as JSON"""
+  content: JSONObject!
+  counts: TemplateCounts!
+  createdAt: String
+  description: String!
+  icon: IconKey
+
+  """builtin:<key> for templates that ship with the app, otherwise a UUID"""
+  id: String!
+  name: String!
+}
+
+type PullRequestLink {
+  author: String!
+  branch: String!
+  id: ID!
+  number: Int!
+  repo: String!
+  state: PullRequestState!
+  taskId: ID!
+  title: String!
+  updatedAt: String!
+  url: String!
+}
+
+enum PullRequestState {
+  closed
+  merged
+  open
 }
 
 type Query {
@@ -963,6 +1318,12 @@ type Query {
     search: String
   ): AdminWorkspacePage!
 
+  """Recent runs of one automation, newest first"""
+  automationRuns(ruleId: ID!, workspaceId: ID!): [AutomationRun!]!
+
+  """A space’s automations"""
+  automations(spaceId: ID!, workspaceId: ID!): [AutomationRule!]!
+
   """Unfinished tasks in a space that aren't in a sprint"""
   backlog(spaceId: ID!, workspaceId: ID!): [Task!]!
   comments(taskId: ID!, workspaceId: ID!): [Comment!]!
@@ -986,8 +1347,12 @@ type Query {
   """Current members with their HR profiles"""
   employees(workspaceId: ID!): [Employee!]!
 
+  """Every folder in the workspace, for the sidebar tree"""
+  folders(workspaceId: ID!): [Folder!]!
+
   """Validation rules for the named forms, or all of them"""
   formSchemas(names: [String!]): [FormSchema!]!
+  githubConnections(workspaceId: ID!): [GithubConnection!]!
 
   """Approver queue, oldest first"""
   leaveRequests(
@@ -1037,6 +1402,9 @@ type Query {
   """Managed and custom policies, with how many roles use each"""
   policies(workspaceId: ID!): [Policy!]!
 
+  """The built-in gallery and the workspace’s own templates"""
+  projectTemplates(workspaceId: ID!): [ProjectTemplate!]!
+
   """Data fields whose visibility policies control"""
   protectedFields(workspaceId: ID!): [FieldDefinition!]!
 
@@ -1066,6 +1434,9 @@ type Query {
   Audit entries matching filters; see resourceSchema(resource: "audit_log")
   """
   searchWorkspaceAuditLog(query: ResourceQueryInput, workspaceId: ID!): AuditLogPage!
+
+  """A space as template content, to export without saving"""
+  spaceTemplateContent(includeContent: Boolean! = false, spaceId: ID!, workspaceId: ID!): JSONObject!
   spaces(workspaceId: ID!): [Space!]!
   sprint(sprintId: ID!, workspaceId: ID!): Sprint!
   sprintTasks(sprintId: ID!, workspaceId: ID!): [Task!]!
@@ -1081,6 +1452,9 @@ type Query {
 
   """A task by its short number, e.g. 978 for #978"""
   taskByNumber(number: Int!, workspaceId: ID!): Task!
+
+  """Pull requests that mention the task"""
+  taskPullRequests(taskId: ID!, workspaceId: ID!): [PullRequestLink!]!
   taskRelations(taskId: ID!, workspaceId: ID!): [TaskRelation!]!
   taskTimeSummary(taskId: ID!, workspaceId: ID!): TaskTimeSummary!
 
@@ -1123,11 +1497,14 @@ type QueryLimits {
 }
 
 enum RealtimeEntityType {
+  automation
   comment
   custom_field
   department
   document
   employee
+  folder
+  integration
   leave_request
   leave_type
   list
@@ -1217,8 +1594,28 @@ type Role {
   """Protected fields members with this role can read"""
   readableFields: [String!]!
 
+  """Spaces where the role is limited"""
+  spaceRules: [SpaceRule!]!
+
   """Set for built-in roles"""
   systemKey: String
+}
+
+input SaveAsTemplateInput {
+  category: TemplateCategory
+  description: String
+
+  """Copy open tasks and docs too (default false)"""
+  includeContent: Boolean
+  name: String!
+}
+
+input SaveAutomationInput {
+  actions: [AutomationActionInput!]!
+  conditions: AutomationConditionsInput
+  enabled: Boolean
+  name: String!
+  trigger: AutomationTriggerInput!
 }
 
 input SavePolicyInput {
@@ -1284,6 +1681,9 @@ type Space {
 
   """yyyy-mm-dd"""
   dueDate: String
+
+  """Icon key; null shows the first letter"""
+  icon: IconKey
   id: ID!
   name: String!
 
@@ -1294,6 +1694,13 @@ type Space {
   status: SpaceStatus!
   statusNote: String!
   workspaceId: ID!
+}
+
+"""A space-limited deny in effect for a role or caller"""
+type SpaceRule {
+  notSpaces: [ID!]
+  permissions: [String!]!
+  spaces: [ID!]
 }
 
 enum SpaceStatus {
@@ -1416,13 +1823,24 @@ type TaskActivity {
 }
 
 type TaskList {
+  color: String
   createdAt: String!
+
+  """Null: directly under the space"""
+  folderId: ID
+  icon: IconKey
   id: ID!
   name: String!
+  position: Float!
   spaceId: ID!
 }
 
 input TaskListInput {
+  color: String
+
+  """Create the list inside this folder"""
+  folderId: ID
+  icon: IconKey
   name: String!
 }
 
@@ -1485,6 +1903,23 @@ enum TaskType {
   task
 }
 
+enum TemplateCategory {
+  engineering
+  general
+  marketing
+  operations
+  people
+}
+
+type TemplateCounts {
+  customFields: Int!
+  docs: Int!
+  folders: Int!
+  lists: Int!
+  statuses: Int!
+  tasks: Int!
+}
+
 type TimeEntry {
   activity: String!
 
@@ -1538,7 +1973,19 @@ input UpdateDepartmentInput {
 
 input UpdateDocumentInput {
   content: String
+  icon: IconKey
   title: String
+}
+
+input UpdateFolderInput {
+  color: String
+  icon: IconKey
+  name: String
+}
+
+input UpdateGithubConnectionInput {
+  sync: GithubSyncInput
+  taskPrefix: String
 }
 
 input UpdateLeaveTypeInput {
@@ -1571,6 +2018,7 @@ input UpdateSpaceInput {
 
   """yyyy-mm-dd; null clears it"""
   dueDate: String
+  icon: IconKey
   name: String
 
   """yyyy-mm-dd; null clears it"""
@@ -1611,6 +2059,12 @@ input UpdateTaskInput {
   type: TaskType
 }
 
+input UpdateTaskListInput {
+  color: String
+  icon: IconKey
+  name: String
+}
+
 input UpdateTaskStatusInput {
   category: StatusCategory
   color: String
@@ -1642,6 +2096,9 @@ type Workspace {
 
   """The caller's role in this workspace"""
   roleName: String!
+
+  """Spaces where some of those permissions are taken away"""
+  spaceRules: [SpaceRule!]!
 }
 
 """Something changed. Ids only: refetch the affected views to see it."""

@@ -8,6 +8,8 @@ export abstract class DocumentRepository {
   abstract ancestorChain(workspaceId: string, documentId: string): Promise<string[]>;
   /** Levels in the subtree rooted at this page (1 for a page with no children). */
   abstract subtreeHeight(workspaceId: string, documentId: string): Promise<number>;
+  /** Sets the space of a page and everything under it. */
+  abstract setSubtreeSpace(workspaceId: string, documentId: string, spaceId: string | null): Promise<void>;
   abstract maxSiblingPosition(workspaceId: string, parentId: string | null): Promise<number>;
   abstract create(document: NewDocument): Promise<Document>;
   abstract save(document: Document): Promise<Document>;

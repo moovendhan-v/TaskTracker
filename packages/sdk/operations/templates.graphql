@@ -1,0 +1,32 @@
+fragment TemplateFields on ProjectTemplate {
+  id
+  name
+  description
+  category
+  builtIn
+  icon
+  color
+  counts { statuses customFields folders lists tasks docs }
+  content
+  createdAt
+}
+
+query ProjectTemplates($workspaceId: ID!) { projectTemplates(workspaceId: $workspaceId) { ...TemplateFields } }
+
+query SpaceTemplateContent($workspaceId: ID!, $spaceId: ID!, $includeContent: Boolean) {
+  spaceTemplateContent(workspaceId: $workspaceId, spaceId: $spaceId, includeContent: $includeContent)
+}
+
+mutation CreateSpaceFromTemplate($workspaceId: ID!, $templateId: String!, $input: CreateFromTemplateInput!) {
+  createSpaceFromTemplate(workspaceId: $workspaceId, templateId: $templateId, input: $input) { ...SpaceFields }
+}
+
+mutation SaveSpaceAsTemplate($workspaceId: ID!, $spaceId: ID!, $input: SaveAsTemplateInput!) {
+  saveSpaceAsTemplate(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) { ...TemplateFields }
+}
+
+mutation ImportTemplate($workspaceId: ID!, $input: ImportTemplateInput!) {
+  importTemplate(workspaceId: $workspaceId, input: $input) { ...TemplateFields }
+}
+
+mutation DeleteTemplate($workspaceId: ID!, $templateId: ID!) { deleteTemplate(workspaceId: $workspaceId, templateId: $templateId) }

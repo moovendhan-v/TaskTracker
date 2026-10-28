@@ -10,5 +10,6 @@ export abstract class TaskStatusRepository {
   abstract delete(workspaceId: string, statusId: string): Promise<void>;
   abstract setPositions(workspaceId: string, orderedIds: readonly string[]): Promise<void>;
   /** Moves every task in one status to another; returns how many moved. */
+  abstract countTasks(workspaceId: string, statusId: string): Promise<number>;
   abstract moveTasks(workspaceId: string, fromStatusId: string, toStatusId: string): Promise<number>;
 }

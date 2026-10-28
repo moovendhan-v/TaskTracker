@@ -3,7 +3,9 @@
 
 fragment CurrentUserFields on CurrentUser { id email name image platformRole emailVerified }
 
-fragment WorkspaceFields on Workspace { id name color roleName permissions createdAt }
+fragment WorkspaceFields on Workspace { id name color roleName permissions spaceRules { ...SpaceRuleFields } createdAt }
+
+fragment SpaceRuleFields on SpaceRule { spaces notSpaces permissions }
 
 fragment MemberFields on Member { userId name email roleId roleName joinedAt }
 
@@ -14,13 +16,16 @@ fragment RoleFields on Role {
   permissions
   effectivePermissions
   readableFields
+  spaceRules { ...SpaceRuleFields }
   policies { ref name managed }
-  inlinePolicy { statements { effect permissions fields } }
+  inlinePolicy { statements { effect permissions fields spaces notSpaces } }
 }
 
-fragment SpaceFields on Space { id workspaceId name color status statusNote startDate dueDate customFields createdAt }
+fragment SpaceFields on Space { id workspaceId name color icon status statusNote startDate dueDate customFields createdAt }
 
-fragment TaskListFields on TaskList { id spaceId name createdAt }
+fragment TaskListFields on TaskList { id spaceId folderId name color icon position createdAt }
+
+fragment FolderFields on Folder { id spaceId parentId name color icon position createdAt }
 
 fragment TaskStatusFields on TaskStatus { id spaceId name color category position }
 
@@ -60,10 +65,10 @@ fragment SprintFields on Sprint {
   id spaceId name goal status startDate endDate completedAt totalTasks doneTasks
 }
 
-fragment DocumentSummaryFields on DocumentSummary { id spaceId parentId kind title position createdById updatedAt }
+fragment DocumentSummaryFields on DocumentSummary { id spaceId parentId kind title icon position createdById updatedAt }
 
 fragment DocumentFields on Document {
-  id spaceId parentId kind title content position createdById createdAt updatedAt
+  id spaceId parentId kind title icon content position createdById createdAt updatedAt
 }
 
 fragment DepartmentFields on Department { id name headUserId memberCount }
@@ -118,7 +123,7 @@ fragment PolicyFields on Policy {
   description
   managed
   attachedRoleCount
-  document { statements { effect permissions fields } }
+  document { statements { effect permissions fields spaces notSpaces } }
 }
 
 fragment PreferencesFields on Preferences {

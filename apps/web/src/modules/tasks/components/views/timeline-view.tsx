@@ -36,8 +36,8 @@ export function TimelineView({ workspaceId, tasks, onOpen }: TimelineViewProps) 
   const [drag, setDrag] = useState<Drag | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const { update } = useTaskMutations(workspaceId);
-  const { can } = usePermissions(workspaceId);
-  const canEdit = can('task.update');
+  const { canIn } = usePermissions(workspaceId);
+  const canEditTask = (task: { spaceId: string }) => canIn(task.spaceId, 'task.update');
   const dayWidth = ZOOMS[zoom];
 
   const scheduled = tasks
@@ -53,7 +53,8 @@ export function TimelineView({ workspaceId, tasks, onOpen }: TimelineViewProps) 
   const x = (day: Day) => daysBetween(first, day) * dayWidth;
 
   const beginDrag = (event: ReactPointerEvent, taskId: string, mode: Drag['mode']) => {
-    if (!canEdit) return;
+    const task = tasks.find((item) => item.id === taskId);
+    if (!task || !canEditTask(task)) return;
     event.preventDefault();
     event.stopPropagation();
     const startX = event.clientX;
@@ -148,11 +149,11 @@ export function TimelineView({ workspaceId, tasks, onOpen }: TimelineViewProps) 
                         onPointerDown={(event) => beginDrag(event, task.id, 'move')}
                         onDoubleClick={() => onOpen(task.id)}
                         onKeyDown={(event) => event.key === 'Enter' && onOpen(task.id)}
-                        className={cn('absolute top-2 flex h-6 items-center rounded-md border-2 px-1.5 text-[11px] font-semibold', canEdit && 'cursor-grab active:cursor-grabbing')}
+                        className={cn('absolute top-2 flex h-6 items-center rounded-md border-2 px-1.5 text-[11px] font-semibold', canEditTask(task) && 'cursor-grab active:cursor-grabbing')}
                         style={{ left: x(start), width: length * dayWidth, borderColor: task.status.color, backgroundColor: `color-mix(in oklab, ${task.status.color} 22%, transparent)` }}
                       >
                         {length > 1 && length * dayWidth > 28 ? `${length}d` : ''}
-                        {canEdit ? <span onPointerDown={(event) => beginDrag(event, task.id, 'end')} className="absolute top-0 right-0 bottom-0 w-2 cursor-ew-resize" aria-hidden /> : null}
+                        {canEditTask(task) ? <span onPointerDown={(event) => beginDrag(event, task.id, 'end')} className="absolute top-0 right-0 bottom-0 w-2 cursor-ew-resize" aria-hidden /> : null}
                       </div>
                       <span className="pointer-events-none absolute top-2.5 truncate text-[11px] whitespace-nowrap text-muted-foreground italic" style={{ left: x(end) + dayWidth + 6 }}>
                         {formatNumericDate(end)} {task.title}

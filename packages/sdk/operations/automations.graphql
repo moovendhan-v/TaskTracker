@@ -1,0 +1,33 @@
+fragment AutomationRuleFields on AutomationRule {
+  id
+  spaceId
+  name
+  enabled
+  trigger { type statusIds categories priorities }
+  conditions { listIds priorities types }
+  actions { type statusId priority userId audiences userIds message }
+  createdById
+  runCount
+  lastRunAt
+  createdAt
+}
+
+query Automations($workspaceId: ID!, $spaceId: ID!) { automations(workspaceId: $workspaceId, spaceId: $spaceId) { ...AutomationRuleFields } }
+
+query AutomationRuns($workspaceId: ID!, $ruleId: ID!) {
+  automationRuns(workspaceId: $workspaceId, ruleId: $ruleId) { id ruleId taskId status message createdAt }
+}
+
+mutation CreateAutomation($workspaceId: ID!, $spaceId: ID!, $input: SaveAutomationInput!) {
+  createAutomation(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) { ...AutomationRuleFields }
+}
+
+mutation UpdateAutomation($workspaceId: ID!, $ruleId: ID!, $input: SaveAutomationInput!) {
+  updateAutomation(workspaceId: $workspaceId, ruleId: $ruleId, input: $input) { ...AutomationRuleFields }
+}
+
+mutation SetAutomationEnabled($workspaceId: ID!, $ruleId: ID!, $enabled: Boolean!) {
+  setAutomationEnabled(workspaceId: $workspaceId, ruleId: $ruleId, enabled: $enabled) { ...AutomationRuleFields }
+}
+
+mutation DeleteAutomation($workspaceId: ID!, $ruleId: ID!) { deleteAutomation(workspaceId: $workspaceId, ruleId: $ruleId) }

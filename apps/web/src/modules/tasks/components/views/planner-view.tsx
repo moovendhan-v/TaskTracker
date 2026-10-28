@@ -53,8 +53,8 @@ export function PlannerView({ workspaceId, tasks, onOpen }: PlannerViewProps) {
   const [from, setFrom] = useState(() => startOfWeekDay(today(), weekStart));
   const { data: members = [] } = useMembers(workspaceId);
   const { update } = useTaskMutations(workspaceId);
-  const { can } = usePermissions(workspaceId);
-  const canEdit = can('task.update') && can('task.assign');
+  const { canIn } = usePermissions(workspaceId);
+  const canEditTask = (task: { spaceId: string }) => canIn(task.spaceId, 'task.update') && canIn(task.spaceId, 'task.assign');
   const dayCount = Number(weeks) * 7;
   const to = shiftDay(from, dayCount - 1);
   const days = Array.from({ length: dayCount }, (_, index) => shiftDay(from, index));
@@ -130,7 +130,7 @@ export function PlannerView({ workspaceId, tasks, onOpen }: PlannerViewProps) {
                       {days.map((day) => (
                         <div
                           key={day}
-                          onDragOver={(event) => canEdit && event.preventDefault()}
+                          onDragOver={(event) => event.preventDefault()}
                           onDrop={(event) => {
                             event.preventDefault();
                             const taskId = event.dataTransfer.getData(TASK_DRAG_TYPE);
@@ -145,7 +145,7 @@ export function PlannerView({ workspaceId, tasks, onOpen }: PlannerViewProps) {
                         <button
                           key={item.task.id}
                           type="button"
-                          draggable={canEdit}
+                          draggable={canEditTask(item.task)}
                           onDragStart={(event) => event.dataTransfer.setData(TASK_DRAG_TYPE, item.task.id)}
                           onClick={() => onOpen(item.task.id)}
                           className="pointer-events-auto mx-0.5 my-0.5 truncate rounded border-l-4 bg-muted px-2 text-left text-xs hover:bg-accent"
@@ -172,7 +172,7 @@ export function PlannerView({ workspaceId, tasks, onOpen }: PlannerViewProps) {
               <button
                 key={task.id}
                 type="button"
-                draggable={canEdit}
+                draggable={canEditTask(task)}
                 onDragStart={(event) => event.dataTransfer.setData(TASK_DRAG_TYPE, task.id)}
                 onClick={() => onOpen(task.id)}
                 className="truncate rounded-md border-l-4 bg-muted px-2 py-1.5 text-left text-xs hover:bg-accent"

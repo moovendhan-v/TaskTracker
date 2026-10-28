@@ -5,6 +5,13 @@ import { PERMISSIONS, type Permission } from './permissions.js';
  * policies. A policy is a list of statements that allow or deny permissions
  * (actions such as `task.update`) and fields (data such as `member.email`).
  * Deny always wins. Patterns may end in `*`: `task.*`, `member.*`, `*`.
+ *
+ * A deny statement can be limited to some spaces (projects) with `spaces`, or
+ * to every space except some with `notSpaces`, like an IAM resource condition:
+ * `{ effect: 'deny', permissions: ['*'], spaces: [hrSpaceId] }` hides that
+ * space, `{ effect: 'deny', permissions: ['task.update'], notSpaces: [mine] }`
+ * makes every other space read-only. A space whose `task.view` is denied is
+ * hidden entirely: the database doesn't return its rows.
  */
 
 export const POLICY_EFFECTS = ['allow', 'deny'] as const;
@@ -16,13 +23,47 @@ export interface PolicyStatement {
   permissions?: string[] | null;
   /** Field keys or patterns, e.g. `member.email`. Controls whether the field is readable. */
   fields?: string[] | null;
+  /** Deny only: limit the statement to these space ids. */
+  spaces?: string[] | null;
+  /** Deny only: apply the statement in every space except these. */
+  notSpaces?: string[] | null;
+}
+
+/** Permissions that act on things inside one space, so a statement may target spaces. */
+export const SPACE_SCOPED_PERMISSIONS = [
+  'space.manage',
+  'list.manage',
+  'task.view',
+  'task.create',
+  'task.update',
+  'task.delete',
+  'task.assign',
+  'sprint.manage',
+  'automation.manage',
+  'doc.view',
+  'doc.create',
+  'doc.manage',
+] as const satisfies readonly Permission[];
+export type SpaceScopedPermission = (typeof SPACE_SCOPED_PERMISSIONS)[number];
+
+/** One space-limited deny: these permissions are taken away in `spaces`, or everywhere but `notSpaces`. */
+export interface SpaceRule {
+  spaces: string[] | null;
+  notSpaces: string[] | null;
+  permissions: SpaceScopedPermission[];
+}
+
+/** Space ids a rule applies to, for the database: `deny` lists, `only` limits (null: no limit). */
+export interface SpaceVisibility {
+  deny: string[];
+  only: string[] | null;
 }
 
 export interface PolicyDocument {
   statements: PolicyStatement[];
 }
 
-export const POLICY_LIMITS = { maxStatements: 50, maxEntriesPerStatement: 50, nameMax: 80, descriptionMax: 300 } as const;
+export const POLICY_LIMITS = { maxStatements: 50, maxEntriesPerStatement: 50, nameMax: 80, descriptionMax: 300, maxSpacesPerStatement: 100 } as const;
 
 /** Data fields whose visibility policies control. Hidden ones need an explicit allow. */
 export interface FieldDefinition {
@@ -133,11 +174,14 @@ export interface EffectiveAccess {
   /** Field keys explicitly allowed and denied (patterns expanded to the known fields). */
   allowedFields: string[];
   deniedFields: string[];
+  /** Space-limited denies, on top of `permissions`. */
+  spaceRules: SpaceRule[];
 }
 
 /** Evaluates policies the IAM way: anything allowed by some statement and denied by none. */
 export function evaluatePolicies(documents: readonly PolicyDocument[]): EffectiveAccess {
-  const statements = documents.flatMap((document) => document.statements);
+  const all = documents.flatMap((document) => document.statements);
+  const statements = all.filter((statement) => !isSpaceLimited(statement));
   const matches = (effect: PolicyEffect, kind: 'permissions' | 'fields', key: string) =>
     statements.some((statement) => statement.effect === effect && (statement[kind] ?? []).some((pattern) => matchesPattern(pattern, key)));
 
@@ -147,6 +191,11 @@ export function evaluatePolicies(documents: readonly PolicyDocument[]): Effectiv
     permissions,
     allowedFields: fieldKeys.filter((key) => matches('allow', 'fields', key)),
     deniedFields: fieldKeys.filter((key) => matches('deny', 'fields', key)),
+    spaceRules: all.filter(isSpaceLimited).flatMap((statement) => {
+      const scoped = SPACE_SCOPED_PERMISSIONS.filter((permission) => (statement.permissions ?? []).some((pattern) => matchesPattern(pattern, permission)));
+      if (statement.effect !== 'deny' || scoped.length === 0) return [];
+      return [{ spaces: statement.spaces?.length ? [...statement.spaces] : null, notSpaces: statement.notSpaces?.length ? [...statement.notSpaces] : null, permissions: scoped }];
+    }),
   };
 }
 
@@ -169,4 +218,69 @@ export function isKnownPermissionPattern(pattern: string): boolean {
 
 export function isKnownFieldPattern(pattern: string): boolean {
   return PROTECTED_FIELDS.some((field) => matchesPattern(pattern, field.key));
+}
+
+export function isSpaceLimited(statement: Pick<PolicyStatement, 'spaces' | 'notSpaces'>): boolean {
+  return Boolean(statement.spaces?.length || statement.notSpaces?.length);
+}
+
+function ruleCovers(rule: SpaceRule, spaceId: string): boolean {
+  if (rule.spaces) return rule.spaces.includes(spaceId);
+  if (rule.notSpaces) return !rule.notSpaces.includes(spaceId);
+  return false;
+}
+
+/**
+ * Whether a permission holds inside one space: granted workspace-wide and not
+ * taken away there by a space rule.
+ */
+export function canInSpace(access: { permissions: Iterable<Permission>; spaceRules: readonly SpaceRule[] }, spaceId: string, permission: Permission): boolean {
+  return [...access.permissions].includes(permission) && !deniedInSpace(access.spaceRules, spaceId, permission);
+}
+
+/** Whether a space rule takes `permission` away inside `spaceId`. */
+export function deniedInSpace(rules: readonly SpaceRule[], spaceId: string, permission: Permission): boolean {
+  return rules.some((rule) => (rule.permissions as readonly string[]).includes(permission) && ruleCovers(rule, spaceId));
+}
+
+/**
+ * Which spaces a permission is denied in, in the form row-level security uses:
+ * spaces listed by some rule, and (for `notSpaces` rules) the only spaces left.
+ */
+export function spaceVisibility(rules: readonly SpaceRule[], permission: SpaceScopedPermission): SpaceVisibility {
+  const relevant = rules.filter((rule) => rule.permissions.includes(permission));
+  const deny = [...new Set(relevant.flatMap((rule) => rule.spaces ?? []))].sort();
+  const limits = relevant.flatMap((rule) => (rule.notSpaces ? [rule.notSpaces] : []));
+  const only = limits.length === 0 ? null : limits.reduce((kept, list) => kept.filter((id) => list.includes(id))).sort();
+  return { deny, only };
+}
+
+/**
+ * Whether `result` is at least as limited in spaces as `actor`: wherever the
+ * actor is denied something by a space rule, the result is denied it too (or
+ * doesn't have it at all). Stops someone who can't see a space from building
+ * or handing out a role that can.
+ */
+export function keepsSpaceRules(
+  actor: { spaceRules: readonly SpaceRule[] },
+  result: { permissions: readonly Permission[]; spaceRules: readonly SpaceRule[] },
+): boolean {
+  return actor.spaceRules.every((rule) =>
+    rule.permissions.every((permission) => {
+      if (!result.permissions.includes(permission)) return true;
+      if (rule.spaces) return rule.spaces.every((spaceId) => !canInSpace(result, spaceId, permission));
+      // "Everywhere except E": the result needs a rule of its own that excepts no more than E.
+      const except = rule.notSpaces ?? [];
+      return result.spaceRules.some((own) => own.permissions.includes(permission) && own.notSpaces !== null && own.notSpaces.every((id) => except.includes(id)));
+    }),
+  );
+}
+
+export function isSpaceScoped(permission: string): permission is SpaceScopedPermission {
+  return (SPACE_SCOPED_PERMISSIONS as readonly string[]).includes(permission);
+}
+
+/** Space rules from an API response, keeping only permission keys that apply in a space. */
+export function parseSpaceRules(rules: readonly { spaces: string[] | null; notSpaces: string[] | null; permissions: readonly string[] }[]): SpaceRule[] {
+  return rules.map((rule) => ({ spaces: rule.spaces, notSpaces: rule.notSpaces, permissions: rule.permissions.filter(isSpaceScoped) }));
 }

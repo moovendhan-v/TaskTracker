@@ -55,6 +55,7 @@ test('creates a workspace, a space and a list', async () => {
   await expect(page.getByRole('status').filter({ hasText: 'Confirm your email' })).toBeVisible();
 
   await page.getByRole('button', { name: 'New space' }).click();
+  await page.getByRole('menuitem', { name: 'Blank space' }).click();
   await page.getByRole('dialog').getByLabel('Name').fill('Product');
   await page.getByRole('button', { name: 'Create space' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -62,7 +63,8 @@ test('creates a workspace, a space and a list', async () => {
   await expect(nav.getByText('Product')).toBeVisible();
 
   await nav.getByText('Product').hover();
-  await page.getByRole('button', { name: 'New list in Product' }).click();
+  await page.getByRole('button', { name: 'Add to Product' }).click();
+  await page.getByRole('menuitem', { name: 'List' }).click();
   await page.getByRole('dialog').getByLabel('Name').fill('Launch plan');
   await page.getByRole('button', { name: 'Create list' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -105,7 +107,7 @@ test('shows changes made in another tab without reloading', async () => {
 });
 
 test('edits a task and renders comments as text, never HTML', async () => {
-  await page.getByRole('button', { name: 'Write release notes' }).click();
+  await page.getByRole('button', { name: 'Write release notes', exact: true }).click();
   await expect(page).toHaveURL(/task=/);
   const panel = page.getByRole('dialog');
   await panel.getByRole('button', { name: 'Description' }).click();
@@ -147,25 +149,29 @@ test('plans, starts and completes a sprint', async () => {
   await page.getByRole('dialog').getByLabel('Goal').fill('Ship the launch notes');
   await page.getByRole('button', { name: 'Create sprint' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
-  await expect(page.getByRole('heading', { name: 'Sprint 1' })).toBeVisible();
+  const lane = page.getByRole('region', { name: 'Sprint 1', exact: true });
+  await expect(lane).toBeVisible();
 
-  await page.getByRole('combobox', { name: 'Plan Write release notes into a sprint' }).click();
-  await page.getByRole('option', { name: 'Sprint 1' }).click();
-  await expect(page.getByText('0 of 1 done')).toBeVisible();
-  await page.getByRole('button', { name: 'Start sprint' }).click();
-  await expect(page.getByText('Active', { exact: true }).first()).toBeVisible();
+  // Plan the task from the backlog, then start the sprint from its lane.
+  const backlog = page.getByRole('region', { name: 'Backlog' });
+  await backlog.getByRole('checkbox', { name: 'Select Write release notes' }).click();
+  await backlog.getByRole('button', { name: 'Move 1 to…' }).click();
+  await page.getByRole('menuitem', { name: /Sprint 1/ }).click();
+  await expect(lane.getByRole('button', { name: 'Write release notes', exact: true })).toBeVisible();
+  await lane.getByRole('button', { name: 'Start' }).click();
+  const activePanel = page.getByRole('region', { name: 'Active sprint: Sprint 1' });
+  await expect(activePanel).toBeVisible();
 
-  // The sprint card's board link (the project's own Board tab comes first on the page).
-  await page.getByRole('link', { name: 'Board', exact: true }).last().click();
+  await lane.getByRole('link', { name: 'Board' }).click();
   await expect(page).toHaveURL(/\/sprints\/[0-9a-f-]+/);
   await expect(page.locator('article', { hasText: 'Write release notes' })).toBeVisible();
   await page.getByRole('link', { name: 'All sprints' }).click();
-  await page.getByRole('button', { name: 'Complete sprint' }).click();
+  await activePanel.getByRole('button', { name: 'Complete sprint' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Complete sprint' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
-  await expect(page.getByText('Completed', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Completed sprints')).toBeVisible();
   // The unfinished task went back to the backlog.
-  await expect(page.getByRole('button', { name: 'Write release notes' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Backlog' }).getByRole('button', { name: 'Write release notes', exact: true })).toBeVisible();
 });
 
 test('writes a doc with autosave and a preview that drops unsafe markup', async () => {
@@ -224,6 +230,7 @@ test('makes a folder and drags a page into it', async () => {
 
 test('creates a task in a project that has no lists yet', async () => {
   await page.getByRole('button', { name: 'New space' }).click();
+  await page.getByRole('menuitem', { name: 'Blank space' }).click();
   await page.getByRole('dialog').getByLabel('Name').fill('Ops');
   await page.getByRole('button', { name: 'Create space' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();

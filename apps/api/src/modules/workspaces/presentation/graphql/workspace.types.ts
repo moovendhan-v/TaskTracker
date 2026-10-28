@@ -9,6 +9,7 @@ import {
   type WorkspaceResponse,
 } from '@taskflow/shared-types';
 import { IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
+import { SpaceRuleGql } from '../../../roles/presentation/graphql/policy.types.js';
 import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 
 @ObjectType('Workspace')
@@ -18,6 +19,7 @@ export class WorkspaceGql implements WorkspaceResponse {
   @Field() color: string;
   @Field({ description: "The caller's role in this workspace" }) roleName: string;
   @Field(() => [String], { description: "The caller's permissions, e.g. task.create" }) permissions: Permission[];
+  @Field(() => [SpaceRuleGql], { description: 'Spaces where some of those permissions are taken away' }) spaceRules: SpaceRuleGql[];
   @Field() createdAt: string;
 }
 

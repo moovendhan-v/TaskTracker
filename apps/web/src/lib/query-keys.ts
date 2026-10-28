@@ -4,11 +4,21 @@ export const queryKeys = {
   workspaces: ['workspaces'] as const,
   workspace: (workspaceId: string) => ['workspaces', workspaceId] as const,
   members: (workspaceId: string) => ['workspaces', workspaceId, 'members'] as const,
+  automationsRoot: (workspaceId: string) => ['workspaces', workspaceId, 'automations'] as const,
+  automations: (workspaceId: string, spaceId: string) => ['workspaces', workspaceId, 'automations', spaceId] as const,
+  automationRuns: (workspaceId: string, ruleId: string) => ['workspaces', workspaceId, 'automations', 'runs', ruleId] as const,
+  integrations: (workspaceId: string) => ['workspaces', workspaceId, 'integrations'] as const,
+  taskPullRequests: (workspaceId: string, taskId: string) => ['workspaces', workspaceId, 'tasks', 'pull-requests', taskId] as const,
+  templates: (workspaceId: string) => ['workspaces', workspaceId, 'templates'] as const,
   roles: (workspaceId: string) => ['workspaces', workspaceId, 'roles'] as const,
+  /** Under `roles`, so role and policy changes refresh each other. */
+  policies: (workspaceId: string) => ['workspaces', workspaceId, 'roles', 'policies'] as const,
   spaces: (workspaceId: string) => ['workspaces', workspaceId, 'spaces'] as const,
   // Under spaces, so a space change refreshes its statuses too.
   statuses: (workspaceId: string, spaceId: string) => ['workspaces', workspaceId, 'spaces', spaceId, 'statuses'] as const,
   lists: (workspaceId: string) => ['workspaces', workspaceId, 'lists'] as const,
+  /** Under `lists`, so a list change refreshes the folders too. */
+  folders: (workspaceId: string) => ['workspaces', workspaceId, 'lists', 'folders'] as const,
   tasksRoot: (workspaceId: string) => ['workspaces', workspaceId, 'tasks'] as const,
   tasks: (workspaceId: string, listId: string, query: object = {}) => ['workspaces', workspaceId, 'tasks', 'list', listId, query] as const,
   task: (workspaceId: string, taskId: string) => ['workspaces', workspaceId, 'tasks', 'detail', taskId] as const,

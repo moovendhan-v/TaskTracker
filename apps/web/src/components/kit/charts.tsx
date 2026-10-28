@@ -257,3 +257,104 @@ export function Meter({ value, label, className, color = 'var(--good)' }: { valu
     </span>
   );
 }
+
+export interface LineSeries {
+  key: string;
+  label: string;
+  color: string;
+  /** One value per point; null leaves a gap (e.g. days still to come). */
+  values: readonly (number | null)[];
+  /** A reference line (target, ideal) drawn dashed and thinner. */
+  reference?: boolean;
+}
+
+interface LineChartProps {
+  series: readonly LineSeries[];
+  /** Axis labels, one per point. */
+  labels: readonly string[];
+  label: string;
+  height?: number;
+  formatValue?: (value: number) => string;
+  note?: ReactNode;
+}
+
+/** Lines over time on one axis, with a crosshair and tooltip: e.g. a sprint burndown against its ideal. */
+export function LineChart({ series, labels, label, height = 180, formatValue = String, note }: LineChartProps) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const count = labels.length;
+  const max = niceMax(Math.max(...series.flatMap((item) => item.values.filter((value): value is number => value !== null))));
+  const x = (index: number) => (count <= 1 ? 50 : (index / (count - 1)) * 100);
+  const y = (value: number) => 100 - (value / max) * 100;
+  const path = (values: readonly (number | null)[]) =>
+    values.reduce<string>((d, value, index) => (value === null ? d : `${d}${d && values[index - 1] !== null ? 'L' : 'M'}${x(index)},${y(value)}`), '');
+
+  return (
+    <figure aria-label={label} className="w-full">
+      {series.length > 1 ? <Legend items={series} aside={note} /> : null}
+      <div className="relative mt-3" style={{ height }}>
+        <div className="absolute inset-x-0 top-0 border-t border-chart-grid" />
+        <div className="absolute inset-x-0 top-1/2 border-t border-chart-grid" />
+        <div className="absolute inset-x-0 bottom-0 border-t border-chart-grid" />
+        <span className="absolute top-0.5 left-0 text-[10px] tabular-nums text-muted-foreground">{formatValue(max)}</span>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible" aria-hidden>
+          {hovered !== null ? <line x1={x(hovered)} x2={x(hovered)} y1={0} y2={100} stroke="currentColor" className="text-muted-foreground/40" strokeWidth={1} vectorEffect="non-scaling-stroke" /> : null}
+          {series.map((item) => (
+            <path
+              key={item.key}
+              d={path(item.values)}
+              fill="none"
+              stroke={item.color}
+              strokeWidth={item.reference ? 1.5 : 2}
+              strokeDasharray={item.reference ? '4 4' : undefined}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
+        {hovered !== null
+          ? series.map((item) => {
+              const value = item.values[hovered];
+              return value === null || value === undefined || item.reference ? null : (
+                <span
+                  key={item.key}
+                  className="pointer-events-none absolute size-2.5 -translate-x-1/2 translate-y-1/2 rounded-full ring-2 ring-card"
+                  style={{ left: `${x(hovered)}%`, bottom: `${100 - y(value)}%`, background: item.color }}
+                />
+              );
+            })
+          : null}
+        <div className="absolute inset-0 flex">
+          {labels.map((text, index) => (
+            <button
+              key={index}
+              type="button"
+              aria-label={`${text}: ${series.map((item) => `${item.label} ${item.values[index] === null ? 'not yet' : formatValue(item.values[index] ?? 0)}`).join(', ')}`}
+              onMouseEnter={() => setHovered(index)}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setHovered(index)}
+              onBlur={() => setHovered(null)}
+              className="h-full min-w-0 flex-1 focus-visible:outline-none"
+            />
+          ))}
+        </div>
+        {hovered !== null ? (
+          <Tooltip left={`${x(hovered)}%`}>
+            <span className="font-medium">{labels[hovered]}</span>
+            {series.map((item) => (
+              <span key={item.key} className="ml-2 inline-flex items-center gap-1">
+                <span className="size-2 rounded-full" style={{ background: item.color }} />
+                {item.label} {item.values[hovered] === null ? '–' : formatValue(item.values[hovered] ?? 0)}
+              </span>
+            ))}
+          </Tooltip>
+        ) : null}
+      </div>
+      <figcaption className="mt-1.5 flex justify-between text-[11px] text-muted-foreground">
+        <span>{labels[0]}</span>
+        {count > 2 ? <span>{labels[Math.floor((count - 1) / 2)]}</span> : null}
+        <span>{labels[count - 1]}</span>
+      </figcaption>
+    </figure>
+  );
+}

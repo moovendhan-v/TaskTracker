@@ -29,7 +29,7 @@ const status = (id: string, name: string, category: TaskStatusResponse['category
 const STATUSES = [status('s-todo', 'To do', 'unstarted'), status('s-doing', 'In progress', 'started'), status('s-done', 'Done', 'done'), status('s-other', 'Elsewhere', 'started', 'space-b')];
 
 function accessWith(...permissions: Permission[]): WorkspaceAccess {
-  return { workspaceId: WORKSPACE, roleId: 'role', permissions: new Set(permissions), readableFields: new Set(), viaPlatformRole: false };
+  return { workspaceId: WORKSPACE, roleId: 'role', permissions: new Set(permissions), readableFields: new Set(), spaceRules: [], viaPlatformRole: false };
 }
 
 describe('TasksService', () => {

@@ -21,7 +21,7 @@ interface TaskBoardViewProps {
 /** One column per status; drag a card to change its status or order. */
 export function TaskBoardView({ workspaceId, spaceId, statuses: given, listId, tasks, onOpen }: TaskBoardViewProps) {
   const { update } = useTaskMutations(workspaceId);
-  const { can } = usePermissions(workspaceId);
+  const { can, canIn } = usePermissions(workspaceId);
   const { data: fetched = [] } = useStatuses(workspaceId, given ? undefined : spaceId);
   const statuses = given ?? fetched;
   const byStatus = (statusId: string) => tasks.filter((task) => task.statusId === statusId).sort((a, b) => a.position - b.position);
@@ -47,8 +47,8 @@ export function TaskBoardView({ workspaceId, spaceId, statuses: given, listId, t
           spaceId={spaceId}
           status={status}
           tasks={byStatus(status.id)}
-          canEdit={can('task.update')}
-          canCreate={Boolean(listId) && can('task.create')}
+          canEdit={spaceId ? canIn(spaceId, 'task.update') : can('task.update')}
+          canCreate={Boolean(listId) && (spaceId ? canIn(spaceId, 'task.create') : can('task.create'))}
           onOpen={onOpen}
           onDrop={handleDrop}
         />

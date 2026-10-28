@@ -8,6 +8,7 @@ import { Announces } from '../../../core/events/announces.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { workspaceFromAccess } from '../../../core/runtime/change-target.js';
 import { findManagedPolicy, PolicyRef, type CustomPolicy, type PolicyAttachment } from '../domain/policy.js';
+import { RoleGrantPolicy } from '../domain/role-grant.policy.js';
 import { PolicyDocumentPolicy } from '../domain/policy-document.policy.js';
 import { PolicyRepository } from '../domain/policy.repository.js';
 import type { WorkspaceRole } from '../domain/workspace-role.js';
@@ -167,4 +168,5 @@ function assertWithin(actor: WorkspaceAccess, result: RoleAccess): void {
   if (!result.readableFields.every((field) => actor.readableFields.has(field))) {
     throw DomainError.forbidden('That change would let the role see fields you cannot see');
   }
+  RoleGrantPolicy.assertKeepsSpaceRules(actor, result);
 }

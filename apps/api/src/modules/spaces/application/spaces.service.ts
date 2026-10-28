@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { CreateSpaceRequest, CustomFieldValues, SpaceResponse, UpdateSpaceRequest } from '@taskflow/shared-types';
+import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
@@ -29,6 +30,7 @@ export class SpacesService {
       workspaceId,
       name: request.name.trim(),
       color: request.color ?? DEFAULT_SPACE_COLOR,
+      icon: request.icon ?? null,
     });
     return SpaceMapper.toResponse(space);
   }
@@ -37,8 +39,10 @@ export class SpacesService {
   @Announces('space.updated')
   async update(_actor: Actor, workspaceId: string, spaceId: string, request: UpdateSpaceRequest): Promise<SpaceResponse> {
     const space = await this.getInWorkspace(workspaceId, spaceId);
+    SpaceGuard.assert(space.id, 'space.manage');
     if (request.name !== undefined) space.name = request.name.trim();
     if (request.color !== undefined) space.color = request.color;
+    if (request.icon !== undefined) space.icon = request.icon;
     if (request.status !== undefined) space.status = request.status;
     if (request.statusNote !== undefined) space.statusNote = request.statusNote.trim();
     if (request.startDate !== undefined) space.startDate = request.startDate;
@@ -51,6 +55,7 @@ export class SpacesService {
   @Announces('space.deleted')
   async remove(_actor: Actor, workspaceId: string, spaceId: string): Promise<SpaceResponse> {
     const space = await this.getInWorkspace(workspaceId, spaceId);
+    SpaceGuard.assert(space.id, 'space.manage');
     await this.spaces.delete(workspaceId, spaceId);
     return SpaceMapper.toResponse(space);
   }

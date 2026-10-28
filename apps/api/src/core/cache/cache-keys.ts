@@ -1,3 +1,4 @@
+import type { DataScope } from '../database/data-scope.js';
 import { createHash } from 'node:crypto';
 import type { EntityType } from '../events/domain-event.js';
 
@@ -32,4 +33,10 @@ export function stableStringify(value: unknown): string {
     }
     return item;
   });
+}
+
+/** A short fingerprint of the caller's space limits, or '' when they have none. */
+export function spaceLimitsKey(scope: DataScope | null): string {
+  if (scope?.kind !== 'workspace' || !scope.spaceRules?.length) return '';
+  return createHash('sha256').update(stableStringify(scope.spaceRules)).digest('base64url').slice(0, 16);
 }

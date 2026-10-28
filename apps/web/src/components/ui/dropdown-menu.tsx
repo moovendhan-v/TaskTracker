@@ -1,4 +1,5 @@
 import { DropdownMenu as MenuPrimitive } from 'radix-ui';
+import { ChevronRightIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { cn } from '@/lib/cn';
 
@@ -44,4 +45,32 @@ export function DropdownMenuLabel({ className, ...props }: ComponentProps<typeof
 
 export function DropdownMenuSeparator({ className, ...props }: ComponentProps<typeof MenuPrimitive.Separator>) {
   return <MenuPrimitive.Separator className={cn('-mx-1 my-1 h-px bg-border', className)} {...props} />;
+}
+
+export const DropdownMenuSub = MenuPrimitive.Sub;
+
+export function DropdownMenuSubTrigger({ className, children, ...props }: ComponentProps<typeof MenuPrimitive.SubTrigger>) {
+  return (
+    <MenuPrimitive.SubTrigger
+      className={cn(
+        'flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none select-none focus:bg-muted data-[state=open]:bg-muted [&_svg]:size-4 [&_svg]:text-muted-foreground',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      <ChevronRightIcon className="ml-auto" />
+    </MenuPrimitive.SubTrigger>
+  );
+}
+
+export function DropdownMenuSubContent({ className, ...props }: ComponentProps<typeof MenuPrimitive.SubContent>) {
+  return (
+    <MenuPrimitive.Portal>
+      <MenuPrimitive.SubContent
+        className={cn('z-50 max-h-80 min-w-44 overflow-y-auto rounded-lg border bg-popover p-1 text-popover-foreground shadow-md', className)}
+        {...props}
+      />
+    </MenuPrimitive.Portal>
+  );
 }

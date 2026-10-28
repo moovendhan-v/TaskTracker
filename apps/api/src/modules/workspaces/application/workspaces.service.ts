@@ -36,7 +36,7 @@ export class WorkspacesService {
       if (!workspace) continue;
       // Sequential on purpose: one transaction connection. Each lookup is cached per role.
       const access = await this.membersService.roleAccessFor(membership.workspaceId, membership.roleId);
-      result.push(WorkspaceMapper.toResponse(workspace, membership.roleName, access?.permissions ?? []));
+      result.push(WorkspaceMapper.toResponse(workspace, membership.roleName, access?.permissions ?? [], access?.spaceRules));
     }
     return result;
   }
@@ -66,7 +66,7 @@ export class WorkspacesService {
 
   async get(access: WorkspaceAccess, userId: string): Promise<WorkspaceResponse> {
     const workspace = await this.getOrFail(access.workspaceId);
-    return WorkspaceMapper.toResponse(workspace, await this.roleName(access, userId), access.permissions);
+    return WorkspaceMapper.toResponse(workspace, await this.roleName(access, userId), access.permissions, access.spaceRules);
   }
 
   @Announces('workspace.updated', workspaceFromAccess)
@@ -77,7 +77,7 @@ export class WorkspacesService {
     const saved = await this.workspaces.save(workspace);
 
     await this.audit(actor, 'workspace.update', saved, { fields: Object.keys(request) });
-    return WorkspaceMapper.toResponse(saved, await this.roleName(access, actor.userId), access.permissions);
+    return WorkspaceMapper.toResponse(saved, await this.roleName(access, actor.userId), access.permissions, access.spaceRules);
   }
 
   /** Announced so every instance drops cached access to the workspace at once. */

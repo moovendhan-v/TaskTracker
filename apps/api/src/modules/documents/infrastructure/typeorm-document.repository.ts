@@ -29,6 +29,7 @@ export class TypeOrmDocumentRepository extends DocumentRepository {
         'doc.parentId',
         'doc.kind',
         'doc.title',
+        'doc.icon',
         'doc.position',
         'doc.createdById',
         'doc.createdAt',
@@ -71,6 +72,20 @@ export class TypeOrmDocumentRepository extends DocumentRepository {
       [documentId, workspaceId, RECURSION_GUARD],
     );
     return Number(rows[0]?.height ?? 1);
+  }
+
+  async setSubtreeSpace(workspaceId: string, documentId: string, spaceId: string | null): Promise<void> {
+    await this.transactional.manager.query(
+      `WITH RECURSIVE subtree AS (
+         SELECT id, 1 AS level FROM document WHERE id = $1 AND workspace_id = $2
+         UNION ALL
+         SELECT d.id, subtree.level + 1
+         FROM document d JOIN subtree ON d.parent_id = subtree.id
+         WHERE d.workspace_id = $2 AND subtree.level < $3
+       )
+       UPDATE document SET space_id = $4 WHERE workspace_id = $2 AND id IN (SELECT id FROM subtree)`,
+      [documentId, workspaceId, RECURSION_GUARD, spaceId],
+    );
   }
 
   async maxSiblingPosition(workspaceId: string, parentId: string | null): Promise<number> {

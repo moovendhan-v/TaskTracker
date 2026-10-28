@@ -47,6 +47,10 @@ export class InMemoryTaskRepository extends TaskRepository {
     return [...this.rows.values()].filter((t) => t.workspaceId === workspaceId && t.sprintId === null && !this.closedStatusIds.has(t.statusId)).slice(0, limit);
   }
 
+  async openInSpace(workspaceId: string, _spaceId: string, limit: number): Promise<Task[]> {
+    return [...this.rows.values()].filter((t) => t.workspaceId === workspaceId && !this.closedStatusIds.has(t.statusId)).slice(0, limit);
+  }
+
   async nextNumber(workspaceId: string): Promise<number> {
     const next = (this.numbers.get(workspaceId) ?? 0) + 1;
     this.numbers.set(workspaceId, next);

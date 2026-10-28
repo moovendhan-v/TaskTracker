@@ -1,6 +1,6 @@
 import { MessageSquareIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
-import { COMMENT_BODY_MAX } from '@taskflow/shared-types';
+import { COMMENT_BODY_MAX, type Permission } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,14 +12,17 @@ import { useCommentMutations, useComments } from '../hooks/use-comments';
 interface CommentThreadProps {
   workspaceId: string;
   taskId: string;
+  /** The task's space, so the caller's space limits apply. */
+  spaceId: string;
 }
 
 /** Comments are plain text and rendered as text (whitespace-pre-wrap), so no HTML from users reaches the DOM. */
-export function CommentThread({ workspaceId, taskId }: CommentThreadProps) {
+export function CommentThread({ workspaceId, taskId, spaceId }: CommentThreadProps) {
   const [draft, setDraft] = useState('');
   const { data: comments = [] } = useComments(workspaceId, taskId);
   const { data: me } = useCurrentUser();
-  const { can } = usePermissions(workspaceId);
+  const { canIn } = usePermissions(workspaceId);
+  const can = (permission: Permission) => canIn(spaceId, permission);
   const mutations = useCommentMutations(workspaceId, taskId);
 
   function submit(event: { preventDefault: () => void }) {

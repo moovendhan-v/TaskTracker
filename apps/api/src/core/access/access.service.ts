@@ -17,6 +17,7 @@ export class AccessService {
         roleId: grant.roleId,
         permissions: new Set(grant.permissions),
         readableFields: new Set(grant.readableFields),
+        spaceRules: grant.spaceRules,
         viaPlatformRole: false,
       };
     }
@@ -26,10 +27,19 @@ export class AccessService {
         roleId: null,
         permissions: new Set(PERMISSIONS),
         readableFields: new Set(PROTECTED_FIELDS.map((field) => field.key)),
+        spaceRules: [],
         viaPlatformRole: true,
       };
     }
     return null;
+  }
+
+  /**
+   * A member's own access, never a platform role's: for work done on someone's
+   * behalf without a request, such as automations and integrations.
+   */
+  resolveMember(userId: string, workspaceId: string): Promise<WorkspaceAccess | null> {
+    return this.resolve({ id: userId, email: '', name: '', image: null, platformRole: 'USER', emailVerified: true }, workspaceId);
   }
 
   static hasAll(access: WorkspaceAccess, required: readonly Permission[]): boolean {

@@ -1,7 +1,9 @@
 import { Injectable, type OnModuleInit } from '@nestjs/common';
 import { DEFAULT_STATUSES, type SaveTaskStatusRequest, type TaskStatusResponse } from '@taskflow/shared-types';
+import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
+import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
 import { Announces } from '../../../core/events/announces.decorator.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
@@ -67,6 +69,7 @@ export class StatusesService implements OnModuleInit {
   @Announces('status.created', workspaceFromArg)
   async create(_actor: Actor, workspaceId: string, spaceId: string, request: SaveTaskStatusRequest): Promise<TaskStatusResponse> {
     await this.spacesService.getInWorkspace(workspaceId, spaceId);
+    SpaceGuard.assert(spaceId, 'space.manage');
     const existing = await this.statuses.listForSpace(workspaceId, spaceId);
     StatusPolicy.assertRoomFor(existing);
     const position = Math.max(0, ...existing.map((status) => status.position)) + 1;
@@ -78,6 +81,7 @@ export class StatusesService implements OnModuleInit {
   @Announces('status.updated', workspaceFromArg)
   async update(_actor: Actor, workspaceId: string, statusId: string, request: Partial<SaveTaskStatusRequest>): Promise<TaskStatusResponse> {
     const status = await this.getInWorkspace(workspaceId, statusId);
+    SpaceGuard.assert(status.spaceId, 'space.manage');
     if (request.name !== undefined) status.name = request.name.trim();
     if (request.color !== undefined) status.color = request.color;
     if (request.category !== undefined) status.category = request.category;
@@ -89,6 +93,7 @@ export class StatusesService implements OnModuleInit {
   @Announces('status.deleted', workspaceFromArg)
   async remove(_actor: Actor, workspaceId: string, statusId: string, moveToStatusId: string): Promise<TaskStatusResponse> {
     const status = await this.getInWorkspace(workspaceId, statusId);
+    SpaceGuard.assert(status.spaceId, 'space.manage');
     const siblings = await this.statuses.listForSpace(workspaceId, status.spaceId);
     StatusPolicy.assertCanDelete(status, siblings, siblings.find((sibling) => sibling.id === moveToStatusId) ?? null);
     await this.statuses.moveTasks(workspaceId, statusId, moveToStatusId);
@@ -98,10 +103,25 @@ export class StatusesService implements OnModuleInit {
 
   @Announces('status.updated', { ...workspaceFromArg, entity: (statuses: TaskStatusResponse[]) => ({ id: statuses[0]?.spaceId ?? '' }) })
   async reorder(_actor: Actor, workspaceId: string, spaceId: string, orderedIds: string[]): Promise<TaskStatusResponse[]> {
+    SpaceGuard.assert(spaceId, 'space.manage');
     const current = await this.statuses.listForSpace(workspaceId, spaceId);
     StatusPolicy.assertSameSet(current, orderedIds);
     await this.statuses.setPositions(workspaceId, orderedIds);
     return (await this.statuses.listForSpace(workspaceId, spaceId)).map(StatusMapper.toResponse);
+  }
+
+  /**
+   * Gives a brand-new space its own set of statuses instead of the defaults
+   * (templates). Refuses once any task uses the current ones.
+   */
+  async replaceForNewSpace(workspaceId: string, spaceId: string, statuses: readonly Pick<SaveTaskStatusRequest, 'name' | 'color' | 'category'>[]): Promise<TaskStatusResponse[]> {
+    const current = await this.statuses.listForSpace(workspaceId, spaceId);
+    for (const status of current) {
+      if ((await this.statuses.countTasks(workspaceId, status.id)) > 0) throw DomainError.conflict('This space already has tasks');
+    }
+    for (const status of current) await this.statuses.delete(workspaceId, status.id);
+    const created = await this.statuses.createMany(statuses.map((status, index) => ({ workspaceId, spaceId, ...status, position: index + 1 })));
+    return created.map(StatusMapper.toResponse);
   }
 
   private async seedDefaults(workspaceId: string, spaceId: string): Promise<void> {

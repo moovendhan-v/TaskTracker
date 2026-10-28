@@ -1,4 +1,4 @@
-import type { Permission } from '@taskflow/shared-types';
+import { canInSpace, type Permission } from '@taskflow/shared-types';
 import { useWorkspace } from './use-workspaces';
 
 /**
@@ -8,8 +8,11 @@ import { useWorkspace } from './use-workspaces';
 export function usePermissions(workspaceId: string) {
   const { data } = useWorkspace(workspaceId);
   const granted = new Set<Permission>(data?.permissions ?? []);
+  const access = { permissions: granted, spaceRules: data?.spaceRules ?? [] };
   return {
     can: (permission: Permission) => granted.has(permission),
     canAll: (...permissions: Permission[]) => permissions.every((p) => granted.has(p)),
+    /** Inside one space, after the caller's space limits. */
+    canIn: (spaceId: string, permission: Permission) => canInSpace(access, spaceId, permission),
   };
 }

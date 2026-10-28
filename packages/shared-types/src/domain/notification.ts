@@ -1,4 +1,4 @@
-export const NOTIFICATION_KINDS = ['task_assigned', 'task_commented', 'leave_requested', 'leave_decided', 'member_added'] as const;
+export const NOTIFICATION_KINDS = ['task_assigned', 'task_commented', 'leave_requested', 'leave_decided', 'member_added', 'automation'] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 /** Entity types a realtime event can refer to; clients map them to the views to refresh. */
@@ -9,6 +9,7 @@ export const REALTIME_ENTITY_TYPES = [
   'document',
   'space',
   'list',
+  'folder',
   'member',
   'leave_request',
   'notification',
@@ -21,5 +22,7 @@ export const REALTIME_ENTITY_TYPES = [
   'status',
   'custom_field',
   'time_entry',
+  'automation',
+  'integration',
 ] as const;
 export type RealtimeEntityType = (typeof REALTIME_ENTITY_TYPES)[number];

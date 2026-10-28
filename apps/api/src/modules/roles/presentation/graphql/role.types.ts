@@ -1,5 +1,5 @@
 import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { AttachedPolicyGql, PolicyDocumentGql } from './policy.types.js';
+import { AttachedPolicyGql, PolicyDocumentGql, SpaceRuleGql } from './policy.types.js';
 import { ArrayMaxSize, ArrayUnique, IsArray, IsIn, IsString, MaxLength } from 'class-validator';
 import {
   PERMISSIONS,
@@ -22,6 +22,7 @@ export class RoleGql implements RoleResponse {
   @Field(() => [AttachedPolicyGql]) policies: AttachedPolicyGql[];
   @Field(() => [String], { description: 'What members with this role can do after every policy and deny' }) effectivePermissions: Permission[];
   @Field(() => [String], { description: 'Protected fields members with this role can read' }) readableFields: string[];
+  @Field(() => [SpaceRuleGql], { description: 'Spaces where the role is limited' }) spaceRules: SpaceRuleGql[];
 }
 
 @FormSchema('role.create')
