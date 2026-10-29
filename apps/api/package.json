@@ -53,6 +53,6 @@
     "graphql-ws": "6.3.0",
     "smtp-server": "3.19.17",
     "typescript": "5.9.3",
-    "vitest": "4.1.12"
+    "vitest": "5.0.5"
   }
 }
