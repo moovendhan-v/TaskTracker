@@ -52,7 +52,7 @@
     "@types/ws": "8.18.2",
     "graphql-ws": "6.3.0",
     "smtp-server": "3.19.17",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "vitest": "4.1.12"
   }
 }
