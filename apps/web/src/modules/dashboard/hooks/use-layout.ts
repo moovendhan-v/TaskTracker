@@ -1,10 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { BLOCK_TYPES_BY_PAGE, DEFAULT_LAYOUTS, validateLayoutItems, type DashboardLayout, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
+import { BLOCK_TYPES_BY_PAGE, DEFAULT_LAYOUTS, validateLayoutItems, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage, isConflict } from '@/lib/errors';
 import { queryKeys } from '@/lib/query-keys';
-import { layoutsApi } from '../api/layouts.api';
+import { dashboardsApi, layoutsApi } from '../api/layouts.api';
 import { arrange } from '../lib/grid';
 
 const SAVE_DELAY_MS = 800;
@@ -20,15 +20,65 @@ function usable(pageKey: LayoutPage, items: readonly LayoutItem[] | undefined): 
   return validateLayoutItems(pageKey, known).length ? arrange(known) : known;
 }
 
+interface SavedLayout {
+  version: number | null;
+  items: LayoutItem[];
+}
+
+/** Where a layout lives: the personal per-page layout, or one named dashboard. */
+interface LayoutSource {
+  key: readonly unknown[];
+  pageKey: LayoutPage;
+  /** null when nothing is saved yet (the default applies). */
+  fetch: () => Promise<SavedLayout | null>;
+  save: (baseVersion: number | null, items: LayoutItem[]) => Promise<SavedLayout>;
+  /** Back to the default blocks; returns the version to continue from. */
+  reset: () => Promise<number | null>;
+}
+
+/** The user's own layout for a page (Home → Overview). */
+export function useLayout(workspaceId: string, pageKey: LayoutPage) {
+  return useArrangeableLayout({
+    key: queryKeys.layout(workspaceId, pageKey),
+    pageKey,
+    fetch: () => layoutsApi.get(workspaceId, pageKey),
+    save: (baseVersion, items) => layoutsApi.save(workspaceId, pageKey, baseVersion, items),
+    reset: async () => {
+      await layoutsApi.reset(workspaceId, pageKey);
+      return null;
+    },
+  });
+}
+
+/** One named dashboard's blocks (only its owner edits them). */
+export function useDashboardLayout(workspaceId: string, dashboardId: string) {
+  const find = async () => (await dashboardsApi.list(workspaceId)).find((dashboard) => dashboard.id === dashboardId) ?? null;
+  return useArrangeableLayout({
+    key: [...queryKeys.dashboards(workspaceId), dashboardId, 'layout'],
+    pageKey: 'home',
+    fetch: find,
+    save: (baseVersion, items) => dashboardsApi.saveLayout(workspaceId, dashboardId, baseVersion ?? 1, items),
+    reset: async () => {
+      const current = await find();
+      return (await dashboardsApi.saveLayout(workspaceId, dashboardId, current?.version ?? 1, DEFAULT_LAYOUTS.home)).version;
+    },
+  });
+}
+
 /**
- * The user's layout for a page. Edits show at once and save after a pause, carrying
- * the version they started from. If another device saved in between, the user picks:
+ * A layout being arranged. Edits show at once and save after a pause, carrying the
+ * version they started from. If another device saved in between, the user picks:
  * keep this layout (saved on top) or use the other one (spec §4.4).
  */
-export function useLayout(workspaceId: string, pageKey: LayoutPage) {
+function useArrangeableLayout(source: LayoutSource) {
+  const { key, pageKey } = source;
+  const keyId = JSON.stringify(key);
   const queryClient = useQueryClient();
-  const key = queryKeys.layout(workspaceId, pageKey);
-  const query = useQuery({ queryKey: key, queryFn: () => layoutsApi.get(workspaceId, pageKey), staleTime: 60_000 });
+  const sourceRef = useRef(source);
+  useEffect(() => {
+    sourceRef.current = source;
+  });
+  const query = useQuery({ queryKey: key, queryFn: () => sourceRef.current.fetch(), staleTime: 60_000 });
   const [items, setItemsState] = useState<LayoutItem[] | null>(null);
   const [saving, setSaving] = useState(false);
   const version = useRef<number | null>(null);
@@ -51,9 +101,9 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
       if (validateLayoutItems(pageKey, next).length) return;
       setSaving(true);
       try {
-        const saved = await layoutsApi.save(workspaceId, pageKey, version.current, next);
+        const saved = await sourceRef.current.save(version.current, next);
         version.current = saved.version;
-        queryClient.setQueryData<DashboardLayout | null>(key, saved as DashboardLayout);
+        queryClient.setQueryData<SavedLayout | null>(key, saved);
       } catch (error) {
         if (!isConflict(error)) {
           toast.error(`Couldn't save the layout. ${getErrorMessage(error)}`);
@@ -64,7 +114,7 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
           action: {
             label: 'Keep this',
             onClick: () => {
-              void layoutsApi.get(workspaceId, pageKey).then((newest) => {
+              void sourceRef.current.fetch().then((newest) => {
                 version.current = newest?.version ?? null;
                 void saveAgain.current(next);
               });
@@ -73,7 +123,7 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
           cancel: {
             label: 'Use other',
             onClick: () => {
-              void queryClient.fetchQuery({ queryKey: key, queryFn: () => layoutsApi.get(workspaceId, pageKey), staleTime: 0 }).then((other) => {
+              void queryClient.fetchQuery({ queryKey: key, queryFn: () => sourceRef.current.fetch(), staleTime: 0 }).then((other) => {
                 version.current = other?.version ?? null;
                 history.current = [];
                 setUndoable(0);
@@ -87,8 +137,8 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
         setSaving(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- key is derived from workspaceId and pageKey
-    [workspaceId, pageKey, queryClient],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the key identifies the source; sourceRef holds its functions
+    [keyId, pageKey, queryClient],
   );
 
   useEffect(() => {
@@ -121,18 +171,17 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
   const reset = useCallback(async () => {
     if (pending.current) clearTimeout(pending.current);
     try {
-      await layoutsApi.reset(workspaceId, pageKey);
-      version.current = null;
+      version.current = await sourceRef.current.reset();
       history.current = [];
       setUndoable(0);
-      queryClient.setQueryData(key, null);
+      void queryClient.invalidateQueries({ queryKey: key });
       latest.current = DEFAULT_LAYOUTS[pageKey];
       setItemsState(latest.current);
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- key is derived from workspaceId and pageKey
-  }, [workspaceId, pageKey, queryClient]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the key identifies the source; sourceRef holds its functions
+  }, [keyId, pageKey, queryClient]);
 
   // Leaving the page with a change still waiting: save it now rather than drop it.
   useEffect(
@@ -154,3 +203,6 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
     isCustom: Boolean(query.data),
   };
 }
+
+/** What the grid needs from a layout, whichever source it comes from. */
+export type ArrangeableLayout = ReturnType<typeof useLayout>;

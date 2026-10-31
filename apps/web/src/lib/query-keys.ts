@@ -37,6 +37,7 @@ export const queryKeys = {
   timeEntries: (workspaceId: string, query: object) => ['workspaces', workspaceId, 'time', 'entries', query] as const,
   runningTimer: (workspaceId: string) => ['workspaces', workspaceId, 'time', 'running'] as const,
   taskTime: (workspaceId: string, taskId: string) => ['workspaces', workspaceId, 'time', 'task', taskId] as const,
+  dashboards: (workspaceId: string) => ['workspaces', workspaceId, 'named-dashboards'] as const,
   layout: (workspaceId: string, pageKey: string) => ['workspaces', workspaceId, 'layout', pageKey] as const,
   dashboardRoot: (workspaceId: string) => ['workspaces', workspaceId, 'dashboard'] as const,
   dashboard: (workspaceId: string, input: object) => ['workspaces', workspaceId, 'dashboard', input] as const,

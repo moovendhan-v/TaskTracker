@@ -88,6 +88,13 @@ export type CreateCustomFieldInput = {
   type: CustomFieldType;
 };
 
+export type CreateDashboardInput = {
+  /** Start from these blocks; the default Home layout when omitted */
+  items?: Array<LayoutItemInput> | null | undefined;
+  name: string;
+  visibility?: string;
+};
+
 export type CreateDepartmentInput = {
   headUserId?: string | null | undefined;
   name: string;
@@ -505,6 +512,11 @@ export type SaveAutomationInput = {
   trigger: AutomationTriggerInput;
 };
 
+export type SaveDashboardLayoutInput = {
+  baseVersion: number;
+  items: Array<LayoutItemInput>;
+};
+
 export type SaveLayoutInput = {
   /** The version you started from; null when you had none saved */
   baseVersion?: number | null | undefined;
@@ -638,6 +650,11 @@ export type UpdateCustomFieldInput = {
   name?: string | null | undefined;
   options?: Array<CustomFieldOptionInput> | null | undefined;
   required?: boolean | null | undefined;
+};
+
+export type UpdateDashboardInput = {
+  name?: string | null | undefined;
+  visibility?: string | null | undefined;
 };
 
 export type UpdateDepartmentInput = {
@@ -1288,6 +1305,49 @@ export type ResetLayoutMutationVariables = Exact<{
 
 
 export type ResetLayoutMutation = { resetLayout: boolean };
+
+export type NamedDashboardFieldsFragment = { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> };
+
+export type DashboardsQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type DashboardsQuery = { dashboards: Array<{ id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> }> };
+
+export type CreateDashboardMutationVariables = Exact<{
+  workspaceId: string;
+  input: CreateDashboardInput;
+}>;
+
+
+export type CreateDashboardMutation = { createDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+
+export type UpdateDashboardMutationVariables = Exact<{
+  workspaceId: string;
+  dashboardId: string;
+  input: UpdateDashboardInput;
+}>;
+
+
+export type UpdateDashboardMutation = { updateDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+
+export type SaveDashboardLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  dashboardId: string;
+  input: SaveDashboardLayoutInput;
+}>;
+
+
+export type SaveDashboardLayoutMutation = { saveDashboardLayout: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+
+export type DeleteDashboardMutationVariables = Exact<{
+  workspaceId: string;
+  dashboardId: string;
+}>;
+
+
+export type DeleteDashboardMutation = { deleteDashboard: boolean };
 
 export type ListsQueryVariables = Exact<{
   workspaceId: string;
@@ -2647,6 +2707,25 @@ export const LayoutFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"LayoutFields"}) as unknown as TypedDocumentString<LayoutFieldsFragment, unknown>;
+export const NamedDashboardFieldsFragmentDoc = new TypedDocumentString(`
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}
+    `, {"fragmentName":"NamedDashboardFields"}) as unknown as TypedDocumentString<NamedDashboardFieldsFragment, unknown>;
 export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
     fragment TemplateFields on ProjectTemplate {
   id
@@ -3800,6 +3879,111 @@ export const ResetLayoutDocument = new TypedDocumentString(`
   resetLayout(workspaceId: $workspaceId, pageKey: $pageKey)
 }
     `) as unknown as TypedDocumentString<ResetLayoutMutation, ResetLayoutMutationVariables>;
+export const DashboardsDocument = new TypedDocumentString(`
+    query Dashboards($workspaceId: ID!) {
+  dashboards(workspaceId: $workspaceId) {
+    ...NamedDashboardFields
+  }
+}
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<DashboardsQuery, DashboardsQueryVariables>;
+export const CreateDashboardDocument = new TypedDocumentString(`
+    mutation CreateDashboard($workspaceId: ID!, $input: CreateDashboardInput!) {
+  createDashboard(workspaceId: $workspaceId, input: $input) {
+    ...NamedDashboardFields
+  }
+}
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<CreateDashboardMutation, CreateDashboardMutationVariables>;
+export const UpdateDashboardDocument = new TypedDocumentString(`
+    mutation UpdateDashboard($workspaceId: ID!, $dashboardId: ID!, $input: UpdateDashboardInput!) {
+  updateDashboard(
+    workspaceId: $workspaceId
+    dashboardId: $dashboardId
+    input: $input
+  ) {
+    ...NamedDashboardFields
+  }
+}
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<UpdateDashboardMutation, UpdateDashboardMutationVariables>;
+export const SaveDashboardLayoutDocument = new TypedDocumentString(`
+    mutation SaveDashboardLayout($workspaceId: ID!, $dashboardId: ID!, $input: SaveDashboardLayoutInput!) {
+  saveDashboardLayout(
+    workspaceId: $workspaceId
+    dashboardId: $dashboardId
+    input: $input
+  ) {
+    ...NamedDashboardFields
+  }
+}
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<SaveDashboardLayoutMutation, SaveDashboardLayoutMutationVariables>;
+export const DeleteDashboardDocument = new TypedDocumentString(`
+    mutation DeleteDashboard($workspaceId: ID!, $dashboardId: ID!) {
+  deleteDashboard(workspaceId: $workspaceId, dashboardId: $dashboardId)
+}
+    `) as unknown as TypedDocumentString<DeleteDashboardMutation, DeleteDashboardMutationVariables>;
 export const ListsDocument = new TypedDocumentString(`
     query Lists($workspaceId: ID!) {
   lists(workspaceId: $workspaceId) {

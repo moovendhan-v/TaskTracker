@@ -216,6 +216,13 @@ input CreateCustomFieldInput {
   type: CustomFieldType!
 }
 
+input CreateDashboardInput {
+  """Start from these blocks; the default Home layout when omitted"""
+  items: [LayoutItemInput!]
+  name: String!
+  visibility: String! = "private"
+}
+
 input CreateDepartmentInput {
   headUserId: ID
   name: String!
@@ -1006,6 +1013,7 @@ type Mutation {
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
   createCustomField(input: CreateCustomFieldInput!, workspaceId: ID!): CustomField!
+  createDashboard(input: CreateDashboardInput!, workspaceId: ID!): NamedDashboard!
   createDepartment(input: CreateDepartmentInput!, workspaceId: ID!): Department!
   createDocument(input: CreateDocumentInput!, workspaceId: ID!): Document!
   createFolder(input: CreateFolderInput!, spaceId: ID!, workspaceId: ID!): Folder!
@@ -1042,6 +1050,7 @@ type Mutation {
 
   """Deletes the field and its values everywhere"""
   deleteCustomField(fieldId: ID!, workspaceId: ID!): Boolean!
+  deleteDashboard(dashboardId: ID!, workspaceId: ID!): Boolean!
   deleteDepartment(departmentId: ID!, workspaceId: ID!): Boolean!
 
   """Sub-pages are deleted too"""
@@ -1120,6 +1129,11 @@ type Mutation {
   """A new webhook secret; the old one stops working at once"""
   rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
 
+  """
+  Saves the blocks of one of your dashboards. Fails with CONFLICT if it changed since baseVersion
+  """
+  saveDashboardLayout(dashboardId: ID!, input: SaveDashboardLayoutInput!, workspaceId: ID!): NamedDashboard!
+
   """Saves your layout. Fails with CONFLICT if it changed since baseVersion"""
   saveLayout(input: SaveLayoutInput!, workspaceId: ID!): DashboardLayout!
   saveSpaceAsTemplate(input: SaveAsTemplateInput!, spaceId: ID!, workspaceId: ID!): ProjectTemplate!
@@ -1159,6 +1173,9 @@ type Mutation {
   """Only the author can edit"""
   updateComment(commentId: ID!, input: CommentInput!, workspaceId: ID!): Comment!
   updateCustomField(fieldId: ID!, input: UpdateCustomFieldInput!, workspaceId: ID!): CustomField!
+
+  """Rename or share / unshare one of your dashboards"""
+  updateDashboard(dashboardId: ID!, input: UpdateDashboardInput!, workspaceId: ID!): NamedDashboard!
   updateDepartment(departmentId: ID!, input: UpdateDepartmentInput!, workspaceId: ID!): Department!
   updateDocument(documentId: ID!, input: UpdateDocumentInput!, workspaceId: ID!): Document!
   updateFolder(folderId: ID!, input: UpdateFolderInput!, workspaceId: ID!): Folder!
@@ -1189,6 +1206,22 @@ type MyAccess {
   permissions: [String!]!
   readableFields: [String!]!
   spaceRules: [SpaceRule!]!
+}
+
+"""
+A Home dashboard tab: private to its owner or shared with the workspace
+"""
+type NamedDashboard {
+  id: ID!
+  items: [LayoutItem!]!
+
+  """You own it, so you can edit, share or delete it"""
+  mine: Boolean!
+  name: String!
+  ownerId: ID!
+  updatedAt: String!
+  version: Int!
+  visibility: String!
 }
 
 type Notification {
@@ -1383,6 +1416,9 @@ type Query {
   Workspace or project (spaceId) dashboard: live task counts and hours for a window
   """
   dashboard(input: DashboardInput!, workspaceId: ID!): Dashboard!
+
+  """Your dashboards and the ones shared with the workspace"""
+  dashboards(workspaceId: ID!): [NamedDashboard!]!
   departments(workspaceId: ID!): [Department!]!
   document(documentId: ID!, workspaceId: ID!): Document!
 
@@ -1681,6 +1717,11 @@ input SaveAutomationInput {
   enabled: Boolean
   name: String!
   trigger: AutomationTriggerInput!
+}
+
+input SaveDashboardLayoutInput {
+  baseVersion: Int!
+  items: [LayoutItemInput!]!
 }
 
 input SaveLayoutInput {
@@ -2057,6 +2098,11 @@ input UpdateCustomFieldInput {
   name: String
   options: [CustomFieldOptionInput!]
   required: Boolean
+}
+
+input UpdateDashboardInput {
+  name: String
+  visibility: String
 }
 
 input UpdateDepartmentInput {

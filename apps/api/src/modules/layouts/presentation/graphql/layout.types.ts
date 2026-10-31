@@ -1,8 +1,19 @@
-import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
+import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import { ArrayMaxSize, IsArray, IsIn, IsInt, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
-import { GRID_COLUMNS, LAYOUT_LIMITS, LAYOUT_PAGES, type DashboardLayout, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
-import { IsClearable } from '../../../../core/graphql/validation.js';
+import {
+  DASHBOARD_LIMITS,
+  DASHBOARD_VISIBILITIES,
+  GRID_COLUMNS,
+  LAYOUT_LIMITS,
+  LAYOUT_PAGES,
+  type DashboardLayout,
+  type NamedDashboardResponse,
+  type DashboardVisibility,
+  type LayoutItem,
+  type LayoutPage,
+} from '@taskflow/shared-types';
+import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
 
 @ObjectType('LayoutItem')
 export class LayoutItemGql implements LayoutItem {
@@ -41,6 +52,50 @@ export class SaveLayoutInput {
   @IsInt()
   @Min(1)
   baseVersion: number | null;
+
+  @Field(() => [LayoutItemInput])
+  @IsArray()
+  @ArrayMaxSize(LAYOUT_LIMITS.items)
+  @ValidateNested({ each: true })
+  @Type(() => LayoutItemInput)
+  items: LayoutItemInput[];
+}
+
+@ObjectType('NamedDashboard', { description: 'A Home dashboard tab: private to its owner or shared with the workspace' })
+export class NamedDashboardGql implements NamedDashboardResponse {
+  @Field(() => ID) id: string;
+  @Field() name: string;
+  @Field(() => String) visibility: DashboardVisibility;
+  @Field(() => ID) ownerId: string;
+  @Field({ description: 'You own it, so you can edit, share or delete it' }) mine: boolean;
+  @Field(() => Int) version: number;
+  @Field(() => [LayoutItemGql]) items: LayoutItemGql[];
+  @Field() updatedAt: string;
+}
+
+@InputType('CreateDashboardInput')
+export class CreateDashboardInput {
+  @Field() @IsString() @IsNotBlank() @MaxLength(DASHBOARD_LIMITS.nameMax) name: string;
+  @Field(() => String, { defaultValue: 'private' }) @IsIn(DASHBOARD_VISIBILITIES) visibility: DashboardVisibility = 'private';
+
+  @Field(() => [LayoutItemInput], { nullable: true, description: 'Start from these blocks; the default Home layout when omitted' })
+  @IsClearable()
+  @IsArray()
+  @ArrayMaxSize(LAYOUT_LIMITS.items)
+  @ValidateNested({ each: true })
+  @Type(() => LayoutItemInput)
+  items?: LayoutItemInput[] | null;
+}
+
+@InputType('UpdateDashboardInput')
+export class UpdateDashboardInput {
+  @Field({ nullable: true }) @IsOmittable() @IsString() @IsNotBlank() @MaxLength(DASHBOARD_LIMITS.nameMax) name?: string;
+  @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(DASHBOARD_VISIBILITIES) visibility?: DashboardVisibility;
+}
+
+@InputType('SaveDashboardLayoutInput')
+export class SaveDashboardLayoutInput {
+  @Field(() => Int) @IsInt() @Min(1) baseVersion: number;
 
   @Field(() => [LayoutItemInput])
   @IsArray()

@@ -23,6 +23,7 @@ import { TimeResolver } from './modules/time-tracking/presentation/graphql/time.
 import { StatusesResolver } from './modules/statuses/presentation/graphql/statuses.resolver.js';
 import { FormSchemaResolver } from './modules/forms/presentation/graphql/form-schema.resolver.js';
 import { PreferencesResolver, SavedViewFieldsResolver } from './modules/preferences/presentation/graphql/preferences.resolver.js';
+import { DashboardsResolver } from './modules/layouts/presentation/graphql/dashboards.resolver.js';
 import { LayoutsResolver } from './modules/layouts/presentation/graphql/layouts.resolver.js';
 import { ResourceSchemaResolver } from './modules/resources/presentation/graphql/resource-schema.resolver.js';
 import { PoliciesResolver } from './modules/roles/presentation/graphql/policies.resolver.js';
@@ -60,6 +61,7 @@ export const RESOLVERS = [
   FormSchemaResolver,
   PreferencesResolver,
   LayoutsResolver,
+  DashboardsResolver,
   SavedViewFieldsResolver,
   StatusesResolver,
   CustomFieldsResolver,

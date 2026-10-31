@@ -1,101 +1,87 @@
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  FolderKanbanIcon,
-  LayoutDashboardIcon,
-  LayoutGridIcon,
-  ListTodoIcon,
-  PlusIcon,
-  RotateCcwIcon,
-  Trash2Icon,
-  Undo2Icon,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { DEFAULT_LAYOUTS, type HomeBlockType, type LayoutItem } from '@taskflow/shared-types';
-import { UserAvatar } from '@/components/common/user-avatar';
-import { ConfirmDialog } from '@/components/common/confirm-dialog';
+import type { DashboardResponse, NamedDashboardResponse } from '@taskflow/shared-types';
+import { FolderKanbanIcon, LockIcon, PlusIcon, UsersIcon } from 'lucide-react';
+import { useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
 import { ErrorState } from '@/components/common/error-state';
+import { UserAvatar } from '@/components/common/user-avatar';
 import { Block } from '@/components/kit/block';
-import { blockStateOf } from '@/components/kit/block-state';
-import { Segmented } from '@/components/kit/segmented';
+import { blockStateOf, type BlockState } from '@/components/kit/block-state';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/sonner';
 import { useCurrentUser } from '@/core/auth/use-current-user';
 import { usePreferences } from '@/core/preferences/use-preferences';
 import { queryKeys } from '@/lib/query-keys';
 import type { Period } from '@/lib/periods';
+import { useMemberName } from '@/modules/members';
 import { NewTaskDialog, useOpenTask } from '@/modules/tasks';
+import { ArrangeableGrid } from '../components/arrangeable-grid';
 import { DashboardFilters } from '../components/dashboard-filters';
-import { BlockGrid } from '../components/block-grid';
-import { BlockLibrary } from '../components/block-library';
+import { DashboardTabs, type HomeTab } from '../components/dashboard-tabs';
 import { KpiRow, KpiRowSkeleton } from '../components/dashboard-panels';
-import { HOME_BLOCKS } from '../components/home-blocks';
 import { ProjectsTable } from '../components/projects-table';
 import { useDashboard } from '../hooks/use-dashboard';
-import { useLayout } from '../hooks/use-layout';
-import { addItem, removeItem } from '../lib/grid';
+import { useDashboardLayout, useLayout } from '../hooks/use-layout';
+import { useNamedDashboardMutations, useNamedDashboards } from '../hooks/use-named-dashboards';
 import { dashboardInput } from '../lib/dashboard-input';
-
-function isEditable(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-}
 
 function greeting(hour: number): string {
   return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 }
 
-/** Everything across the workspace's projects: counts, health, charts and the lists that need attention. */
+interface GridProps {
+  data: DashboardResponse | undefined;
+  state: BlockState;
+}
+
+/** Overview and My work: your own arrangement of Home. */
+function PersonalGrid({ workspaceId, ...props }: GridProps & { workspaceId: string }) {
+  return <ArrangeableGrid layout={useLayout(workspaceId, 'home')} canArrange {...props} />;
+}
+
+/** A named dashboard: its owner arranges it, everyone else sees it with their own data. */
+function NamedGrid({ workspaceId, dashboard, ownerName, ...props }: GridProps & { workspaceId: string; dashboard: NamedDashboardResponse; ownerName: string }) {
+  const layout = useDashboardLayout(workspaceId, dashboard.id);
+  const note =
+    dashboard.visibility === 'private' ? (
+      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <LockIcon className="size-3.5" /> Private: only you can see this dashboard.
+      </span>
+    ) : (
+      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <UsersIcon className="size-3.5" />
+        {dashboard.mine ? 'Shared with the workspace. Only you can change it.' : `Shared by ${ownerName}. Numbers show what you have access to.`}
+      </span>
+    );
+  return <ArrangeableGrid key={dashboard.id} layout={layout} canArrange={dashboard.mine} leading={note} {...props} />;
+}
+
+/** Everything across the workspace's projects, plus named dashboards the team can share. */
 export function HomePage({ workspaceId }: { workspaceId: string }) {
   const { data: me } = useCurrentUser();
   const { weekStart } = usePreferences();
   const queryClient = useQueryClient();
   const openTask = useOpenTask();
-  const [tab, setTab] = useState<'overview' | 'mine'>('overview');
+  const memberName = useMemberName(workspaceId);
+  const [tab, setTab] = useState<HomeTab>('overview');
   const [period, setPeriod] = useState<Period>('this_week');
   const [people, setPeople] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
-  const userIds = tab === 'mine' && me ? [me.id] : people;
+  const named = useNamedDashboards(workspaceId);
+  const dashboards = named.data ?? [];
+  const mutations = useNamedDashboardMutations(workspaceId);
+  const active = dashboards.find((dashboard) => `dashboard:${dashboard.id}` === tab);
+  // A dashboard that was deleted or unshared falls back to the overview, but only once the
+  // list has loaded: never show (and let someone edit) the overview in a dashboard's place.
+  const waiting = tab.startsWith('dashboard:') && !active && named.isFetching;
+  const current: HomeTab = tab.startsWith('dashboard:') && !active && !waiting ? 'overview' : tab;
+
+  const userIds = current === 'mine' && me ? [me.id] : people;
   const dashboard = useDashboard(workspaceId, dashboardInput(period, weekStart, { userIds }));
   const data = dashboard.data;
   const firstName = me?.name.split(' ')[0] ?? '';
   // One query feeds every block: they load together, and a failure shows once above them.
   const state = blockStateOf(dashboard, { what: 'the dashboard' });
-  const layout = useLayout(workspaceId, 'home');
-  const [arranging, setArranging] = useState(false);
-  const [library, setLibrary] = useState(false);
-
-  const remove = (item: LayoutItem) => {
-    if (!layout.items) return;
-    layout.setItems(removeItem(layout.items, item.id));
-    toast(`Removed ${HOME_BLOCKS[item.type as HomeBlockType].title}`, { duration: 10_000, action: { label: 'Undo', onClick: () => layout.undo() } });
-  };
-  const add = (type: HomeBlockType) => {
-    if (!layout.items) return;
-    layout.setItems(addItem(layout.items, { id: type, type, ...HOME_BLOCKS[type].size }));
-    setLibrary(false);
-  };
-
-  // E: arrange, A: add a block, ⌘/Ctrl+Z: undo while arranging, Esc: done.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (isEditable(event.target) || document.querySelector('[role="dialog"]')) return;
-      const plain = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
-      if (plain && event.key.toLowerCase() === 'e') {
-        event.preventDefault();
-        setArranging((value) => !value);
-      } else if (plain && event.key.toLowerCase() === 'a') {
-        event.preventDefault();
-        setArranging(true);
-        setLibrary(true);
-      } else if (arranging && event.key === 'Escape') {
-        setArranging(false);
-      } else if (arranging && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && layout.undo()) {
-        event.preventDefault();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [arranging, layout]);
+  const nameOf = (userId: string) => memberName(userId) ?? 'a teammate';
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
@@ -108,53 +94,24 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
             </h1>
             <p className="text-sm text-muted-foreground">Everything across your projects</p>
           </div>
-          {arranging ? (
-            <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Arrange blocks">
-              <span className="mr-1 flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-medium text-ring">
-                <LayoutDashboardIcon className="size-3.5" /> Arranging
-              </span>
-              <Button variant="outline" size="sm" onClick={() => setLibrary(true)}>
-                <PlusIcon /> Add block <kbd className="ml-1 font-mono text-[10.5px] text-subtle-foreground">A</kbd>
-              </Button>
-              <Button variant="outline" size="sm" disabled={!layout.canUndo} onClick={() => layout.undo()}>
-                <Undo2Icon /> Undo
-              </Button>
-              <ConfirmDialog
-                trigger={
-                  <Button variant="outline" size="sm" disabled={!layout.isCustom}>
-                    <RotateCcwIcon /> Reset
-                  </Button>
-                }
-                title="Reset this page's layout?"
-                description="Your arrangement is replaced by the default one. This can't be undone."
-                confirmLabel="Reset layout"
-                onConfirm={() => layout.reset()}
-              />
-              <Button size="sm" onClick={() => setArranging(false)}>
-                Done <kbd className="ml-1 font-mono text-[10.5px] opacity-70">E</kbd>
-              </Button>
-            </div>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => setArranging(true)} disabled={!layout.items}>
-                <LayoutDashboardIcon /> Arrange <kbd className="ml-1 font-mono text-[10.5px] text-subtle-foreground">E</kbd>
-              </Button>
-              <Button onClick={() => setCreating(true)}>
-                <PlusIcon /> New task
-              </Button>
-            </>
-          )}
+          <Button onClick={() => setCreating(true)}>
+            <PlusIcon /> New task
+          </Button>
         </header>
-        <Segmented
-          variant="joined"
-          size="md"
-          label="Home view"
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: 'overview', label: 'Overview', icon: <LayoutGridIcon /> },
-            { value: 'mine', label: 'My work', icon: <ListTodoIcon /> },
-          ]}
+        <DashboardTabs
+          tab={current}
+          onTab={setTab}
+          dashboards={dashboards}
+          ownerName={nameOf}
+          onCreate={(name) => mutations.create.mutateAsync({ name, visibility: 'private' })}
+          onRename={(target, name) => mutations.update.mutateAsync({ id: target.id, name })}
+          onShare={(target, shared) => mutations.update.mutate({ id: target.id, visibility: shared ? 'workspace' : 'private' })}
+          onDuplicate={(target) =>
+            void mutations.create
+              .mutateAsync({ name: `${target.name} (copy)`.slice(0, 60), visibility: 'private', items: target.items })
+              .then((copy) => setTab(`dashboard:${copy.id}`))
+          }
+          onDelete={(target) => mutations.remove.mutateAsync(target.id).then(() => setTab('overview'))}
         />
         <DashboardFilters
           period={period}
@@ -163,7 +120,7 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
           note="hours are for this period, task counts are live"
           refreshing={dashboard.isFetching}
           onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
-          people={tab === 'overview' ? { workspaceId, selected: people, onChange: setPeople, meId: me?.id } : undefined}
+          people={current === 'mine' ? undefined : { workspaceId, selected: people, onChange: setPeople, meId: me?.id }}
         />
         {dashboard.isError ? <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} /> : null}
         {data && data.projects.length === 0 ? (
@@ -173,39 +130,14 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
           <>
             {data ? <KpiRow data={data} mode="home" /> : <KpiRowSkeleton tiles={6} />}
             {data ? <ProjectsTable workspaceId={workspaceId} projects={data.projects} /> : <Block title="Projects" icon={FolderKanbanIcon} state={state} />}
-            {layout.items ? (
-              <BlockGrid
-                items={layout.items}
-                arranging={arranging}
-                onChange={(items) => layout.setItems(items)}
-                onRemove={remove}
-                titleOf={(item) => HOME_BLOCKS[item.type as HomeBlockType].title}
-                renderBlock={(item) => {
-                  const block = HOME_BLOCKS[item.type as HomeBlockType];
-                  const chip = data && block.chip?.(data);
-                  return (
-                    <Block
-                      title={block.title}
-                      icon={block.icon}
-                      aside={block.aside}
-                      chip={chip ? { label: chip } : undefined}
-                      state={state}
-                      skeleton={block.skeleton}
-                      arranging={arranging}
-                      maximisable
-                      actions={[{ label: 'Remove', icon: Trash2Icon, destructive: true, onSelect: () => remove(item) }]}
-                      bodyClassName="overflow-y-auto"
-                    >
-                      {data ? block.render(data) : null}
-                    </Block>
-                  );
-                }}
-              />
-            ) : null}
+            {waiting ? null : active ? (
+              <NamedGrid workspaceId={workspaceId} dashboard={active} ownerName={nameOf(active.ownerId)} data={data} state={state} />
+            ) : (
+              <PersonalGrid workspaceId={workspaceId} data={data} state={state} />
+            )}
           </>
         ) : null}
       </div>
-      <BlockLibrary open={library} onOpenChange={setLibrary} placed={new Set((layout.items ?? DEFAULT_LAYOUTS.home).map((item) => item.type))} onAdd={add} />
       {creating ? <NewTaskDialog workspaceId={workspaceId} open onOpenChange={setCreating} onCreated={openTask} /> : null}
     </div>
   );

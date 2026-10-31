@@ -112,3 +112,23 @@ export function validateLayoutItems(pageKey: LayoutPage, items: readonly LayoutI
   }
   return problems.slice(0, 10);
 }
+
+/* Named dashboards: extra tabs on Home, each with its own block layout. */
+
+/** Who can see a dashboard. Only its owner can change it either way. */
+export const DASHBOARD_VISIBILITIES = ['private', 'workspace'] as const;
+export type DashboardVisibility = (typeof DASHBOARD_VISIBILITIES)[number];
+
+export const DASHBOARD_LIMITS = { perOwner: 20, nameMax: 60 } as const;
+
+export interface NamedDashboardResponse {
+  id: string;
+  name: string;
+  visibility: DashboardVisibility;
+  ownerId: string;
+  /** True when the signed-in user owns it (and so may edit, share or delete it). */
+  mine: boolean;
+  version: number;
+  items: LayoutItem[];
+  updatedAt: string;
+}
