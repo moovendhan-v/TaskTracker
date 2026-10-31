@@ -14,21 +14,26 @@ export function PullRequestsSection({ workspaceId, taskId }: { workspaceId: stri
   const { data: links = [] } = useTaskPullRequests(workspaceId, taskId);
   if (links.length === 0) return null;
   return (
-    <section className="grid gap-1.5">
-      <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Pull requests</h3>
-      <ul className="grid gap-1">
+    <section aria-labelledby="task-development" className="overflow-hidden rounded-xl border bg-card">
+      <header className="flex h-10 items-center gap-2 border-b px-4">
+        <GitPullRequestIcon aria-hidden className="size-4 text-muted-foreground" />
+        <h3 id="task-development" className="text-[13px] font-semibold">
+          Development
+        </h3>
+        <span className="font-mono text-[11px] text-subtle-foreground">{[...new Set(links.map((link) => link.repo))].join(' · ')}</span>
+      </header>
+      <ul className="divide-y">
         {links.map((link) => {
           const state = STATE[link.state];
           const Icon = state.icon;
           return (
             <li key={link.id}>
               {/* The API only stores https://github.com/ URLs. */}
-              <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                <Icon className={cn('size-4 shrink-0', state.className)} aria-label={state.label} />
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center gap-2.5 px-4 text-sm hover:bg-muted/50">
+                <Icon className={cn('size-4 shrink-0', state.className)} aria-hidden />
+                <span className="font-mono text-[11.5px] font-medium text-muted-foreground">#{link.number}</span>
                 <span className="min-w-0 flex-1 truncate">{link.title}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {link.repo}#{link.number}
-                </span>
+                <span className={cn('shrink-0 rounded-full bg-selected px-2 py-0.5 text-[11px] font-medium', state.className)}>{state.label}</span>
               </a>
             </li>
           );
