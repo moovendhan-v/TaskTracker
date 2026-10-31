@@ -509,6 +509,7 @@ src/modules/
 ├── forms/                                        ✅ public formSchemas query (rules only, no data)
 │
 ├── preferences/                                  ✅ personal settings, table layouts, saved views, tabs (own row only, RLS)
+├── layouts/                                      ✅ personal block-grid layouts per page (dashboard_layout) and named Home dashboards (dashboard: RLS read own + shared, write own); optimistic versions
 │
 ├── resources/                                    ✅ resourceSchema and resourceNames queries
 │   ├── application/resource-schema.service.ts    unknown and forbidden resources both answer NOT_FOUND
@@ -572,9 +573,12 @@ src/app/                              composition root (like app.module.ts on th
 ├── routes.tsx                        the whole typed route tree; session guards; pages come from module index.ts files
 ├── query-client.ts                   retries (none on client error codes), stale times, UNAUTHENTICATED → sign-in
 └── layouts/
-    ├── workspace-layout.tsx          sidebar, top bar and <Outlet/>; the open task (?task=) shows over any page
+    ├── workspace-layout.tsx          rail, side panel, top bar, workbench tabs and <Outlet/>; the open task (?task=) shows over any page
+    ├── app-rail.tsx                  60px app rail: apps, inbox, panel toggle, appearance, account; G-then-key shortcuts
+    ├── rail-areas.ts                 rail apps and which pages belong to each
+    ├── workbench-tabs.tsx            tab strip: pin, reorder (drag or menu), close, Alt+T / W / 1–9 / ⇧[ ] shortcuts
     ├── workspace-sidebar.tsx         navigation, projects with live counts, workspace and people pages; resizable
-    ├── app-topbar.tsx                sidebar toggle, workspace switcher, search, timer, live status, inbox, new task
+    ├── app-topbar.tsx                workspace switcher, search, timer, live status, new task
     └── user-menu.tsx                 account menu, theme toggle, sign out (sidebar row or top-bar avatar)
 
 src/core/
@@ -603,6 +607,11 @@ src/core/
 │   ├── invalidations.ts              entity type → query keys to refresh
 │   ├── realtime-status.store.ts      Zustand: live | connecting | offline
 │   └── realtime-indicator.tsx        status dot in the top bar
+├── workbench/
+│   ├── tabs.ts                       pure tab rules: follow navigation, pin, close, reorder, limits
+│   ├── describe-path.ts              label and icon for an in-app path
+│   ├── workbench.store.ts            Zustand: open tabs (active tab remembered per browser)
+│   └── use-workbench-sync.ts         loads tabs from preferences, saves changes (debounced 800 ms)
 └── theme/use-theme.ts                light/dark preference
 
 src/components/
@@ -624,7 +633,7 @@ src/components/
 │   ├── section.tsx                   collapsible block (accordion item), controlled or remembered per browser
 │   ├── option-picker.tsx             popover list with search, optional clear row and a check on the current value
 │   ├── range-calendar.tsx            day-range picker
-│   ├── segmented.tsx  panel.tsx  stat-card.tsx  status-pill.tsx
+│   ├── segmented.tsx  block.tsx (+ block-state.ts)  stat-card.tsx  status-pill.tsx
 │   ├── charts.tsx                    columns, grouped columns, stacked bar, bar list, meter, line chart (no chart library)
 │   └── notify.ts                     toast presets: success, info, error, undoable, promise
 └── layout/
@@ -693,7 +702,8 @@ src/modules/
 ├── projects/        pages/{project,my-tasks}.page.tsx: one page per project with twelve views (lib/views.ts) and a shared toolbar
 │                    components/{project-tabs,saved-views-menu,task-table-view}.tsx, store/project-view.store.ts
 ├── resources/       components/{resource-table,filter-builder}.tsx: tables and filters built from `resourceSchema`; lib/filters.ts
-├── dashboard/       pages/home.page.tsx (workspace overview), lib/dashboard-input.ts
+├── dashboard/       pages/home.page.tsx (workspace overview on the block grid), lib/{dashboard-input,grid}.ts, hooks/use-layout.ts,
+│                    components/{arrangeable-grid,block-grid,block-library,dashboard-tabs,home-blocks}.tsx, hooks/use-named-dashboards.ts
 │                    components/{project-dashboard,dashboard-panels,projects-table,dashboard-filters,dashboard-task-list,space-status-chip}.tsx
 ├── time/            pages/{timesheets,daily-log}.page.tsx, components/{log-time-dialog,task-time-controls,timer-indicator,time-report}.tsx,
 │                    lib/time-format.ts
@@ -709,6 +719,7 @@ src/modules/
 ├── hr/              pages/{directory,departments,time-off,approvals,leave-types}.page.tsx, lib/{hr-labels,working-days}.ts
 │                    components/{profile-dialog,leave-request-dialog,leave-type-dialog,leave-balance-card,leave-status-badge}.tsx
 ├── inbox/           pages/inbox.page.tsx, components/notification-item.tsx, lib/describe-notification.ts
+├── preferences/     pages/appearance.page.tsx (theme, accent, radius, density, font), components/{appearance-preview,theme-card}.tsx, lib/appearance-options.ts
 ├── audit-log/       pages/workspace-audit-log.page.tsx, components/{audit-log-table,audit-filter}.tsx
 └── admin/           pages/{admin-users,admin-workspaces,admin-audit-log}.page.tsx, components/{admin-layout,pager,search-box}.tsx
 ```

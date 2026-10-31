@@ -20,6 +20,8 @@ export default tseslint.config(
       '**/coverage/**',
       'infra/terraform/.terraform/**',
       'apps/web/playwright-report/**',
+      // Design references from the handoff: a generated viewer runtime, not app code.
+      'docs/design/**',
       'apps/web/test-results/**',
     ],
   },

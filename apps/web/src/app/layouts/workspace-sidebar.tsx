@@ -1,4 +1,4 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { useRouterState } from '@tanstack/react-router';
 import {
   Building2Icon,
   CalendarCheckIcon,
@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { PREFERENCE_LIMITS } from '@taskflow/shared-types';
-import { Logo } from '@/components/common/logo';
 import { SidebarLink } from '@/components/layout/sidebar-link';
 import { SidebarSection } from '@/components/layout/sidebar-section';
 import { usePreferenceMutations, usePreferences } from '@/core/preferences/use-preferences';
@@ -74,9 +73,6 @@ export function WorkspaceSidebar({ workspaceId, unread }: { workspaceId: string;
   return (
     <aside aria-label="Workspace navigation" className="relative flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground" style={{ width }}>
       <div className="flex h-12 items-center gap-2.5 px-4">
-        <Link to="/w/$workspaceId" params={params} aria-label="TaskFlow home" className="shrink-0">
-          <Logo withWordmark={false} />
-        </Link>
         <h2 className="truncate text-base font-semibold">{title}</h2>
       </div>
       <div className="px-3 pb-2">

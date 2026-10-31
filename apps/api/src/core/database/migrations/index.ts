@@ -17,6 +17,9 @@ import { SpaceAccess1729690000000 } from './1729690000000-space-access.js';
 import { ProjectTemplates1729700000000 } from './1729700000000-project-templates.js';
 import { Automations1729710000000 } from './1729710000000-automations.js';
 import { GithubIntegration1729720000000 } from './1729720000000-github-integration.js';
+import { Dashboards1729760000000 } from './1729760000000-dashboards.js';
+import { SprintCommittedTasks1729750000000 } from './1729750000000-sprint-committed-tasks.js';
+import { DashboardLayouts1729740000000 } from './1729740000000-dashboard-layouts.js';
 import { MultipleAssignees1729730000000 } from './1729730000000-multiple-assignees.js';
 
 /** Registered in order. Add new migrations to the end. */
@@ -41,4 +44,7 @@ export const MIGRATIONS = [
   Automations1729710000000,
   GithubIntegration1729720000000,
   MultipleAssignees1729730000000,
+  DashboardLayouts1729740000000,
+  SprintCommittedTasks1729750000000,
+  Dashboards1729760000000,
 ];

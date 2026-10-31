@@ -13,6 +13,7 @@ const sprint = (overrides: Partial<Sprint> = {}): Sprint => ({
   endDate: '2026-11-13',
   status: 'planned',
   completedAt: null,
+  committedTasks: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,

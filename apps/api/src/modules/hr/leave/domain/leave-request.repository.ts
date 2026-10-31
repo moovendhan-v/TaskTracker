@@ -12,6 +12,8 @@ export abstract class LeaveRequestRepository {
   abstract hasOverlap(workspaceId: string, userId: string, startDate: string, endDate: string): Promise<boolean>;
   /** Pending working days per leave type for a user in a year. */
   abstract pendingDaysByType(workspaceId: string, userId: string, year: number): Promise<Map<string, number>>;
+  /** Approved leave overlapping the range, dates only. */
+  abstract approvedInRange(workspaceId: string, from: string, to: string, limit: number): Promise<{ userId: string; startDate: string; endDate: string }[]>;
   abstract create(request: NewLeaveRequest): Promise<LeaveRequest>;
   abstract save(request: LeaveRequest): Promise<LeaveRequest>;
 }

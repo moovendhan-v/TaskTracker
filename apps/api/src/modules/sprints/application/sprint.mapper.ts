@@ -14,6 +14,7 @@ export const SprintMapper = {
       totalTasks: sprint.totalTasks,
       doneTasks: sprint.doneTasks,
       completedAt: sprint.completedAt ? sprint.completedAt.toISOString() : null,
+      committedTasks: sprint.committedTasks,
     };
   },
 };

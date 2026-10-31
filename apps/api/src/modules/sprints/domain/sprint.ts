@@ -12,6 +12,8 @@ export interface Sprint {
   endDate: string;
   status: SprintStatus;
   completedAt: Date | null;
+  /** Tasks in the sprint when it was completed, before unfinished work moved out; null until then. */
+  committedTasks: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

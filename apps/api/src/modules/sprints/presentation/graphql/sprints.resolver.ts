@@ -5,7 +5,7 @@ import { OptionalUuidArg, UuidArg, WorkspaceIdArg } from '../../../../core/graph
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { SprintsService } from '../../application/sprints.service.js';
-import { CreateSprintInput, SprintGql, UpdateSprintInput } from './sprint.types.js';
+import { CompleteSprintMovesInput, CreateSprintInput, SprintGql, UpdateSprintInput } from './sprint.types.js';
 
 @Resolver(() => SprintGql)
 export class SprintsResolver {
@@ -76,9 +76,10 @@ export class SprintsResolver {
     @WorkspaceIdArg() _workspaceId: string,
     @UuidArg('sprintId') sprintId: string,
     @OptionalUuidArg('moveOpenTasksToSprintId') target: string | null | undefined,
+    @Args('rollover', { type: () => CompleteSprintMovesInput, nullable: true, description: 'Per-task destinations for unfinished tasks' }) rollover: CompleteSprintMovesInput | null | undefined,
     @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<SprintGql> {
-    return this.sprintsService.complete(actor, access.workspaceId, sprintId, { moveOpenTasksToSprintId: target ?? null });
+    return this.sprintsService.complete(actor, access.workspaceId, sprintId, { moveOpenTasksToSprintId: target ?? null, moves: rollover?.moves ?? [] });
   }
 }

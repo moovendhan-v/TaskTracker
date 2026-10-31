@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="height:42px;box-sizing:border-box;display:flex;align-items:end;gap:2px;padding:0 10px 0 8px;background:var(--rail);border-bottom:1px solid var(--border);font-family:Geist,system-ui,sans-serif;font-size:12.5px;color:var(--fg2)">
+  <sc-for list="{{ pinned }}" as="p" hint-placeholder-count="2"><span style="height:32px;width:34px;margin-bottom:5px;border-radius:8px;display:grid;place-items:center;color:var(--fg2);background:var(--muted)"><i style="font-size:16px">{{ p }}</i></span></sc-for>
+  <span style="width:1px;height:18px;background:var(--border2);margin:0 6px 12px"></span>
+  <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+    <span style="height:34px;min-width:0;max-width:210px;padding:0 8px 0 10px;display:flex;align-items:center;gap:7px;border-radius:9px 9px 0 0;background:{{ t.bg }};color:{{ t.c }};border:1px solid {{ t.bd }};border-bottom:none;box-sizing:border-box;position:relative;top:1px;white-space:nowrap">
+      <i style="font-size:15px;color:{{ t.ic }}">{{ t.i }}</i><span style="overflow:hidden;text-overflow:ellipsis">{{ t.n }}</span><span style="width:6px;height:6px;border-radius:50%;background:{{ t.dot }};flex:none"></span><i style="font-size:14px;color:var(--fg3);margin-left:2px">close</i>
+    </span>
+  </sc-for>
+  <span style="height:32px;width:30px;margin-bottom:5px;display:grid;place-items:center;color:var(--fg3)"><i style="font-size:17px">add</i></span>
+  <div style="flex:1"></div>
+  <div style="height:30px;margin-bottom:6px;width:240px;border:1px solid var(--border);border-radius:var(--r);background:var(--card);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--fg3);box-sizing:border-box;white-space:nowrap"><i style="font-size:15px">search</i>Search everything<span style="margin-left:auto;font:500 10.5px 'Geist Mono';border:1px solid var(--border2);border-radius:4px;padding:0 4px">⌘K</span></div>
+  <span style="height:30px;margin:0 0 6px 6px;padding:0 10px;border:1px solid {{ arrBd }};background:{{ arrBg }};color:{{ arrC }};border-radius:var(--r);display:flex;align-items:center;gap:6px;white-space:nowrap"><i style="font-size:15px">dashboard_customize</i>Arrange</span>
+  <span style="height:30px;width:30px;margin:0 0 6px 4px;border:1px solid var(--border);border-radius:var(--r);display:grid;place-items:center;color:var(--fg2)"><i style="font-size:16px">dark_mode</i></span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1380,&quot;height&quot;:42},&quot;active&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;issues&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;icon&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;arranging&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const a = this.props.active ?? 'issues';
+    let list = [['issues','view_kanban','Issues · Platform',''],['tf142','bug_report','TF-142 Fix login crash',''],['chat','tag','platform','var(--acc)'],['call','videocam','Sprint 14 stand-up','#ef4444'],['prefs','palette','Appearance','']];
+    if (!list.some(l=>l[0]===a)) list = [list[0],list[2],[a,this.props.icon ?? 'tab',this.props.label ?? a,''],list[3]];
+    const arr = this.props.arranging ?? false;
+    return {
+      pinned:['inbox','calendar_today'],
+      tabs: list.map(([k,i,n,dot])=>({i,n,dot:dot||'transparent',bg:k===a?'var(--bg)':'transparent',c:k===a?'var(--fg)':'var(--fg2)',bd:k===a?'var(--border)':'transparent',ic:k===a?'var(--acc)':'var(--fg3)'})),
+      arrBd: arr?'var(--acc)':'var(--border)', arrBg: arr?'var(--acc)':'transparent', arrC: arr?'#fff':'var(--fg)'
+    };
+  }
+}
+</script>
+</body>
+</html>

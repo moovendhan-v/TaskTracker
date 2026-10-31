@@ -5,11 +5,13 @@ import type {
   SprintResponse,
   UpdateSprintRequest,
 } from '@taskflow/shared-types';
+import { SPRINT_COMPLETE_MAX_MOVES } from '@taskflow/shared-types';
 import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
+import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
 import { Announces } from '../../../core/events/announces.decorator.js';
 import type { Actor } from '../../../core/http/types/authenticated-request.js';
@@ -108,6 +110,9 @@ export class SprintsService {
   /** Completes the sprint and moves unfinished tasks in the same transaction. */
   @Announces('sprint.updated', workspaceFromArg)
   async complete(actor: Actor, workspaceId: string, sprintId: string, request: CompleteSprintRequest): Promise<SprintResponse> {
+    const moves = request.moves ?? [];
+    if (moves.length > SPRINT_COMPLETE_MAX_MOVES) throw DomainError.invalid(`At most ${SPRINT_COMPLETE_MAX_MOVES} task moves`);
+    if (new Set(moves.map((move) => move.taskId)).size !== moves.length) throw DomainError.invalid('Each task can only have one destination');
     await this.unitOfWork.run(async () => {
       const sprint = await this.getInWorkspace(workspaceId, sprintId);
       SpaceGuard.assert(sprint.spaceId, 'sprint.manage');
@@ -117,15 +122,30 @@ export class SprintsService {
         : null;
       SprintRolloverPolicy.assertValidTarget(sprint, target);
 
-      const moved = await this.sprints.moveOpenTasks(workspaceId, sprint.id, target?.id ?? null);
-      await this.sprints.save({ ...toSprint(sprint), status: 'completed', completedAt: this.clock.now() });
-      // Audited here rather than with @Audited because the entry records how many tasks moved.
+      // Per-task destinations first (each checked like the default target), then everything else.
+      const byTarget = new Map<string | null, string[]>();
+      for (const move of moves) byTarget.set(move.sprintId, [...(byTarget.get(move.sprintId) ?? []), move.taskId]);
+      const destinations: Record<string, number> = {};
+      const add = (key: string, count: number) => {
+        destinations[key] = (destinations[key] ?? 0) + count;
+      };
+      for (const [targetId, taskIds] of byTarget) {
+        const destination = targetId ? await this.getInWorkspace(workspaceId, targetId) : null;
+        SprintRolloverPolicy.assertValidTarget(sprint, destination);
+        add(destination?.id ?? 'backlog', await this.sprints.moveTasks(workspaceId, sprint.id, taskIds, destination?.id ?? null));
+      }
+      add(target?.id ?? 'backlog', await this.sprints.moveOpenTasks(workspaceId, sprint.id, target?.id ?? null));
+      const moved = Object.values(destinations).reduce((sum, count) => sum + count, 0);
+
+      // Remember what the sprint held before unfinished work left, for velocity (committed vs done).
+      await this.sprints.save({ ...toSprint(sprint), status: 'completed', completedAt: this.clock.now(), committedTasks: sprint.totalTasks });
+      // Audited here rather than with @Audited because the entry records where the tasks went.
       await this.auditLogger.record(actor, {
         action: 'sprint.complete',
         targetType: 'sprint',
         targetId: sprint.id,
         workspaceId,
-        metadata: { name: sprint.name, spaceId: sprint.spaceId, movedTasks: moved, movedTo: target?.id ?? 'backlog' },
+        metadata: { name: sprint.name, spaceId: sprint.spaceId, movedTasks: moved, movedTo: target?.id ?? 'backlog', destinations },
       });
     });
     return this.get(workspaceId, sprintId);

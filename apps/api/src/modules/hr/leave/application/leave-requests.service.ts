@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { AVAILABILITY_MAX_DAYS, type TeamAbsenceResponse } from '@taskflow/shared-types';
 import type {
   CreateLeaveRequestRequest,
   DecideLeaveRequestRequest,
@@ -25,6 +26,8 @@ import { LeaveTypesService } from './leave-types.service.js';
 import { LeaveMapper } from './leave.mapper.js';
 
 const MY_REQUESTS_LIMIT = 100;
+/** Most absences one availability query returns. */
+const AVAILABILITY_LIMIT = 1000;
 
 @Injectable()
 export class LeaveRequestsService {
@@ -41,6 +44,20 @@ export class LeaveRequestsService {
   async mine(actor: Actor, workspaceId: string): Promise<LeaveRequestResponse[]> {
     const requests = await this.requests.listForUser(workspaceId, actor.userId, MY_REQUESTS_LIMIT);
     return requests.map(LeaveMapper.request);
+  }
+
+  /**
+   * Approved leave in a date range, for capacity planning. Returns dates and people only;
+   * the leave type, reason and notes stay private to the person and their approvers.
+   */
+  async teamAvailability(workspaceId: string, from: string, to: string): Promise<TeamAbsenceResponse[]> {
+    const day = (value: string) => (/^\d{4}-\d{2}-\d{2}$/.test(value) ? Date.parse(`${value}T00:00:00Z`) : Number.NaN);
+    const start = day(from);
+    const end = day(to);
+    if (Number.isNaN(start) || Number.isNaN(end)) throw DomainError.invalid('Dates must be yyyy-mm-dd');
+    if (end < start) throw DomainError.invalid('The range must end on or after its start');
+    if ((end - start) / 86_400_000 + 1 > AVAILABILITY_MAX_DAYS) throw DomainError.invalid(`At most ${AVAILABILITY_MAX_DAYS} days at a time`);
+    return this.requests.approvedInRange(workspaceId, from, to, AVAILABILITY_LIMIT);
   }
 
   async queue(workspaceId: string, query: LeaveRequestQuery): Promise<Paginated<LeaveRequestResponse>> {

@@ -1,2 +1,2 @@
 export { DocumentsPage } from './pages/documents.page';
-export { useDocumentMutations, useDocumentTree } from './hooks/use-documents';
+export { useDocument, useDocumentMutations, useDocumentTree } from './hooks/use-documents';

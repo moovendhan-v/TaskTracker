@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,300,0..1,0&display=block">
+<style>
+[data-theme=dark]{--bg:#09090b;--rail:#0c0c0e;--card:#111113;--muted:#18181b;--muted2:#232327;--border:#27272a;--border2:#3f3f46;--fg:#fafafa;--fg2:#a1a1aa;--fg3:#71717a;--canvas:#050506;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#60a5fa}
+[data-theme=light]{--bg:#ffffff;--rail:#fafafa;--card:#ffffff;--muted:#f4f4f5;--muted2:#ececee;--border:#e4e4e7;--border2:#d4d4d8;--fg:#09090b;--fg2:#52525b;--fg3:#a1a1aa;--canvas:#f4f4f5;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--info:#2563eb}
+[data-accent=orange]{--acc:#f97316;--acc2:#ea580c}[data-accent=blue]{--acc:#3b82f6;--acc2:#2563eb}[data-accent=emerald]{--acc:#10b981;--acc2:#059669}[data-accent=rose]{--acc:#f43f5e;--acc2:#e11d48}[data-accent=zinc]{--acc:#a1a1aa;--acc2:#71717a}
+[data-accent]{--acc-soft:color-mix(in oklab,var(--acc) 14%,transparent);--acc-soft2:color-mix(in oklab,var(--acc) 40%,transparent)}
+[data-radius=sm]{--r:4px;--r2:6px}[data-radius=md]{--r:8px;--r2:12px}[data-radius=lg]{--r:12px;--r2:16px}
+[data-office]{--line:var(--border);--line2:var(--border2);--raised:var(--muted);--surface:var(--card);--sunk:var(--muted);--paper:var(--bg);--ink:var(--fg);--ink2:var(--fg2);--ink3:var(--fg3);--accent:var(--acc);--accent-soft:var(--acc-soft);--steel:#60a5fa;--steel-soft:color-mix(in oklab,#60a5fa 16%,transparent);--amber:#f59e0b;--amber-soft:color-mix(in oklab,#f59e0b 16%,transparent);--green:#22c55e;--green-soft:color-mix(in oklab,#22c55e 14%,transparent);--red:#ef4444}
+body{margin:0;background:#050506;font-family:Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+i{font-family:'Material Symbols Rounded';font-style:normal;font-size:16px;line-height:1;display:inline-flex;font-feature-settings:'liga';user-select:none;flex:none}
+.dv-turn{padding:56px 64px 48px;border-bottom:1px solid var(--border)}.dv-thd{display:flex;align-items:baseline;gap:12px;margin:0 0 6px}.dv-tid{font:600 11px 'Geist Mono',monospace;padding:3px 8px;background:var(--fg);color:var(--bg);border-radius:4px;text-decoration:none}.dv-tname{font:600 22px/1.2 Geist,sans-serif;color:var(--fg);letter-spacing:-.02em}.dv-sub{font:400 13.5px/1.55 Geist,sans-serif;color:var(--fg2);margin:0 0 32px;max-width:900px}.dv-opts{display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:14px;scroll-margin-top:16px}.dv-oid{font:600 10.5px 'Geist Mono',monospace;padding:3px 7px;background:var(--muted2);color:var(--fg);border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 Geist,sans-serif;color:var(--fg2)}.dv-opt:target .dv-oid{background:var(--acc);color:#fff}.dv-next{margin:28px 0 0;font:12px/1.5 Geist,sans-serif;color:var(--fg3)}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" data-accent="{{ accent }}" data-radius="{{ radius }}" style="background:var(--canvas);background-image:radial-gradient(color-mix(in oklab,var(--fg) 7%,transparent) 1px,transparent 1px);background-size:6px 6px;color:var(--fg);min-height:100vh">
+
+<section class="dv-turn" id="t11" data-screen-label="11 Block system">
+  <div style="max-width:1100px;margin-bottom:36px">
+    <div style="font:500 11px 'Geist Mono';color:var(--fg3);letter-spacing:.08em;margin-bottom:14px">TASKFLOW v2 · FEATURES · with <a href="TaskFlow v2.dc.html">Tracker/Chat/Calls</a> · <a href="TaskFlow v2 Platform.dc.html">Org/Automations/IAM/HR</a></div>
+    <div style="font-size:56px;font-weight:600;letter-spacing:-.045em;line-height:1">Every block, every state.<br><span style="color:var(--fg3)">Ported from v1 into the v2 look.</span></div>
+  </div>
+  <div class="dv-thd"><a class="dv-tid" href="#t11">11</a><span class="dv-tname">Block frame — states, config, layout menu</span></div>
+  <p class="dv-sub">One frame for every block: header with icon, title, view switcher, filter chip and menu. Data source is separate from the view. Each block fails, loads or locks on its own without breaking the page.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="11a">
+      <div class="dv-olabel"><a class="dv-oid" href="#11a">11a</a>Block states</div>
+      <div style="width:1440px;border-radius:16px;border:1px solid var(--border2);background:var(--bg);padding:24px;box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;font-size:13px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+        <sc-for list="{{ states }}" as="s" hint-placeholder-count="9">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:500 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--fg3)">{{ s.label }}</span>
+            <div style="height:220px;border:1px {{ s.bs }} {{ s.bd }};border-radius:var(--r2);background:var(--card);box-shadow:{{ s.sh }};display:flex;flex-direction:column;overflow:hidden;position:relative">
+              <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border-bottom:1px solid var(--border);background:{{ s.hbg }}">
+                <i style="color:var(--fg3);font-size:17px;display:{{ s.grip }}">drag_indicator</i><i style="color:var(--fg2);font-size:16px">{{ s.i }}</i><span style="font-weight:600">{{ s.n }}</span>
+                <span style="height:22px;padding:0 8px;border-radius:999px;background:{{ s.cbg }};color:{{ s.cc }};font-size:11px;display:flex;align-items:center;gap:4px;white-space:nowrap"><i style="font-size:13px">{{ s.ci }}</i>{{ s.chip }}</span>
+                <div style="flex:1"></div>
+                <div style="display:{{ s.vsw }};padding:2px;border-radius:var(--r);background:var(--muted);gap:1px"><i style="padding:4px;border-radius:5px;background:var(--bg);font-size:14px">table_rows</i><i style="padding:4px;font-size:14px;color:var(--fg3)">view_kanban</i><i style="padding:4px;font-size:14px;color:var(--fg3)">calendar_month</i></div>
+                <i style="padding:4px;color:var(--fg3);border-radius:6px;background:{{ s.mbg }}">more_horiz</i>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:{{ s.jc }};align-items:{{ s.ai }};gap:8px;padding:12px;text-align:center;background:{{ s.bbg }}">
+                <i style="font-size:24px;color:{{ s.bic }};display:{{ s.bid }}">{{ s.bi }}</i>
+                <span style="font-weight:500;display:{{ s.btd }}">{{ s.bt }}</span>
+                <span style="font-size:12px;color:var(--fg3);display:{{ s.btd }};text-wrap:pretty">{{ s.bs2 }}</span>
+                <span style="height:28px;padding:0 12px;border-radius:var(--r);background:{{ s.btnbg }};color:{{ s.btnc }};border:1px solid var(--border2);font-size:12px;font-weight:500;display:{{ s.btnd }};align-items:center;gap:4px">{{ s.btn }}</span>
+                <sc-for list="{{ s.rows }}" as="r" hint-placeholder-count="0"><div style="height:30px;width:100%;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);font-size:12.5px;text-align:left"><span style="width:7px;height:7px;border-radius:50%;background:{{ r.c }}"></span><span style="font:500 11px 'Geist Mono';color:var(--fg3);width:46px">{{ r.id }}</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:{{ r.sk }};border-radius:3px;color:{{ r.tc }}">{{ r.t }}</span></div></sc-for>
+              </div>
+              <sc-if value="{{ s.menu }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;right:8px;top:38px;width:220px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 16px 40px rgba(0,0,0,.5);padding:4px;z-index:2">
+                  <sc-for list="{{ blockMenu }}" as="m" hint-placeholder-count="6"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;background:{{ m.bg }};color:{{ m.c }}"><i style="font-size:15px">{{ m.i }}</i>{{ m.n }}<span style="margin-left:auto;font:500 10.5px 'Geist Mono';color:var(--fg3)">{{ m.k }}</span></div></sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ s.handles }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:4px;background:var(--acc)"></span><span style="position:absolute;left:12px;bottom:8px;font:500 10.5px 'Geist Mono';color:var(--fg3)">⌥ arrows move · ⇧⌥ resize · 6×4</span></sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div class="dv-opt" id="11b">
+      <div class="dv-olabel"><a class="dv-oid" href="#11b">11b</a>Configure block · data source separate from view</div>
+      <div style="width:400px;border-radius:16px;border:1px solid var(--border2);background:var(--rail);font-size:12.5px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+        <div style="height:52px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--border)"><i style="color:var(--acc)">view_kanban</i><span style="font-weight:600;font-size:14px">Configure · Tasks</span><i style="margin-left:auto;color:var(--fg3)">close</i></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:500;color:var(--fg2)">Data source</span><div style="display:flex;padding:3px;border-radius:var(--r);background:var(--muted);gap:2px"><sc-for list="{{ srcTabs }}" as="t" hint-placeholder-count="5"><span style="flex:1;height:26px;display:grid;place-items:center;border-radius:6px;background:{{ t.bg }};color:{{ t.c }};font-weight:{{ t.w }}">{{ t.n }}</span></sc-for></div><div style="height:36px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--card)"><i style="font-size:15px;color:var(--fg3)">sprint</i>Platform · Sprint 14<i style="margin-left:auto;color:var(--fg3)">unfold_more</i></div><div style="display:flex;gap:5px;flex-wrap:wrap"><span style="height:24px;padding:0 6px 0 9px;border-radius:999px;background:var(--muted2);display:flex;align-items:center;gap:4px">assignee = me<i style="font-size:13px;color:var(--fg3)">close</i></span><span style="height:24px;padding:0 6px 0 9px;border-radius:999px;background:var(--muted2);display:flex;align-items:center;gap:4px">status ≠ Done<i style="font-size:13px;color:var(--fg3)">close</i></span><span style="height:24px;padding:0 9px;border-radius:999px;border:1px dashed var(--border2);color:var(--fg3);display:flex;align-items:center">+ filter</span></div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:500;color:var(--fg2)">View</span><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px"><sc-for list="{{ viewPick }}" as="v" hint-placeholder-count="6"><span style="height:52px;border-radius:var(--r);border:1px solid {{ v.bd }};background:{{ v.bg }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10.5px;color:{{ v.c }}"><i style="font-size:18px">{{ v.i }}</i>{{ v.n }}</span></sc-for></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><sc-for list="{{ cfgSel }}" as="c" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:11.5px;color:var(--fg3)">{{ c.k }}</span><div style="height:32px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;padding:0 8px;background:var(--card);font-family:{{ c.ff }}">{{ c.v }}</div></div></sc-for></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:500;color:var(--fg2)">Fields</span><div style="border:1px solid var(--border);border-radius:var(--r);background:var(--card)"><sc-for list="{{ fields }}" as="f" hint-placeholder-count="4"><div style="height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--border)"><i style="font-size:15px;color:var(--fg3)">drag_indicator</i>{{ f.n }}<span style="margin-left:auto;width:30px;height:17px;border-radius:9px;background:{{ f.tg }};position:relative"><span style="position:absolute;top:2px;left:{{ f.tl }};width:13px;height:13px;border-radius:50%;background:#fff"></span></span></div></sc-for></div></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r2);background:var(--acc-soft);border:1px solid color-mix(in oklab,var(--acc) 35%,transparent)"><i style="color:var(--acc)">link</i><div style="flex:1"><div style="font-weight:500">Follow page context</div><div style="font-size:11.5px;color:var(--fg2)">Filters to the selected task, project or person</div></div><span style="width:34px;height:19px;border-radius:10px;background:var(--acc);position:relative"><span style="position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:50%;background:#fff"></span></span></div>
+          <div style="display:flex;gap:8px;align-items:center"><span style="font-size:11.5px;color:var(--fg3)">Colour</span><sc-for list="{{ swatches }}" as="c" hint-placeholder-count="5"><span style="width:20px;height:20px;border-radius:50%;background:{{ c.c }};box-shadow:{{ c.sh }}"></span></sc-for></div>
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px"><span style="height:32px;padding:0 12px;display:flex;align-items:center;color:var(--fg2)">Reset block</span><div style="flex:1"></div><span style="height:32px;padding:0 14px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;font-weight:500">Done</span></div>
+      </div>
+    </div>
+    <div class="dv-opt" id="11c">
+      <div class="dv-olabel"><a class="dv-oid" href="#11c">11c</a>Layout menu · reset with preview · version history · sync</div>
+      <div style="display:grid;grid-template-columns:280px 460px 360px;gap:24px;align-items:start;font-size:12.5px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--card);display:flex;align-items:center;gap:6px;width:max-content"><i style="font-size:15px;color:var(--fg3)">dashboard_customize</i>Maya's sprint view<i style="color:var(--fg3)">expand_more</i></span>
+          <div style="border:1px solid var(--border2);border-radius:var(--r2);background:var(--card);padding:4px;box-shadow:0 20px 50px rgba(0,0,0,.5)">
+            <div style="padding:8px 10px;font-size:11.5px;color:var(--fg3);display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ok)"></span>Saved · synced 12s ago</div>
+            <sc-for list="{{ layoutMenu }}" as="m" hint-placeholder-count="8"><div style="height:32px;display:flex;align-items:center;gap:8px;padding:0 10px;border-radius:6px;color:{{ m.c }};background:{{ m.bg }}"><i style="font-size:15px;color:var(--fg3)">{{ m.i }}</i>{{ m.n }}<span style="margin-left:auto;font:500 10.5px 'Geist Mono';color:var(--fg3)">{{ m.k }}</span></div></sc-for>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border2);border-radius:16px;background:var(--card);box-shadow:0 30px 70px rgba(0,0,0,.55)">
+          <div style="padding:20px 20px 0"><div style="font-size:16px;font-weight:600">Reset “Sprint 14” to team default?</div><div style="color:var(--fg2);margin-top:6px;line-height:1.5">Your 7 blocks and 2 splits will be replaced. Undo for 10 seconds or restore from version history.</div></div>
+          <div style="margin:18px 20px;display:grid;grid-template-columns:1fr 24px 1fr;gap:8px;align-items:center">
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 10.5px 'Geist Mono';color:var(--fg3)">CURRENT</span><div style="height:120px;border:1px solid var(--border);border-radius:var(--r);padding:6px;display:grid;grid-template-columns:28% 1fr 30%;grid-template-rows:1fr 1fr;gap:4px;background:var(--bg)"><span style="grid-row:span 2;background:var(--muted2);border-radius:3px"></span><span style="background:var(--acc-soft);border-radius:3px"></span><span style="grid-row:span 2;background:var(--muted2);border-radius:3px"></span><span style="background:var(--muted);border-radius:3px"></span></div></div>
+            <i style="color:var(--fg3)">arrow_forward</i>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 10.5px 'Geist Mono';color:var(--acc)">TEAM DEFAULT · v3</span><div style="height:120px;border:1.5px solid var(--acc);border-radius:var(--r);padding:6px;display:grid;grid-template-columns:1fr 26%;grid-template-rows:22px 1fr;gap:4px;background:var(--bg)"><span style="grid-column:span 2;background:var(--muted);border-radius:3px"></span><span style="background:var(--muted2);border-radius:3px"></span><span style="background:var(--muted2);border-radius:3px"></span></div></div>
+          </div>
+          <div style="margin:0 20px 16px;display:flex;align-items:center;gap:8px;color:var(--fg2)"><span style="width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2)"></span>Also reset sidebar and pinned tabs</div>
+          <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px"><span style="height:34px;padding:0 14px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center">Cancel</span><span style="height:34px;padding:0 14px;border-radius:var(--r);background:var(--bad);color:#fff;display:flex;align-items:center;font-weight:500">Reset layout</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="border:1px solid var(--border2);border-radius:var(--r2);background:var(--card)">
+            <div style="height:44px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">history</i><span style="font-weight:600">Version history</span></div>
+            <sc-for list="{{ versions }}" as="v" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);background:{{ v.bg }}"><div style="flex:1"><div style="font-weight:500">{{ v.n }}</div><div style="font-size:11.5px;color:var(--fg3)">{{ v.m }}</div></div><span style="color:var(--acc);font-weight:500">{{ v.a }}</span></div></sc-for>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--warn);border-radius:var(--r2);background:var(--card);box-shadow:0 16px 40px rgba(0,0,0,.45)"><i style="color:var(--warn)">devices</i><div style="flex:1;min-width:0"><div style="font-weight:500">Layout changed on another device</div><div style="font-size:11.5px;color:var(--fg3)">MacBook Pro · 2 min ago</div><div style="display:flex;gap:6px;margin-top:8px"><span style="height:28px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;white-space:nowrap;flex:none">Keep this</span><span style="height:28px;padding:0 10px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;font-weight:500;white-space:nowrap;flex:none">Use other</span></div></div></div>
+          <div style="display:flex;align-items:center;gap:12px;height:44px;padding:0 6px 0 14px;border-radius:var(--r2);background:var(--fg);color:var(--bg);width:max-content"><span>Removed “Burndown”</span><span style="height:30px;padding:0 10px;border-radius:var(--r);background:color-mix(in oklab,var(--bg) 14%,transparent);display:flex;align-items:center;font-weight:600">Undo ⌘Z</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ syncChips }}" as="c" hint-placeholder-count="3"><span style="height:28px;padding:0 10px;border:1px solid var(--border);border-radius:999px;background:var(--card);display:flex;align-items:center;gap:6px;color:{{ c.c }}"><i style="font-size:14px">{{ c.i }}</i>{{ c.n }}</span></sc-for></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t12" data-screen-label="12 Sidebars and templates">
+  <div class="dv-thd"><a class="dv-tid" href="#t12">12</a><span class="dv-tname">Sidebar presets &amp; layout templates</span></div>
+  <p class="dv-sub">The panel next to the rail is itself a layout of navigation blocks. Three presets below, then the templates gallery where layouts are picked, previewed, saved and shared.</p>
+  <div class="dv-opts">
+    <sc-for list="{{ sidebars }}" as="sb" hint-placeholder-count="3">
+      <div class="dv-opt" id="{{ sb.id }}">
+        <div class="dv-olabel"><a class="dv-oid" href="#{{ sb.id }}">{{ sb.id }}</a>{{ sb.label }}</div>
+        <div style="width:256px;height:680px;border-radius:16px;border:1px solid var(--border2);background:var(--rail);padding:16px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;font-size:13px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+          <div style="font-size:18px;font-weight:600;letter-spacing:-.02em;padding:0 8px 12px">{{ sb.title }}</div>
+          <sc-for list="{{ sb.items }}" as="n" hint-placeholder-count="10">
+            <div style="height:{{ n.h }};display:flex;align-items:center;gap:10px;padding:0 10px 0 {{ n.pad }};border-radius:var(--r);background:{{ n.bg }};color:{{ n.c }};font:{{ n.font }}"><i style="font-size:{{ n.is }};color:{{ n.ic }}">{{ n.i }}</i>{{ n.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:{{ n.bc }}">{{ n.b }}</span></div>
+          </sc-for>
+          <div style="flex:1"></div>
+          <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:12px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500"><i style="font-size:15px;color:var(--fg3)">{{ sb.fi }}</i>{{ sb.ft }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:{{ sb.fvc }}">{{ sb.fv }}</span></div>
+            <div style="display:flex;gap:3px;height:22px;align-items:end"><sc-for list="{{ sb.bars }}" as="b" hint-placeholder-count="8"><span style="flex:1;height:{{ b.h }};border-radius:2px;background:{{ b.c }}"></span></sc-for></div>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+    <div class="dv-opt" id="12d">
+      <div class="dv-olabel"><a class="dv-oid" href="#12d">12d</a>Layout templates gallery</div>
+      <div style="width:1440px;border-radius:16px;border:1px solid var(--border2);background:var(--bg);font-size:13px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6);overflow:hidden">
+        <div style="padding:24px 28px 16px;display:flex;align-items:end;gap:12px;border-bottom:1px solid var(--border)">
+          <div><div style="font-size:24px;font-weight:600;letter-spacing:-.02em">Templates</div><div style="color:var(--fg2);margin-top:4px">Layouts, projects and automations · built-in, Acme workspace and community</div></div><div style="flex:1"></div>
+          <div style="display:flex;padding:3px;border-radius:var(--r);background:var(--muted);gap:2px"><sc-for list="{{ tplKinds }}" as="k" hint-placeholder-count="4"><span style="height:28px;padding:0 12px;display:flex;align-items:center;border-radius:6px;background:{{ k.bg }};color:{{ k.c }};font-weight:{{ k.w }}">{{ k.n }}</span></sc-for></div>
+          <span style="height:34px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px"><i style="font-size:16px">upload</i>Import</span>
+          <span style="height:34px;padding:0 14px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;gap:6px;font-weight:500"><i style="font-size:16px">add</i>Save current layout</span>
+        </div>
+        <div style="padding:24px 28px 28px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px">
+          <sc-for list="{{ templates }}" as="tp" hint-placeholder-count="8">
+            <div style="border:1px solid {{ tp.bd }};border-radius:var(--r2);background:var(--card);overflow:hidden;display:flex;flex-direction:column;box-shadow:{{ tp.sh }}">
+              <div style="height:160px;padding:12px;box-sizing:border-box;background:radial-gradient(circle at 30% 0%,{{ tp.glow }},transparent 70%),var(--muted);position:relative">
+                <div style="position:relative;height:100%;border-radius:8px;border:1px solid var(--border2);background:var(--bg);overflow:hidden"><sc-for list="{{ tp.rects }}" as="r" hint-placeholder-count="4"><span style="position:absolute;left:{{ r.x }};top:{{ r.y }};width:{{ r.w }};height:{{ r.h }};background:{{ r.c }};border-radius:3px"></span></sc-for></div>
+                <span style="position:absolute;right:18px;top:18px;height:20px;padding:0 7px;border-radius:999px;background:var(--card);border:1px solid var(--border2);font-size:10.5px;color:var(--fg2);display:flex;align-items:center">{{ tp.tag }}</span>
+              </div>
+              <div style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:4px;flex:1"><div style="font-weight:600">{{ tp.n }}</div><div style="font-size:12px;color:var(--fg3);line-height:1.45;flex:1">{{ tp.d }}</div><div style="display:flex;gap:6px;margin-top:10px;align-items:center"><span style="height:28px;padding:0 12px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;font-size:12px;font-weight:500">Use</span><span style="height:28px;padding:0 12px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;font-size:12px">Preview</span><span style="margin-left:auto;font:500 10.5px 'Geist Mono';color:var(--fg3);white-space:nowrap">{{ tp.w }}</span></div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t13" data-screen-label="13 Space table and dashboards">
+  <div class="dv-thd"><a class="dv-tid" href="#t13">13</a><span class="dv-tname">Space views &amp; dashboards</span></div>
+  <p class="dv-sub">A space has a view bar (List, Board, Table, Calendar, Timeline, Team planner, Time, Sprints, Dashboard, Automations, Settings) and custom views — each just a saved layout. Inline editing, grouping, WIP limits and a bulk bar.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="13a">
+      <div class="dv-olabel"><a class="dv-oid" href="#13a">13a</a>Platform · Table · grouped by list · inline status edit · 3 selected</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px;position:relative">
+        <dc-import name="TF2 Rail" active="tracker" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="table" label="Platform · Table" icon="table_rows" hint-size="1380px,42px"></dc-import>
+          <div style="padding:18px 24px 0;display:flex;align-items:center;gap:12px"><span style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center"><i style="color:#fff;font-size:17px">deployed_code</i></span><span style="font-size:22px;font-weight:600;letter-spacing:-.02em">Platform</span><span style="font:500 11.5px 'Geist Mono';color:var(--fg3)">TF · 60 tasks · acme/platform ⇄</span><div style="flex:1"></div><span style="height:32px;padding:0 12px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;gap:6px;font-weight:500"><i style="font-size:16px">add</i>New task</span></div>
+          <div style="height:46px;display:flex;align-items:end;padding:0 16px;border-bottom:1px solid var(--border);gap:2px">
+            <sc-for list="{{ spaceViews }}" as="v" hint-placeholder-count="11"><span style="height:40px;padding:0 10px;display:flex;align-items:center;gap:6px;border-bottom:2px solid {{ v.bd }};color:{{ v.c }};font-weight:{{ v.w }};white-space:nowrap"><i style="font-size:16px">{{ v.i }}</i>{{ v.n }}</span></sc-for>
+            <span style="width:1px;height:18px;background:var(--border2);margin:0 6px 11px"></span><span style="height:40px;padding:0 10px;display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:16px;color:var(--acc)">bookmark</i>Bug triage</span><i style="height:40px;padding:0 8px;align-items:center;color:var(--fg3)">add</i>
+          </div>
+          <div style="height:48px;display:flex;align-items:center;gap:8px;padding:0 20px;border-bottom:1px solid var(--border)">
+            <span style="height:28px;padding:0 6px 0 10px;border-radius:999px;background:var(--acc-soft);color:var(--acc);display:flex;align-items:center;gap:4px;font-weight:500"><i style="font-size:14px">filter_alt</i>Sprint 14<i style="font-size:14px">close</i></span><span style="height:28px;padding:0 6px 0 10px;border-radius:999px;background:var(--muted2);display:flex;align-items:center;gap:4px">Type ≠ Epic<i style="font-size:14px;color:var(--fg3)">close</i></span><span style="height:28px;padding:0 10px;border-radius:999px;border:1px dashed var(--border2);color:var(--fg3);display:flex;align-items:center">+ Filter</span>
+            <span style="color:var(--fg3);margin-left:8px">Saved: <span style="color:var(--fg2)">My open · Blocked · No estimate</span></span><div style="flex:1"></div>
+            <sc-for list="{{ tableTools }}" as="t" hint-placeholder-count="4"><span style="height:28px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:15px">{{ t.i }}</i>{{ t.n }}</span></sc-for>
+          </div>
+          <div style="height:36px;display:grid;grid-template-columns:36px 74px minmax(0,1fr) 130px 110px 90px 60px 76px 76px;gap:8px;align-items:center;padding:0 20px;font-size:11.5px;color:var(--fg3);border-bottom:1px solid var(--border);background:var(--rail)"><span style="width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border2)"></span><span>ID</span><span>Title</span><span>Status</span><span>Assignees</span><span>Priority</span><span>Pts</span><span>Due</span><span>PR</span></div>
+          <div style="flex:1;overflow:hidden;position:relative">
+            <sc-for list="{{ tableGroups }}" as="g" hint-placeholder-count="2">
+              <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 20px;border-bottom:1px solid var(--border);font-weight:600"><i style="font-size:16px;color:var(--fg3)">expand_more</i>{{ g.n }}<span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ g.count }}</span><span style="font-weight:400;color:var(--fg3);margin-left:6px">{{ g.pts }}</span><span style="margin-left:auto;font:500 11px 'Geist Mono';color:{{ g.wc }}">{{ g.wip }}</span></div>
+              <sc-for list="{{ g.rows }}" as="t" hint-placeholder-count="6">
+                <div style="height:42px;display:grid;grid-template-columns:36px 74px minmax(0,1fr) 130px 110px 90px 60px 76px 76px;gap:8px;align-items:center;padding:0 20px;border-bottom:1px solid var(--border);background:{{ t.bg }}">
+                  <span style="width:15px;height:15px;border-radius:4px;border:1.5px solid {{ t.cb }};background:{{ t.cbg }};display:grid;place-items:center"><i style="font-size:12px;color:#fff">{{ t.ck }}</i></span>
+                  <span style="font:500 11.5px 'Geist Mono';color:var(--fg3)">{{ t.id }}</span>
+                  <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.t }}</span>
+                  <span style="height:24px;padding:0 9px;border-radius:999px;background:{{ t.sb }};color:{{ t.sc }};font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;width:max-content;box-shadow:{{ t.ed }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ t.sc }}"></span>{{ t.st }}</span>
+                  <span style="display:flex"><sc-for list="{{ t.av }}" as="a" hint-placeholder-count="1"><span style="width:22px;height:22px;border-radius:50%;background:{{ a.g }};color:#fff;font:600 8.5px Geist;display:grid;place-items:center;border:2px solid var(--bg);margin-right:-6px">{{ a.i }}</span></sc-for></span>
+                  <span style="font-size:12px;color:{{ t.pc }};display:flex;align-items:center;gap:3px"><i style="font-size:14px">{{ t.pi }}</i>{{ t.p }}</span>
+                  <span style="font:500 12px 'Geist Mono';color:var(--fg2)">{{ t.pts }}</span>
+                  <span style="font:500 12px 'Geist Mono';color:{{ t.dc }}">{{ t.due }}</span>
+                  <span style="font:500 12px 'Geist Mono';color:var(--fg3)">{{ t.pr }}</span>
+                </div>
+              </sc-for>
+            </sc-for>
+            <div style="position:absolute;left:640px;top:76px;width:210px;border:1px solid var(--border2);border-radius:var(--r);background:var(--card);box-shadow:0 20px 50px rgba(0,0,0,.55);padding:4px;z-index:2">
+              <div style="height:32px;display:flex;align-items:center;gap:6px;padding:0 8px;color:var(--fg3);border-bottom:1px solid var(--border);margin-bottom:4px"><i style="font-size:14px">search</i>Change status…</div>
+              <sc-for list="{{ statusMenu }}" as="s" hint-placeholder-count="5"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;background:{{ s.bg }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.c }}"></span>{{ s.n }}<span style="margin-left:auto;font:500 10.5px 'Geist Mono';color:var(--fg3)">{{ s.k }}</span></div></sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;left:50%;bottom:24px;transform:translateX(-40%);display:flex;align-items:center;gap:2px;height:46px;padding:0 6px 0 16px;border-radius:var(--r2);background:var(--card);border:1px solid var(--border2);box-shadow:0 20px 50px rgba(0,0,0,.6)">
+          <span style="font-weight:600;margin-right:10px">3 selected</span>
+          <sc-for list="{{ bulk }}" as="b" hint-placeholder-count="6"><span style="height:34px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:var(--r);color:{{ b.c }}"><i style="font-size:16px">{{ b.i }}</i>{{ b.n }}</span></sc-for>
+          <span style="width:1px;height:20px;background:var(--border2);margin:0 4px"></span><i style="padding:8px;color:var(--fg3)">close</i>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="13b">
+      <div class="dv-olabel"><a class="dv-oid" href="#13b">13b</a>Dashboards · tabs with private / team / workspace visibility</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:-40px 0 90px -40px var(--acc),40px 0 90px -40px #3b82f6,0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="dash" label="Eng overview" icon="monitoring" hint-size="1380px,42px"></dc-import>
+          <div style="height:48px;display:flex;align-items:end;gap:2px;padding:0 20px;border-bottom:1px solid var(--border)">
+            <sc-for list="{{ dashTabs }}" as="d" hint-placeholder-count="4"><span style="height:42px;padding:0 14px;display:flex;align-items:center;gap:8px;border-bottom:2px solid {{ d.bd }};color:{{ d.c }};font-weight:{{ d.w }}">{{ d.n }}<span style="height:20px;padding:0 7px;border-radius:999px;background:var(--muted2);font-size:10.5px;color:var(--fg3);display:flex;align-items:center;gap:3px;font-weight:400"><i style="font-size:12px">{{ d.vi }}</i>{{ d.v }}</span></span></sc-for>
+            <i style="height:42px;padding:0 10px;align-items:center;color:var(--fg3)">add</i><div style="flex:1"></div>
+            <span style="height:30px;margin-bottom:8px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:15px">date_range</i>Last 30 days</span>
+          </div>
+          <div style="flex:1;padding:16px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:108px minmax(0,1fr) minmax(0,1fr);gap:12px;min-height:0">
+            <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+              <div style="grid-column:span 3;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:14px 16px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden">
+                <span style="font-size:12px;color:var(--fg3)">{{ k.n }}</span>
+                <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:28px;font-weight:600;letter-spacing:-.03em">{{ k.v }}</span><span style="font:500 11.5px 'Geist Mono';color:{{ k.tc }}">{{ k.t }}</span></div>
+                <svg viewBox="0 0 120 30" preserveAspectRatio="none" style="position:absolute;right:14px;bottom:14px;width:120px;height:34px"><polyline points="{{ k.sp }}" fill="none" stroke="{{ k.sc }}" stroke-width="1.8" vector-effect="non-scaling-stroke"></polyline></svg>
+              </div>
+            </sc-for>
+            <div style="grid-column:span 7;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">trending_down</i><span style="font-weight:600">Burndown · Sprint 14</span><div style="flex:1"></div><span style="display:flex;gap:12px;font-size:11.5px;color:var(--fg3)"><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:2px;background:var(--border2)"></span>Ideal</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:2px;background:var(--acc)"></span>Remaining</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:2px;background:#60a5fa"></span>Scope</span></span></div>
+              <div style="flex:1;min-height:0;padding:16px 18px 12px 18px;box-sizing:border-box"><svg viewBox="0 0 600 220" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible;display:block"><defs><linearGradient id="bdg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--acc)" stop-opacity=".35"></stop><stop offset="1" stop-color="var(--acc)" stop-opacity="0"></stop></linearGradient></defs><g stroke="var(--border)"><line x1="0" y1="55" x2="600" y2="55"></line><line x1="0" y1="110" x2="600" y2="110"></line><line x1="0" y1="165" x2="600" y2="165"></line></g><polyline points="0,20 600,220" fill="none" stroke="var(--border2)" stroke-width="1.5" stroke-dasharray="4 4"></polyline><path d="M0,20 L60,20 120,35 180,48 240,46 300,70 360,98 420,118 L420,220 L0,220Z" fill="url(#bdg)"></path><polyline points="0,20 60,20 120,35 180,48 240,46 300,70 360,98 420,118" fill="none" stroke="var(--acc)" stroke-width="2.5"></polyline><polyline points="0,20 180,20 240,8 600,8" fill="none" stroke="#60a5fa" stroke-width="1.5"></polyline><circle cx="420" cy="118" r="5" fill="var(--acc)"></circle></svg></div>
+            </div>
+            <div style="grid-column:span 5;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">person_search</i><span style="font-weight:600">Workload</span><span style="font-size:11.5px;color:var(--fg3)">pts vs capacity</span></div>
+              <div style="padding:14px;display:flex;flex-direction:column;gap:11px"><sc-for list="{{ workload }}" as="w" hint-placeholder-count="7"><div style="display:flex;align-items:center;gap:10px;font-size:12px"><span style="width:22px;height:22px;border-radius:50%;background:{{ w.g }};color:#fff;font:600 8.5px Geist;display:grid;place-items:center">{{ w.i }}</span><span style="width:70px;color:var(--fg2)">{{ w.n }}</span><div style="flex:1;height:8px;border-radius:4px;background:var(--muted2);overflow:hidden"><div style="width:{{ w.pct }};height:100%;background:{{ w.bc }};border-radius:4px"></div></div><span style="font:500 11px 'Geist Mono';color:{{ w.tc }};width:44px;text-align:right">{{ w.v }}</span></div></sc-for></div>
+            </div>
+            <div style="grid-column:span 4;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">timer</i><span style="font-weight:600">Cycle time</span><span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--ok)">p50 2.4d</span></div>
+              <div style="flex:1;padding:14px;display:flex;align-items:end;gap:6px"><sc-for list="{{ cycle }}" as="c" hint-placeholder-count="10"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end"><div style="width:100%;height:{{ c.h }};background:{{ c.c }};border-radius:4px 4px 0 0"></div><span style="font:500 10px 'Geist Mono';color:var(--fg3)">{{ c.l }}</span></div></sc-for></div>
+            </div>
+            <div style="grid-column:span 4;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">apartment</i><span style="font-weight:600">Office</span><span style="font-size:11.5px;color:var(--fg3)">5 here</span><i style="margin-left:auto;color:var(--fg3)">open_in_full</i></div>
+              <div data-office="1" style="flex:1;display:grid;place-items:center;overflow:hidden;min-height:0"><dc-import name="Office Floor" scale="{{ 0.3 }}" compact="{{ true }}" hint-size="340px,222px"></dc-import></div>
+            </div>
+            <div style="grid-column:span 4;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">warning</i><span style="font-weight:600">Overdue</span><span style="font:500 11px 'Geist Mono';color:var(--warn)">6</span></div>
+              <sc-for list="{{ overdue }}" as="t" hint-placeholder-count="5"><div style="height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border);font-size:12.5px"><span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ t.id }}</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.t }}</span><span style="font:500 11px 'Geist Mono';color:var(--bad)">{{ t.d }}</span></div></sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t14" data-screen-label="14 Task detail">
+  <div class="dv-thd"><a class="dv-tid" href="#t14">14</a><span class="dv-tname">Task detail — full page &amp; peek</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="14a">
+      <div class="dv-olabel"><a class="dv-oid" href="#14a">14a</a>TF-142 · full page tab</div>
+      <div style="width:1440px;height:1040px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="tracker" hint-size="60px,1040px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="tf142" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 340px;min-height:0">
+            <div style="padding:26px 44px;display:flex;flex-direction:column;gap:22px;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-size:12.5px;color:var(--fg3)">Platform / Backend /</span>
+                <span style="height:26px;padding:0 9px;border-radius:999px;background:color-mix(in oklab,#ef4444 16%,transparent);color:#f87171;display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500"><i style="font-size:14px">bug_report</i>Bug</span>
+                <span style="height:26px;padding:0 9px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;gap:6px;font:500 12px 'Geist Mono'">TF-142<i style="font-size:13px;color:var(--fg3)">content_copy</i></span>
+                <span style="height:26px;padding:0 9px;border-radius:999px;background:color-mix(in oklab,#60a5fa 16%,transparent);color:var(--info);display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:var(--info)"></span>In progress<i style="font-size:14px">expand_more</i></span>
+                <span style="font-size:12px;color:var(--fg3);display:flex;align-items:center;gap:4px"><i style="font-size:14px">repeat</i>Not recurring</span>
+                <div style="flex:1"></div>
+                <span style="height:34px;padding:0 12px;border-radius:var(--r);background:var(--acc-soft);border:1px solid color-mix(in oklab,var(--acc) 40%,transparent);color:var(--acc);display:flex;align-items:center;gap:8px;font:600 13px 'Geist Mono'"><span style="width:7px;height:7px;border-radius:50%;background:var(--acc)"></span>1:20:14<i style="font-size:16px;font-variation-settings:'FILL' 1">pause</i></span>
+                <span style="height:34px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px"><i style="font-size:16px">forum</i>Thread</span>
+              </div>
+              <div style="font-size:32px;font-weight:600;letter-spacing:-.03em;line-height:1.15">Fix login crash on SSO redirect</div>
+              <div style="font-size:14.5px;line-height:1.65;max-width:760px;display:flex;flex-direction:column;gap:10px;color:var(--fg)"><p style="margin:0">After Okta redirects to <span style="font:13px 'Geist Mono';background:var(--muted2);padding:1px 6px;border-radius:5px">/auth/callback</span>, <span style="font:13px 'Geist Mono';background:var(--muted2);padding:1px 6px;border-radius:5px">session.restore()</span> runs before the token is persisted. iOS Safari throws on null deref.</p><p style="margin:0;color:var(--fg2)">Repro: private window → SSO → crash on ~30% of attempts. Sentry: 214 events / 24h.</p></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+                <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px;font-weight:600">Checklist<span style="font:500 11px 'Geist Mono';color:var(--fg3)">2/4</span><div style="flex:1;height:4px;border-radius:2px;background:var(--muted2);overflow:hidden;margin-left:8px"><div style="width:50%;height:100%;background:var(--acc)"></div></div></div><sc-for list="{{ checklist }}" as="c" hint-placeholder-count="4"><div style="display:flex;gap:8px;align-items:center;color:{{ c.col }};text-decoration:{{ c.td }}"><i style="font-size:18px;color:{{ c.ic }};font-variation-settings:'FILL' 1">{{ c.i }}</i>{{ c.n }}</div></sc-for></div>
+                <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;gap:8px;font-weight:600">Subtasks<span style="font:500 11px 'Geist Mono';color:var(--fg3)">1/3</span><i style="margin-left:auto;color:var(--fg3)">add</i></div><sc-for list="{{ subtasks }}" as="s" hint-placeholder-count="3"><div style="height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r)"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.c }}"></span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ s.id }}</span><span style="flex:1">{{ s.t }}</span><span style="width:20px;height:20px;border-radius:50%;background:{{ s.g }};color:#fff;font:600 8px Geist;display:grid;place-items:center">{{ s.i }}</span></div></sc-for></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ relations }}" as="r" hint-placeholder-count="3"><span style="height:30px;padding:0 10px;border-radius:var(--r);border:1px solid var(--border);display:flex;align-items:center;gap:6px;font-size:12px;background:var(--card)"><span style="color:{{ r.c }};font-weight:500">{{ r.k }}</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ r.id }}</span>{{ r.t }}</span></sc-for><span style="height:30px;padding:0 10px;border-radius:var(--r);border:1px solid var(--border);display:flex;align-items:center;gap:6px;font-size:12px;background:var(--card)"><i style="font-size:15px;color:var(--fg3)">attach_file</i>safari-crash.mov · sentry-trace.json</span></div>
+              <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:16px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:8px"><i style="color:var(--fg3)">code</i><span style="font-weight:600">Development</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">acme/platform · two-way sync</span><div style="flex:1"></div><span style="height:30px;padding:0 10px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;gap:6px;font-size:12px"><i style="font-size:15px">fork_right</i>Create branch</span><span style="height:30px;padding:0 10px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500"><i style="font-size:15px">merge</i>Create PR</span></div>
+                <div style="height:38px;display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:var(--r);background:var(--muted);font:500 12px 'Geist Mono'"><i style="font-size:15px;color:var(--fg3)">fork_right</i>tf-142-fix-login-crash<span style="font:12px Geist;color:var(--fg3)">· 3 commits · 2h ago</span><i style="margin-left:auto;font-size:14px;color:var(--fg3)">content_copy</i></div>
+                <div style="height:44px;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:var(--r);border:1px solid var(--border)"><i style="color:var(--info)">merge</i><span style="font:500 12px 'Geist Mono'">#418</span><span style="font-weight:500">Fix SSO redirect loop on token restore</span><span style="height:22px;padding:0 8px;border-radius:999px;background:color-mix(in oklab,#f59e0b 16%,transparent);color:var(--warn);font-size:11px;font-weight:500;display:flex;align-items:center">Review requested</span><div style="flex:1"></div><span style="font:500 11px 'Geist Mono';color:var(--ok);display:flex;align-items:center;gap:4px"><i style="font-size:14px">check_circle</i>CI 14/14</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex;gap:18px;border-bottom:1px solid var(--border)"><span style="padding:8px 0;border-bottom:2px solid var(--acc);font-weight:600">Activity</span><span style="padding:8px 0;color:var(--fg3)">Comments 3</span><span style="padding:8px 0;color:var(--fg3)">History</span><span style="padding:8px 0;color:var(--fg3)">Time 3h 05m</span></div>
+                <sc-for list="{{ activity }}" as="a" hint-placeholder-count="4"><div style="display:flex;gap:12px;align-items:flex-start"><span style="width:28px;height:28px;border-radius:{{ a.r }};background:{{ a.g }};color:{{ a.fc }};font:600 10px Geist;display:grid;place-items:center;flex:none"><i style="font-size:15px">{{ a.icon }}</i>{{ a.i }}</span><div style="flex:1;display:flex;flex-direction:column;gap:6px"><div><b style="font-weight:600">{{ a.who }}</b> <span style="color:var(--fg2)">{{ a.what }}</span><span style="color:var(--fg3);font:11px 'Geist Mono';margin-left:6px">{{ a.t }}</span></div><sc-if value="{{ a.body }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 12px;border-radius:var(--r);background:var(--card);border:1px solid var(--border);line-height:1.5">{{ a.body }}</div></sc-if></div></div></sc-for>
+              </div>
+            </div>
+            <div style="border-left:1px solid var(--border);background:var(--rail);padding:22px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:grid;grid-template-columns:100px 1fr;row-gap:13px;align-items:center;font-size:12.5px"><sc-for list="{{ props }}" as="f" hint-placeholder-count="12"><span style="color:var(--fg3)">{{ f.k }}</span><span style="font-family:{{ f.ff }};color:{{ f.c }};font-weight:{{ f.w }}">{{ f.v }}</span></sc-for></div>
+              <div style="height:1px;background:var(--border)"></div>
+              <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--fg3)">PEOPLE</div>
+              <sc-for list="{{ taskPeople }}" as="p" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;background:{{ p.g }};color:#fff;font:600 9px Geist;display:grid;place-items:center">{{ p.i }}</span>{{ p.n }}<span style="margin-left:auto;font-size:11.5px;color:var(--fg3)">{{ p.r }}</span></div></sc-for>
+              <div style="height:1px;background:var(--border)"></div>
+              <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--fg3)">CUSTOM FIELDS</div>
+              <div style="display:grid;grid-template-columns:100px 1fr;row-gap:10px;font-size:12.5px"><span style="color:var(--fg3)">Customer</span><span>Northwind · Enterprise</span><span style="color:var(--fg3)">Severity</span><span style="color:var(--bad);font-weight:500">S2</span><span style="color:var(--fg3)">Platform</span><span>iOS Safari 18</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t15" data-screen-label="15 Sprints">
+  <div class="dv-thd"><a class="dv-tid" href="#t15">15</a><span class="dv-tname">Sprints — health, planning, velocity, completion</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="15a">
+      <div class="dv-olabel"><a class="dv-oid" href="#15a">15a</a>Sprint planning · backlog 30 | capacity lanes 70</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="tracker" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="sprint" label="Sprints · Platform" icon="sprint" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;padding:14px;display:flex;flex-direction:column;gap:12px;min-height:0">
+            <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:14px 18px;display:flex;align-items:center;gap:24px">
+              <div><div style="font-weight:600;font-size:14px">Sprint 14 · active</div><div style="font:500 11.5px 'Geist Mono';color:var(--fg3)">Oct 20 → Nov 2 · day 8 / 10</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px"><div style="height:10px;border-radius:5px;background:var(--muted2);overflow:hidden;display:flex"><span style="width:44%;background:var(--ok)"></span><span style="width:22%;background:var(--info)"></span><span style="width:12%;background:var(--warn)"></span><span style="width:4%;background:var(--bad)"></span></div><div style="display:flex;gap:16px;font-size:12px;color:var(--fg3)"><span><b style="color:var(--ok)">27</b> done</span><span><b style="color:var(--info)">14</b> in progress</span><span><b style="color:var(--warn)">8</b> review</span><span><b style="color:var(--bad)">3</b> blocked</span><span>+4 scope</span></div></div>
+              <span style="height:28px;padding:0 12px;border-radius:999px;background:color-mix(in oklab,var(--ok) 16%,transparent);color:var(--ok);display:flex;align-items:center;gap:6px;font-weight:500"><i style="font-size:15px">ecg_heart</i>Healthy · forecast 58/62</span>
+              <span style="height:34px;padding:0 14px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;font-weight:500">Complete sprint…</span>
+            </div>
+            <div style="flex:1;display:flex;gap:12px;min-height:0">
+              <div style="width:30%;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden">
+                <div style="height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">inventory_2</i><span style="font-weight:600">Backlog</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">38 · 142 pts</span><i style="margin-left:auto;color:var(--fg3)">filter_list</i></div>
+                <sc-for list="{{ backlog }}" as="t" hint-placeholder-count="12"><div style="min-height:42px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--border);background:{{ t.bg }};opacity:{{ t.op }}"><i style="font-size:15px;color:var(--fg3)">drag_indicator</i><span style="font:500 11px 'Geist Mono';color:var(--fg3);width:46px">{{ t.id }}</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.t }}</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ t.p }}</span></div></sc-for>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:12px;min-width:0">
+                <div style="flex:1;border:1.5px solid var(--acc);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 0 3px var(--acc-soft)">
+                  <div style="height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--acc)">sprint</i><span style="font-weight:600">Sprint 15 · planning</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">Nov 3 → Nov 16</span><div style="flex:1"></div><span style="font:500 12px 'Geist Mono'">48 / 56 pts</span><div style="width:140px;height:8px;border-radius:4px;background:var(--muted2);overflow:hidden"><div style="width:86%;height:100%;background:var(--acc)"></div></div><span style="height:30px;padding:0 12px;border-radius:var(--r);background:var(--acc);color:#fff;display:flex;align-items:center;font-weight:600;font-size:12px">Start sprint</span></div>
+                  <div style="flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px">
+                    <sc-for list="{{ lanes }}" as="l" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;background:{{ l.g }};color:#fff;font:600 9px Geist;display:grid;place-items:center">{{ l.i }}</span><span style="font-weight:600">{{ l.n }}</span><span style="margin-left:auto;font:500 11px 'Geist Mono';color:{{ l.tc }}">{{ l.cap }}</span></div><div style="height:4px;border-radius:2px;background:var(--muted2);overflow:hidden"><div style="width:{{ l.pct }};height:100%;background:{{ l.bc }}"></div></div><sc-for list="{{ l.cards }}" as="k" hint-placeholder-count="3"><div style="border:1px {{ k.bs }} {{ k.bd }};border-radius:var(--r);padding:9px 10px;display:flex;flex-direction:column;gap:5px;background:var(--bg)"><div style="display:flex;font:500 10.5px 'Geist Mono';color:var(--fg3)">{{ k.id }}<span style="margin-left:auto">{{ k.p }}</span></div><span style="font-weight:500;line-height:1.35">{{ k.t }}</span></div></sc-for></div></sc-for>
+                  </div>
+                </div>
+                <div style="height:210px;flex:none;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column">
+                  <div style="height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">speed</i><span style="font-weight:600">Velocity</span><span style="font-size:12px;color:var(--fg3)">last 8 sprints · avg 54</span></div>
+                  <div style="flex:1;display:flex;align-items:end;gap:22px;padding:14px 22px"><sc-for list="{{ velocity }}" as="v" hint-placeholder-count="8"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:end;width:100%;height:100%"><span style="flex:1;height:{{ v.c }};background:var(--muted2);border-radius:4px 4px 0 0"></span><span style="flex:1;height:{{ v.d }};background:{{ v.col }};border-radius:4px 4px 0 0"></span></div><span style="font:500 10.5px 'Geist Mono';color:var(--fg3)">{{ v.n }}</span></div></sc-for></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="15b">
+      <div class="dv-olabel"><a class="dv-oid" href="#15b">15b</a>Complete sprint · step 2 of 3</div>
+      <div style="width:520px;border-radius:16px;border:1px solid var(--border2);background:var(--card);font-size:13px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+        <div style="padding:20px 20px 12px"><div style="font:500 11px 'Geist Mono';color:var(--fg3);margin-bottom:6px">STEP 2 OF 3 · UNFINISHED WORK</div><div style="font-size:17px;font-weight:600">Complete Sprint 14</div><div style="color:var(--fg2);margin-top:4px">58 of 62 pts done. 3 tasks are unfinished — where should they go?</div></div>
+        <div style="padding:0 20px 14px;display:flex;gap:6px"><span style="flex:1;height:4px;border-radius:2px;background:var(--acc)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--acc)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--muted2)"></span></div>
+        <sc-for list="{{ unfinished }}" as="u" hint-placeholder-count="3"><div style="margin:0 20px 6px;height:46px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg)"><span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ u.id }}</span><span style="flex:1">{{ u.t }}</span><span style="height:28px;padding:0 8px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;gap:4px;font-size:12px">{{ u.to }}<i style="font-size:14px">unfold_more</i></span></div></sc-for>
+        <div style="margin:12px 20px;display:flex;align-items:center;gap:8px;color:var(--fg2)"><span style="width:16px;height:16px;border-radius:4px;background:var(--acc);display:grid;place-items:center"><i style="font-size:13px;color:#fff">check</i></span>Post report to #platform and run “Sprint end” flow</div>
+        <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between"><span style="height:34px;padding:0 14px;display:flex;align-items:center;border:1px solid var(--border2);border-radius:var(--r)">Back</span><span style="height:34px;padding:0 14px;display:flex;align-items:center;border-radius:var(--r);background:var(--fg);color:var(--bg);font-weight:500">Review &amp; complete</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t16" data-screen-label="16 Docs">
+  <div class="dv-thd"><a class="dv-tid" href="#t16">16</a><span class="dv-tname">Docs — tree, live editor, task embeds, present</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="16a">
+      <div class="dv-olabel"><a class="dv-oid" href="#16a">16a</a>Auth runbook · multiplayer · embedded tasks</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="docs" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="doc" label="Auth runbook" icon="description" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="width:250px;flex:none;border-right:1px solid var(--border);background:var(--rail);padding:16px 10px;display:flex;flex-direction:column;gap:1px">
+              <div style="display:flex;align-items:center;padding:0 8px 12px"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Docs</span><i style="margin-left:auto;color:var(--fg3)">edit_square</i></div>
+              <sc-for list="{{ docTree }}" as="d" hint-placeholder-count="12"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px 0 {{ d.pad }};border-radius:var(--r);background:{{ d.bg }};color:{{ d.c }};font-weight:{{ d.w }}"><i style="font-size:16px;color:var(--fg3)">{{ d.i }}</i>{{ d.n }}</div></sc-for>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+              <div style="height:48px;display:flex;align-items:center;gap:2px;padding:0 16px;border-bottom:1px solid var(--border)">
+                <sc-for list="{{ toolbar }}" as="t" hint-placeholder-count="10"><i style="padding:7px;border-radius:6px;color:var(--fg2);font-size:18px">{{ t }}</i></sc-for><div style="flex:1"></div>
+                <div style="display:flex;margin-right:10px"><span style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#334155,#1e293b);color:#fff;font:600 9px Geist;display:grid;place-items:center;border:2px solid var(--bg);box-shadow:0 0 0 1.5px #60a5fa">DP</span><span style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#4d7c0f,#1a2e05);color:#fff;font:600 9px Geist;display:grid;place-items:center;border:2px solid var(--bg);margin-left:-7px">JB</span></div>
+                <span style="height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px"><i style="font-size:16px">slideshow</i>Present</span>
+                <span style="height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px;margin-left:6px"><i style="font-size:16px">download</i>Export</span>
+                <span style="height:32px;padding:0 12px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;font-weight:500;margin-left:6px">Share</span>
+              </div>
+              <div style="flex:1;overflow:hidden;padding:44px 0;display:flex;justify-content:center">
+                <div style="width:720px;display:flex;flex-direction:column;gap:16px;font-size:15px;line-height:1.7">
+                  <div style="font:500 11.5px 'Geist Mono';color:var(--fg3)">Platform / Runbooks · edited by Dev 5m ago</div>
+                  <div style="font-size:38px;font-weight:600;letter-spacing:-.035em;line-height:1.1">Auth runbook</div>
+                  <p style="margin:0;color:var(--fg2)">What to do when SSO sign-in fails. Link to tasks for anything longer than a paragraph.</p>
+                  <div style="font-size:20px;font-weight:600;margin-top:6px">1. Triage</div>
+                  <p style="margin:0">Check the auth dashboard and Sentry. If errors exceed 50/hour, page on-call and open a task.</p>
+                  <div style="border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;display:flex;align-items:center;gap:12px;background:var(--card);font-size:13px"><i style="color:#f87171">bug_report</i><span style="font:500 12px 'Geist Mono';color:var(--fg3)">TF-142</span><span style="font-weight:500;flex:1">Fix login crash on SSO redirect</span><span style="height:22px;padding:0 8px;border-radius:999px;background:color-mix(in oklab,#60a5fa 16%,transparent);color:var(--info);font-size:11.5px;font-weight:500;display:flex;align-items:center">In progress</span><span style="font:500 11px 'Geist Mono';color:var(--ok)">#418 CI ✓</span></div>
+                  <div style="font-size:20px;font-weight:600;margin-top:6px">2. Mitigate</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;font-size:14.5px"><span style="display:flex;gap:8px;align-items:center"><i style="font-size:19px;color:var(--acc);font-variation-settings:'FILL' 1">check_box</i>Toggle <span style="font:13px 'Geist Mono';background:var(--muted2);padding:1px 6px;border-radius:5px">auth.sso_fallback</span></span><span style="display:flex;gap:8px;align-items:center;position:relative"><i style="font-size:19px;color:var(--fg3)">check_box_outline_blank</i>Post ETA in #status<span style="width:2px;height:20px;background:#60a5fa;margin-left:2px"></span><span style="position:absolute;left:200px;top:-16px;font:600 10px Geist;color:#fff;background:#3b82f6;padding:1px 6px;border-radius:4px">Dev</span></span></div>
+                  <div style="border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;font-size:13px;background:var(--card)"><div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--border);color:var(--fg2)"><i style="font-size:15px">table_rows</i>Embedded view · label = auth · open<span style="margin-left:auto;color:var(--fg3)">3 tasks</span></div><sc-for list="{{ embedRows }}" as="r" hint-placeholder-count="3"><div style="height:38px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border)"><span style="width:7px;height:7px;border-radius:50%;background:{{ r.c }}"></span><span style="font:500 11.5px 'Geist Mono';color:var(--fg3)">{{ r.id }}</span><span style="flex:1">{{ r.t }}</span><span style="font:500 11.5px 'Geist Mono';color:var(--fg3)">{{ r.d }}</span></div></sc-for></div>
+                  <div style="color:var(--fg3);font-size:14px">Type <span style="font-family:'Geist Mono'">/</span> for blocks, <span style="font-family:'Geist Mono'">TF-</span> to embed a task</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t17" data-screen-label="17 Virtual office">
+  <div class="dv-thd"><a class="dv-tid" href="#t17">17</a><span class="dv-tname">Virtual office — isometric &amp; flat</span></div>
+  <p class="dv-sub">Rooms map to teams. Desk light on = working with live task card, dimmed = away, headphones = focus, empty + tag = leave. Ambient: done-today shelf, sprint plant, CI light, merge confetti. Hover for profile; Knock to ping; click to open their tasks.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="17a">
+      <div class="dv-olabel"><a class="dv-oid" href="#17a">17a</a>3D office · hovering Dev</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:-40px 0 90px -40px var(--acc),40px 0 90px -40px #3b82f6,0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="office" label="Office" icon="apartment" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;position:relative">
+              <div style="height:52px;display:flex;align-items:center;gap:8px;padding:0 18px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;padding:3px;border-radius:var(--r);background:var(--muted);gap:2px"><span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:6px;background:var(--bg);font-weight:500"><i style="font-size:16px">view_in_ar</i>3D office</span><span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:16px">grid_view</i>Flat grid</span></div>
+                <sc-for list="{{ teamFilters }}" as="f" hint-placeholder-count="5"><span style="height:28px;padding:0 11px;border-radius:999px;border:1px solid {{ f.bd }};background:{{ f.bg }};color:{{ f.c }};display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:7px;height:7px;border-radius:2px;background:{{ f.dot }}"></span>{{ f.n }}</span></sc-for>
+                <div style="flex:1"></div><span style="font-size:12px;color:var(--fg3);display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:var(--ok)"></span>5 of 8 here · 11 done today</span>
+              </div>
+              <div data-office="1" style="flex:1;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 55%,color-mix(in oklab,var(--acc) 10%,transparent),transparent 65%)"><dc-import name="Office Floor" scale="{{ 0.86 }}" hint-size="973px,636px"></dc-import></div>
+              <div style="position:absolute;left:28px;top:76px;width:280px;border:1px solid var(--border2);border-radius:var(--r2);background:var(--card);box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:3">
+                <div style="padding:12px;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border)"><span style="position:relative;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#334155,#1e293b);color:#fff;font:600 13px Geist;display:grid;place-items:center">DP<span style="position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:var(--ok);border:2px solid var(--card)"></span></span><div style="flex:1"><div style="font-weight:600">Dev Patel</div><div style="font-size:11.5px;color:var(--fg3)">Backend · Platform</div></div><span style="font:500 11px 'Geist Mono';color:var(--fg3);text-align:right">10:42<br>Lisbon</span></div>
+                <div style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px"><span style="font:600 10px 'Geist Mono';letter-spacing:.06em;color:var(--fg3)">NOW</span><div style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--acc)"></span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">TF-142</span>Fix login crash<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--acc)">1:20:14</span></div><span style="font:600 10px 'Geist Mono';letter-spacing:.06em;color:var(--fg3);margin-top:4px">DONE TODAY · 2</span><div style="display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:14px;color:var(--ok)">check_circle</i>TF-143 Remove v1 auth</div><div style="display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:14px;color:var(--ok)">check_circle</i>TF-131 Token TTL config</div></div>
+                <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:6px"><span style="flex:1;height:32px;border-radius:var(--r);background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600"><i style="font-size:16px">front_hand</i>Knock</span><span style="flex:1;height:32px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:6px"><i style="font-size:16px">chat_bubble</i>Chat</span><span style="width:32px;height:32px;border-radius:var(--r);border:1px solid var(--border2);display:grid;place-items:center"><i style="font-size:16px">videocam</i></span></div>
+              </div>
+            </div>
+            <div style="width:340px;flex:none;border-left:1px solid var(--border);background:var(--rail);display:flex;flex-direction:column">
+              <div style="height:52px;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid var(--border)"><span style="font-weight:600">Dev's tasks</span><span style="height:22px;padding:0 8px;border-radius:999px;background:var(--acc-soft);color:var(--acc);font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px;margin-left:auto"><i style="font-size:13px">link</i>Office · desk</span></div>
+              <sc-for list="{{ devTasks }}" as="t" hint-placeholder-count="5"><div style="height:44px;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid var(--border)"><span style="width:7px;height:7px;border-radius:50%;background:{{ t.c }}"></span><span style="font:500 11px 'Geist Mono';color:var(--fg3);width:48px">{{ t.id }}</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.t }}</span></div></sc-for>
+              <div style="margin:14px;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><i style="color:var(--ok)">merge</i><span style="font-weight:600">Merged today</span></div><sc-for list="{{ merged }}" as="m" hint-placeholder-count="3"><div style="display:flex;gap:8px;font-size:12.5px"><span style="font:500 11px 'Geist Mono'">{{ m.n }}</span><span style="color:var(--fg2)">{{ m.t }}</span></div></sc-for></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t18" data-screen-label="18 Login and mobile">
+  <div class="dv-thd"><a class="dv-tid" href="#t18">18</a><span class="dv-tname">Sign in, workspace restore &amp; mobile</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="18a">
+      <div class="dv-olabel"><a class="dv-oid" href="#18a">18a</a>Sign in · restoring your workspace</div>
+      <div style="width:1100px;height:680px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:grid;grid-template-columns:460px 1fr;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <div style="padding:40px 56px;display:flex;flex-direction:column;border-right:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 0 18px -4px var(--acc)"></span><span style="font-weight:600;font-size:16px">TaskFlow</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px">
+            <div><div style="font-size:28px;font-weight:600;letter-spacing:-.03em">Welcome back</div><div style="color:var(--fg2);margin-top:6px">Your tabs, layouts and theme follow you to every device.</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:var(--fg2)">Work email</span><div style="height:40px;border:1px solid var(--acc);box-shadow:0 0 0 3px var(--acc-soft);border-radius:var(--r);display:flex;align-items:center;padding:0 12px;font-size:14px">maya.chen@acme.dev</div></div>
+            <div style="height:40px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:14px">Continue with Acme SSO</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="height:38px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;gap:8px"><i>code</i>GitHub</div><div style="height:38px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;gap:8px"><i>passkey</i>Passkey</div></div>
+            <div style="font-size:12px;color:var(--fg3)">Organization: Acme Inc · SSO enforced by admin</div>
+          </div>
+        </div>
+        <div style="position:relative;display:grid;place-items:center;background:radial-gradient(circle at 70% 20%,var(--acc-soft2),transparent 50%),radial-gradient(circle at 20% 90%,color-mix(in oklab,#3b82f6 30%,transparent),transparent 50%)">
+          <div style="width:400px;border:1px solid var(--border2);border-radius:var(--r2);background:color-mix(in oklab,var(--card) 85%,transparent);backdrop-filter:blur(12px);padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 30px 70px rgba(0,0,0,.5)">
+            <div style="font-size:16px;font-weight:600">Restoring your workspace…</div>
+            <div style="font-size:12.5px;color:var(--fg3);margin-top:-8px">Acme Inc › Engineering · from MacBook Pro, 9:41</div>
+            <sc-for list="{{ syncSteps }}" as="s" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:10px"><i style="font-size:18px;color:{{ s.c }}">{{ s.i }}</i><span style="flex:1;color:{{ s.tc }}">{{ s.n }}</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ s.m }}</span></div></sc-for>
+            <div style="height:4px;border-radius:2px;background:var(--muted2);overflow:hidden"><div style="width:70%;height:100%;background:var(--acc)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="18b">
+      <div class="dv-olabel"><a class="dv-oid" href="#18b">18b</a>Phone · stacked blocks · swipeable regions</div>
+      <div style="width:390px;height:844px;border-radius:44px;border:10px solid #000;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;font-size:14px;position:relative;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+        <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:600 14px Geist"><span>9:41</span><span style="display:flex;gap:4px"><i style="font-size:16px">signal_cellular_alt</i><i style="font-size:16px">wifi</i><i style="font-size:16px">battery_full</i></span></div>
+        <div style="padding:6px 16px 10px;display:flex;align-items:center;gap:10px"><span style="font-size:24px;font-weight:600;letter-spacing:-.02em">Sprint 14</span><div style="flex:1"></div><i style="color:var(--fg2);font-size:22px">search</i><span style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;font:600 11px Geist;display:grid;place-items:center">MC</span></div>
+        <div style="display:flex;gap:6px;padding:0 16px 12px;border-bottom:1px solid var(--border)"><sc-for list="{{ phoneRegions }}" as="r" hint-placeholder-count="4"><span style="height:32px;padding:0 14px;border-radius:999px;background:{{ r.bg }};color:{{ r.c }};border:1px solid {{ r.bd }};display:flex;align-items:center;font-size:13px;font-weight:500">{{ r.n }}</span></sc-for></div>
+        <div style="flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:12px"><div style="font-size:12px;color:var(--fg3)">Done</div><div style="font-size:24px;font-weight:600">27<span style="font:500 12px 'Geist Mono';color:var(--fg3)"> / 62</span></div></div><div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:12px"><div style="font-size:12px;color:var(--fg3)">Live call</div><div style="font-size:15px;font-weight:600;color:#f87171;display:flex;align-items:center;gap:6px;margin-top:4px"><span style="width:7px;height:7px;border-radius:50%;background:#ef4444"></span>Stand-up</div></div></div>
+          <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);overflow:hidden">
+            <div style="height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">view_kanban</i><span style="font-weight:600">In progress</span><span style="font-size:12px;color:var(--fg3)">4</span><i style="margin-left:auto;color:var(--fg3)">more_horiz</i></div>
+            <sc-for list="{{ phoneTasks }}" as="t" hint-placeholder-count="4"><div style="min-height:56px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border)"><span style="width:8px;height:8px;border-radius:50%;background:var(--info)"></span><div style="flex:1;min-width:0"><div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.t }}</div><div style="font:500 11.5px 'Geist Mono';color:var(--fg3)">{{ t.id }} · {{ t.m }}</div></div><span style="width:26px;height:26px;border-radius:50%;background:{{ t.g }};color:#fff;font:600 9px Geist;display:grid;place-items:center">{{ t.i }}</span></div></sc-for>
+          </div>
+          <div style="display:flex;justify-content:center;gap:6px"><span style="width:18px;height:6px;border-radius:3px;background:var(--fg)"></span><span style="width:6px;height:6px;border-radius:3px;background:var(--border2)"></span><span style="width:6px;height:6px;border-radius:3px;background:var(--border2)"></span><span style="width:6px;height:6px;border-radius:3px;background:var(--border2)"></span></div>
+        </div>
+        <div style="position:absolute;right:18px;bottom:100px;width:56px;height:56px;border-radius:18px;background:var(--acc);color:#fff;display:grid;place-items:center;box-shadow:0 10px 26px -4px var(--acc)"><i style="font-size:26px">add</i></div>
+        <div style="height:80px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 8px 22px;background:var(--rail)"><sc-for list="{{ phoneTabs }}" as="t" hint-placeholder-count="5"><span style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:{{ t.c }}"><i style="font-size:22px">{{ t.i }}</i>{{ t.n }}</span></sc-for></div>
+      </div>
+    </div>
+    <div class="dv-opt" id="18c">
+      <div class="dv-olabel"><a class="dv-oid" href="#18c">18c</a>Phone · quick add sheet</div>
+      <div style="width:390px;height:844px;border-radius:44px;border:10px solid #000;overflow:hidden;background:var(--bg);position:relative;font-size:14px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,.55)"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--border2);border-radius:22px 22px 0 0;padding:10px 16px 0;display:flex;flex-direction:column;gap:14px">
+          <span style="width:40px;height:5px;border-radius:3px;background:var(--border2);align-self:center"></span>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:16px">New task</span><span style="font-size:12px;color:var(--fg3)">Platform › Backend</span></div>
+          <div style="font-size:17px;line-height:1.45">Retry SAML refresh <span style="background:var(--acc-soft);color:var(--acc);border-radius:5px;padding:0 5px">tomorrow</span> <span style="background:var(--muted2);border-radius:5px;padding:0 5px">@dev</span> <span style="background:color-mix(in oklab,#ef4444 16%,transparent);color:#f87171;border-radius:5px;padding:0 5px">!high</span><span style="display:inline-block;width:2px;height:20px;background:var(--acc);vertical-align:middle;margin-left:2px"></span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ qaChips }}" as="c" hint-placeholder-count="5"><span style="height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--border2);display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg2)"><i style="font-size:16px">{{ c.i }}</i>{{ c.n }}</span></sc-for></div>
+          <div style="display:flex;gap:8px"><span style="flex:1;height:48px;border-radius:14px;border:1px solid var(--border2);display:grid;place-items:center">Cancel</span><span style="flex:2;height:48px;border-radius:14px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:600">Add task</span></div>
+          <div style="height:280px;margin:0 -16px;background:var(--muted);display:grid;grid-template-columns:repeat(10,1fr);gap:6px;padding:10px 6px;box-sizing:border-box;align-content:start"><sc-for list="{{ keys }}" as="k" hint-placeholder-count="28"><span style="height:44px;border-radius:7px;background:var(--muted2);display:grid;place-items:center;font-size:17px">{{ k }}</span></sc-for></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Also see <a href="TaskFlow v2.dc.html">v2 core</a> (tracker, chat, video, appearance) and <a href="TaskFlow v2 Platform.dc.html">platform</a> (org, lego, automations, GitHub sync, IAM, HR).</p>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;orange&quot;,&quot;blue&quot;,&quot;emerald&quot;,&quot;rose&quot;,&quot;zinc&quot;],&quot;default&quot;:&quot;orange&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;radius&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sm&quot;,&quot;md&quot;,&quot;lg&quot;],&quot;default&quot;:&quot;md&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const G={MC:'linear-gradient(135deg,#0f766e,#134e4a)',DP:'linear-gradient(135deg,#334155,#1e293b)',SR:'linear-gradient(135deg,#9f1239,#4c0519)',JB:'linear-gradient(135deg,#4d7c0f,#1a2e05)',AT:'linear-gradient(135deg,#0369a1,#082f49)',LO:'linear-gradient(135deg,#a16207,#713f12)',NH:'linear-gradient(135deg,#7c2d12,#431407)',TS:'linear-gradient(135deg,#57534e,#292524)'};
+    const N={MC:'Maya Chen',DP:'Dev Patel',SR:'Sofia Rossi',JB:'Jonas Berg',AT:'Aiko Tanaka',LO:"Liam O'Connor",NH:'Nadia Haddad',TS:'Tomás Silva'};
+    const soft=c=>`color-mix(in oklab,${c} 16%,transparent)`;
+    const S={todo:['To do','#a1a1aa'],prog:['In progress','#60a5fa'],rev:['In review','#f59e0b'],done:['Done','#22c55e'],blk:['Blocked','#ef4444']};
+    const R=(id,t,c,sk)=>({id,t,c,sk:sk?'var(--muted2)':'transparent',tc:sk?'transparent':'var(--fg)'});
+    const base={bs:'solid',bd:'var(--border)',sh:'none',hbg:'transparent',grip:'none',cbg:'var(--muted2)',cc:'var(--fg2)',ci:'filter_list',chip:'Sprint 14 · me',vsw:'flex',mbg:'transparent',jc:'flex-start',ai:'stretch',bbg:'transparent',bic:'var(--fg3)',bi:'',bid:'none',bt:'',btd:'none',bs2:'',btn:'',btnd:'none',btnbg:'transparent',btnc:'var(--fg)',rows:[],menu:false,handles:false,i:'table_rows',n:'Tasks'};
+    const rowsA=[R('TF-142','Fix login crash on SSO redirect','#60a5fa'),R('TF-147','Rate-limit token refresh','#f59e0b'),R('TF-151','Settings skeleton states','#60a5fa'),R('TF-149','Audit log export as CSV','#a1a1aa')];
+    const states=[
+      {...base,label:'DEFAULT',rows:rowsA},
+      {...base,label:'MENU OPEN · FOCUSED',bd:'var(--acc)',sh:'0 0 0 3px var(--acc-soft)',mbg:'var(--muted2)',menu:true,rows:rowsA.slice(0,2)},
+      {...base,label:'ARRANGE · GRIP + HANDLES',bs:'dashed',bd:'var(--acc)',hbg:'var(--acc-soft)',grip:'inline-flex',vsw:'none',handles:true,rows:rowsA.slice(0,3).map(r=>({...r,sk:'var(--muted2)',tc:'transparent'}))},
+      {...base,label:'LOADING · SKELETON',i:'trending_down',n:'Burndown',chip:'—',vsw:'none',rows:[0,1,2,3].map(()=>R('','','var(--muted2)',1))},
+      {...base,label:'ERROR · RETRY',i:'merge',n:'GitHub PRs',chip:'acme/platform',ci:'code',vsw:'none',jc:'center',ai:'center',bi:'cloud_off',bid:'inline-flex',bic:'var(--bad)',bt:'Couldn’t reach GitHub',btd:'block',bs2:'Rate limited · last success 4 min ago',btn:'↻ Retry',btnd:'flex'},
+      {...base,label:'NO ACCESS TO THIS DATA',i:'payments',n:'Timesheet',chip:'Finance',ci:'lock',vsw:'none',jc:'center',ai:'center',bbg:'repeating-linear-gradient(135deg,transparent 0 8px,var(--muted) 8px 9px)',bi:'lock',bid:'inline-flex',bt:'You can’t view Finance',btd:'block',bs2:'Policy deny:ws/*/space/finance applies to Engineers',btn:'Request access',btnd:'flex'},
+      {...base,label:'STACKED · TABS IN ONE SLOT',i:'inventory_2',n:'Backlog 38 | Bugs 7 | Mine 5',chip:'',cbg:'transparent',ci:'',vsw:'none',rows:[R('TF-160','SAML metadata auto-refresh','#a1a1aa'),R('TF-158','Bulk move tasks','#a1a1aa'),R('TF-156','Webhook retries','#a1a1aa')]},
+      {...base,label:'EMPTY REGION',bs:'dashed',bd:'var(--border2)',i:'add',n:'Empty',chip:'',cbg:'transparent',ci:'',vsw:'none',jc:'center',ai:'center',bi:'dashboard_customize',bid:'inline-flex',bic:'var(--acc)',bt:'This region is empty',btd:'block',bs2:'Drag a block here or pick a layout',btn:'+ Add block',btnd:'flex',btnbg:'var(--acc)',btnc:'#fff'},
+      {...base,label:'LINKED · FOLLOWS CONTEXT',i:'description',n:'Task detail',chip:'Linked to Tasks',ci:'link',cbg:'var(--acc-soft)',cc:'var(--acc)',vsw:'none',jc:'flex-start',ai:'flex-start',bi:'',bt:'TF-142 · Fix login crash on SSO redirect',btd:'block',bs2:'Updates when you select a row in the Tasks block.'}
+    ];
+    const blockMenu=[['tune','Configure','C'],['content_copy','Duplicate','⌘D'],['open_in_full','Maximise','M'],['right_panel_open','Pop out to side panel',''],['tab','Open as tab','⌘↵'],['delete','Remove','⌫']].map(([i,n,k],x)=>({i,n,k,bg:x===0?'var(--muted2)':'transparent',c:i==='delete'?'var(--bad)':'var(--fg)'}));
+    const srcTabs=['Space','List','Sprint','Filter','Person'].map((n,k)=>({n,bg:k===2?'var(--bg)':'transparent',c:k===2?'var(--fg)':'var(--fg2)',w:k===2?500:400}));
+    const viewPick=[['table_rows','Table'],['list','List'],['view_kanban','Kanban'],['calendar_month','Calendar'],['view_timeline','Timeline'],['grid_view','Cards']].map(([i,n],k)=>({i,n,bd:k===2?'var(--acc)':'var(--border)',bg:k===2?'var(--acc-soft)':'var(--card)',c:k===2?'var(--acc)':'var(--fg2)'}));
+    const cfgSel=[['Group by','Status'],['Sort','Priority ↓'],['Measure','Points'],['Date range','Oct 20–Nov 2',1],['Refresh','Live'],['Title','My sprint']].map(([k,v,m])=>({k,v,ff:m?"'Geist Mono'":'Geist'}));
+    const fields=[['ID',1],['Assignees',1],['Labels',1],['Linked PR',0]].map(([n,on])=>({n,tg:on?'var(--acc)':'var(--border2)',tl:on?'15px':'2px'}));
+    const swatches=['#a1a1aa','var(--acc)','#3b82f6','#22c55e','#f43f5e'].map((c,k)=>({c,sh:k===1?'0 0 0 2px var(--rail),0 0 0 3.5px var(--acc)':'none'}));
+    const layoutMenu=[['add','Save as new layout','⇧⌘S'],['edit','Rename',''],['content_copy','Duplicate',''],['group','Share with team / workspace',''],['push_pin','Set as default for this page',''],['lock','Lock regions (admin)',''],['history','Version history',''],['restart_alt','Reset to default…','']].map(([i,n,k],x)=>({i,n,k,bg:x===7?'color-mix(in oklab,#ef4444 10%,transparent)':'transparent',c:x===7?'var(--bad)':'var(--fg)'}));
+    const versions=[['Current','You · just now · 30:70 Kanban','','var(--acc-soft)'],['Added Burndown','You · today 10:12','Restore','transparent'],['Hid side panel','You · yesterday','Restore','transparent'],['Team default v3','Maya · Oct 21 · published','Restore','transparent']].map(([n,m,a,bg])=>({n,m,a,bg}));
+    const syncChips=[['cloud_done','Saved · synced','var(--ok)'],['sync','Saving…','var(--fg2)'],['cloud_off','Offline · will sync','var(--warn)']].map(([i,n,c])=>({i,n,c}));
+    const it=(i,n,b,o={})=>({i,n,b:b||'',pad:'10px',h:'34px',bg:'transparent',c:'var(--fg2)',font:"400 13px Geist",is:'18px',ic:'var(--fg3)',bc:'var(--fg3)',...o});
+    const hd=n=>({i:'expand_more',n,b:'',pad:'8px',h:'30px',bg:'transparent',c:'var(--fg3)',font:"600 10.5px 'Geist Mono'",is:'14px',ic:'var(--fg3)',bc:'var(--fg3)'});
+    const on={bg:'var(--muted2)',c:'var(--fg)',font:'500 13px Geist'};
+    const bars=(arr,c)=>arr.map(h=>({h:h+'%',c}));
+    const sidebars=[
+      {id:'12a',label:'Default',title:'Tracker',items:[it('person','My issues','9',on),it('inbox','Inbox','4'),it('checklist','All issues','60'),hd('SPACES'),it('deployed_code','Platform','',{c:'var(--fg)'}),it('list','Backend','',{pad:'34px'}),it('list','Web','',{pad:'34px'}),it('sprint','Sprint 14','',{pad:'34px'}),hd('FAVOURITES'),it('star','Release 2.8 checklist','',{ic:'var(--acc)'}),it('filter_alt','Bugs · untriaged')],fi:'groups',ft:'5 online',fv:'Office →',fvc:'var(--fg3)',bars:bars([40,70,55,90,60,80,45,65],'var(--acc-soft2)')},
+      {id:'12b',label:'Minimal — favourites + inbox',title:'Focus',items:[it('inbox','Inbox','4',{...on,bc:'var(--acc)'}),it('person','My tasks','9'),it('sprint','Sprint 14'),hd('FAVOURITES'),it('star','Web · Board','',{ic:'var(--acc)'}),it('star','TF-142 Fix login crash','',{ic:'var(--acc)'}),it('folder','Release notes'),it('link','Grafana · auth','',{pad:'34px'}),it('link','Status page','',{pad:'34px'})],fi:'timer',ft:'Focus today',fv:'3h 05m',fvc:'var(--acc)',bars:bars([20,40,60,30,80,50,0,0],'var(--acc)')},
+      {id:'12c',label:'Manager — teams, workload, dashboards',title:'Overview',items:[hd('DASHBOARDS'),it('monitoring','Eng overview','',on),it('monitoring','Sprint health'),it('monitoring','Incidents · Q4'),hd('TEAMS'),it('square','Platform','4',{ic:'var(--acc)',is:'12px'}),it('square','Web','2',{ic:'#60a5fa',is:'12px'}),it('square','Design','1',{ic:'#f472b6',is:'12px'}),it('square','Ops','1',{is:'12px'}),hd('PEOPLE'),it('event_busy','On leave','2'),it('warning','Over capacity','1',{ic:'var(--bad)',bc:'var(--bad)'})],fi:'person_search',ft:'Workload',fv:'JB 110%',fvc:'var(--bad)',bars:[92,78,64,110,0,45,70,30].map(v=>({h:Math.min(v,100)+'%',c:v>100?'var(--bad)':'var(--acc)'}))}
+    ];
+    const tplKinds=['Layouts','Projects','Automations','Docs'].map((n,k)=>({n,bg:k===0?'var(--bg)':'transparent',c:k===0?'var(--fg)':'var(--fg2)',w:k===0?500:400}));
+    const A='var(--acc-soft2)',AS='var(--acc-soft)',M='var(--muted2)',BL='color-mix(in oklab,#3b82f6 30%,transparent)',GR='color-mix(in oklab,#22c55e 30%,transparent)',RD='color-mix(in oklab,#ef4444 30%,transparent)';
+    const Rc=(x,y,w,h,c)=>({x:x+'%',y:y+'%',w:w+'%',h:h+'%',c});
+    const tp=(n,d,tag,w,glow,rects,sel)=>({n,d,tag,w,glow,rects,bd:sel?'var(--acc)':'var(--border)',sh:sel?'0 0 0 3px var(--acc-soft)':'none'});
+    const templates=[
+      tp('Sprint planning','Backlog 30 | sprint lanes 70, capacity bar on top.','Built-in','5 blocks',AS,[Rc(3,5,94,10,A),Rc(3,20,28,75,M),Rc(34,20,15,75,M),Rc(51,20,15,75,BL),Rc(68,20,14,75,AS),Rc(84,20,13,75,GR)]),
+      tp('Daily stand-up','Call + per-person yesterday / today / blocked + burndown.','Built-in','4 blocks',RD,[Rc(3,5,60,60,M),Rc(3,69,60,26,AS),Rc(66,5,31,90,M)]),
+      tp('Bug triage','Untriaged table | task detail, quick actions strip.','Built-in','3 blocks',RD,[Rc(3,5,94,9,M),Rc(3,18,55,77,M),Rc(61,18,36,77,AS)]),
+      tp('My focus day','Today’s tasks, timer, calendar, inbox.','Built-in','4 blocks',AS,[Rc(3,5,45,90,M),Rc(51,5,46,22,A),Rc(51,31,46,34,BL),Rc(51,69,46,26,M)]),
+      tp('Release / PR review','GitHub PRs | linked tasks | CI status.','Built-in','3 blocks',BL,[Rc(3,5,20,90,M),Rc(26,5,53,90,M),Rc(82,5,15,90,GR)]),
+      tp('Manager overview','Workload, cycle time, overdue, team presence.','Built-in','6 blocks',BL,[Rc(3,5,30,20,AS),Rc(36,5,30,20,AS),Rc(69,5,28,20,RD),Rc(3,29,60,66,M),Rc(66,29,31,66,BL)]),
+      tp('Roadmap','Timeline with epics and milestones.','Built-in','3 blocks',GR,[Rc(3,5,94,10,M),Rc(3,22,40,10,A),Rc(25,36,45,10,BL),Rc(50,50,40,10,GR),Rc(3,80,94,15,M)]),
+      tp('Client / ops desk','Requests table, SLA timers, assignee rotation.','Built-in','4 blocks',AS,[Rc(3,5,66,90,M),Rc(72,5,25,40,RD),Rc(72,49,25,46,M)]),
+      tp('Virtual office','Isometric team floor with presence and live work.','Built-in','2 blocks',A,[Rc(3,5,70,90,AS),Rc(76,5,21,90,M)]),
+      tp('Chat + tasks','Channel | linked task list | call dock.','Built-in','3 blocks',BL,[Rc(3,5,58,90,M),Rc(64,5,33,60,AS),Rc(64,69,33,26,RD)]),
+      tp('Platform on-call','CI, incidents, runbook doc, who’s on call.','Acme','5 blocks',GR,[Rc(3,5,30,30,GR),Rc(3,39,30,56,M),Rc(36,5,61,90,M)]),
+      tp('Maya’s sprint view','Backlog tabs 30 | Kanban 70 | linked detail.','Mine','3 blocks',A,[Rc(3,5,28,90,M),Rc(34,5,40,90,BL),Rc(77,5,20,90,AS)],1)
+    ];
+    const vt=(i,n,o)=>({i,n,bd:o?'var(--acc)':'transparent',c:o?'var(--fg)':'var(--fg3)',w:o?500:400});
+    const spaceViews=[vt('list','List'),vt('view_kanban','Board'),vt('table_rows','Table',1),vt('calendar_month','Calendar'),vt('view_timeline','Timeline'),vt('groups','Team planner'),vt('timer','Time'),vt('sprint','Sprints'),vt('monitoring','Dashboard'),vt('account_tree','Automations'),vt('settings','Settings')];
+    const tableTools=[['segment','Group: List'],['sort','Priority'],['view_week','Fields · 9'],['swap_vert','Swimlanes']].map(([i,n])=>({i,n}));
+    const PR={urg:['Urgent','keyboard_double_arrow_up','#f87171'],hi:['High','keyboard_arrow_up','#f59e0b'],med:['Medium','remove','var(--fg3)'],lo:['Low','keyboard_arrow_down','var(--fg3)']};
+    const row=(id,t,k,as,p,pts,due,pr,sel,ed)=>({id,t,st:S[k][0],sc:S[k][1],sb:soft(S[k][1]),av:as.map(i=>({i,g:G[i]})),p:PR[p][0],pi:PR[p][1],pc:PR[p][2],pts,due,dc:k==='blk'?'var(--bad)':'var(--fg3)',pr:pr||'—',bg:sel?'var(--acc-soft)':'transparent',cb:sel?'var(--acc)':'var(--border2)',cbg:sel?'var(--acc)':'transparent',ck:sel?'check':'',ed:ed?'0 0 0 2px var(--acc)':'none'});
+    const tableGroups=[
+      {n:'Backend',count:'8',pts:'34 pts',wip:'WIP 4/4',wc:'var(--warn)',rows:[row('TF-142','Fix login crash on SSO redirect','prog',['DP','TS'],'hi',5,'Oct 30','#418',1,1),row('TF-147','Rate-limit token refresh endpoint','rev',['LO'],'hi',3,'Oct 31','#421',1),row('TF-149','Audit log export as CSV','todo',['LO'],'med',5,'Nov 3','',1),row('TF-157','Paginate /v2/tasks responses','todo',['DP'],'med',5,'Nov 4',''),row('TF-138','Migrate session store to Redis 7','done',['JB'],'med',8,'Oct 27','#409'),row('TF-159','Alert on CI queue > 10 min','todo',['JB'],'lo',2,'Nov 5','')]},
+      {n:'Web',count:'6',pts:'14 pts',wip:'WIP 2/3',wc:'var(--fg3)',rows:[row('TF-155','Flaky e2e: checkout timeout','blk',['TS'],'urg',3,'Oct 29',''),row('TF-151','Settings page skeleton states','prog',['SR'],'med',2,'Nov 1',''),row('TF-144','Dark mode tokens for web app','rev',['NH','AT'],'med',3,'Oct 30','#416'),row('TF-146','Keyboard nav in command palette','prog',['NH'],'med',3,'Oct 31',''),row('TF-150','Avatar upload crops incorrectly','rev',['SR'],'lo',2,'Oct 31','#419')]}
+    ];
+    const statusMenu=Object.values(S).map(([n,c],k)=>({n,c,k:String(k+1),bg:k===2?'var(--muted2)':'transparent'}));
+    const bulk=[['radio_button_checked','Status'],['person_add','Assign'],['sprint','Sprint'],['sell','Labels'],['account_tree','Run flow'],['delete','Delete']].map(([i,n])=>({i,n,c:n==='Delete'?'var(--bad)':'var(--fg)'}));
+    const dt=(n,v,vi,o)=>({n,v,vi,bd:o?'var(--acc)':'transparent',c:o?'var(--fg)':'var(--fg3)',w:o?500:400});
+    const dashTabs=[dt('Eng overview','Team','group',1),dt('Sprint health','Workspace','domain'),dt('Incidents · Q4','Team','group'),dt('My stats','Private','lock')];
+    const kpis=[{n:'Throughput · 30d',v:'164',t:'+12%',tc:'var(--ok)',sc:'var(--acc)',sp:'0,24 15,20 30,22 45,16 60,18 75,12 90,10 105,8 120,6'},{n:'Cycle time p50',v:'2.4d',t:'−0.6d',tc:'var(--ok)',sc:'var(--acc)',sp:'0,8 15,10 30,12 45,14 60,16 75,15 90,18 105,22 120,22'},{n:'Open bugs',v:'23',t:'+4',tc:'var(--warn)',sc:'#f59e0b',sp:'0,20 20,18 40,22 60,16 80,14 100,10 120,8'},{n:'Deploys · 30d',v:'48',t:'98% ok',tc:'var(--fg3)',sc:'#60a5fa',sp:'0,14 15,18 30,12 45,16 60,10 75,14 90,12 105,16 120,12'}];
+    const workload=[['DP',42,40],['LO',30,36],['SR',22,32],['JB',44,40],['AT',18,24],['TS',14,30],['NH',0,0]].map(([i,v,c])=>({i,g:G[i],n:N[i].split(' ')[0],pct:c?Math.min(100,v/c*100)+'%':'0%',v:c?v+'/'+c:'leave',bc:v>c?'var(--bad)':'var(--acc)',tc:v>c?'var(--bad)':'var(--fg3)'}));
+    const cycle=[['1d',38],['2d',72],['3d',90],['4d',58],['5d',40],['6d',26],['7d',18],['8d',10],['9d',8],['10+',14]].map(([l,h],k)=>({l,h:h+'%',c:k===2?'var(--acc)':'var(--acc-soft2)'}));
+    const overdue=[['TF-155','Flaky e2e: checkout','1d'],['TF-128','Rotate staging certs','3d'],['TF-122','Billing webhook docs','4d'],['TF-119','Fix tz in reports','6d'],['TF-117','Remove feature flag x','8d']].map(([id,t,d])=>({id,t,d}));
+    const checklist=[['Reproduce on iOS 18 Safari',1],['Persist token before restore',1],['Regression test for redirect race',0],['Update auth runbook',0]].map(([n,d])=>({n,i:d?'check_box':'check_box_outline_blank',ic:d?'var(--acc)':'var(--fg3)',col:d?'var(--fg3)':'var(--fg)',td:d?'line-through':'none'}));
+    const subtasks=[['TF-142.1','Guard restore() on missing token','done','DP'],['TF-142.2','Add Safari to e2e matrix','prog','TS'],['TF-142.3','Sentry alert threshold','todo','JB']].map(([id,t,k,i])=>({id,t,c:S[k][1],i,g:G[i]}));
+    const relations=[{k:'Blocks',c:'#f87171',id:'TF-160',t:'SAML metadata refresh'},{k:'Blocked by',c:'#f59e0b',id:'TF-138',t:'Redis 7 migration'},{k:'Duplicates',c:'var(--fg3)',id:'TF-127',t:'White screen after login'}];
+    const activity=[{i:'',icon:'account_tree',g:'var(--acc-soft)',fc:'var(--acc)',r:'8px',who:'Automation',what:'“Bug PR → task” linked PR #418 · status → In progress',t:'2h',body:''},{i:'LO',icon:'',g:G.LO,fc:'#fff',r:'50%',who:"Liam O'Connor",what:'commented',t:'1h',body:'Can we add a regression test for the race before merge?'},{i:'',icon:'sync_alt',g:'color-mix(in oklab,#60a5fa 16%,transparent)',fc:'#60a5fa',r:'8px',who:'GitHub sync',what:'label “auth” added on acme/platform#5041',t:'40m',body:''},{i:'DP',icon:'',g:G.DP,fc:'#fff',r:'50%',who:'Dev Patel',what:'logged 1h 45m · estimate 3 → 5 pts',t:'12m',body:''}];
+    const pf=(k,v,o={})=>({k,v,ff:'Geist',c:'var(--fg)',w:400,...o});
+    const props=[pf('Status','In progress',{c:'var(--info)',w:500}),pf('Priority','High',{c:'#f59e0b',w:500}),pf('Start','Oct 27',{ff:"'Geist Mono'"}),pf('Due','Oct 30',{ff:"'Geist Mono'"}),pf('Estimate','1d · 5 pts',{ff:"'Geist Mono'"}),pf('Sprint','Sprint 14'),pf('List','Platform › Backend'),pf('Labels','auth · ios · sev2'),pf('Time logged','3h 05m',{ff:"'Geist Mono'"}),pf('Recurring','—',{c:'var(--fg3)'}),pf('GitHub','#5041 ⇄ synced',{c:'var(--ok)'}),pf('Thread','#platform · 5 replies',{c:'var(--acc)'})];
+    const taskPeople=[['DP','Assignee'],['TS','Assignee'],['LO','Reviewer'],['MC','Reporter']].map(([i,r])=>({i,g:G[i],n:N[i],r}));
+    const backlog=[['TF-160','SAML metadata auto-refresh',5,1],['TF-158','Bulk move tasks between lists',3],['TF-156','Webhook retries with backoff',5],['TF-154','Time entries: round to 15m',2],['TF-152','Export sprint report PDF',3],['TF-148','Per-space notification rules',8],['TF-145','Search: fuzzy match on IDs',2],['TF-141','iOS: offline queue for comments',8],['TF-139','Dashboard tile: cycle time p85',3],['TF-137','Admin: deny-list for embeds',2],['TF-136','Recurring: monthly by weekday',5],['TF-134','Docs: task embed hover card',3]].map(([id,t,p,d])=>({id,t,p,bg:d?'var(--acc-soft)':'transparent',op:d?.6:1}));
+    const ck=(id,t,p,ghost)=>({id,t,p:p+' pts',bd:ghost?'var(--acc)':'var(--border)',bs:ghost?'dashed':'solid'});
+    const lanes=[{i:'DP',n:'Dev',cap:'16/16',pct:'100%',bc:'#f59e0b',tc:'#f59e0b',cards:[ck('TF-157','Paginate /v2/tasks',5),ck('TF-148','Notification rules',8),ck('TF-160','SAML metadata refresh',5,1)]},{i:'LO',n:'Liam',cap:'10/14',pct:'71%',bc:'var(--acc)',tc:'var(--fg3)',cards:[ck('TF-156','Webhook retries',5),ck('TF-149','Audit log CSV',5)]},{i:'SR',n:'Sofia',cap:'12/14',pct:'86%',bc:'var(--acc)',tc:'var(--fg3)',cards:[ck('TF-152','Sprint report PDF',3),ck('TF-139','Cycle time tile',3),ck('TF-158','Bulk move tasks',3)]},{i:'NH',n:'Nadia',cap:'leave 3d',pct:'40%',bc:'var(--fg3)',tc:'#f59e0b',cards:[ck('TF-134','Task embed hover',3)]}].map(l=>({...l,g:G[l.i]}));
+    const velocity=[['S7',50,46],['S8',52,50],['S9',55,41],['S10',54,52],['S11',58,55],['S12',56,54],['S13',60,57],['S14',62,58]].map(([n,c,d],k)=>({n,c:(c/64*100)+'%',d:(d/64*100)+'%',col:k===7?'var(--acc)':'var(--acc-soft2)'}));
+    const unfinished=[['TF-155','Flaky e2e: checkout timeout','Sprint 15'],['TF-146','Keyboard nav in palette','Sprint 15'],['TF-151','Settings skeletons','Backlog']].map(([id,t,to])=>({id,t,to}));
+    const d=(i,n,pad,o,b)=>({i,n,pad,bg:o?'var(--muted2)':'transparent',c:o?'var(--fg)':'var(--fg2)',w:o||b?500:400});
+    const docTree=[d('expand_more','Platform','8px',0,1),d('expand_more','Runbooks','24px'),d('article','Auth runbook','44px',1),d('article','Deploy rollback','44px'),d('article','On-call handbook','44px'),d('chevron_right','RFCs','24px'),d('article','Sprint 14 notes','24px'),d('expand_more','Web','8px',0,1),d('article','Design tokens','24px'),d('article','Release 2.8 notes','24px'),d('chevron_right','Design','8px',0,1),d('chevron_right','Company','8px',0,1)];
+    const toolbar=['undo','redo','format_bold','format_italic','code','link','format_list_bulleted','checklist','table','add_task','image'];
+    const embedRows=[['#60a5fa','TF-142','Fix login crash on SSO redirect','Oct 30'],['#a1a1aa','TF-160','SAML metadata auto-refresh','Nov 6'],['#f59e0b','TF-147','Rate-limit token refresh','Oct 31']].map(([c,id,t,dd])=>({c,id,t,d:dd}));
+    const tf=(n,dot,o)=>({n,dot,bd:o?'var(--fg)':'var(--border2)',bg:o?'var(--fg)':'transparent',c:o?'var(--bg)':'var(--fg2)'});
+    const teamFilters=[tf('All teams','var(--fg3)',1),tf('Platform','var(--acc)'),tf('Web','#60a5fa'),tf('Design','#f472b6'),tf('Ops','#a1a1aa')];
+    const devTasks=[['TF-142','Fix login crash on SSO redirect','#60a5fa'],['TF-157','Paginate /v2/tasks','#a1a1aa'],['TF-160','SAML metadata refresh','#a1a1aa'],['TF-143','Remove v1 auth routes','#22c55e'],['TF-131','Token TTL per tenant','#22c55e']].map(([id,t,c])=>({id,t,c}));
+    const merged=[{n:'#421',t:'Rate-limit token refresh'},{n:'#416',t:'Dark mode tokens'},{n:'#409',t:'Session store → Redis 7'}];
+    const syncSteps=[['check_circle','var(--ok)','Organization & workspace','Acme › Eng'],['check_circle','var(--ok)','Theme · Ember dark','synced'],['check_circle','var(--ok)','12 layouts · 5 open tabs','v38'],['progress_activity','var(--acc)','Block data','6 / 9'],['radio_button_unchecked','var(--fg3)','Calls & presence','']].map(([i,c,n,m])=>({i,c,n,m,tc:c==='var(--fg3)'?'var(--fg3)':'var(--fg)'}));
+    const phoneRegions=['Main','Detail','Panel','Dock'].map((n,k)=>({n,bg:k===0?'var(--fg)':'transparent',c:k===0?'var(--bg)':'var(--fg2)',bd:k===0?'var(--fg)':'var(--border2)'}));
+    const phoneTasks=[['Fix login crash on SSO redirect','TF-142','1:20 timer','DP'],['Settings page skeleton states','TF-151','due Nov 1','SR'],['Keyboard nav in command palette','TF-146','due Oct 31','NH'],['Per-space notification rules','TF-148','due today','MC']].map(([t,id,m,i])=>({t,id,m,i,g:G[i]}));
+    const phoneTabs=[['home','Home','var(--fg2)'],['forum','Chat','var(--fg2)'],['sprint','Sprint','var(--acc)'],['videocam','Calls','var(--fg2)'],['badge','Clock','var(--fg2)']].map(([i,n,c])=>({i,n,c}));
+    const qaChips=[{i:'event',n:'Tomorrow'},{i:'person',n:'Dev'},{i:'flag',n:'High'},{i:'sprint',n:'Sprint 14'},{i:'sell',n:'Label'}];
+    const keys='qwertyuiopasdfghjkl⇧zxcvbnm⌫'.split('');
+    return { theme:this.props.theme ?? 'dark', accent:this.props.accent ?? 'orange', radius:this.props.radius ?? 'md', states, blockMenu, srcTabs, viewPick, cfgSel, fields, swatches, layoutMenu, versions, syncChips, sidebars, tplKinds, templates, spaceViews, tableTools, tableGroups, statusMenu, bulk, dashTabs, kpis, workload, cycle, overdue, checklist, subtasks, relations, activity, props, taskPeople, backlog, lanes, velocity, unfinished, docTree, toolbar, embedRows, teamFilters, devTasks, merged, syncSteps, phoneRegions, phoneTasks, phoneTabs, qaChips, keys };
+  }
+}
+</script>
+</body>
+</html>

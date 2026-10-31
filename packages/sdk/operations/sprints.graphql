@@ -14,8 +14,8 @@ mutation DeleteSprint($workspaceId: ID!, $sprintId: ID!) { deleteSprint(workspac
 
 mutation StartSprint($workspaceId: ID!, $sprintId: ID!) { startSprint(workspaceId: $workspaceId, sprintId: $sprintId) { ...SprintFields } }
 
-mutation CompleteSprint($workspaceId: ID!, $sprintId: ID!, $moveOpenTasksToSprintId: ID) {
-  completeSprint(workspaceId: $workspaceId, sprintId: $sprintId, moveOpenTasksToSprintId: $moveOpenTasksToSprintId) {
+mutation CompleteSprint($workspaceId: ID!, $sprintId: ID!, $moveOpenTasksToSprintId: ID, $rollover: CompleteSprintMovesInput) {
+  completeSprint(workspaceId: $workspaceId, sprintId: $sprintId, moveOpenTasksToSprintId: $moveOpenTasksToSprintId, rollover: $rollover) {
     ...SprintFields
   }
 }

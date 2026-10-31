@@ -2,7 +2,9 @@ import { DEFAULT_PREFERENCES, readPreferences, type UserPreferences } from '@tas
 
 const SNAPSHOT_KEY = 'taskflow.appearance';
 
-type Appearance = Pick<UserPreferences, 'theme' | 'accent' | 'density'>;
+export type Appearance = Pick<UserPreferences, 'theme' | 'accent' | 'density' | 'radius' | 'font'>;
+
+const pickAppearance = ({ theme, accent, density, radius, font }: Appearance): Appearance => ({ theme, accent, density, radius, font });
 
 /**
  * The last appearance this browser saw, so the first paint before preferences
@@ -12,10 +14,9 @@ type Appearance = Pick<UserPreferences, 'theme' | 'accent' | 'density'>;
 export function storedAppearance(): Appearance {
   try {
     const raw = localStorage.getItem(SNAPSHOT_KEY);
-    const stored = raw ? readPreferences(JSON.parse(raw)) : DEFAULT_PREFERENCES;
-    return { theme: stored.theme, accent: stored.accent, density: stored.density };
+    return pickAppearance(raw ? readPreferences(JSON.parse(raw)) : DEFAULT_PREFERENCES);
   } catch {
-    return { theme: DEFAULT_PREFERENCES.theme, accent: DEFAULT_PREFERENCES.accent, density: DEFAULT_PREFERENCES.density };
+    return pickAppearance(DEFAULT_PREFERENCES);
   }
 }
 
@@ -36,11 +37,13 @@ export function resolvedTheme(theme: Appearance['theme']): 'light' | 'dark' {
   return theme === 'system' ? (systemPrefersDark() ? 'dark' : 'light') : theme;
 }
 
-/** Puts the appearance on <html>: the `dark` class plus data-accent and data-density for the CSS tokens. */
+/** Puts the appearance on <html>: the `dark` class plus data-accent, -density, -radius and -font for the CSS tokens. */
 export function applyAppearance(appearance: Appearance): void {
   const root = document.documentElement;
   root.classList.toggle('dark', resolvedTheme(appearance.theme) === 'dark');
   root.dataset['accent'] = appearance.accent;
   root.dataset['density'] = appearance.density;
-  rememberAppearance(appearance);
+  root.dataset['radius'] = appearance.radius;
+  root.dataset['font'] = appearance.font;
+  rememberAppearance(pickAppearance(appearance));
 }

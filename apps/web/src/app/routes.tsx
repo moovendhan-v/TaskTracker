@@ -15,6 +15,7 @@ import { HomePage } from '@/modules/dashboard';
 import { ApprovalsPage, DepartmentsPage, DirectoryPage, LeaveTypesPage, TimeOffPage } from '@/modules/hr';
 import { listsApi } from '@/modules/lists';
 import { InboxPage } from '@/modules/inbox';
+import { AppearancePage } from '@/modules/preferences';
 import { tasksApi } from '@/modules/tasks';
 import { MembersPage } from '@/modules/members';
 import { isProjectView, MyTasksPage, ProjectPage } from '@/modules/projects';
@@ -284,6 +285,9 @@ const rolesRoute = createRoute({
   },
 });
 
+/** Personal appearance settings; shown inside the workspace shell, saved per user (not per workspace). */
+const appearanceRoute = createRoute({ getParentRoute: () => workspaceRoute, path: '/appearance', component: AppearancePage });
+
 const settingsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: '/settings',
@@ -321,6 +325,7 @@ const routeTree = rootRoute.addChildren([
       membersRoute,
       rolesRoute,
       settingsRoute,
+      appearanceRoute,
     ]),
   ]),
 ]);

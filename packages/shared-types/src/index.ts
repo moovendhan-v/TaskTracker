@@ -39,3 +39,4 @@ export * from './domain/automation.js';
 export * from './contracts/automation.contract.js';
 export * from './domain/github.js';
 export * from './contracts/github.contract.js';
+export * from './domain/layout.js';

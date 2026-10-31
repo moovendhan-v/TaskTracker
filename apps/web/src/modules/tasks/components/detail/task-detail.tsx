@@ -1,21 +1,15 @@
 import {
-  CalendarDaysIcon,
   CheckIcon,
-  ClockIcon,
-  CircleDotIcon,
+  CopyIcon,
   EyeIcon,
   EyeOffIcon,
-  FlagIcon,
   GitBranchIcon,
   HistoryIcon,
-  HourglassIcon,
   LinkIcon,
   MessageSquareIcon,
   MoreHorizontalIcon,
-  PercentIcon,
   PlusIcon,
   TrashIcon,
-  UserRoundIcon,
   XIcon,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -37,9 +31,9 @@ import { Modal } from '@/components/kit/modal';
 import { Section } from '@/components/kit/section';
 import { PullRequestsSection } from '@/modules/integrations';
 import { DateRangeField } from '@/components/kit/range-calendar';
-import { StatusPill } from '@/components/kit/status-pill';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useCurrentUser } from '@/core/auth/use-current-user';
 import { usePreferences } from '@/core/preferences/use-preferences';
@@ -47,7 +41,7 @@ import { cn } from '@/lib/cn';
 import { dayOf, dayToIso } from '@/lib/days';
 import { formatNumericDate } from '@/lib/periods';
 import { useResettableState } from '@/lib/use-resettable-state';
-import { CommentThread } from '@/modules/comments';
+import { CommentThread, useComments } from '@/modules/comments';
 import { useMemberName } from '@/modules/members';
 import { useSpaces } from '@/modules/spaces';
 import { TaskTimeControls } from '@/modules/time';
@@ -67,15 +61,30 @@ interface TaskDetailProps {
   onOpen: (taskId: string) => void;
 }
 
-/** The open task, as a centred modal or a side panel (the user's preference). */
+/** The open task (v2 Features #14a): content and activity on the left, properties and people on the right. */
 export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailProps) {
   const { data: task, isLoading } = useTask(workspaceId, taskId);
   const { taskDetailMode } = usePreferences();
   const { data: spaces = [] } = useSpaces(workspaceId);
-  const memberName = useMemberName(workspaceId);
   const open = Boolean(taskId);
   const space = spaces.find((item) => item.id === task?.spaceId);
   const { data: parent } = useTask(workspaceId, task?.parentId ?? undefined);
+
+  const breadcrumb = task ? (
+    <>
+      <span className="text-muted-foreground">{space?.name ?? 'Project'}</span>
+      {parent ? (
+        <>
+          <span aria-hidden className="text-subtle-foreground">/</span>
+          <button type="button" className="max-w-64 truncate text-muted-foreground hover:text-primary" onClick={() => onOpen(parent.id)}>
+            {parent.title}
+          </button>
+        </>
+      ) : null}
+      <span aria-hidden className="text-subtle-foreground">/</span>
+      <CopyId task={task} />
+    </>
+  ) : null;
 
   if (taskDetailMode === 'side') {
     return (
@@ -83,12 +92,25 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
         <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
           <SheetTitle className="sr-only">{task?.title ?? 'Task'}</SheetTitle>
           <SheetDescription className="sr-only">Task details</SheetDescription>
-          {isLoading || !task ? <FullPageSpinner /> : <TaskBody key={task.id} workspaceId={workspaceId} task={task} onOpen={onOpen} onDeleted={onClose} />}
-          {task ? (
-            <div className="border-t p-4">
-              <CommentThread workspaceId={workspaceId} taskId={task.id} spaceId={task.spaceId} />
+          {isLoading || !task ? (
+            <FullPageSpinner />
+          ) : (
+            <div key={task.id}>
+              <div className="flex items-center gap-2 px-6 pt-5 text-xs">{breadcrumb}</div>
+              <TaskMain
+                workspaceId={workspaceId}
+                task={task}
+                onOpen={onOpen}
+                onDeleted={onClose}
+                // The panel is narrow: properties go right under the title instead of in a side column.
+                properties={
+                  <div className="-mx-8 -mb-7 border-t bg-muted/20 [&>div]:px-8">
+                    <TaskProperties workspaceId={workspaceId} task={task} />
+                  </div>
+                }
+              />
             </div>
-          ) : null}
+          )}
         </SheetContent>
       </Sheet>
     );
@@ -102,56 +124,162 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
       tall
       hideTitle
       title={task?.title ?? 'Task'}
-      eyebrow={
-        task ? (
-          <>
-            <span className="rounded bg-muted px-2 py-0.5 font-medium text-foreground">{space?.name ?? 'Project'}</span>
-            {parent ? (
-              <>
-                <span aria-hidden>/</span>
-                <button type="button" className="max-w-64 truncate hover:text-primary" onClick={() => onOpen(parent.id)}>
-                  {parent.title}
-                </button>
-              </>
-            ) : null}
-            <span className="ml-1 tabular-nums text-muted-foreground/70">#{task.number}</span>
-          </>
-        ) : null
-      }
-      headerActions={task ? <span className="hidden text-xs text-muted-foreground sm:inline">Created {formatNumericDate(task.createdAt)} by {memberName(task.createdById) ?? 'someone'}</span> : null}
-      aside={
-        task ? (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <h2 className="flex items-center gap-2 border-b px-5 py-3 text-sm font-semibold">
-              <MessageSquareIcon className="size-4 text-muted-foreground" /> Activity
-            </h2>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-              <CommentThread workspaceId={workspaceId} taskId={task.id} spaceId={task.spaceId} />
-            </div>
-          </div>
-        ) : null
-      }
+      eyebrow={breadcrumb}
+      aside={task ? <TaskProperties key={task.id} workspaceId={workspaceId} task={task} /> : null}
     >
-      {isLoading || !task ? <FullPageSpinner /> : <TaskBody key={task.id} workspaceId={workspaceId} task={task} onOpen={onOpen} onDeleted={onClose} />}
+      {isLoading || !task ? <FullPageSpinner /> : <TaskMain key={task.id} workspaceId={workspaceId} task={task} onOpen={onOpen} onDeleted={onClose} />}
     </Modal>
   );
 }
 
-function Property({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
+/** The task's number in mono; clicking copies a link to the task. */
+function CopyId({ task }: { task: TaskResponse }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const url = `${window.location.origin}/w/${window.location.pathname.split('/')[2]}/t/${task.id}`;
+    void navigator.clipboard?.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
   return (
-    <div className="grid min-h-10 grid-cols-[120px_minmax(0,1fr)] items-center gap-2 text-sm">
-      <dt className="flex items-center gap-2 text-[13px] text-muted-foreground [&_svg]:size-4">
-        {icon}
-        {label}
-      </dt>
-      <dd className="min-w-0">{children}</dd>
+    <button type="button" onClick={copy} title="Copy link to this task" className="inline-flex items-center gap-1 rounded px-1 font-mono text-[11.5px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+      #{task.number}
+      {copied ? <CheckIcon className="size-3 text-good" aria-label="Link copied" /> : <CopyIcon className="size-3 opacity-60" aria-hidden />}
+    </button>
+  );
+}
+
+/** Mono, uppercase section label (v2 type scale). */
+function Label({ children, className }: { children: ReactNode; className?: string }) {
+  return <h3 className={cn('font-mono text-[10.5px] font-semibold tracking-[0.06em] text-subtle-foreground uppercase', className)}>{children}</h3>;
+}
+
+function Property({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="contents">
+      <dt className="flex min-h-9 items-center text-[12.5px] text-muted-foreground">{label}</dt>
+      <dd className="flex min-h-9 min-w-0 items-center text-[13px]">{children}</dd>
     </div>
   );
 }
 
 const inputClass = 'h-8 rounded-md bg-transparent px-1.5 text-sm outline-none placeholder:text-muted-foreground hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none';
 
-function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: string; task: TaskResponse; onOpen: (taskId: string) => void; onDeleted: () => void }) {
+/** Right-hand panel: the task's properties, then the people on it. */
+function TaskProperties({ workspaceId, task }: { workspaceId: string; task: TaskResponse }) {
+  const { update } = useTaskMutations(workspaceId);
+  const { canIn } = usePermissions(workspaceId);
+  const can = (permission: Permission) => canIn(task.spaceId, permission);
+  const canEdit = can('task.update');
+  const memberName = useMemberName(workspaceId);
+  const [estimate, setEstimate] = useResettableState(task.estimateMinutes === null ? '' : String(task.estimateMinutes / 60));
+  const [progress, setProgress] = useResettableState(task.progress === null ? '' : String(task.progress));
+  const save = (body: UpdateTaskRequest) => update.mutate({ taskId: task.id, body });
+  const creator = memberName(task.createdById) ?? 'Someone';
+
+  return (
+    <div className="grid content-start gap-5 overflow-y-auto px-5 py-5">
+      <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-3">
+        <Property label="Status">
+          <StatusPicker variant="pill" workspaceId={workspaceId} value={task.status} disabled={!canEdit} onChange={(status) => update.mutate({ taskId: task.id, body: { statusId: status.id }, status })} />
+        </Property>
+        <Property label="Priority">
+          <PriorityPicker showLabel value={task.priority} disabled={!canEdit} onChange={(priority) => save({ priority })} />
+        </Property>
+        <Property label="Dates">
+          <DateRangeField
+            start={dayOf(task.startDate)}
+            due={dayOf(task.dueDate)}
+            closed={isClosedCategory(task.status.category)}
+            disabled={!canEdit}
+            onChange={({ start, due }) => save({ startDate: start ? dayToIso(start) : null, dueDate: due ? dayToIso(due) : null })}
+          />
+        </Property>
+        <Property label="Estimate">
+          <span className="flex items-center gap-1.5">
+            <input
+              type="number"
+              min={0}
+              step={0.25}
+              value={estimate}
+              disabled={!canEdit}
+              placeholder="Empty"
+              aria-label="Estimate in hours"
+              onChange={(event) => setEstimate(event.target.value)}
+              onBlur={() => save({ estimateMinutes: estimate === '' ? null : Math.round(Number(estimate) * 60) })}
+              className={cn(inputClass, 'w-16 font-mono')}
+            />
+            <span className="text-muted-foreground">h</span>
+          </span>
+        </Property>
+        <Property label="Complete">
+          <span className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={progress}
+              disabled={!canEdit}
+              placeholder="Empty"
+              aria-label="Percent complete"
+              onChange={(event) => setProgress(event.target.value)}
+              onBlur={() => save({ progress: progress === '' ? null : Math.max(0, Math.min(100, Math.round(Number(progress)))) })}
+              className={cn(inputClass, 'w-14 font-mono')}
+            />
+            <span className="text-muted-foreground">%</span>
+            <span role="meter" aria-label="Percent complete" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number(progress) || 0} className="h-1 w-14 overflow-hidden rounded-full bg-muted">
+              <span className="block h-full rounded-full bg-good" style={{ width: `${Math.max(0, Math.min(100, Number(progress) || 0))}%` }} />
+            </span>
+          </span>
+        </Property>
+        <Property label="Created">
+          <span className="font-mono text-xs text-muted-foreground">{formatNumericDate(task.createdAt)}</span>
+        </Property>
+      </dl>
+
+      <div className="grid gap-2 border-t pt-4">
+        <Label>People</Label>
+        <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-3">
+          <Property label="Assignees">
+            <AssigneePicker
+              showName
+              workspaceId={workspaceId}
+              values={task.assigneeIds?.length ? task.assigneeIds : (task.assigneeId ? [task.assigneeId] : [])}
+              disabled={!can('task.assign')}
+              onChangeMultiple={(assigneeIds) => save({ assigneeIds })}
+            />
+          </Property>
+          <Property label="Reporter">
+            <span className="flex items-center gap-2">
+              <UserAvatar name={creator} className="size-5 text-[9px]" />
+              {creator}
+            </span>
+          </Property>
+          <Property label="Watchers">
+            <Watchers workspaceId={workspaceId} taskId={task.id} />
+          </Property>
+        </dl>
+      </div>
+    </div>
+  );
+}
+
+/** The left column: header, title, description, subtasks, relations, development and activity. */
+function TaskMain({
+  workspaceId,
+  task,
+  onOpen,
+  onDeleted,
+  properties,
+}: {
+  workspaceId: string;
+  task: TaskResponse;
+  onOpen: (taskId: string) => void;
+  onDeleted: () => void;
+  /** Shown after the description when there's no side column for them. */
+  properties?: ReactNode;
+}) {
   const { update, remove } = useTaskMutations(workspaceId);
   const { canIn } = usePermissions(workspaceId);
   const can = (permission: Permission) => canIn(task.spaceId, permission);
@@ -159,40 +287,27 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
   const [title, setTitle] = useResettableState(task.title);
   const [description, setDescription] = useResettableState(task.description);
   const [editingDescription, setEditingDescription] = useState(false);
-  const [estimate, setEstimate] = useResettableState(task.estimateMinutes === null ? '' : String(task.estimateMinutes / 60));
-  const [progress, setProgress] = useResettableState(task.progress === null ? '' : String(task.progress));
   const save = (body: UpdateTaskRequest) => update.mutate({ taskId: task.id, body });
 
   return (
-    <div className="grid gap-6 px-8 py-6">
+    <div className="grid gap-7 px-8 py-6">
       <div className="grid gap-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger disabled={!canEdit} className="w-fit rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={`Type: ${TYPE_META[task.type].label}`}>
-            <span className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs hover:bg-muted">
-              <CircleDotIcon className="size-3.5 text-primary" />
-              {TYPE_META[task.type].label}
-            </span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {TASK_TYPES.map((type) => (
-              <DropdownMenuItem key={type} onSelect={() => save({ type })}>
-                <TypeBadge type={type} />
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <div className="flex items-start gap-2">
-          <textarea
-            value={title}
-            maxLength={TASK_TITLE_MAX}
-            disabled={!canEdit}
-            rows={1}
-            onChange={(event) => setTitle(event.target.value)}
-            onBlur={() => title.trim() && title.trim() !== task.title && save({ title: title.trim() })}
-            onKeyDown={(event) => event.key === 'Enter' && (event.preventDefault(), event.currentTarget.blur())}
-            aria-label="Task title"
-            className="field-sizing-content min-w-0 flex-1 resize-none rounded-md bg-transparent px-1 text-[28px] leading-tight font-bold outline-none hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger disabled={!canEdit} className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={`Type: ${TYPE_META[task.type].label}`}>
+              <TypeBadge type={task.type} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {TASK_TYPES.map((type) => (
+                <DropdownMenuItem key={type} onSelect={() => save({ type })}>
+                  <TypeBadge type={type} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <StatusPicker variant="pill" workspaceId={workspaceId} value={task.status} disabled={!canEdit} onChange={(status) => update.mutate({ taskId: task.id, body: { statusId: status.id }, status })} />
+          <div className="flex-1" />
+          <TaskTimeControls workspaceId={workspaceId} task={{ id: task.id, number: task.number, title: task.title, spaceId: task.spaceId }} />
           {can('task.delete') ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-md p-1.5 text-muted-foreground hover:bg-muted" aria-label="Task actions">
@@ -214,91 +329,17 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
             </DropdownMenu>
           ) : null}
         </div>
-      </div>
-
-      <dl className="grid gap-x-10 gap-y-0.5 lg:grid-cols-2">
-        <div className="grid content-start gap-0.5">
-          <Property icon={<CircleDotIcon />} label="Status">
-            <StatusPicker variant="pill" workspaceId={workspaceId} value={task.status} disabled={!canEdit} onChange={(status) => update.mutate({ taskId: task.id, body: { statusId: status.id }, status })} />
-          </Property>
-          <Property icon={<CalendarDaysIcon />} label="Dates">
-            <DateRangeField
-              start={dayOf(task.startDate)}
-              due={dayOf(task.dueDate)}
-              closed={isClosedCategory(task.status.category)}
-              disabled={!canEdit}
-              onChange={({ start, due }) => save({ startDate: start ? dayToIso(start) : null, dueDate: due ? dayToIso(due) : null })}
-            />
-          </Property>
-          <Property icon={<HourglassIcon />} label="Work">
-            <span className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                step={0.25}
-                value={estimate}
-                disabled={!canEdit}
-                placeholder="Empty"
-                aria-label="Estimate in hours"
-                onChange={(event) => setEstimate(event.target.value)}
-                onBlur={() => save({ estimateMinutes: estimate === '' ? null : Math.round(Number(estimate) * 60) })}
-                className={cn(inputClass, 'w-16')}
-              />
-              <span className="text-muted-foreground">hours</span>
-            </span>
-          </Property>
-          <Property icon={<ClockIcon />} label="Track time">
-            <TaskTimeControls workspaceId={workspaceId} task={{ id: task.id, number: task.number, title: task.title, spaceId: task.spaceId }} />
-          </Property>
-        </div>
-        <div className="grid content-start gap-0.5">
-          <Property icon={<UserRoundIcon />} label="Assignees">
-            <AssigneePicker
-              showName
-              workspaceId={workspaceId}
-              values={task.assigneeIds?.length ? task.assigneeIds : (task.assigneeId ? [task.assigneeId] : [])}
-              disabled={!can('task.assign')}
-              onChangeMultiple={(assigneeIds) => save({ assigneeIds })}
-            />
-          </Property>
-          <Property icon={<FlagIcon />} label="Priority">
-            <PriorityPicker showLabel value={task.priority} disabled={!canEdit} onChange={(priority) => save({ priority })} />
-          </Property>
-          <Property icon={<PercentIcon />} label="% complete">
-            <span className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={progress}
-                disabled={!canEdit}
-                placeholder="Empty"
-                aria-label="Percent complete"
-                onChange={(event) => setProgress(event.target.value)}
-                onBlur={() => save({ progress: progress === '' ? null : Math.max(0, Math.min(100, Math.round(Number(progress)))) })}
-                className={cn(inputClass, 'w-14')}
-              />
-              <span className="text-muted-foreground">%</span>
-              <span role="meter" aria-label="Percent complete" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number(progress) || 0} className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                <span className="block h-full rounded-full bg-good" style={{ width: `${Math.max(0, Math.min(100, Number(progress) || 0))}%` }} />
-              </span>
-            </span>
-          </Property>
-          <Property icon={<EyeIcon />} label="Watchers">
-            <Watchers workspaceId={workspaceId} taskId={task.id} />
-          </Property>
-        </div>
-      </dl>
-
-      <section className="grid gap-2 border-t pt-5">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Description</h3>
-          {canEdit && !editingDescription ? (
-            <button type="button" className="text-sm text-primary hover:underline" onClick={() => setEditingDescription(true)}>
-              Edit
-            </button>
-          ) : null}
-        </div>
+        <textarea
+          value={title}
+          maxLength={TASK_TITLE_MAX}
+          disabled={!canEdit}
+          rows={1}
+          onChange={(event) => setTitle(event.target.value)}
+          onBlur={() => title.trim() && title.trim() !== task.title && save({ title: title.trim() })}
+          onKeyDown={(event) => event.key === 'Enter' && (event.preventDefault(), event.currentTarget.blur())}
+          aria-label="Task title"
+          className="field-sizing-content min-w-0 resize-none rounded-md bg-transparent px-1 text-[30px] leading-tight font-semibold tracking-[-0.025em] outline-none hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
+        />
         {editingDescription ? (
           <Textarea
             autoFocus
@@ -317,19 +358,44 @@ function TaskBody({ workspaceId, task, onOpen, onDeleted }: { workspaceId: strin
             type="button"
             disabled={!canEdit}
             onClick={() => setEditingDescription(true)}
-            className="rounded-md px-1 py-1 text-left text-sm whitespace-pre-wrap hover:bg-muted/40 disabled:hover:bg-transparent"
+            className="rounded-md px-1 py-1 text-left text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground hover:bg-muted/40 disabled:hover:bg-transparent"
             aria-label="Description"
           >
-            {task.description || <span className="text-muted-foreground">Add a description…</span>}
+            {task.description ? <span className="text-foreground/90">{task.description}</span> : 'Add a description…'}
           </button>
         )}
-      </section>
+      </div>
 
+      {properties}
       <Subtasks workspaceId={workspaceId} task={task} onOpen={onOpen} />
       <Relations workspaceId={workspaceId} task={task} onOpen={onOpen} />
       <PullRequestsSection workspaceId={workspaceId} taskId={task.id} />
-      <History workspaceId={workspaceId} taskId={task.id} />
+      <ActivityTabs workspaceId={workspaceId} task={task} />
     </div>
+  );
+}
+
+/** Comments and the change history, as tabs (design: Activity / Comments / History). */
+function ActivityTabs({ workspaceId, task }: { workspaceId: string; task: TaskResponse }) {
+  const { data: activity = [] } = useTaskActivity(workspaceId, task.id);
+  const { data: comments = [] } = useComments(workspaceId, task.id);
+  return (
+    <Tabs defaultValue="comments" className="grid gap-3 border-t pt-5">
+      <TabsList className="h-auto w-fit justify-start gap-1 bg-transparent p-0">
+        <TabsTrigger value="comments" className="h-8 rounded-md px-2.5 data-[state=active]:bg-selected data-[state=active]:shadow-none">
+          <MessageSquareIcon /> Comments <span className="font-mono text-[11px] text-subtle-foreground">{comments.length}</span>
+        </TabsTrigger>
+        <TabsTrigger value="history" className="h-8 rounded-md px-2.5 data-[state=active]:bg-selected data-[state=active]:shadow-none">
+          <HistoryIcon /> History <span className="font-mono text-[11px] text-subtle-foreground">{activity.length}</span>
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="comments">
+        <CommentThread heading={false} workspaceId={workspaceId} taskId={task.id} spaceId={task.spaceId} />
+      </TabsContent>
+      <TabsContent value="history">
+        <History activity={activity} />
+      </TabsContent>
+    </Tabs>
   );
 }
 
@@ -373,18 +439,28 @@ function Subtasks({ workspaceId, task, onOpen }: { workspaceId: string; task: Ta
       storageKey="task-detail:subtasks"
       className="border-t pt-4"
       title={
-        <span className="flex items-center gap-2 font-semibold">
-          <GitBranchIcon className="size-4" /> Subtasks
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          <GitBranchIcon className="size-4 text-muted-foreground" /> Subtasks
         </span>
       }
-      count={subtasks.length}
-      actions={subtasks.length ? <span className="text-xs text-muted-foreground">{done} done</span> : null}
+      actions={
+        subtasks.length ? (
+          <span className="flex items-center gap-2">
+            <span className="font-mono text-[11px] text-subtle-foreground">
+              {done}/{subtasks.length}
+            </span>
+            <span role="meter" aria-label="Subtasks done" aria-valuemin={0} aria-valuemax={subtasks.length} aria-valuenow={done} className="h-1 w-20 overflow-hidden rounded-full bg-muted">
+              <span className="block h-full rounded-full bg-status-done" style={{ width: `${(done / subtasks.length) * 100}%` }} />
+            </span>
+          </span>
+        ) : null
+      }
     >
       <ul className="grid gap-0.5 pt-1">
         {subtasks.map((subtask) => (
           <li key={subtask.id} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/50">
             <StatusPicker variant="ring" workspaceId={workspaceId} value={subtask.status} disabled={!can('task.update')} onChange={(status) => update.mutate({ taskId: subtask.id, body: { statusId: status.id }, status })} />
-            <span className="text-xs tabular-nums text-muted-foreground">#{subtask.number}</span>
+            <span className="font-mono text-[11.5px] text-subtle-foreground">#{subtask.number}</span>
             <button type="button" className={cn('min-w-0 flex-1 truncate text-left text-sm hover:text-primary', isClosedCategory(subtask.status.category) && 'text-muted-foreground line-through')} onClick={() => onOpen(subtask.id)}>
               {subtask.title}
             </button>
@@ -446,8 +522,8 @@ function Relations({ workspaceId, task, onOpen }: { workspaceId: string; task: T
       storageKey="task-detail:relations"
       className="border-t pt-4"
       title={
-        <span className="flex items-center gap-2 font-semibold">
-          <LinkIcon className="size-4" /> Relations
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          <LinkIcon className="size-4 text-muted-foreground" /> Relations
         </span>
       }
       count={relations.length}
@@ -457,7 +533,7 @@ function Relations({ workspaceId, task, onOpen }: { workspaceId: string; task: T
           <li key={relation.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-muted/50">
             <span className="w-24 shrink-0 text-xs text-muted-foreground">{KIND_LABEL[relation.kind][relation.outgoing ? 'outgoing' : 'incoming']}</span>
             <StatusDot status={relation.task.status} />
-            <span className="text-xs tabular-nums text-muted-foreground">#{relation.task.number}</span>
+            <span className="font-mono text-[11.5px] text-subtle-foreground">#{relation.task.number}</span>
             <button type="button" className="min-w-0 flex-1 truncate text-left hover:text-primary" onClick={() => onOpen(relation.task.id)}>
               {relation.task.title}
             </button>
@@ -502,23 +578,13 @@ function ago(iso: string): string {
   return relative.format(-Math.round(minutes / 1440), 'day');
 }
 
-function History({ workspaceId, taskId }: { workspaceId: string; taskId: string }) {
-  const { data: activity = [] } = useTaskActivity(workspaceId, taskId);
+function History({ activity }: { activity: readonly { id: string; actorName: string | null; field: string | null; from: string | null; to: string | null; kind: string; createdAt: string }[] }) {
   return (
-    <Section
-      storageKey="task-detail:history"
-      defaultOpen={false}
-      className="border-t pt-4"
-      title={
-        <span className="flex items-center gap-2 font-semibold">
-          <HistoryIcon className="size-4" /> History
-        </span>
-      }
-      count={activity.length}
-    >
-      <ol className="grid gap-2 pt-2 pl-2 text-sm">
-        {activity.map((item) => (
-          <li key={item.id} className="text-muted-foreground">
+    <ol className="grid gap-2.5 text-sm">
+      {activity.map((item) => (
+        <li key={item.id} className="flex gap-2.5">
+          <UserAvatar name={item.actorName ?? '?'} className="mt-0.5 size-5 shrink-0 text-[9px]" />
+          <span className="text-muted-foreground">
             <span className="font-medium text-foreground">{item.actorName ?? 'Someone'}</span>{' '}
             {item.field ? (
               <>
@@ -528,11 +594,11 @@ function History({ workspaceId, taskId }: { workspaceId: string; taskId: string 
             ) : (
               item.kind.replace(/_/g, ' ')
             )}{' '}
-            · {ago(item.createdAt)}
-          </li>
-        ))}
-        {activity.length === 0 ? <li className="text-muted-foreground">No changes yet.</li> : null}
-      </ol>
-    </Section>
+            <span className="font-mono text-[11px] text-subtle-foreground">· {ago(item.createdAt)}</span>
+          </span>
+        </li>
+      ))}
+      {activity.length === 0 ? <li className="text-muted-foreground">No changes yet.</li> : null}
+    </ol>
   );
 }

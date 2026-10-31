@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,300,0..1,0&display=block">
+<style>
+[data-theme=dark]{--bg:#09090b;--rail:#0c0c0e;--card:#111113;--muted:#18181b;--muted2:#232327;--border:#27272a;--border2:#3f3f46;--fg:#fafafa;--fg2:#a1a1aa;--fg3:#71717a;--canvas:#050506;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#60a5fa}
+[data-theme=light]{--bg:#ffffff;--rail:#fafafa;--card:#ffffff;--muted:#f4f4f5;--muted2:#ececee;--border:#e4e4e7;--border2:#d4d4d8;--fg:#09090b;--fg2:#52525b;--fg3:#a1a1aa;--canvas:#f4f4f5;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--info:#2563eb}
+[data-accent=orange]{--acc:#f97316;--acc2:#ea580c}[data-accent=blue]{--acc:#3b82f6;--acc2:#2563eb}[data-accent=emerald]{--acc:#10b981;--acc2:#059669}[data-accent=rose]{--acc:#f43f5e;--acc2:#e11d48}[data-accent=zinc]{--acc:#a1a1aa;--acc2:#71717a}
+[data-accent]{--acc-soft:color-mix(in oklab,var(--acc) 14%,transparent);--acc-soft2:color-mix(in oklab,var(--acc) 40%,transparent)}
+[data-radius=sm]{--r:4px;--r2:6px}[data-radius=md]{--r:8px;--r2:12px}[data-radius=lg]{--r:12px;--r2:16px}
+body{margin:0;background:#050506;font-family:Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+i{font-family:'Material Symbols Rounded';font-style:normal;font-size:16px;line-height:1;display:inline-flex;font-feature-settings:'liga';user-select:none;flex:none}
+.dv-turn{padding:56px 64px 48px;border-bottom:1px solid var(--border)}.dv-thd{display:flex;align-items:baseline;gap:12px;margin:0 0 6px}.dv-tid{font:600 11px 'Geist Mono',monospace;padding:3px 8px;background:var(--fg);color:var(--bg);border-radius:4px;text-decoration:none}.dv-tname{font:600 22px/1.2 Geist,sans-serif;color:var(--fg);letter-spacing:-.02em}.dv-sub{font:400 13.5px/1.55 Geist,sans-serif;color:var(--fg2);margin:0 0 32px;max-width:860px}.dv-opts{display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:14px;scroll-margin-top:16px}.dv-oid{font:600 10.5px 'Geist Mono',monospace;padding:3px 7px;background:var(--muted2);color:var(--fg);border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 Geist,sans-serif;color:var(--fg2)}.dv-opt:target .dv-oid{background:var(--acc);color:#fff}.dv-next{margin:28px 0 0;font:12px/1.5 Geist,sans-serif;color:var(--fg3)}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" data-accent="{{ accent }}" data-radius="{{ radius }}" style="background:var(--canvas);background-image:radial-gradient(color-mix(in oklab,var(--fg) 7%,transparent) 1px,transparent 1px);background-size:6px 6px;color:var(--fg);min-height:100vh">
+
+<section class="dv-turn" id="t1" data-screen-label="01 Tracker with tabs">
+  <div style="max-width:1440px;margin-bottom:40px">
+    <div style="font:500 11px 'Geist Mono';color:var(--fg3);letter-spacing:.08em;margin-bottom:14px">TASKFLOW v2 · DARK-FIRST · COMPOSABLE</div>
+    <div style="font-size:64px;font-weight:600;letter-spacing:-.045em;line-height:.98">Tasks, chat and calls.<br>One workbench.</div>
+    <div style="font-size:16px;color:var(--fg2);margin-top:16px;max-width:620px;line-height:1.5">Every page opens as a tab. Pin, split, reorder, and restore them on any device. Accent, radius, font and density are yours to set — try Tweaks.</div>
+  </div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Tracker · Kanban · workbench tabs · inbox panel</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:-40px 0 90px -40px var(--acc),40px 0 90px -40px #3b82f6,0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="tracker" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="issues" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="width:236px;flex:none;border-right:1px solid var(--border);background:var(--rail);padding:16px 12px;display:flex;flex-direction:column;gap:2px">
+              <div style="font-size:20px;font-weight:600;letter-spacing:-.02em;padding:0 8px 12px">Tracker</div>
+              <sc-for list="{{ trackNav }}" as="n" hint-placeholder-count="3"><div style="height:34px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:var(--r);color:var(--fg2)"><i style="font-size:18px">{{ n.i }}</i>{{ n.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--fg3)">{{ n.b }}</span></div></sc-for>
+              <div style="height:1px;background:var(--border);margin:10px 4px"></div>
+              <div style="display:flex;align-items:center;gap:6px;padding:4px 10px 8px;font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--fg3)"><i style="font-size:14px">expand_more</i>YOUR PROJECTS<i style="margin-left:auto;font-size:14px">add</i></div>
+              <sc-for list="{{ projects }}" as="p" hint-placeholder-count="8"><div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 10px 0 {{ p.pad }};border-radius:var(--r);color:{{ p.c }};background:{{ p.bg }};font-weight:{{ p.w }}"><span style="width:10px;height:10px;border-radius:{{ p.shape }};border:2px solid {{ p.dot }};box-sizing:border-box;display:{{ p.showDot }}"></span>{{ p.n }}</div></sc-for>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+              <div style="padding:18px 24px 0;display:flex;flex-direction:column;gap:4px">
+                <div style="font-size:12.5px;color:var(--fg3);display:flex;gap:8px">Your projects<span>/</span>Platform<span>/</span><span style="color:var(--acc)">Issues</span></div>
+                <div style="display:flex;align-items:center;gap:12px"><span style="font-size:24px;font-weight:600;letter-spacing:-.02em">Issues</span><div style="flex:1"></div>
+                  <div style="display:flex"><sc-for list="{{ people5 }}" as="p" hint-placeholder-count="4"><span style="width:28px;height:28px;border-radius:50%;background:{{ p.g }};color:#fff;font:600 10px Geist;display:grid;place-items:center;border:2px solid var(--bg);margin-right:-8px">{{ p.i }}</span></sc-for><span style="width:28px;height:28px;border-radius:50%;background:var(--muted2);color:var(--fg2);font:600 10px Geist;display:grid;place-items:center;border:2px solid var(--bg)">+3</span></div>
+                  <span style="height:32px;padding:0 12px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;gap:6px;font-weight:500;margin-left:8px"><i style="font-size:16px">add</i>New issue</span>
+                </div>
+              </div>
+              <div style="height:46px;display:flex;align-items:end;gap:4px;padding:0 16px;border-bottom:1px solid var(--border)">
+                <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="4"><span style="height:40px;padding:0 12px;display:flex;align-items:center;gap:8px;border-bottom:2px solid {{ v.bd }};color:{{ v.c }};font-weight:{{ v.w }}"><i style="font-size:17px">{{ v.i }}</i>{{ v.n }}</span></sc-for>
+                <span style="height:40px;padding:0 8px;display:flex;align-items:center;color:var(--fg3)"><i style="font-size:17px">add</i></span>
+                <div style="flex:1"></div>
+                <span style="height:30px;margin-bottom:7px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:15px">tune</i>Filter</span>
+                <span style="height:30px;margin-bottom:7px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:15px">view_agenda</i>Display</span>
+              </div>
+              <div style="flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:16px;min-height:0;position:relative;overflow:hidden">
+                <sc-for list="{{ kanban }}" as="col" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+                    <div style="height:28px;display:flex;align-items:center;gap:8px;font:600 11.5px Geist;letter-spacing:.04em;text-transform:uppercase"><span style="width:8px;height:8px;border-radius:50%;background:{{ col.c }}"></span>{{ col.n }}<span style="color:var(--fg3);font-weight:400">— {{ col.count }}</span><i style="margin-left:auto;color:var(--fg3)">more_horiz</i></div>
+                    <div style="height:34px;border:1px dashed var(--border2);border-radius:var(--r);display:grid;place-items:center;color:var(--fg3)"><i>add</i></div>
+                    <sc-for list="{{ col.cards }}" as="k" hint-placeholder-count="2">
+                      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;opacity:{{ k.op }}">
+                        <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+                          <div style="display:flex;font:500 10.5px 'Geist Mono';color:var(--fg3)">{{ k.id }}</div>
+                          <div style="font-size:13.5px;font-weight:500;line-height:1.35;text-wrap:pretty">{{ k.t }}</div>
+                          <div style="display:flex;gap:5px;flex-wrap:wrap"><sc-for list="{{ k.tags }}" as="g" hint-placeholder-count="2"><span style="height:20px;padding:0 8px;border-radius:999px;background:{{ g.bg }};color:{{ g.c }};font-size:11px;font-weight:500;display:flex;align-items:center">{{ g.n }}</span></sc-for></div>
+                          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg2)"><span style="width:14px;height:14px;border-radius:50%;background:conic-gradient(var(--acc) {{ k.deg }},var(--border2) 0);-webkit-mask:radial-gradient(circle,transparent 4px,#000 4.5px);mask:radial-gradient(circle,transparent 4px,#000 4.5px)"></span>{{ k.pct }}<span style="display:flex;align-items:center;gap:4px;margin-left:6px;font-family:'Geist Mono';font-size:11.5px"><i style="font-size:14px">{{ k.gi }}</i>{{ k.gh }}</span></div>
+                        </div>
+                        <div style="height:38px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 14px;font-size:11.5px;color:var(--fg3)">
+                          <div style="display:flex"><sc-for list="{{ k.av }}" as="a" hint-placeholder-count="2"><span style="width:22px;height:22px;border-radius:50%;background:{{ a.g }};color:#fff;font:600 8.5px Geist;display:grid;place-items:center;border:2px solid var(--card);margin-right:-6px">{{ a.i }}</span></sc-for></div>
+                          <div style="flex:1"></div><span style="display:flex;align-items:center;gap:3px"><i style="font-size:13px">attach_file</i>{{ k.att }}</span><span style="display:flex;align-items:center;gap:3px"><i style="font-size:13px">chat_bubble</i>{{ k.com }}</span>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+                <div style="position:absolute;left:190px;top:330px;width:290px;transform:rotate(3deg);background:color-mix(in oklab,var(--card) 88%,transparent);backdrop-filter:blur(8px);border:1px solid var(--border2);border-radius:var(--r2);box-shadow:0 24px 50px rgba(0,0,0,.45);padding:14px;display:flex;flex-direction:column;gap:10px">
+                  <div style="font-size:14px;font-weight:500;line-height:1.35">Analyse slow search queries on /v2/tasks</div>
+                  <div style="display:flex;gap:5px"><span style="height:20px;padding:0 8px;border-radius:999px;background:color-mix(in oklab,#60a5fa 20%,transparent);color:#93c5fd;font-size:11px;font-weight:500;display:flex;align-items:center">Low</span><span style="height:20px;padding:0 8px;border-radius:999px;background:color-mix(in oklab,#f97316 20%,transparent);color:#fdba74;font-size:11px;font-weight:500;display:flex;align-items:center">DevOps</span><span style="height:20px;padding:0 8px;border-radius:999px;background:color-mix(in oklab,#a78bfa 20%,transparent);color:#c4b5fd;font-size:11px;font-weight:500;display:flex;align-items:center">Research</span></div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg2)"><span style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);box-sizing:border-box"></span>0%<span style="margin-left:auto;font:500 10.5px 'Geist Mono';color:var(--fg3)">TF-161</span></div>
+                </div>
+              </div>
+            </div>
+            <div style="width:372px;flex:none;border-left:1px solid var(--border);background:var(--rail);display:flex;flex-direction:column">
+              <div style="height:56px;display:flex;align-items:center;padding:0 16px"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Inbox</span><div style="flex:1"></div><i style="color:var(--fg3);font-size:18px">done_all</i><i style="color:var(--fg3);font-size:18px;margin-left:12px">close</i></div>
+              <div style="display:flex;gap:4px;padding:0 10px;border-bottom:1px solid var(--border)">
+                <sc-for list="{{ inboxTabs }}" as="t" hint-placeholder-count="3"><span style="height:40px;padding:0 10px;display:flex;align-items:center;gap:7px;border-bottom:2px solid {{ t.bd }};color:{{ t.c }}"><i style="font-size:17px">{{ t.i }}</i>{{ t.n }}<span style="min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:{{ t.bb }};color:#fff;font:600 10.5px Geist;display:{{ t.bdisp }};place-items:center">{{ t.b }}</span></span></sc-for>
+              </div>
+              <sc-for list="{{ inbox }}" as="n" hint-placeholder-count="6">
+                <div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);opacity:{{ n.op }}">
+                  <span style="width:36px;height:36px;border-radius:50%;background:{{ n.g }};color:#fff;font:600 12px Geist;display:grid;place-items:center;flex:none">{{ n.ai }}</span>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                    <div style="font-size:13px;line-height:1.45;color:var(--fg2)"><b style="color:var(--fg);font-weight:500">{{ n.who }}</b> {{ n.text }} <b style="color:var(--fg);font-weight:500">{{ n.obj }}</b></div>
+                    <div style="font-size:11.5px;color:var(--fg3)">{{ n.t }} · {{ n.where }}</div>
+                    <sc-if value="{{ n.join }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:6px;margin-top:4px"><span style="height:28px;padding:0 10px;border-radius:var(--r);background:#ef4444;color:#fff;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500"><i style="font-size:15px">videocam</i>Join call</span><span style="height:28px;padding:0 10px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;font-size:12px">Later</span></div></sc-if>
+                  </div>
+                  <span style="width:7px;height:7px;border-radius:50%;background:{{ n.dot }};margin-top:6px;flex:none"></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t2" data-screen-label="02 Chat">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Chat — channels, threads, task embeds, huddles</span></div>
+  <p class="dv-sub">Chat is first-class: every message can become a task, every task has a thread, and a live call follows you as a floating window while you work in other tabs.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>#platform · thread open · call PiP</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.02);font-size:13px;position:relative">
+        <dc-import name="TF2 Rail" active="chat" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="chat" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="width:236px;flex:none;border-right:1px solid var(--border);background:var(--rail);padding:16px 12px;display:flex;flex-direction:column;gap:2px">
+              <div style="display:flex;align-items:center;padding:0 8px 12px"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Chat</span><i style="margin-left:auto;color:var(--fg3);font-size:18px">edit_square</i></div>
+              <sc-for list="{{ chatTop }}" as="n" hint-placeholder-count="3"><div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:var(--r);color:var(--fg2)"><i style="font-size:17px">{{ n.i }}</i>{{ n.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--fg3)">{{ n.b }}</span></div></sc-for>
+              <div style="padding:14px 10px 6px;font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--fg3)">CHANNELS</div>
+              <sc-for list="{{ channels }}" as="c" hint-placeholder-count="5"><div style="height:32px;display:flex;align-items:center;gap:8px;padding:0 10px;border-radius:var(--r);background:{{ c.bg }};color:{{ c.c }};font-weight:{{ c.w }}"><i style="font-size:16px;color:var(--fg3)">tag</i>{{ c.n }}<span style="margin-left:auto;display:flex;align-items:center;gap:6px"><i style="font-size:14px;color:#ef4444;display:{{ c.live }}">graphic_eq</i><span style="min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:var(--acc);color:#fff;font:600 10.5px Geist;display:{{ c.bd }};place-items:center">{{ c.u }}</span></span></div></sc-for>
+              <div style="padding:14px 10px 6px;font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--fg3)">DIRECT</div>
+              <sc-for list="{{ dms }}" as="d" hint-placeholder-count="5"><div style="height:34px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:var(--r);color:var(--fg2)"><span style="position:relative;width:22px;height:22px;border-radius:50%;background:{{ d.g }};color:#fff;font:600 8.5px Geist;display:grid;place-items:center">{{ d.i }}<span style="position:absolute;right:-2px;bottom:-2px;width:8px;height:8px;border-radius:50%;background:{{ d.pc }};border:2px solid var(--rail)"></span></span>{{ d.n }}<span style="margin-left:auto;font-size:11px;color:var(--fg3)">{{ d.s }}</span></div></sc-for>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+              <div style="height:56px;flex:none;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--border)">
+                <i style="color:var(--fg3);font-size:20px">tag</i><span style="font-size:16px;font-weight:600">platform</span><span style="color:var(--fg3)">Backend + infra · 8 members</span>
+                <div style="flex:1"></div>
+                <span style="display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:17px">push_pin</i>3</span>
+                <span style="height:32px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:6px"><i style="font-size:16px">headphones</i>Huddle</span>
+                <span style="height:32px;padding:0 12px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;gap:6px;font-weight:500"><i style="font-size:16px">videocam</i>Video call</span>
+              </div>
+              <div style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 20px;background:linear-gradient(90deg,color-mix(in oklab,#ef4444 14%,transparent),transparent);border-bottom:1px solid var(--border)">
+                <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 4px color-mix(in oklab,#ef4444 25%,transparent)"></span><span style="font-weight:500">Sprint 14 stand-up is live</span><span style="color:var(--fg3);font-family:'Geist Mono';font-size:12px">12:04</span>
+                <div style="display:flex;margin-left:6px"><sc-for list="{{ people5 }}" as="p" hint-placeholder-count="4"><span style="width:22px;height:22px;border-radius:50%;background:{{ p.g }};color:#fff;font:600 8.5px Geist;display:grid;place-items:center;border:2px solid var(--bg);margin-right:-6px">{{ p.i }}</span></sc-for></div>
+                <div style="flex:1"></div><span style="height:28px;padding:0 12px;border-radius:var(--r);background:#ef4444;color:#fff;display:flex;align-items:center;font-weight:500;font-size:12px">Join</span>
+              </div>
+              <div style="flex:1;overflow:hidden;padding:12px 0;display:flex;flex-direction:column">
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 20px;color:var(--fg3);font-size:11.5px"><span style="flex:1;height:1px;background:var(--border)"></span>Today<span style="flex:1;height:1px;background:var(--border)"></span></div>
+                <sc-for list="{{ messages }}" as="m" hint-placeholder-count="5">
+                  <div style="display:flex;gap:12px;padding:8px 20px;background:{{ m.bg }}">
+                    <span style="width:36px;height:36px;border-radius:10px;background:{{ m.g }};color:#fff;font:600 12px Geist;display:grid;place-items:center;flex:none">{{ m.i }}</span>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                      <div style="display:flex;align-items:baseline;gap:8px"><span style="font-weight:600">{{ m.n }}</span><span style="font-size:11.5px;color:var(--fg3)">{{ m.t }}</span></div>
+                      <div style="font-size:13.5px;line-height:1.55;color:var(--fg);text-wrap:pretty">{{ m.text }}</div>
+                      <sc-if value="{{ m.task }}" hint-placeholder-val="{{ false }}">
+                        <div style="max-width:520px;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+                          <div style="display:flex;align-items:center;gap:8px"><i style="color:#ef4444;font-size:17px">bug_report</i><span style="font:500 11.5px 'Geist Mono';color:var(--fg3)">TF-142</span><span style="font-weight:500">Fix login crash on SSO redirect</span></div>
+                          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg2)"><span style="height:22px;padding:0 8px;border-radius:999px;background:color-mix(in oklab,#60a5fa 18%,transparent);color:var(--info);display:flex;align-items:center;gap:5px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:var(--info)"></span>In progress</span><span>Dev Patel</span><span>·</span><span style="font-family:'Geist Mono'">#418 CI ✓</span><div style="flex:1"></div><span style="color:var(--acc);font-weight:500">Open tab ↗</span></div>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ m.code }}" hint-placeholder-val="{{ false }}"><div style="max-width:560px;border:1px solid var(--border);border-radius:var(--r);background:var(--muted);padding:10px 12px;font:12px/1.65 'Geist Mono';color:var(--fg2)"><div><span style="color:var(--acc)">await</span> tokenStore.persist(token)</div><div><span style="color:var(--acc)">await</span> session.restore()   <span style="color:var(--fg3)">// was racing</span></div></div></sc-if>
+                      <div style="display:flex;gap:6px;align-items:center"><sc-for list="{{ m.reacts }}" as="r" hint-placeholder-count="0"><span style="height:24px;padding:0 8px;border-radius:999px;border:1px solid {{ r.bd }};background:{{ r.bg }};display:flex;align-items:center;gap:5px;font-size:12px">{{ r.e }}<span style="font:500 11px 'Geist Mono';color:var(--fg2)">{{ r.n }}</span></span></sc-for><sc-if value="{{ m.replies }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--acc);font-weight:500;margin-left:4px"><span style="display:flex"><span style="width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#a16207,#713f12);border:1.5px solid var(--bg)"></span><span style="width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#1d4ed8,#1e3a8a);border:1.5px solid var(--bg);margin-left:-5px"></span></span>{{ m.replies }}</span></sc-if></div>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:8px;padding:6px 20px;font-size:12px;color:var(--fg3)"><span style="display:flex;gap:3px"><span style="width:4px;height:4px;border-radius:50%;background:var(--fg3)"></span><span style="width:4px;height:4px;border-radius:50%;background:var(--fg3);opacity:.6"></span><span style="width:4px;height:4px;border-radius:50%;background:var(--fg3);opacity:.3"></span></span>Jonas is typing…</div>
+              </div>
+              <div style="margin:0 20px 18px;border:1px solid var(--border2);border-radius:var(--r2);background:var(--card)">
+                <div style="padding:12px 14px;font-size:13.5px;color:var(--fg)">Shipping the fix today — <span style="color:var(--acc);background:var(--acc-soft);border-radius:4px;padding:0 4px">@Liam</span> can you re-review <span style="font-family:'Geist Mono';font-size:12.5px;background:var(--muted2);border-radius:4px;padding:1px 5px">#418</span>?<span style="display:inline-block;width:1.5px;height:17px;background:var(--fg);vertical-align:middle;margin-left:2px"></span></div>
+                <div style="height:40px;display:flex;align-items:center;gap:2px;padding:0 8px;border-top:1px solid var(--border)"><sc-for list="{{ composer }}" as="c" hint-placeholder-count="7"><i style="padding:6px;color:var(--fg3);font-size:18px">{{ c }}</i></sc-for><span style="margin-left:8px;height:24px;padding:0 8px;border-radius:999px;border:1px solid var(--border2);display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--fg2)"><i style="font-size:14px">task_alt</i>/task</span><div style="flex:1"></div><span style="font:500 11px 'Geist Mono';color:var(--fg3);margin-right:8px">↵ send · ⇧↵ newline</span><span style="width:32px;height:32px;border-radius:var(--r);background:var(--acc);color:#fff;display:grid;place-items:center"><i style="font-size:18px">arrow_upward</i></span></div>
+              </div>
+            </div>
+            <div style="width:360px;flex:none;border-left:1px solid var(--border);background:var(--rail);display:flex;flex-direction:column">
+              <div style="height:56px;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid var(--border)"><span style="font-weight:600;font-size:15px">Thread</span><span style="color:var(--fg3)">#platform</span><div style="flex:1"></div><i style="color:var(--fg3);font-size:18px">add_task</i><i style="color:var(--fg3);font-size:18px;margin-left:10px">close</i></div>
+              <div style="padding:16px;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+                <sc-for list="{{ thread }}" as="m" hint-placeholder-count="4"><div style="display:flex;gap:10px"><span style="width:30px;height:30px;border-radius:9px;background:{{ m.g }};color:#fff;font:600 10.5px Geist;display:grid;place-items:center;flex:none">{{ m.i }}</span><div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;gap:8px;align-items:baseline"><span style="font-weight:600">{{ m.n }}</span><span style="font-size:11px;color:var(--fg3)">{{ m.t }}</span></div><div style="line-height:1.5;color:var(--fg2)">{{ m.text }}</div></div></div></sc-for>
+                <div style="border:1px dashed var(--border2);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:10px;color:var(--fg2);font-size:12.5px"><i style="color:var(--acc)">auto_awesome</i>Turn this thread into a subtask of TF-142<span style="margin-left:auto;color:var(--acc);font-weight:500">Create</span></div>
+              </div>
+              <div style="margin-top:auto;padding:14px 16px"><div style="height:40px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;padding:0 12px;color:var(--fg3)">Reply…</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;right:384px;bottom:96px;width:300px;border-radius:14px;overflow:hidden;border:1px solid var(--border2);background:#0b0b0d;box-shadow:0 24px 60px rgba(0,0,0,.55)">
+          <div style="height:160px;position:relative;background:radial-gradient(circle at 40% 40%,#1e3a8a,#0b0b0d 70%);display:grid;place-items:center"><span style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#334155,#1e293b);color:#fff;font:600 22px Geist;display:grid;place-items:center;box-shadow:0 0 0 3px var(--acc)">DP</span><span style="position:absolute;left:10px;bottom:8px;font-size:11.5px;color:#fff;display:flex;align-items:center;gap:5px"><i style="font-size:14px">graphic_eq</i>Dev Patel</span><span style="position:absolute;right:8px;top:8px;width:64px;height:44px;border-radius:8px;background:linear-gradient(135deg,#0f766e,#134e4a);border:1px solid rgba(255,255,255,.15);display:grid;place-items:center;color:#fff;font:600 11px Geist">You</span></div>
+          <div style="height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;color:#fafafa;font-size:12px"><span style="width:7px;height:7px;border-radius:50%;background:#ef4444"></span>Stand-up · 12:04<div style="flex:1"></div><i style="padding:5px;font-size:17px">mic</i><i style="padding:5px;font-size:17px">videocam</i><i style="padding:5px;font-size:17px">open_in_full</i><span style="width:30px;height:26px;border-radius:7px;background:#ef4444;display:grid;place-items:center"><i style="font-size:16px">call_end</i></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t3" data-screen-label="03 Video call">
+  <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Video call — stand-up with tasks on the side</span></div>
+  <p class="dv-sub">Calls live in a tab like anything else. The side panel is a layout: People, Chat, Tasks (per-person yesterday / today / blocked) and Notes. Tiles are placeholders for camera feeds.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="3a">
+      <div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Sprint 14 stand-up · screen share + speaker strip</div>
+      <div data-theme="dark" style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:#060607;box-shadow:-40px 0 90px -40px #ef4444,40px 0 90px -40px var(--acc),0 30px 80px -20px rgba(0,0,0,.6);font-size:13px;color:var(--fg)">
+        <dc-import name="TF2 Rail" active="video" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="call" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:14px;gap:12px">
+              <div style="display:flex;align-items:center;gap:10px"><span style="height:26px;padding:0 10px;border-radius:999px;background:color-mix(in oklab,#ef4444 18%,transparent);color:#fca5a5;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500"><span style="width:7px;height:7px;border-radius:50%;background:#ef4444"></span>REC 12:04</span><span style="font-size:16px;font-weight:600">Sprint 14 stand-up</span><span style="color:var(--fg3)">#platform · 6 in call</span><div style="flex:1"></div><span style="height:30px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:16px">grid_view</i>Layout</span><span style="height:30px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:6px;color:var(--fg2)"><i style="font-size:16px">person_add</i>Invite</span></div>
+              <div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;min-height:0">
+                <div style="position:relative;border-radius:14px;border:1px solid var(--border);background:var(--bg);overflow:hidden;display:flex;flex-direction:column">
+                  <div style="height:34px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--rail);border-bottom:1px solid var(--border);font-size:12px;color:var(--fg2)"><i style="font-size:15px;color:var(--acc)">present_to_all</i>Maya is sharing · <b style="color:var(--fg);font-weight:500">Sprint 14 board</b><div style="flex:1"></div><span style="color:var(--acc);font-weight:500">Open in my tab ↗</span></div>
+                  <div style="flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:14px">
+                    <sc-for list="{{ kanban }}" as="col" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:8px"><div style="font:600 10.5px Geist;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:{{ col.c }}"></span>{{ col.n }}</div><sc-for list="{{ col.cards }}" as="k" hint-placeholder-count="2"><div style="background:var(--card);border:1px solid {{ k.hl }};border-radius:var(--r);padding:10px;font-size:12px;line-height:1.35;font-weight:500;box-shadow:{{ k.hs }}">{{ k.t }}</div></sc-for></div></sc-for>
+                  </div>
+                  <div style="position:absolute;left:46%;top:46%;display:flex;align-items:center;gap:6px"><i style="font-size:22px;color:#fff;font-variation-settings:'FILL' 1">near_me</i><span style="height:20px;padding:0 7px;border-radius:5px;background:#0f766e;color:#fff;font-size:11px;font-weight:500;display:flex;align-items:center">Maya</span></div>
+                  <div style="position:absolute;left:50%;bottom:16px;transform:translateX(-50%);max-width:70%;padding:8px 14px;border-radius:10px;background:rgba(0,0,0,.72);color:#fff;font-size:14px;line-height:1.45;text-align:center"><b style="font-weight:600;color:#fdba74">Dev:</b> the SSO fix is in review, I just need Liam's approval on four-eighteen.</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;min-height:0">
+                  <sc-for list="{{ tiles }}" as="p" hint-placeholder-count="5">
+                    <div style="flex:1;position:relative;border-radius:12px;overflow:hidden;background:{{ p.bg }};border:1px solid var(--border);box-shadow:{{ p.ring }};display:grid;place-items:center;min-height:0">
+                      <span style="width:44px;height:44px;border-radius:50%;background:{{ p.g }};color:#fff;font:600 15px Geist;display:grid;place-items:center;opacity:{{ p.op }}">{{ p.i }}</span>
+                      <span style="position:absolute;left:8px;bottom:6px;font-size:11.5px;color:#fff;display:flex;align-items:center;gap:4px"><i style="font-size:13px;color:{{ p.mc }}">{{ p.mic }}</i>{{ p.n }}</span>
+                      <span style="position:absolute;right:8px;top:6px;font-size:14px">{{ p.e }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="height:64px;flex:none;display:flex;align-items:center;justify-content:center;gap:8px">
+                <span style="position:absolute"></span>
+                <sc-for list="{{ controls }}" as="c" hint-placeholder-count="8"><span style="height:46px;min-width:46px;padding:0 {{ c.px }};border-radius:14px;background:{{ c.bg }};color:{{ c.c }};border:1px solid {{ c.bd }};display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:500;box-sizing:border-box"><i style="font-size:21px">{{ c.i }}</i>{{ c.n }}</span></sc-for>
+              </div>
+            </div>
+            <div style="width:360px;flex:none;border-left:1px solid var(--border);background:var(--rail);display:flex;flex-direction:column">
+              <div style="display:flex;gap:2px;padding:10px;border-bottom:1px solid var(--border)"><sc-for list="{{ callTabs }}" as="t" hint-placeholder-count="4"><span style="flex:1;height:30px;border-radius:var(--r);background:{{ t.bg }};color:{{ t.c }};display:flex;align-items:center;justify-content:center;gap:5px;font-size:12.5px;font-weight:500"><i style="font-size:15px">{{ t.i }}</i>{{ t.n }}</span></sc-for></div>
+              <div style="padding:12px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg3)"><i style="font-size:15px">timer</i>Speaking now · 1:12 of 2:00<div style="flex:1;height:4px;border-radius:2px;background:var(--border);margin-left:6px;overflow:hidden"><div style="width:60%;height:100%;background:var(--acc)"></div></div></div>
+              <sc-for list="{{ standup }}" as="s" hint-placeholder-count="4">
+                <div style="margin:0 10px 8px;border:1px solid {{ s.bd }};border-radius:var(--r2);background:var(--card);padding:12px;display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;background:{{ s.g }};color:#fff;font:600 9px Geist;display:grid;place-items:center">{{ s.i }}</span><span style="font-weight:600">{{ s.n }}</span><span style="margin-left:auto;font-size:11px;color:{{ s.sc }}">{{ s.state }}</span></div>
+                  <sc-for list="{{ s.rows }}" as="r" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:58px;font:500 10px 'Geist Mono';letter-spacing:.04em;color:{{ r.kc }}">{{ r.k }}</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ r.id }}</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg2)">{{ r.t }}</span></div></sc-for>
+                </div>
+              </sc-for>
+              <div style="margin-top:auto;padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg2)"><i style="color:var(--acc);font-size:16px">auto_awesome</i>Notes &amp; action items save to Sprint 14 doc<span style="margin-left:auto;width:30px;height:18px;border-radius:9px;background:var(--acc);position:relative"><span style="position:absolute;right:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff"></span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="3b">
+      <div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Incoming call · lobby</div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="width:360px;border-radius:16px;border:1px solid var(--border2);background:var(--card);box-shadow:0 24px 60px rgba(0,0,0,.45);padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:12px"><span style="position:relative;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#a16207,#713f12);color:#fff;font:600 14px Geist;display:grid;place-items:center;box-shadow:0 0 0 4px var(--acc-soft)">LO</span><div style="flex:1"><div style="font-weight:600">Liam O'Connor</div><div style="font-size:12px;color:var(--fg3)">Video call · re: TF-147</div></div></div>
+          <div style="display:flex;gap:8px"><span style="flex:1;height:38px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px"><i style="font-size:16px">chat</i>Reply</span><span style="flex:1;height:38px;border-radius:var(--r);background:#ef4444;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:500"><i style="font-size:16px">call_end</i>Decline</span><span style="flex:1;height:38px;border-radius:var(--r);background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:500"><i style="font-size:16px">videocam</i>Accept</span></div>
+        </div>
+        <div style="width:360px;border-radius:16px;border:1px solid var(--border2);background:var(--card);overflow:hidden">
+          <div style="height:200px;background:radial-gradient(circle at 50% 40%,#134e4a,#0b0b0d 75%);display:grid;place-items:center;position:relative"><span style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;font:600 24px Geist;display:grid;place-items:center">MC</span><span style="position:absolute;left:12px;bottom:10px;display:flex;gap:6px"><span style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.12);display:grid;place-items:center;color:#fff"><i>mic</i></span><span style="width:32px;height:32px;border-radius:10px;background:#ef4444;display:grid;place-items:center;color:#fff"><i>videocam_off</i></span></span></div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px"><div style="font-weight:600">Ready to join Sprint 14 stand-up?</div><div style="font-size:12px;color:var(--fg3)">Dev, Liam, Tomás and 2 others are in the call</div><div style="display:flex;gap:6px;font-size:12px;color:var(--fg2)"><span style="height:28px;padding:0 10px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;gap:6px"><i style="font-size:15px">mic</i>MacBook mic</span><span style="height:28px;padding:0 10px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;gap:6px"><i style="font-size:15px">blur_on</i>Blur</span></div><span style="height:38px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:500">Join now</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t4" data-screen-label="04 Appearance preferences">
+  <div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">Appearance — users choose their theme</span></div>
+  <p class="dv-sub">Theme, accent, radius, font, density, sidebar and tab behaviour — previewed live, synced to the account, resettable. These same controls drive this whole file via Tweaks.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="4a">
+      <div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>Settings · Appearance</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="prefs" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="width:236px;flex:none;border-right:1px solid var(--border);background:var(--rail);padding:16px 12px;display:flex;flex-direction:column;gap:2px">
+              <div style="font-size:20px;font-weight:600;letter-spacing:-.02em;padding:0 8px 12px">Settings</div>
+              <sc-for list="{{ settingsNav }}" as="n" hint-placeholder-count="8"><div style="height:34px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:var(--r);color:{{ n.c }};background:{{ n.bg }};font-weight:{{ n.w }}"><i style="font-size:17px">{{ n.i }}</i>{{ n.n }}</div></sc-for>
+            </div>
+            <div style="flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 470px;overflow:hidden">
+              <div style="padding:28px 36px;display:flex;flex-direction:column;gap:26px;overflow:hidden">
+                <div><div style="font-size:24px;font-weight:600;letter-spacing:-.02em">Appearance</div><div style="color:var(--fg2);margin-top:4px">Customize how TaskFlow looks on your devices. Saved to your account.</div></div>
+                <div style="display:flex;flex-direction:column;gap:10px"><div style="font-weight:500">Theme</div>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                    <sc-for list="{{ themeCards }}" as="t" hint-placeholder-count="3">
+                      <div style="display:flex;flex-direction:column;gap:8px">
+                        <div style="height:104px;border-radius:var(--r2);border:2px solid {{ t.bd }};padding:8px;box-sizing:border-box;background:{{ t.bg }};display:grid;grid-template-columns:22px 1fr;gap:6px;overflow:hidden">
+                          <span style="border-radius:4px;background:{{ t.rail }}"></span>
+                          <div style="display:flex;flex-direction:column;gap:5px"><span style="height:8px;width:60%;border-radius:3px;background:{{ t.line }}"></span><span style="flex:1;border-radius:5px;background:{{ t.card }};border:1px solid {{ t.line }}"></span><span style="height:8px;width:40%;border-radius:3px;background:var(--acc)"></span></div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid {{ t.rb }};display:grid;place-items:center"><span style="width:6px;height:6px;border-radius:50%;background:{{ t.rd }}"></span></span>{{ t.n }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px"><div style="font-weight:500">Accent</div>
+                  <div style="display:flex;gap:10px"><sc-for list="{{ accents }}" as="a" hint-placeholder-count="6"><span style="height:36px;padding:0 12px 0 8px;border-radius:var(--r);border:1px solid {{ a.bd }};display:flex;align-items:center;gap:8px;background:{{ a.bgc }}"><span style="width:18px;height:18px;border-radius:50%;background:{{ a.c }}"></span>{{ a.n }}</span></sc-for></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+                  <div style="display:flex;flex-direction:column;gap:10px"><div style="font-weight:500">Radius</div><div style="display:flex;gap:6px"><sc-for list="{{ radii }}" as="r" hint-placeholder-count="5"><span style="height:34px;padding:0 12px;border-radius:var(--r);border:1px solid {{ r.bd }};background:{{ r.bg }};display:flex;align-items:center;font:500 12px 'Geist Mono'">{{ r.n }}</span></sc-for></div></div>
+                  <div style="display:flex;flex-direction:column;gap:10px"><div style="font-weight:500">Density</div><div style="display:flex;padding:3px;border-radius:var(--r);background:var(--muted);gap:2px;width:max-content"><span style="height:28px;padding:0 12px;display:flex;align-items:center;color:var(--fg2)">Compact</span><span style="height:28px;padding:0 12px;display:flex;align-items:center;border-radius:calc(var(--r) - 2px);background:var(--bg);box-shadow:0 1px 2px rgba(0,0,0,.2);font-weight:500">Default</span><span style="height:28px;padding:0 12px;display:flex;align-items:center;color:var(--fg2)">Comfortable</span></div></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+                  <div style="display:flex;flex-direction:column;gap:10px"><div style="font-weight:500">Font</div><div style="height:38px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;padding:0 12px;gap:8px">Geist<span style="color:var(--fg3)">· Geist Mono for IDs</span><i style="margin-left:auto;color:var(--fg3)">unfold_more</i></div></div>
+                  <div style="display:flex;flex-direction:column;gap:10px"><div style="font-weight:500">Sidebar</div><div style="display:flex;padding:3px;border-radius:var(--r);background:var(--muted);gap:2px;width:max-content"><span style="height:28px;padding:0 12px;display:flex;align-items:center;border-radius:calc(var(--r) - 2px);background:var(--bg);box-shadow:0 1px 2px rgba(0,0,0,.2);font-weight:500">Rail + panel</span><span style="height:28px;padding:0 12px;display:flex;align-items:center;color:var(--fg2)">Rail only</span><span style="height:28px;padding:0 12px;display:flex;align-items:center;color:var(--fg2)">Hidden</span></div></div>
+                </div>
+                <div style="border:1px solid var(--border);border-radius:var(--r2)">
+                  <sc-for list="{{ prefToggles }}" as="p" hint-placeholder-count="5"><div style="min-height:52px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:500">{{ p.n }}</div><div style="font-size:12px;color:var(--fg3)">{{ p.d }}</div></div><span style="width:36px;height:20px;border-radius:10px;background:{{ p.tg }};position:relative;flex:none"><span style="position:absolute;top:2px;left:{{ p.tl }};width:16px;height:16px;border-radius:50%;background:#fff"></span></span></div></sc-for>
+                </div>
+              </div>
+              <div style="border-left:1px solid var(--border);background:var(--rail);padding:24px;display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Live preview</span><span style="font-size:12px;color:var(--fg3)">your workbench</span><div style="flex:1"></div><span style="height:22px;padding:0 8px;border-radius:999px;background:var(--acc-soft);color:var(--acc);font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px"><i style="font-size:13px">sync</i>Synced · 3 devices</span></div>
+                <div data-theme="light" style="border-radius:var(--r2);border:1px solid var(--border);overflow:hidden;background:var(--bg);color:var(--fg);box-shadow:0 12px 30px rgba(0,0,0,.25)">
+                  <div style="height:28px;display:flex;align-items:end;gap:4px;padding:0 8px;background:var(--rail);border-bottom:1px solid var(--border);font-size:10.5px"><span style="height:22px;padding:0 8px;display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-bottom:none;border-radius:6px 6px 0 0"><i style="font-size:12px;color:var(--acc)">view_kanban</i>Issues</span><span style="height:22px;padding:0 8px;display:flex;align-items:center;color:var(--fg2)">#platform</span><span style="height:22px;padding:0 8px;display:flex;align-items:center;color:var(--fg2);gap:4px"><span style="width:5px;height:5px;border-radius:50%;background:#ef4444"></span>Stand-up</span></div>
+                  <div style="display:flex;height:220px">
+                    <div style="width:34px;background:var(--rail);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:8px"><span style="width:18px;height:18px;border-radius:5px;background:var(--acc)"></span><span style="width:14px;height:14px;border-radius:4px;background:var(--muted2)"></span><span style="width:14px;height:14px;border-radius:4px;background:var(--muted2)"></span></div>
+                    <div style="flex:1;padding:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                      <sc-for list="{{ previewCols }}" as="c" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:6px"><span style="font:600 8.5px Geist;letter-spacing:.05em;display:flex;align-items:center;gap:4px"><span style="width:5px;height:5px;border-radius:50%;background:{{ c.c }}"></span>{{ c.n }}</span><sc-for list="{{ c.k }}" as="k" hint-placeholder-count="2"><div style="border:1px solid var(--border);border-radius:var(--r);padding:6px;font-size:9.5px;line-height:1.3;background:var(--card)">{{ k }}<div style="margin-top:5px;height:10px;width:30px;border-radius:999px;background:var(--acc-soft)"></div></div></sc-for></div></sc-for>
+                    </div>
+                  </div>
+                </div>
+                <div style="font-size:12px;color:var(--fg3)">Light preview shown; app currently in dark. Changes apply instantly.</div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px"><div style="font-weight:500">Saved themes</div>
+                  <sc-for list="{{ savedThemes }}" as="s" hint-placeholder-count="3"><div style="height:44px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid {{ s.bd }};border-radius:var(--r);background:var(--card)"><span style="display:flex"><span style="width:14px;height:14px;border-radius:50%;background:{{ s.a }}"></span><span style="width:14px;height:14px;border-radius:50%;background:{{ s.b }};margin-left:-4px;border:1px solid var(--border2)"></span></span><span style="font-weight:500">{{ s.n }}</span><span style="font-size:11.5px;color:var(--fg3)">{{ s.m }}</span><span style="margin-left:auto;font-size:12px;color:var(--acc)">{{ s.act }}</span></div></sc-for>
+                </div>
+                <div style="margin-top:auto;display:flex;gap:8px"><span style="height:36px;padding:0 14px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;gap:6px"><i style="font-size:16px">restart_alt</i>Reset to default</span><div style="flex:1"></div><span style="height:36px;padding:0 14px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center">Share theme</span><span style="height:36px;padding:0 14px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;font-weight:500">Save as theme</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "same tracker in light mode" · "tab overflow and split-tab view" · "mobile chat + call" · earlier v1 work stays in <a href="TaskFlow Layout System.dc.html">Layout System</a></p>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;orange&quot;,&quot;blue&quot;,&quot;emerald&quot;,&quot;rose&quot;,&quot;zinc&quot;],&quot;default&quot;:&quot;orange&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;radius&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sm&quot;,&quot;md&quot;,&quot;lg&quot;],&quot;default&quot;:&quot;md&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? 'orange';
+    const radius = this.props.radius ?? 'md';
+    const G={MC:'linear-gradient(135deg,#0f766e,#134e4a)',DP:'linear-gradient(135deg,#334155,#1e293b)',SR:'linear-gradient(135deg,#9f1239,#4c0519)',JB:'linear-gradient(135deg,#4d7c0f,#1a2e05)',AT:'linear-gradient(135deg,#0369a1,#082f49)',LO:'linear-gradient(135deg,#a16207,#713f12)',NH:'linear-gradient(135deg,#7c2d12,#431407)',TS:'linear-gradient(135deg,#57534e,#292524)'};
+    const N={MC:'Maya Chen',DP:'Dev Patel',SR:'Sofia Rossi',JB:'Jonas Berg',AT:'Aiko Tanaka',LO:"Liam O'Connor",NH:'Nadia Haddad',TS:'Tomás Silva'};
+    const T={low:['Low','#60a5fa'],med:['Medium','#94a3b8'],high:['High','#f87171'],devops:['DevOps','#fb923c'],qa:['QA','#fb7185'],web:['Web','#38bdf8'],auth:['Auth','#fbbf24'],design:['Design','#f472b6'],infra:['Infra','#4ade80']};
+    const tag=k=>({n:T[k][0],c:T[k][1],bg:`color-mix(in oklab,${T[k][1]} 18%,transparent)`});
+    const card=(id,t,tags,pct,gh,av,att,com,op=1)=>({id,t,tags:tags.map(tag),pct:pct+'%',deg:(pct*3.6)+'deg',gi:gh?'code':'',gh:gh||'',av:av.map(i=>({i,g:G[i]})),att,com,op,hl:'var(--border)',hs:'none'});
+    const kanban=[
+      {n:'Backlog',c:'#f97316',count:10,cards:[card('TF-160','SAML metadata auto-refresh',['low','devops'],12,'acme/platform',['DP','JB'],1,0),card('TF-158','Bulk move tasks between lists',['med','web'],0,'',['SR'],0,3,.55)]},
+      {n:'To do',c:'#a1a1aa',count:24,cards:[card('TF-149','Audit log export as CSV',['low','infra'],20,'acme/platform',['LO','DP'],1,2),card('TF-153','Onboarding empty states',['med','design'],25,'',['AT'],0,4)]},
+      {n:'In progress',c:'#60a5fa',count:3,cards:[{...card('TF-142','Fix login crash on SSO redirect',['high','auth'],50,'#418',['DP','TS'],2,6),hl:'var(--acc)',hs:'0 0 0 3px var(--acc-soft)'},card('TF-146','Keyboard nav in command palette',['med','qa'],90,'',['NH','SR','AT'],1,24)]},
+      {n:'Done',c:'#22c55e',count:12,cards:[card('TF-138','Migrate session store to Redis 7',['infra'],100,'#409',['JB'],0,5),card('TF-143','Remove legacy v1 auth routes',['auth'],100,'#398',['DP'],1,2,.55)]}
+    ];
+    const trackNav=[{i:'person',n:'My issues',b:'9'},{i:'checklist',n:'All issues',b:'60'},{i:'inventory_2',n:'All projects',b:''}];
+    const pj=(n,dot,shape,pad,on,sub)=>({n,dot,shape,pad,showDot:sub?'none':'block',c:on?'var(--fg)':'var(--fg2)',bg:on?'var(--muted2)':'transparent',w:on?500:400});
+    const projects=[pj('Platform','#f97316','2px','10px'),pj('Issues','','','32px',1,1),pj('Components','','','32px',0,1),pj('Milestones','','','32px',0,1),pj('Templates','','','32px',0,1),pj('Web','#60a5fa','50%','10px'),pj('Design','#f472b6','2px','10px'),pj('Ops desk','#a1a1aa','2px','10px')];
+    const vt=(i,n,on)=>({i,n,bd:on?'var(--acc)':'transparent',c:on?'var(--fg)':'var(--fg3)',w:on?500:400});
+    const viewTabs=[vt('view_kanban','Kanban',1),vt('list','List'),vt('view_timeline','Timeline'),vt('table_rows','Table')];
+    const ib=(i,n,b,on)=>({i,n,b,bd:on?'var(--acc)':'transparent',c:on?'var(--fg)':'var(--fg3)',bb:'var(--acc)',bdisp:b?'grid':'none'});
+    const inboxTabs=[ib('format_list_bulleted','All','',1),ib('task_alt','Tasks','2'),ib('forum','Chat','5')];
+    const nn=(ai,text,obj,t,where,unread,op=1,join=false)=>({ai,g:G[ai],who:N[ai],text,obj,t,where,dot:unread?'var(--acc)':'transparent',op,join});
+    const inbox=[nn('MC','started a call in','#platform','now','Sprint 14 stand-up',1,1,true),nn('LO','requested review on','#421 rate-limit','8 min ago','Platform',1),nn('DP','mentioned you in','TF-142','22 min ago','Issues',1),nn('AT','shared a doc','Onboarding v2','1 hour ago','Design'),nn('TS','changed status of TF-155 to','Blocked','3 hours ago','Web',0,.7),nn('JB','added a tag to','Release 2.8','8 hours ago','Platform',0,.45)];
+    const people5=['MC','DP','LO','SR'].map(i=>({i,g:G[i]}));
+    const chatTop=[{i:'forum',n:'Threads',b:'3'},{i:'alternate_email',n:'Mentions',b:'2'},{i:'bookmark',n:'Saved',b:''}];
+    const ch=(n,u,live,on)=>({n,u,bd:u?'grid':'none',live:live?'inline-flex':'none',bg:on?'var(--muted2)':'transparent',c:on||u?'var(--fg)':'var(--fg2)',w:on||u?500:400});
+    const channels=[ch('general',''),ch('platform','',1,1),ch('web','4'),ch('incidents','1'),ch('releases','')];
+    const dms=[['DP','#22c55e','in call'],['LO','#22c55e',''],['SR','#f59e0b','away'],['AT','#ef4444','focus'],['NH','#52525b','leave']].map(([i,pc,s])=>({i,g:G[i],n:N[i].split(' ')[0],pc,s}));
+    const re=(e,n,mine)=>({e,n,bd:mine?'var(--acc)':'var(--border)',bg:mine?'var(--acc-soft)':'transparent'});
+    const messages=[
+      {i:'TS',g:G.TS,n:N.TS,t:'09:12',text:'Safari crash still reproduces on staging — ~30% of SSO sign-ins in a private window.',task:false,code:false,reacts:[re('👀','3')],replies:'',bg:'transparent'},
+      {i:'DP',g:G.DP,n:N.DP,t:'09:20',text:'Found it. restore() runs before the token is persisted. Fix is up:',task:true,code:true,reacts:[re('🎉','4',1),re('🙏','2')],replies:'5 replies',bg:'var(--acc-soft)'},
+      {i:'MC',g:G.MC,n:N.MC,t:'09:28',text:'Nice. Let\'s cover it in stand-up — I started the call, join from the banner.',task:false,code:false,reacts:[],replies:'',bg:'transparent'}
+    ];
+    const composer=['add_circle','format_bold','format_italic','code','alternate_email','mood','attach_file'];
+    const thread=[{i:'DP',g:G.DP,n:'Dev',t:'09:20',text:'Fix is up: persist before restore. PR #418.'},{i:'LO',g:G.LO,n:'Liam',t:'09:24',text:'Can we add a regression test for the race before merge?'},{i:'DP',g:G.DP,n:'Dev',t:'09:25',text:'Yes — adding to the e2e matrix with Safari 18.'},{i:'TS',g:G.TS,n:'Tomás',t:'09:31',text:'I\'ll verify on staging once CI is green.'}];
+    const tl=(i,mic,e,speak,cam)=>({i,n:N[i].split(' ')[0],g:G[i],mic:mic?'mic':'mic_off',mc:mic?'#fff':'#f87171',e,bg:cam?'radial-gradient(circle at 50% 35%,#27272a,#0b0b0d 75%)':'#0b0b0d',ring:speak?'0 0 0 2px var(--acc), 0 0 24px -4px var(--acc)':'none',op:cam?1:.6});
+    const tiles=[tl('DP',1,'',1,1),tl('LO',0,'✋',0,1),tl('TS',0,'',0,1),tl('JB',0,'',0,0),tl('MC',1,'',0,1)];
+    const cb=(i,n,bg,c,bd)=>({i,n,bg,c,bd,px:n?'16px':'0'});
+    const controls=[cb('mic','','var(--muted2)','var(--fg)','var(--border2)'),cb('videocam','','var(--muted2)','var(--fg)','var(--border2)'),cb('present_to_all','Share','var(--muted2)','var(--fg)','var(--border2)'),cb('closed_caption','','var(--acc-soft)','var(--acc)','var(--acc)'),cb('back_hand','','var(--muted2)','var(--fg)','var(--border2)'),cb('add_reaction','','var(--muted2)','var(--fg)','var(--border2)'),cb('fiber_manual_record','Rec','var(--muted2)','#f87171','var(--border2)'),cb('more_horiz','','var(--muted2)','var(--fg)','var(--border2)'),cb('call_end','Leave','#ef4444','#fff','#ef4444')];
+    const ct=(i,n,on)=>({i,n,bg:on?'var(--muted2)':'transparent',c:on?'var(--fg)':'var(--fg3)'});
+    const callTabs=[ct('group','People'),ct('chat','Chat'),ct('task_alt','Tasks',1),ct('edit_note','Notes')];
+    const row=(k,id,t)=>({k,id,t,kc:k==='BLOCKED'?'#f87171':k==='TODAY'?'var(--acc)':'var(--fg3)'});
+    const su=(i,state,sc,rows,on)=>({i,n:N[i].split(' ')[0],g:G[i],state,sc,rows,bd:on?'var(--acc)':'var(--border)'});
+    const standup=[su('DP','speaking','var(--acc)',[row('YESTERDAY','TF-143','Remove v1 auth routes'),row('TODAY','TF-142','Ship SSO fix'),row('BLOCKED','#418','Needs Liam review')],1),su('LO','next','var(--fg3)',[row('YESTERDAY','TF-147','Rate limiter'),row('TODAY','TF-149','Audit log CSV')]),su('TS','','var(--fg3)',[row('TODAY','TF-155','Flaky checkout e2e'),row('BLOCKED','TF-155','Staging DB reset')]),su('JB','camera off','var(--fg3)',[row('TODAY','TF-159','CI queue alert')])];
+    const sn=(i,n,on)=>({i,n,bg:on?'var(--muted2)':'transparent',c:on?'var(--fg)':'var(--fg2)',w:on?500:400});
+    const settingsNav=[sn('person','Profile'),sn('palette','Appearance',1),sn('notifications','Notifications'),sn('tab','Tabs & workbench'),sn('keyboard','Shortcuts'),sn('videocam','Audio & video'),sn('devices','Devices & sync'),sn('lock','Privacy')];
+    const th=this.props.theme ?? 'dark';
+    const tc=(k,n,bg,rail,card,line)=>({n,bg,rail,card,line,bd:k===th?'var(--acc)':'var(--border)',rb:k===th?'var(--acc)':'var(--border2)',rd:k===th?'var(--acc)':'transparent'});
+    const themeCards=[tc('light','Light','#ffffff','#f4f4f5','#fafafa','#e4e4e7'),tc('dark','Dark','#09090b','#18181b','#111113','#27272a'),tc('system','System','linear-gradient(90deg,#ffffff 50%,#09090b 50%)','#71717a','transparent','#52525b')];
+    const acc=[['orange','Ember','#f97316'],['blue','Ocean','#3b82f6'],['emerald','Mint','#10b981'],['rose','Rose','#f43f5e'],['zinc','Mono','#a1a1aa']];
+    const accents=acc.map(([k,n,c])=>({n,c,bd:k===accent?'var(--acc)':'var(--border)',bgc:k===accent?'var(--acc-soft)':'transparent'}));
+    const radii=[['0','x'],['0.25','sm'],['0.5','md'],['0.75','lg'],['1.0','x']].map(([n,k])=>({n,bd:k===radius?'var(--acc)':'var(--border)',bg:k===radius?'var(--acc-soft)':'transparent'}));
+    const pt=(n,d,on)=>({n,d,tg:on?'var(--acc)':'var(--border2)',tl:on?'18px':'2px'});
+    const prefToggles=[pt('Open links in a new tab','Tasks, docs and chats open as workbench tabs',1),pt('Restore tabs on login','Reopen your last session on any device',1),pt('Ambient glow','Soft accent glow behind the workbench',1),pt('Floating call window','Keep calls visible while you switch tabs',1),pt('Reduce motion','Disable card tilt and transitions',0)];
+    const previewCols=[{n:'TO DO',c:'#a1a1aa',k:['Audit log CSV','Empty states']},{n:'IN PROGRESS',c:'#60a5fa',k:['Fix login crash','Palette nav']},{n:'DONE',c:'#22c55e',k:['Redis 7 migration']}];
+    const savedThemes=[{n:'Ember dark',m:'default',a:'#f97316',b:'#09090b',act:'Active',bd:'var(--acc)'},{n:'Ocean light',m:'for daytime',a:'#3b82f6',b:'#ffffff',act:'Apply',bd:'var(--border)'},{n:'Acme brand',m:'workspace · shared by Maya',a:'#10b981',b:'#18181b',act:'Apply',bd:'var(--border)'}];
+    return { theme:th, accent, radius, kanban, trackNav, projects, viewTabs, inboxTabs, inbox, people5, chatTop, channels, dms, messages, composer, thread, tiles, controls, callTabs, standup, settingsNav, themeCards, accents, radii, prefToggles, previewCols, savedThemes };
+  }
+}
+</script>
+</body>
+</html>

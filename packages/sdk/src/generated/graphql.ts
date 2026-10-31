@@ -68,6 +68,10 @@ export type CommentInput = {
   body: string;
 };
 
+export type CompleteSprintMovesInput = {
+  moves: Array<SprintTaskMoveInput>;
+};
+
 export type ConnectGithubInput = {
   /** owner/name */
   repo: string;
@@ -82,6 +86,13 @@ export type CreateCustomFieldInput = {
   required?: boolean | null | undefined;
   spaceId?: string | null | undefined;
   type: CustomFieldType;
+};
+
+export type CreateDashboardInput = {
+  /** Start from these blocks; the default Home layout when omitted */
+  items?: Array<LayoutItemInput> | null | undefined;
+  name: string;
+  visibility?: string;
 };
 
 export type CreateDepartmentInput = {
@@ -147,6 +158,7 @@ export type CreateSprintInput = {
 
 export type CreateTaskInput = {
   assigneeId?: string | null | undefined;
+  /** All assigned user IDs */
   assigneeIds?: Array<string> | null | undefined;
   /** Values keyed by custom field id */
   customFields?: Record<string, string | number | boolean | string[] | null> | null | undefined;
@@ -354,6 +366,15 @@ export type ImportTemplateInput = {
   name: string;
 };
 
+export type LayoutItemInput = {
+  h: number;
+  id: string;
+  type: string;
+  w: number;
+  x: number;
+  y: number;
+};
+
 export type LeaveDecision =
   | 'approved'
   | 'rejected';
@@ -491,6 +512,18 @@ export type SaveAutomationInput = {
   trigger: AutomationTriggerInput;
 };
 
+export type SaveDashboardLayoutInput = {
+  baseVersion: number;
+  items: Array<LayoutItemInput>;
+};
+
+export type SaveLayoutInput = {
+  /** The version you started from; null when you had none saved */
+  baseVersion?: number | null | undefined;
+  items: Array<LayoutItemInput>;
+  pageKey: string;
+};
+
 export type SavePolicyInput = {
   description?: string | null | undefined;
   document: PolicyDocumentInput;
@@ -505,7 +538,7 @@ export type SaveViewInput = {
   id?: string | null | undefined;
   name: string;
   pinned?: boolean;
-  resource: string;
+  resource?: string;
   scope?: string | null | undefined;
   sort?: Array<SortInput> | null | undefined;
   where?: string | null | undefined;
@@ -535,6 +568,12 @@ export type SprintStatus =
   | 'active'
   | 'completed'
   | 'planned';
+
+export type SprintTaskMoveInput = {
+  /** A planned sprint in the same space; null for the backlog */
+  sprintId?: string | null | undefined;
+  taskId: string;
+};
 
 export type StartTimerInput = {
   note?: string | null | undefined;
@@ -613,6 +652,11 @@ export type UpdateCustomFieldInput = {
   required?: boolean | null | undefined;
 };
 
+export type UpdateDashboardInput = {
+  name?: string | null | undefined;
+  visibility?: string | null | undefined;
+};
+
 export type UpdateDepartmentInput = {
   headUserId?: string | null | undefined;
   name?: string | null | undefined;
@@ -647,6 +691,8 @@ export type UpdatePreferencesInput = {
   dateFormat?: string | null | undefined;
   defaultTaskView?: string | null | undefined;
   density?: string | null | undefined;
+  font?: string | null | undefined;
+  radius?: string | null | undefined;
   sidebarCollapsed?: boolean | null | undefined;
   sidebarWidth?: number | null | undefined;
   taskDetailMode?: string | null | undefined;
@@ -681,6 +727,7 @@ export type UpdateSprintInput = {
 
 export type UpdateTaskInput = {
   assigneeId?: string | null | undefined;
+  /** All assigned user IDs */
   assigneeIds?: Array<string> | null | undefined;
   /** Merged into the current values; null clears a field */
   customFields?: Record<string, string | number | boolean | string[] | null> | null | undefined;
@@ -1004,7 +1051,7 @@ export type CustomFieldFieldsFragment = { id: string, spaceId: string | null, en
 
 export type CommentFieldsFragment = { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string };
 
-export type SprintFieldsFragment = { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number };
+export type SprintFieldsFragment = { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null };
 
 export type DocumentSummaryFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, position: number, createdById: string, updatedAt: string };
 
@@ -1034,7 +1081,7 @@ export type FormSchemaFieldsFragment = { name: string, fields: Array<{ name: str
 
 export type PolicyFieldsFragment = { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } };
 
-export type PreferencesFieldsFragment = { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> };
+export type PreferencesFieldsFragment = { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> };
 
 export type DepartmentsQueryVariables = Exact<{
   workspaceId: string;
@@ -1174,6 +1221,15 @@ export type MyLeaveBalancesQueryVariables = Exact<{
 
 export type MyLeaveBalancesQuery = { myLeaveBalances: Array<{ leaveTypeId: string, leaveTypeName: string, color: string, year: number, allowanceDays: number | null, usedDays: number, pendingDays: number, remainingDays: number | null }> };
 
+export type TeamAvailabilityQueryVariables = Exact<{
+  workspaceId: string;
+  from: string;
+  to: string;
+}>;
+
+
+export type TeamAvailabilityQuery = { teamAvailability: Array<{ userId: string, startDate: string, endDate: string }> };
+
 export type GithubConnectionFieldsFragment = { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } };
 
 export type GithubConnectionsQueryVariables = Exact<{
@@ -1223,6 +1279,75 @@ export type DisconnectGithubMutationVariables = Exact<{
 
 
 export type DisconnectGithubMutation = { disconnectGithub: boolean };
+
+export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> };
+
+export type MyLayoutQueryVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+}>;
+
+
+export type MyLayoutQuery = { myLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } | null };
+
+export type SaveLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  input: SaveLayoutInput;
+}>;
+
+
+export type SaveLayoutMutation = { saveLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+
+export type ResetLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+}>;
+
+
+export type ResetLayoutMutation = { resetLayout: boolean };
+
+export type NamedDashboardFieldsFragment = { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> };
+
+export type DashboardsQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type DashboardsQuery = { dashboards: Array<{ id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> }> };
+
+export type CreateDashboardMutationVariables = Exact<{
+  workspaceId: string;
+  input: CreateDashboardInput;
+}>;
+
+
+export type CreateDashboardMutation = { createDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+
+export type UpdateDashboardMutationVariables = Exact<{
+  workspaceId: string;
+  dashboardId: string;
+  input: UpdateDashboardInput;
+}>;
+
+
+export type UpdateDashboardMutation = { updateDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+
+export type SaveDashboardLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  dashboardId: string;
+  input: SaveDashboardLayoutInput;
+}>;
+
+
+export type SaveDashboardLayoutMutation = { saveDashboardLayout: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+
+export type DeleteDashboardMutationVariables = Exact<{
+  workspaceId: string;
+  dashboardId: string;
+}>;
+
+
+export type DeleteDashboardMutation = { deleteDashboard: boolean };
 
 export type ListsQueryVariables = Exact<{
   workspaceId: string;
@@ -1462,54 +1587,54 @@ export type SetRoleInlinePolicyMutation = { setRoleInlinePolicy: { id: string, n
 export type MyPreferencesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MyPreferencesQuery = { myPreferences: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type MyPreferencesQuery = { myPreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type UpdatePreferencesMutationVariables = Exact<{
   input: UpdatePreferencesInput;
 }>;
 
 
-export type UpdatePreferencesMutation = { updatePreferences: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type UpdatePreferencesMutation = { updatePreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type SaveTableLayoutMutationVariables = Exact<{
   input: TableLayoutInput;
 }>;
 
 
-export type SaveTableLayoutMutation = { saveTableLayout: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type SaveTableLayoutMutation = { saveTableLayout: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type ResetTableLayoutMutationVariables = Exact<{
   key: string;
 }>;
 
 
-export type ResetTableLayoutMutation = { resetTableLayout: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type ResetTableLayoutMutation = { resetTableLayout: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type SaveViewMutationVariables = Exact<{
   input: SaveViewInput;
 }>;
 
 
-export type SaveViewMutation = { saveView: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type SaveViewMutation = { saveView: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type DeleteViewMutationVariables = Exact<{
   viewId: string;
 }>;
 
 
-export type DeleteViewMutation = { deleteView: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type DeleteViewMutation = { deleteView: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type SetTabsMutationVariables = Exact<{
   input: SetTabsInput;
 }>;
 
 
-export type SetTabsMutation = { setTabs: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type SetTabsMutation = { setTabs: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type ResetPreferencesMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ResetPreferencesMutation = { resetPreferences: { theme: string, accent: string, density: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type ResetPreferencesMutation = { resetPreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type ResourceSchemaQueryVariables = Exact<{
   workspaceId: string;
@@ -1622,7 +1747,7 @@ export type SprintsQueryVariables = Exact<{
 }>;
 
 
-export type SprintsQuery = { sprints: Array<{ id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number }> };
+export type SprintsQuery = { sprints: Array<{ id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null }> };
 
 export type SprintQueryVariables = Exact<{
   workspaceId: string;
@@ -1630,7 +1755,7 @@ export type SprintQueryVariables = Exact<{
 }>;
 
 
-export type SprintQuery = { sprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type SprintQuery = { sprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type CreateSprintMutationVariables = Exact<{
   workspaceId: string;
@@ -1639,7 +1764,7 @@ export type CreateSprintMutationVariables = Exact<{
 }>;
 
 
-export type CreateSprintMutation = { createSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type CreateSprintMutation = { createSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type UpdateSprintMutationVariables = Exact<{
   workspaceId: string;
@@ -1648,7 +1773,7 @@ export type UpdateSprintMutationVariables = Exact<{
 }>;
 
 
-export type UpdateSprintMutation = { updateSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type UpdateSprintMutation = { updateSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type DeleteSprintMutationVariables = Exact<{
   workspaceId: string;
@@ -1664,16 +1789,17 @@ export type StartSprintMutationVariables = Exact<{
 }>;
 
 
-export type StartSprintMutation = { startSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type StartSprintMutation = { startSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type CompleteSprintMutationVariables = Exact<{
   workspaceId: string;
   sprintId: string;
   moveOpenTasksToSprintId?: string | null | undefined;
+  rollover?: CompleteSprintMovesInput | null | undefined;
 }>;
 
 
-export type CompleteSprintMutation = { completeSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type CompleteSprintMutation = { completeSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type StatusesQueryVariables = Exact<{
   workspaceId: string;
@@ -2285,6 +2411,7 @@ export const SprintFieldsFragmentDoc = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }
     `, {"fragmentName":"SprintFields"}) as unknown as TypedDocumentString<SprintFieldsFragment, unknown>;
 export const DocumentSummaryFieldsFragmentDoc = new TypedDocumentString(`
@@ -2503,6 +2630,8 @@ export const PreferencesFieldsFragmentDoc = new TypedDocumentString(`
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView
@@ -2563,6 +2692,40 @@ export const GithubConnectionFieldsFragmentDoc = new TypedDocumentString(`
   createdAt
 }
     `, {"fragmentName":"GithubConnectionFields"}) as unknown as TypedDocumentString<GithubConnectionFieldsFragment, unknown>;
+export const LayoutFieldsFragmentDoc = new TypedDocumentString(`
+    fragment LayoutFields on DashboardLayout {
+  pageKey
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}
+    `, {"fragmentName":"LayoutFields"}) as unknown as TypedDocumentString<LayoutFieldsFragment, unknown>;
+export const NamedDashboardFieldsFragmentDoc = new TypedDocumentString(`
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}
+    `, {"fragmentName":"NamedDashboardFields"}) as unknown as TypedDocumentString<NamedDashboardFieldsFragment, unknown>;
 export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
     fragment TemplateFields on ProjectTemplate {
   id
@@ -3553,6 +3716,15 @@ export const MyLeaveBalancesDocument = new TypedDocumentString(`
   pendingDays
   remainingDays
 }`) as unknown as TypedDocumentString<MyLeaveBalancesQuery, MyLeaveBalancesQueryVariables>;
+export const TeamAvailabilityDocument = new TypedDocumentString(`
+    query TeamAvailability($workspaceId: ID!, $from: String!, $to: String!) {
+  teamAvailability(workspaceId: $workspaceId, from: $from, to: $to) {
+    userId
+    startDate
+    endDate
+  }
+}
+    `) as unknown as TypedDocumentString<TeamAvailabilityQuery, TeamAvailabilityQueryVariables>;
 export const GithubConnectionsDocument = new TypedDocumentString(`
     query GithubConnections($workspaceId: ID!) {
   githubConnections(workspaceId: $workspaceId) {
@@ -3664,6 +3836,154 @@ export const DisconnectGithubDocument = new TypedDocumentString(`
   disconnectGithub(workspaceId: $workspaceId, connectionId: $connectionId)
 }
     `) as unknown as TypedDocumentString<DisconnectGithubMutation, DisconnectGithubMutationVariables>;
+export const MyLayoutDocument = new TypedDocumentString(`
+    query MyLayout($workspaceId: ID!, $pageKey: String!) {
+  myLayout(workspaceId: $workspaceId, pageKey: $pageKey) {
+    ...LayoutFields
+  }
+}
+    fragment LayoutFields on DashboardLayout {
+  pageKey
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<MyLayoutQuery, MyLayoutQueryVariables>;
+export const SaveLayoutDocument = new TypedDocumentString(`
+    mutation SaveLayout($workspaceId: ID!, $input: SaveLayoutInput!) {
+  saveLayout(workspaceId: $workspaceId, input: $input) {
+    ...LayoutFields
+  }
+}
+    fragment LayoutFields on DashboardLayout {
+  pageKey
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<SaveLayoutMutation, SaveLayoutMutationVariables>;
+export const ResetLayoutDocument = new TypedDocumentString(`
+    mutation ResetLayout($workspaceId: ID!, $pageKey: String!) {
+  resetLayout(workspaceId: $workspaceId, pageKey: $pageKey)
+}
+    `) as unknown as TypedDocumentString<ResetLayoutMutation, ResetLayoutMutationVariables>;
+export const DashboardsDocument = new TypedDocumentString(`
+    query Dashboards($workspaceId: ID!) {
+  dashboards(workspaceId: $workspaceId) {
+    ...NamedDashboardFields
+  }
+}
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<DashboardsQuery, DashboardsQueryVariables>;
+export const CreateDashboardDocument = new TypedDocumentString(`
+    mutation CreateDashboard($workspaceId: ID!, $input: CreateDashboardInput!) {
+  createDashboard(workspaceId: $workspaceId, input: $input) {
+    ...NamedDashboardFields
+  }
+}
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<CreateDashboardMutation, CreateDashboardMutationVariables>;
+export const UpdateDashboardDocument = new TypedDocumentString(`
+    mutation UpdateDashboard($workspaceId: ID!, $dashboardId: ID!, $input: UpdateDashboardInput!) {
+  updateDashboard(
+    workspaceId: $workspaceId
+    dashboardId: $dashboardId
+    input: $input
+  ) {
+    ...NamedDashboardFields
+  }
+}
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<UpdateDashboardMutation, UpdateDashboardMutationVariables>;
+export const SaveDashboardLayoutDocument = new TypedDocumentString(`
+    mutation SaveDashboardLayout($workspaceId: ID!, $dashboardId: ID!, $input: SaveDashboardLayoutInput!) {
+  saveDashboardLayout(
+    workspaceId: $workspaceId
+    dashboardId: $dashboardId
+    input: $input
+  ) {
+    ...NamedDashboardFields
+  }
+}
+    fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<SaveDashboardLayoutMutation, SaveDashboardLayoutMutationVariables>;
+export const DeleteDashboardDocument = new TypedDocumentString(`
+    mutation DeleteDashboard($workspaceId: ID!, $dashboardId: ID!) {
+  deleteDashboard(workspaceId: $workspaceId, dashboardId: $dashboardId)
+}
+    `) as unknown as TypedDocumentString<DeleteDashboardMutation, DeleteDashboardMutationVariables>;
 export const ListsDocument = new TypedDocumentString(`
     query Lists($workspaceId: ID!) {
   lists(workspaceId: $workspaceId) {
@@ -4120,6 +4440,8 @@ export const MyPreferencesDocument = new TypedDocumentString(`
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView
@@ -4173,6 +4495,8 @@ export const UpdatePreferencesDocument = new TypedDocumentString(`
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView
@@ -4226,6 +4550,8 @@ export const SaveTableLayoutDocument = new TypedDocumentString(`
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView
@@ -4279,6 +4605,8 @@ export const ResetTableLayoutDocument = new TypedDocumentString(`
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView
@@ -4332,6 +4660,8 @@ export const SaveViewDocument = new TypedDocumentString(`
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView
@@ -4385,6 +4715,8 @@ export const DeleteViewDocument = new TypedDocumentString(`
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView
@@ -4438,6 +4770,8 @@ export const SetTabsDocument = new TypedDocumentString(`
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView
@@ -4491,6 +4825,8 @@ export const ResetPreferencesDocument = new TypedDocumentString(`
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView
@@ -4867,6 +5203,7 @@ export const SprintsDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<SprintsQuery, SprintsQueryVariables>;
 export const SprintDocument = new TypedDocumentString(`
     query Sprint($workspaceId: ID!, $sprintId: ID!) {
@@ -4885,6 +5222,7 @@ export const SprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<SprintQuery, SprintQueryVariables>;
 export const CreateSprintDocument = new TypedDocumentString(`
     mutation CreateSprint($workspaceId: ID!, $spaceId: ID!, $input: CreateSprintInput!) {
@@ -4903,6 +5241,7 @@ export const CreateSprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<CreateSprintMutation, CreateSprintMutationVariables>;
 export const UpdateSprintDocument = new TypedDocumentString(`
     mutation UpdateSprint($workspaceId: ID!, $sprintId: ID!, $input: UpdateSprintInput!) {
@@ -4921,6 +5260,7 @@ export const UpdateSprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<UpdateSprintMutation, UpdateSprintMutationVariables>;
 export const DeleteSprintDocument = new TypedDocumentString(`
     mutation DeleteSprint($workspaceId: ID!, $sprintId: ID!) {
@@ -4944,13 +5284,15 @@ export const StartSprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<StartSprintMutation, StartSprintMutationVariables>;
 export const CompleteSprintDocument = new TypedDocumentString(`
-    mutation CompleteSprint($workspaceId: ID!, $sprintId: ID!, $moveOpenTasksToSprintId: ID) {
+    mutation CompleteSprint($workspaceId: ID!, $sprintId: ID!, $moveOpenTasksToSprintId: ID, $rollover: CompleteSprintMovesInput) {
   completeSprint(
     workspaceId: $workspaceId
     sprintId: $sprintId
     moveOpenTasksToSprintId: $moveOpenTasksToSprintId
+    rollover: $rollover
   ) {
     ...SprintFields
   }
@@ -4966,6 +5308,7 @@ export const CompleteSprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<CompleteSprintMutation, CompleteSprintMutationVariables>;
 export const StatusesDocument = new TypedDocumentString(`
     query Statuses($workspaceId: ID!, $spaceId: ID!) {

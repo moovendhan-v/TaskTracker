@@ -26,4 +26,7 @@ export class SprintOrmEntity extends TenantOrmEntity implements Sprint {
 
   @Column({ type: 'timestamptz', nullable: true })
   completedAt: Date | null;
+
+  @Column({ type: 'integer', nullable: true })
+  committedTasks: number | null;
 }

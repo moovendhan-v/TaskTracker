@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:60px;height:100%;box-sizing:border-box;background:var(--rail);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:4px;font-family:Geist,system-ui,sans-serif">
+  <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;box-shadow:0 0 18px -4px var(--acc);margin-bottom:8px"><div style="width:16px;height:16px;display:grid;grid-template-columns:1fr 1fr;gap:2px"><span style="background:#fff;border-radius:2px"></span><span style="background:#fff;opacity:.5;border-radius:2px"></span><span style="background:#fff;opacity:.5;border-radius:2px"></span><span style="background:#fff;border-radius:2px"></span></div></div>
+  <div style="width:44px;height:88px;border-radius:12px;border:1px solid var(--border2);background:radial-gradient(circle at 50% 120%,var(--acc-soft2),transparent 70%),var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;box-sizing:border-box;margin-bottom:6px">
+    <span style="font:600 14px Geist;color:var(--fg);letter-spacing:-.02em">56<span style="font-size:8px;vertical-align:top">%</span></span>
+    <span style="width:22px;height:3px;border-radius:2px;background:var(--border2);overflow:hidden"><span style="display:block;width:56%;height:100%;background:var(--acc)"></span></span>
+    <span style="font:600 7.5px 'Geist Mono';color:var(--fg2);letter-spacing:.04em">S14</span>
+  </div>
+  <span style="position:relative;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--fg2)"><i style="font-size:20px">notifications</i><span style="position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--acc);border:2px solid var(--rail)"></span></span>
+  <span style="width:28px;height:1px;background:var(--border);margin:4px 0"></span>
+  <sc-for list="{{ apps }}" as="a" hint-placeholder-count="7">
+    <span style="position:relative;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:{{ a.c }};background:{{ a.bg }};box-shadow:{{ a.sh }}"><i style="font-size:20px">{{ a.i }}</i><span style="position:absolute;top:8px;right:8px;width:6px;height:6px;border-radius:50%;background:{{ a.dot }}"></span></span>
+  </sc-for>
+  <span style="width:28px;height:1px;background:var(--border);margin:4px 0"></span>
+  <span style="width:36px;height:36px;border-radius:50%;border:1px dashed var(--border2);display:grid;place-items:center;color:var(--fg3)"><i style="font-size:18px">add</i></span>
+  <div style="flex:1"></div>
+  <span style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--fg2)"><i style="font-size:20px">tune</i></span>
+  <span style="position:relative;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;font:600 11px Geist;display:grid;place-items:center">MC<span style="position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;background:#22c55e;border:2px solid var(--rail)"></span></span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:60,&quot;height&quot;:860},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;calendar&quot;,&quot;chat&quot;,&quot;tracker&quot;,&quot;time&quot;,&quot;video&quot;,&quot;docs&quot;,&quot;office&quot;],&quot;default&quot;:&quot;tracker&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const a = this.props.active ?? 'tracker';
+    const list = [['calendar','calendar_today'],['chat','forum'],['tracker','task_alt'],['time','schedule'],['video','videocam'],['docs','description'],['auto','account_tree'],['hr','badge'],['admin','shield_person']];
+    const live = {video:'#ef4444', chat:'var(--acc)'};
+    return { apps: list.map(([k,i])=>({i,c:k===a?'var(--fg)':'var(--fg2)',bg:k===a?'var(--muted2)':'transparent',sh:k===a?'inset 0 0 0 1px var(--border2)':'none',dot:live[k]||'transparent'})) };
+  }
+}
+</script>
+</body>
+</html>
