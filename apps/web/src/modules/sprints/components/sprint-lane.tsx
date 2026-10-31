@@ -11,6 +11,7 @@ import { useTaskMutations } from '@/modules/tasks';
 import { useSprintTasks } from '../hooks/use-sprints';
 import { formatSprintRange } from '../lib/sprint-dates';
 import { formatMinutes, summarize } from '../lib/sprint-metrics';
+import { SprintCapacity } from './sprint-capacity';
 import { SprintFormDialog, type SprintFormValues } from './sprint-form-dialog';
 import { SPRINT_TASK_DRAG, SprintTaskRow } from './sprint-task-row';
 
@@ -117,6 +118,7 @@ export function SprintLane({ workspaceId, sprint, canManage, canStart, onOpenTas
           </DropdownMenu>
         ) : null}
       </header>
+      {open ? <SprintCapacity workspaceId={workspaceId} sprint={sprint} tasks={items} canSeeLeave={canManage} /> : null}
       {open ? (
         items.length === 0 ? (
           <p className={cn('px-4 py-6 text-center text-sm text-muted-foreground', over && 'text-primary')}>

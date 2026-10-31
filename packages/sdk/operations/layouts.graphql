@@ -1,0 +1,37 @@
+fragment LayoutFields on DashboardLayout {
+  pageKey
+  version
+  updatedAt
+  items { id type x y w h }
+}
+
+query MyLayout($workspaceId: ID!, $pageKey: String!) { myLayout(workspaceId: $workspaceId, pageKey: $pageKey) { ...LayoutFields } }
+
+mutation SaveLayout($workspaceId: ID!, $input: SaveLayoutInput!) { saveLayout(workspaceId: $workspaceId, input: $input) { ...LayoutFields } }
+
+mutation ResetLayout($workspaceId: ID!, $pageKey: String!) { resetLayout(workspaceId: $workspaceId, pageKey: $pageKey) }
+
+fragment NamedDashboardFields on NamedDashboard {
+  id
+  name
+  visibility
+  ownerId
+  mine
+  version
+  updatedAt
+  items { id type x y w h }
+}
+
+query Dashboards($workspaceId: ID!) { dashboards(workspaceId: $workspaceId) { ...NamedDashboardFields } }
+
+mutation CreateDashboard($workspaceId: ID!, $input: CreateDashboardInput!) { createDashboard(workspaceId: $workspaceId, input: $input) { ...NamedDashboardFields } }
+
+mutation UpdateDashboard($workspaceId: ID!, $dashboardId: ID!, $input: UpdateDashboardInput!) {
+  updateDashboard(workspaceId: $workspaceId, dashboardId: $dashboardId, input: $input) { ...NamedDashboardFields }
+}
+
+mutation SaveDashboardLayout($workspaceId: ID!, $dashboardId: ID!, $input: SaveDashboardLayoutInput!) {
+  saveDashboardLayout(workspaceId: $workspaceId, dashboardId: $dashboardId, input: $input) { ...NamedDashboardFields }
+}
+
+mutation DeleteDashboard($workspaceId: ID!, $dashboardId: ID!) { deleteDashboard(workspaceId: $workspaceId, dashboardId: $dashboardId) }

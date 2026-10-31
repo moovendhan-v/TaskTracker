@@ -56,7 +56,7 @@ export function Section({ title, count, actions, children, storageKey, defaultOp
           <ChevronRightIcon className={cn('size-4 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-90')} />
           {title}
         </button>
-        {count !== undefined ? <span className="text-xs tabular-nums text-muted-foreground">{count}</span> : null}
+        {count !== undefined ? <span className="font-mono text-[11px] font-medium tabular-nums text-subtle-foreground">{count}</span> : null}
         {actions ? <div className="flex items-center gap-1">{actions}</div> : null}
       </div>
       {isOpen ? <div>{children}</div> : null}

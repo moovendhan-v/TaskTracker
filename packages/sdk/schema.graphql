@@ -196,6 +196,10 @@ input CommentInput {
   body: String!
 }
 
+input CompleteSprintMovesInput {
+  moves: [SprintTaskMoveInput!]!
+}
+
 input ConnectGithubInput {
   """owner/name"""
   repo: String!
@@ -210,6 +214,13 @@ input CreateCustomFieldInput {
   required: Boolean
   spaceId: ID
   type: CustomFieldType!
+}
+
+input CreateDashboardInput {
+  """Start from these blocks; the default Home layout when omitted"""
+  items: [LayoutItemInput!]
+  name: String!
+  visibility: String! = "private"
 }
 
 input CreateDepartmentInput {
@@ -281,6 +292,8 @@ input CreateSprintInput {
 
 input CreateTaskInput {
   assigneeId: ID
+
+  """All assigned user IDs"""
   assigneeIds: [ID!]
 
   """Values keyed by custom field id"""
@@ -417,6 +430,16 @@ input DashboardInput {
   timeZone: String!
   to: String!
   userIds: [ID!]
+}
+
+"""The signed-in user's arrangement of a page's blocks"""
+type DashboardLayout {
+  items: [LayoutItem!]!
+  pageKey: String!
+  updatedAt: String!
+
+  """Goes up by one on every save; send it back as baseVersion"""
+  version: Int!
 }
 
 type DashboardPerson {
@@ -829,6 +852,24 @@ input ImportTemplateInput {
 """A JSON object (read-only)"""
 scalar JSONObject
 
+type LayoutItem {
+  h: Int!
+  id: String!
+  type: String!
+  w: Int!
+  x: Int!
+  y: Int!
+}
+
+input LayoutItemInput {
+  h: Int!
+  id: String!
+  type: String!
+  w: Int!
+  x: Int!
+  y: Int!
+}
+
 type LeaveBalance {
   """null means unlimited"""
   allowanceDays: Int
@@ -960,11 +1001,19 @@ type Mutation {
   """
   Unfinished tasks move to another planned sprint in the space, or to the backlog when omitted
   """
-  completeSprint(moveOpenTasksToSprintId: ID, sprintId: ID!, workspaceId: ID!): Sprint!
+  completeSprint(
+    moveOpenTasksToSprintId: ID
+
+    """Per-task destinations for unfinished tasks"""
+    rollover: CompleteSprintMovesInput
+    sprintId: ID!
+    workspaceId: ID!
+  ): Sprint!
   connectGithub(input: ConnectGithubInput!, workspaceId: ID!): GithubSecret!
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
   createCustomField(input: CreateCustomFieldInput!, workspaceId: ID!): CustomField!
+  createDashboard(input: CreateDashboardInput!, workspaceId: ID!): NamedDashboard!
   createDepartment(input: CreateDepartmentInput!, workspaceId: ID!): Department!
   createDocument(input: CreateDocumentInput!, workspaceId: ID!): Document!
   createFolder(input: CreateFolderInput!, spaceId: ID!, workspaceId: ID!): Folder!
@@ -1001,6 +1050,7 @@ type Mutation {
 
   """Deletes the field and its values everywhere"""
   deleteCustomField(fieldId: ID!, workspaceId: ID!): Boolean!
+  deleteDashboard(dashboardId: ID!, workspaceId: ID!): Boolean!
   deleteDepartment(departmentId: ID!, workspaceId: ID!): Boolean!
 
   """Sub-pages are deleted too"""
@@ -1069,12 +1119,23 @@ type Mutation {
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
   requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
 
+  """Back to the built-in layout for a page"""
+  resetLayout(pageKey: String!, workspaceId: ID!): Boolean!
+
   """Back to the default settings"""
   resetPreferences: Preferences!
   resetTableLayout(key: String!): Preferences!
 
   """A new webhook secret; the old one stops working at once"""
   rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
+
+  """
+  Saves the blocks of one of your dashboards. Fails with CONFLICT if it changed since baseVersion
+  """
+  saveDashboardLayout(dashboardId: ID!, input: SaveDashboardLayoutInput!, workspaceId: ID!): NamedDashboard!
+
+  """Saves your layout. Fails with CONFLICT if it changed since baseVersion"""
+  saveLayout(input: SaveLayoutInput!, workspaceId: ID!): DashboardLayout!
   saveSpaceAsTemplate(input: SaveAsTemplateInput!, spaceId: ID!, workspaceId: ID!): ProjectTemplate!
 
   """Saves how a table is arranged (columns, widths, paging)"""
@@ -1112,6 +1173,9 @@ type Mutation {
   """Only the author can edit"""
   updateComment(commentId: ID!, input: CommentInput!, workspaceId: ID!): Comment!
   updateCustomField(fieldId: ID!, input: UpdateCustomFieldInput!, workspaceId: ID!): CustomField!
+
+  """Rename or share / unshare one of your dashboards"""
+  updateDashboard(dashboardId: ID!, input: UpdateDashboardInput!, workspaceId: ID!): NamedDashboard!
   updateDepartment(departmentId: ID!, input: UpdateDepartmentInput!, workspaceId: ID!): Department!
   updateDocument(documentId: ID!, input: UpdateDocumentInput!, workspaceId: ID!): Document!
   updateFolder(folderId: ID!, input: UpdateFolderInput!, workspaceId: ID!): Folder!
@@ -1142,6 +1206,22 @@ type MyAccess {
   permissions: [String!]!
   readableFields: [String!]!
   spaceRules: [SpaceRule!]!
+}
+
+"""
+A Home dashboard tab: private to its owner or shared with the workspace
+"""
+type NamedDashboard {
+  id: ID!
+  items: [LayoutItem!]!
+
+  """You own it, so you can edit, share or delete it"""
+  mine: Boolean!
+  name: String!
+  ownerId: ID!
+  updatedAt: String!
+  version: Int!
+  visibility: String!
 }
 
 type Notification {
@@ -1246,6 +1326,8 @@ type Preferences {
   dateFormat: String!
   defaultTaskView: String!
   density: String!
+  font: String!
+  radius: String!
   savedViews: [SavedView!]!
   sidebarCollapsed: Boolean!
   sidebarWidth: Int!
@@ -1334,6 +1416,9 @@ type Query {
   Workspace or project (spaceId) dashboard: live task counts and hours for a window
   """
   dashboard(input: DashboardInput!, workspaceId: ID!): Dashboard!
+
+  """Your dashboards and the ones shared with the workspace"""
+  dashboards(workspaceId: ID!): [NamedDashboard!]!
   departments(workspaceId: ID!): [Department!]!
   document(documentId: ID!, workspaceId: ID!): Document!
 
@@ -1377,6 +1462,9 @@ type Query {
   The caller's effective permissions and readable fields in the workspace
   """
   myAccess(workspaceId: ID!): MyAccess!
+
+  """Your saved layout for a page; null means the built-in default"""
+  myLayout(pageKey: String!, workspaceId: ID!): DashboardLayout
   myLeaveBalances(
     workspaceId: ID!
 
@@ -1461,6 +1549,18 @@ type Query {
 
   """Users following the task"""
   taskWatchers(taskId: ID!, workspaceId: ID!): [ID!]!
+
+  """
+  Who is away when (approved leave, dates only), for sprint capacity planning
+  """
+  teamAvailability(
+    """yyyy-mm-dd"""
+    from: String!
+
+    """yyyy-mm-dd"""
+    to: String!
+    workspaceId: ID!
+  ): [TeamAbsence!]!
 
   """
   Entries started in [from, to), oldest first, at most 1000. Without time.view_all, only your own.
@@ -1619,6 +1719,18 @@ input SaveAutomationInput {
   trigger: AutomationTriggerInput!
 }
 
+input SaveDashboardLayoutInput {
+  baseVersion: Int!
+  items: [LayoutItemInput!]!
+}
+
+input SaveLayoutInput {
+  """The version you started from; null when you had none saved"""
+  baseVersion: Int
+  items: [LayoutItemInput!]!
+  pageKey: String!
+}
+
 input SavePolicyInput {
   description: String
   document: PolicyDocumentInput!
@@ -1634,7 +1746,7 @@ input SaveViewInput {
   id: ID
   name: String!
   pinned: Boolean! = false
-  resource: String!
+  resource: String! = "tasks"
   scope: String
   sort: [SortInput!]
   where: String
@@ -1713,6 +1825,8 @@ enum SpaceStatus {
 }
 
 type Sprint {
+  """Tasks in the sprint when it was completed; null before then"""
+  committedTasks: Int
   completedAt: String
   doneTasks: Int!
 
@@ -1733,6 +1847,12 @@ enum SprintStatus {
   active
   completed
   planned
+}
+
+input SprintTaskMoveInput {
+  """A planned sprint in the same space; null for the backlog"""
+  sprintId: ID
+  taskId: ID!
 }
 
 input StartTimerInput {
@@ -1775,6 +1895,8 @@ input TableLayoutInput {
 
 type Task {
   assigneeId: ID
+
+  """All assigned user IDs"""
   assigneeIds: [ID!]!
   completedAt: String
   createdAt: String!
@@ -1905,6 +2027,16 @@ enum TaskType {
   task
 }
 
+"""Approved leave, dates only: no type, reason or notes"""
+type TeamAbsence {
+  """yyyy-mm-dd"""
+  endDate: String!
+
+  """yyyy-mm-dd"""
+  startDate: String!
+  userId: ID!
+}
+
 enum TemplateCategory {
   engineering
   general
@@ -1968,6 +2100,11 @@ input UpdateCustomFieldInput {
   required: Boolean
 }
 
+input UpdateDashboardInput {
+  name: String
+  visibility: String
+}
+
 input UpdateDepartmentInput {
   headUserId: ID
   name: String
@@ -2002,6 +2139,8 @@ input UpdatePreferencesInput {
   dateFormat: String
   defaultTaskView: String
   density: String
+  font: String
+  radius: String
   sidebarCollapsed: Boolean
   sidebarWidth: Int
   taskDetailMode: String
@@ -2038,6 +2177,8 @@ input UpdateSprintInput {
 
 input UpdateTaskInput {
   assigneeId: ID
+
+  """All assigned user IDs"""
   assigneeIds: [ID!]
 
   """Merged into the current values; null clears a field"""

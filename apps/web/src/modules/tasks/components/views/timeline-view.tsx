@@ -148,7 +148,11 @@ export function TimelineView({ workspaceId, tasks, onOpen }: TimelineViewProps) 
                         aria-label={`${task.title}: ${formatNumericDate(start)} to ${formatNumericDate(end)}`}
                         onPointerDown={(event) => beginDrag(event, task.id, 'move')}
                         onDoubleClick={() => onOpen(task.id)}
-                        onKeyDown={(event) => event.key === 'Enter' && onOpen(task.id)}
+                        onKeyDown={(event) => {
+                          if (event.key !== 'Enter') return;
+                          event.preventDefault(); // keeps this Enter from also pressing a button in the task that opens
+                          onOpen(task.id);
+                        }}
                         className={cn('absolute top-2 flex h-6 items-center rounded-md border-2 px-1.5 text-[11px] font-semibold', canEditTask(task) && 'cursor-grab active:cursor-grabbing')}
                         style={{ left: x(start), width: length * dayWidth, borderColor: task.status.color, backgroundColor: `color-mix(in oklab, ${task.status.color} 22%, transparent)` }}
                       >

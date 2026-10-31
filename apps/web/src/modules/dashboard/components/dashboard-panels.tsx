@@ -2,8 +2,8 @@ import { ClipboardListIcon, ClockIcon, FolderIcon, ListChecksIcon, TriangleAlert
 import type { DashboardResponse } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { BarList, ColumnChart, GroupedColumnChart, Legend, StackedBar } from '@/components/kit/charts';
-import { Panel } from '@/components/kit/panel';
 import { StatCard } from '@/components/kit/stat-card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatMonthDay, formatNumericDate } from '@/lib/periods';
 import { formatHours, formatMinutes } from '@/modules/time';
 
@@ -26,6 +26,20 @@ export function KpiRow({ data, mode }: { data: Dashboard; mode: 'home' | 'projec
         value={formatHours(summary.minutesLogged)}
         hint={data.hoursOnlyMine ? 'your time only' : mode === 'project' ? `${summary.entries} entries · ${formatMinutes(summary.minutesAllTime)} all-time` : 'selected people'}
       />
+    </div>
+  );
+}
+
+/** Placeholder tiles while the numbers load, so the layout doesn't jump. */
+export function KpiRowSkeleton({ tiles }: { tiles: number }) {
+  return (
+    <div aria-hidden className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      {Array.from({ length: tiles }, (_, index) => (
+        <div key={index} className="grid gap-2.5 rounded-xl border bg-card p-4">
+          <Skeleton className="h-3.5 w-24" />
+          <Skeleton className="h-7 w-14" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -180,4 +194,3 @@ export function Workload({ data }: { data: Dashboard }) {
   );
 }
 
-export { Panel };

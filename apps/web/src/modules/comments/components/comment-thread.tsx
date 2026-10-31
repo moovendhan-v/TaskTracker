@@ -14,10 +14,12 @@ interface CommentThreadProps {
   taskId: string;
   /** The task's space, so the caller's space limits apply. */
   spaceId: string;
+  /** Show the "Comments" heading; off when the caller already labels the thread (e.g. a tab). */
+  heading?: boolean;
 }
 
 /** Comments are plain text and rendered as text (whitespace-pre-wrap), so no HTML from users reaches the DOM. */
-export function CommentThread({ workspaceId, taskId, spaceId }: CommentThreadProps) {
+export function CommentThread({ workspaceId, taskId, spaceId, heading = true }: CommentThreadProps) {
   const [draft, setDraft] = useState('');
   const { data: comments = [] } = useComments(workspaceId, taskId);
   const { data: me } = useCurrentUser();
@@ -33,10 +35,12 @@ export function CommentThread({ workspaceId, taskId, spaceId }: CommentThreadPro
 
   return (
     <section className="grid gap-4">
-      <h3 className="flex items-center gap-2 text-sm font-semibold">
-        <MessageSquareIcon className="size-4 text-muted-foreground" /> Comments
-        <span className="text-xs font-normal text-muted-foreground">{comments.length}</span>
-      </h3>
+      {heading ? (
+        <h3 className="flex items-center gap-2 text-sm font-semibold">
+          <MessageSquareIcon className="size-4 text-muted-foreground" /> Comments
+          <span className="text-xs font-normal text-muted-foreground">{comments.length}</span>
+        </h3>
+      ) : null}
       <ol className="grid gap-3">
         {comments.map((comment) => (
           <li key={comment.id} className="group">

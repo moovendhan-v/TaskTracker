@@ -111,3 +111,35 @@ export function formatMinutes(minutes: number): string {
   const rest = minutes % 60;
   return hours ? (rest ? `${hours} h ${rest} m` : `${hours} h`) : `${rest} m`;
 }
+
+export type SprintHealth = 'healthy' | 'at-risk' | 'off-track';
+
+export interface SprintForecast {
+  /** Tasks expected done by the last day if the current pace holds. */
+  projectedDone: number;
+  total: number;
+  health: SprintHealth;
+}
+
+/**
+ * A straight-line forecast: tasks done per elapsed day, carried over the days left.
+ * Healthy at ≥ 90% of the scope, at risk at ≥ 70%, off track below. No forecast
+ * before the first day or for an empty sprint.
+ */
+export function forecast(summary: Pick<SprintSummary, 'done' | 'total'>, timing: Pick<SprintTiming, 'elapsedDays' | 'daysLeft'>): SprintForecast | null {
+  if (summary.total === 0 || timing.elapsedDays === 0) return null;
+  const perDay = summary.done / timing.elapsedDays;
+  const projectedDone = Math.min(summary.total, Math.round(summary.done + perDay * timing.daysLeft));
+  const ratio = projectedDone / summary.total;
+  return { projectedDone, total: summary.total, health: ratio >= 0.9 ? 'healthy' : ratio >= 0.7 ? 'at-risk' : 'off-track' };
+}
+
+/**
+ * Committed (tasks in the sprint when it closed) vs done, oldest first, for the last `limit`
+ * completed sprints. Sprints completed before that was recorded fall back to their current count.
+ */
+export function velocity(completed: readonly Pick<SprintResponse, 'id' | 'name' | 'endDate' | 'totalTasks' | 'doneTasks' | 'committedTasks'>[], limit = 8) {
+  const rows = [...completed].sort((a, b) => a.endDate.localeCompare(b.endDate)).slice(-limit);
+  const average = rows.length ? Math.round(rows.reduce((sum, row) => sum + row.doneTasks, 0) / rows.length) : 0;
+  return { rows: rows.map((row) => ({ key: row.id, label: row.name, committed: row.committedTasks ?? row.totalTasks, done: row.doneTasks })), average };
+}

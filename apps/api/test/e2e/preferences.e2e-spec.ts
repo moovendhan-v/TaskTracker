@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TestUser } from './support/api-client.js';
 
-const PREFS = `theme accent density sidebarCollapsed sidebarWidth defaultTaskView taskDetailMode dateFormat timeFormat weekStart
+const PREFS = `theme accent density radius font sidebarCollapsed sidebarWidth defaultTaskView taskDetailMode dateFormat timeFormat weekStart
   tables { key columns hidden widths { column width } pageSize sort { field direction } }
   savedViews { id name resource scope where pinned color filter { and { field op value values } } }
   tabs { id path title pinned }`;
@@ -10,11 +10,11 @@ describe('user preferences', () => {
   it('starts from defaults and saves settings that follow the user', async () => {
     const user = await TestUser.signUp('Prefs');
     const { myPreferences } = await user.data<{ myPreferences: Record<string, unknown> }>(`{ myPreferences { ${PREFS} } }`);
-    expect(myPreferences).toMatchObject({ theme: 'system', accent: 'violet', density: 'comfortable', tables: [], savedViews: [], tabs: [] });
+    expect(myPreferences).toMatchObject({ theme: 'system', accent: 'orange', density: 'default', radius: 'md', font: 'geist', tables: [], savedViews: [], tabs: [] });
 
-    await user.data(`mutation { updatePreferences(input: { theme: "dark", accent: "teal", density: "compact", sidebarWidth: 300 }) { theme } }`);
+    await user.data(`mutation { updatePreferences(input: { theme: "dark", accent: "teal", density: "compact", radius: "lg", font: "inter", sidebarWidth: 300 }) { theme } }`);
     const again = await user.data<{ myPreferences: Record<string, unknown> }>(`{ myPreferences { ${PREFS} } }`);
-    expect(again.myPreferences).toMatchObject({ theme: 'dark', accent: 'teal', density: 'compact', sidebarWidth: 300, dateFormat: 'MM/DD/YYYY' });
+    expect(again.myPreferences).toMatchObject({ theme: 'dark', accent: 'teal', density: 'compact', radius: 'lg', font: 'inter', sidebarWidth: 300, dateFormat: 'MM/DD/YYYY' });
 
     // Someone else's preferences are their own.
     const other = await TestUser.signUp('Prefs other');
@@ -23,11 +23,11 @@ describe('user preferences', () => {
 
   it('validates every setting against the published rules', async () => {
     const user = await TestUser.signUp('Prefs validation');
-    const error = (await user.gql('mutation { updatePreferences(input: { theme: "neon", sidebarWidth: 5000 }) { theme } }')).errors?.[0] as {
+    const error = (await user.gql('mutation { updatePreferences(input: { theme: "neon", radius: "xl", font: "comic", sidebarWidth: 5000 }) { theme } }')).errors?.[0] as {
       extensions?: { code?: string; fields?: { field: string }[] };
     };
     expect(error.extensions?.code).toBe('BAD_USER_INPUT');
-    expect(error.extensions?.fields?.map((field) => field.field).sort()).toEqual(['sidebarWidth', 'theme']);
+    expect(error.extensions?.fields?.map((field) => field.field).sort()).toEqual(['font', 'radius', 'sidebarWidth', 'theme']);
   });
 
   it('stores table layouts and saved views, replacing by key or id', async () => {

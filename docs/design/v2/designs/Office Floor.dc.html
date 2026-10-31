@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:relative;width:{{ boxW }};height:{{ boxH }};overflow:hidden;font-family:Geist,system-ui,sans-serif;color:var(--ink)">
+  <div style="position:absolute;left:50%;top:{{ topPct }};width:960px;height:640px;transform:translate(-50%,-50%) scale({{ scale }}) rotateX(55deg) rotateZ(45deg);transform-style:preserve-3d">
+    <div style="position:absolute;inset:-16px;background:var(--line);border-radius:6px;transform:translateZ(-1px)"></div>
+    <sc-for list="{{ rooms }}" as="r" hint-placeholder-count="6">
+      <div style="position:absolute;left:{{ r.x }};top:{{ r.y }};width:{{ r.w }};height:{{ r.h }};background:{{ r.bg }};border-radius:4px;transform-style:preserve-3d;box-shadow:inset 0 0 0 1px var(--line2)">
+        <div style="position:absolute;left:14px;bottom:12px;font:600 15px 'Geist Mono',monospace;letter-spacing:.08em;color:{{ r.lc }};text-transform:uppercase">{{ r.n }}</div>
+        <div style="position:absolute;left:0;top:0;width:100%;height:{{ r.wall }};background:linear-gradient(var(--raised),var(--surface));transform-origin:top;transform:rotateX(90deg);box-shadow:inset 0 0 0 1px var(--line2)"></div>
+        <div style="position:absolute;left:0;top:0;width:{{ r.wall }};height:100%;background:linear-gradient(90deg,var(--sunk),var(--raised));transform-origin:left;transform:rotateY(-90deg);box-shadow:inset 0 0 0 1px var(--line2)"></div>
+      </div>
+    </sc-for>
+    <sc-for list="{{ desks }}" as="d" hint-placeholder-count="10">
+      <div style="position:absolute;left:{{ d.x }};top:{{ d.y }};width:{{ d.w }};height:{{ d.h }};transform-style:preserve-3d;opacity:{{ d.op }}">
+        <div style="position:absolute;inset:-26px;border-radius:50%;background:{{ d.glow }};transform:translateZ(1px)"></div>
+        <div style="position:absolute;inset:0;background:{{ d.top }};border-radius:3px;transform:translateZ(18px);box-shadow:inset 0 0 0 1px var(--line2)"></div>
+        <div style="position:absolute;left:0;top:100%;width:100%;height:18px;background:var(--line2);transform-origin:top;transform:rotateX(90deg)"></div>
+        <div style="position:absolute;left:100%;top:0;width:18px;height:100%;background:var(--line);transform-origin:left;transform:rotateY(-90deg)"></div>
+      </div>
+    </sc-for>
+    <sc-for list="{{ bills }}" as="b" hint-placeholder-count="12">
+      <div style="position:absolute;left:{{ b.l }};top:{{ b.t }};width:{{ b.w }};height:{{ b.h }};transform-origin:50% 100%;transform:translateZ({{ b.z }}) rotateZ(-45deg) rotateX(-55deg);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;opacity:{{ b.op }}">
+        <sc-if value="{{ b.isPerson }}" hint-placeholder-val="{{ false }}">
+          <div style="position:relative;width:26px;height:44px">
+            <span style="position:absolute;left:6px;top:2px;width:14px;height:14px;border-radius:50%;background:{{ b.skin }}"></span>
+            <sc-if value="{{ b.phones }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:3px;top:0;width:20px;height:11px;border:3px solid var(--ink);border-bottom:none;border-radius:11px 11px 0 0;box-sizing:border-box"></span><span style="position:absolute;left:2px;top:7px;width:5px;height:7px;border-radius:2px;background:var(--ink)"></span><span style="position:absolute;left:19px;top:7px;width:5px;height:7px;border-radius:2px;background:var(--ink)"></span></sc-if>
+            <span style="position:absolute;left:2px;top:17px;width:22px;height:27px;border-radius:11px 11px 3px 3px;background:{{ b.shirt }}"></span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ b.isCard }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface);border:1px solid {{ b.bd }};border-radius:8px;padding:6px 9px;box-shadow:0 6px 16px rgba(0,0,0,.12);display:flex;flex-direction:column;gap:2px;white-space:nowrap;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:5px;font:500 10px 'Geist Mono',monospace;color:var(--ink3)"><span style="width:6px;height:6px;border-radius:50%;background:{{ b.dot }}"></span>{{ b.k }}<span style="margin-left:6px;color:{{ b.tc }}">{{ b.time }}</span></div>
+            <div style="font-size:11.5px;font-weight:500;color:var(--ink)">{{ b.label }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ b.isTag }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:4px;height:20px;padding:0 7px;border-radius:10px;background:{{ b.bg }};color:{{ b.fg }};font-size:10.5px;font-weight:500;white-space:nowrap;margin-bottom:4px"><i style="font-size:12px">{{ b.icon }}</i>{{ b.label }}</div>
+        </sc-if>
+        <sc-if value="{{ b.isMonitor }}" hint-placeholder-val="{{ false }}">
+          <div style="width:30px;height:20px;border-radius:2px;background:{{ b.screen }};border:2px solid var(--ink2);box-sizing:border-box"></div><div style="width:4px;height:5px;background:var(--ink2)"></div>
+        </sc-if>
+        <sc-if value="{{ b.isShelf }}" hint-placeholder-val="{{ false }}">
+          <div style="width:150px;background:var(--surface);border:1px solid var(--line2);border-radius:5px;padding:6px;box-sizing:border-box;box-shadow:0 4px 10px rgba(0,0,0,.08)">
+            <div style="font:600 9px 'Geist Mono',monospace;letter-spacing:.06em;color:var(--ink3);margin-bottom:5px;display:flex">DONE TODAY<span style="margin-left:auto;color:var(--green)">11</span></div>
+            <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:3px;border-bottom:3px solid var(--line2);padding-bottom:3px"><sc-for list="{{ tokens }}" as="tk" hint-placeholder-count="16"><span style="height:11px;border-radius:2px;background:{{ tk }}"></span></sc-for></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ b.isPlant }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center">
+            <div style="font:600 10px 'Geist Mono',monospace;color:var(--accent);background:var(--surface);border:1px solid var(--line2);border-radius:5px;padding:2px 6px;margin-bottom:4px">Sprint 14 · 44%</div>
+            <div style="position:relative;width:56px;height:58px">
+              <span style="position:absolute;left:26px;bottom:0;width:3px;height:52px;background:var(--green);border-radius:2px"></span>
+              <span style="position:absolute;left:8px;top:14px;width:20px;height:11px;border-radius:11px 0;background:var(--green)"></span>
+              <span style="position:absolute;left:28px;top:4px;width:20px;height:11px;border-radius:0 11px;background:var(--green);opacity:.8"></span>
+              <span style="position:absolute;left:6px;top:32px;width:21px;height:11px;border-radius:11px 0;background:var(--green);opacity:.75"></span>
+              <span style="position:absolute;left:29px;top:24px;width:16px;height:9px;border-radius:0 9px;border:1.5px dashed var(--green);box-sizing:border-box"></span>
+            </div>
+            <div style="width:34px;height:22px;background:#B98B66;border-radius:2px 2px 7px 7px"></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ b.isCI }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center">
+            <div style="font:600 9.5px 'Geist Mono',monospace;color:var(--green);background:var(--surface);border:1px solid var(--line2);border-radius:5px;padding:2px 6px;margin-bottom:4px;white-space:nowrap">main · CI ✓</div>
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--green);box-shadow:0 0 0 5px var(--green-soft),0 0 18px var(--green)"></span>
+            <span style="width:3px;height:30px;background:var(--ink2)"></span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ b.isConfetti }}" hint-placeholder-val="{{ false }}">
+          <div style="position:relative;width:70px;height:46px">
+            <span style="position:absolute;left:8px;top:12px;width:6px;height:6px;background:var(--amber);transform:rotate(20deg)"></span>
+            <span style="position:absolute;left:22px;top:2px;width:5px;height:8px;background:var(--accent);transform:rotate(-30deg)"></span>
+            <span style="position:absolute;left:40px;top:8px;width:6px;height:6px;border-radius:50%;background:var(--green)"></span>
+            <span style="position:absolute;left:54px;top:18px;width:5px;height:8px;background:var(--amber);transform:rotate(40deg)"></span>
+            <span style="position:absolute;left:30px;top:20px;width:5px;height:5px;background:var(--red);transform:rotate(10deg)"></span>
+            <span style="position:absolute;left:14px;top:28px;width:4px;height:7px;background:var(--steel)"></span>
+            <span style="position:absolute;left:60px;top:2px;width:4px;height:4px;border-radius:50%;background:var(--accent)"></span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ b.isScreen }}" hint-placeholder-val="{{ false }}">
+          <div style="width:120px;height:62px;background:var(--ink);border-radius:4px;padding:6px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px"><span style="font:600 8.5px 'Geist Mono',monospace;color:var(--paper);opacity:.75">SPRINT 14 REVIEW</span><span style="height:5px;width:80%;background:var(--accent);border-radius:2px"></span><span style="height:5px;width:55%;background:var(--paper);opacity:.3;border-radius:2px"></span><span style="height:5px;width:66%;background:var(--paper);opacity:.3;border-radius:2px"></span></div>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:905,&quot;height&quot;:600},&quot;scale&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.2,&quot;max&quot;:1.2,&quot;step&quot;:0.05,&quot;default&quot;:0.8,&quot;tsType&quot;:&quot;number&quot;},&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;width&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;height&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.props.scale ?? 0.8;
+    const compact = this.props.compact ?? false;
+    const px = n => n + 'px';
+    const rooms = [
+      {n:'Platform',x:0,y:0,w:440,h:300,bg:'var(--accent-soft)',lc:'var(--accent)'},
+      {n:'Web',x:460,y:0,w:260,h:300,bg:'var(--steel-soft)',lc:'var(--steel)'},
+      {n:'Design',x:740,y:0,w:220,h:300,bg:'var(--amber-soft)',lc:'var(--amber)'},
+      {n:'Meeting room',x:0,y:320,w:360,h:320,bg:'var(--sunk)',lc:'var(--ink3)'},
+      {n:'Focus zone',x:380,y:320,w:340,h:320,bg:'var(--green-soft)',lc:'var(--green)'},
+      {n:'Commons',x:740,y:320,w:220,h:320,bg:'var(--raised)',lc:'var(--ink3)'}
+    ].map(r=>({...r,x:px(r.x),y:px(r.y),w:px(r.w),h:px(r.h),wall:'40px'}));
+    const ON='radial-gradient(closest-side,rgba(232,176,80,.38),transparent)';
+    const deskTop = on => on ? 'linear-gradient(135deg,var(--surface),#F3E3C0)' : 'var(--surface)';
+    const D = [
+      {x:60,y:100,on:true},{x:250,y:100,on:true},{x:60,y:200,on:false},{x:250,y:200,on:false},
+      {x:500,y:100,on:false,op:.5},{x:610,y:100,on:false},
+      {x:800,y:120,on:true},
+      {x:90,y:430,w:190,h:100,on:false},
+      {x:440,y:430,on:true},{x:590,y:430,on:false}
+    ];
+    const desks = D.map(d=>({x:px(d.x),y:px(d.y),w:px(d.w||76),h:px(d.h||44),glow:d.on?ON:'transparent',top:deskTop(d.on),op:d.op??1}));
+    const B = [];
+    const bb = (o) => B.push({op:1,z:'0px',...o,l:px(o.x-o.w/2),t:px(o.y-o.h),w:px(o.w),h:px(o.h)});
+    const person=(x,y,shirt,skin,extra={})=>bb({x,y,w:30,h:46,isPerson:true,shirt,skin,...extra});
+    const monitor=(x,y,on)=>bb({x,y,w:30,h:26,z:'18px',isMonitor:true,screen:on?'var(--accent-soft)':'var(--sunk)'});
+    const card=(x,y,z,k,label,time,dot,tc,bd)=>{ if(!compact) bb({x,y,w:220,h:60,z,isCard:true,k,label,time,dot,tc:tc||'var(--ink3)',bd:bd||'var(--line)'}); };
+    const tag=(x,y,z,icon,label,bg,fg)=>bb({x,y,w:200,h:26,z,isTag:true,icon,label,bg,fg});
+    person(98,96,'#5D6B8A','#B98E6E'); monitor(98,112,true);
+    card(98,96,'64px','TF-142','Fix login crash','1h 20m','var(--red)','var(--red)','var(--accent)');
+    person(288,96,'#8C6B47','#E0BFA0'); monitor(288,112,true);
+    bb({x:300,y:118,w:70,h:46,z:'40px',isConfetti:true});
+    card(288,96,'64px','TF-147','Rate-limit token refresh','0h 35m','var(--red)');
+    if(!compact) tag(340,150,'30px','merge','#421 merged','var(--green)','#fff');
+    monitor(98,212,false); monitor(288,212,false);
+    if(!compact) tag(120,236,'24px','groups','In meeting','var(--surface)','var(--ink2)');
+    bb({x:400,y:24,w:120,h:70,z:'40px',isCI:true});
+    person(538,96,'#8A5D5D','#D8B49A',{op:.4}); monitor(538,112,false);
+    if(!compact) tag(538,96,'56px','schedule','Away · 25m','var(--surface)','var(--ink3)');
+    monitor(648,112,false);
+    tag(648,120,'26px','event_busy','On leave · back Nov 4','var(--amber-soft)','var(--amber)');
+    person(838,116,'#4F6F7A','#F0D2B6'); monitor(838,132,true);
+    card(838,116,'64px','TF-153','Onboarding empty states','0h 50m','var(--red)');
+    bb({x:180,y:340,w:130,h:66,z:'40px',isScreen:true});
+    person(140,426,'#5B7A6E','#E8C6A8'); person(230,426,'#7A6A58','#A67B5B');
+    if(!compact) card(185,426,'66px','11:00–11:30','Sprint 14 mid-review','2 people','var(--steel)','var(--ink3)');
+    person(478,426,'#7F7451','#EACBAE',{phones:true}); monitor(478,442,true);
+    card(478,426,'66px','TF-159','Focus · DND until 14:00','52m','var(--red)','var(--ink3)');
+    if(!compact) tag(628,440,'26px','do_not_disturb_on','Quiet pod','var(--surface)','var(--ink3)');
+    bb({x:850,y:372,w:160,h:80,z:'40px',isShelf:true});
+    bb({x:880,y:560,w:120,h:120,isPlant:true});
+    const tok=['var(--green)','var(--accent)','var(--green)','var(--steel)','var(--green)','var(--accent)','var(--green)','var(--amber)','var(--green)','var(--accent)','var(--green)','var(--line)','var(--line)','var(--line)','var(--line)','var(--line)'];
+    const W=1131*s, H=740*s;
+    return { boxW:(this.props.width ?? W)+'px', boxH:(this.props.height ?? H)+'px', scale:s, topPct:'56%', rooms, desks, bills:B, tokens:tok };
+  }
+}
+</script>
+</body>
+</html>

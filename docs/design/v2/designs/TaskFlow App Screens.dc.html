@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400,0..1,0&display=block">
+<style>
+:root,[data-theme=light]{--paper:#F5F3EE;--surface:#FFFFFF;--raised:#FBFAF7;--sunk:#ECE9E2;--line:#E4E0D7;--line2:#D3CEC3;--ink:#1E2023;--ink2:#53575D;--ink3:#878A8F;--accent:#0E6B65;--accent-ink:#FFFFFF;--accent-soft:#DDEBE8;--amber:#A86B12;--amber-soft:#F6E9CF;--green:#4B7A57;--green-soft:#E2ECE2;--red:#AE4636;--red-soft:#F4E1DC;--steel:#4E6E86;--steel-soft:#E1E8EE;--shadow:0 1px 2px rgba(30,32,35,.06),0 8px 24px rgba(30,32,35,.08);--canvas:#E9E6DF}
+[data-theme=dark]{--paper:#17191B;--surface:#1F2225;--raised:#24282B;--sunk:#131517;--line:#2D3135;--line2:#3B4045;--ink:#ECEAE5;--ink2:#A8ACB1;--ink3:#767B81;--accent:#3EA79C;--accent-ink:#0D1B1A;--accent-soft:#183431;--amber:#D9A04A;--amber-soft:#3A2F1C;--green:#6FA67B;--green-soft:#1D2E22;--red:#D9705E;--red-soft:#3A221E;--steel:#8AA6BB;--steel-soft:#1E2A33;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);--canvas:#0F1112}
+body{margin:0;background:var(--canvas);font-family:Geist,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+i{font-family:'Material Symbols Rounded';font-style:normal;font-size:16px;line-height:1;display:inline-flex;font-feature-settings:'liga';user-select:none;flex:none}
+.dv-turn{padding:48px 56px 40px;border-bottom:1px solid var(--line)}.dv-thd{display:flex;align-items:baseline;gap:12px;margin:0 0 6px}.dv-tid{font:600 11px 'Geist Mono',monospace;padding:3px 8px;background:var(--ink);color:var(--paper);border-radius:4px;text-decoration:none}.dv-tname{font:600 20px/1.2 Geist,sans-serif;color:var(--ink);letter-spacing:-.01em}.dv-sub{font:400 13px/1.5 Geist,sans-serif;color:var(--ink2);margin:0 0 24px;max-width:860px}.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}.dv-oid{font:600 10.5px 'Geist Mono',monospace;padding:3px 7px;background:var(--sunk);color:var(--ink);border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 Geist,sans-serif;color:var(--ink2)}.dv-card{max-width:100%;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;color:var(--ink)}.dv-opt:target .dv-oid{background:var(--accent);color:var(--accent-ink)}.dv-next{margin:24px 0 0;font:12px/1.5 Geist,sans-serif;color:var(--ink3)}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="background:var(--canvas);color:var(--ink);min-height:100vh">
+
+<section class="dv-turn" id="t1" data-screen-label="01 Login and first sync">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Login &amp; first sync</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Sign in</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:grid;grid-template-columns:560px 1fr;font-size:13px">
+        <div style="padding:48px 72px;display:flex;flex-direction:column;background:var(--surface)">
+          <div style="display:flex;align-items:center;gap:10px"><div style="width:26px;height:26px;border-radius:7px;background:var(--accent);display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:6px;box-sizing:border-box"><span style="background:var(--accent-ink);border-radius:1px"></span><span style="background:var(--accent-ink);border-radius:1px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:1px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:1px"></span></div><span style="font-weight:600;font-size:16px">TaskFlow</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px;max-width:360px">
+            <div><div style="font-size:28px;font-weight:600;letter-spacing:-.02em;margin-bottom:6px">Welcome back</div><div style="color:var(--ink2);font-size:14px">Your layouts follow you to every device.</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:var(--ink2)">Work email</span><div style="height:40px;border:1px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft);border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:14px">maya.chen@acme.dev</div></div>
+            <div style="height:40px;border-radius:8px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:500;font-size:14px">Continue with Acme SSO<span style="font:11px 'Geist Mono';opacity:.6">↵</span></div>
+            <div style="display:flex;align-items:center;gap:12px;color:var(--ink3);font-size:12px"><span style="flex:1;height:1px;background:var(--line)"></span>or<span style="flex:1;height:1px;background:var(--line)"></span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="height:38px;border:1px solid var(--line2);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:8px"><i>code</i>GitHub</div><div style="height:38px;border:1px solid var(--line2);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:8px"><i>passkey</i>Passkey</div></div>
+            <div style="font-size:12px;color:var(--ink3)">SSO enforced for acme.dev by your admin.</div>
+          </div>
+          <div style="font:11px 'Geist Mono';color:var(--ink3)">eu-west · v4.12</div>
+        </div>
+        <div style="background:var(--paper);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;border-left:1px solid var(--line)">
+          <div style="width:640px;height:440px;display:grid;grid-template-columns:90px 1fr 1fr 150px;grid-template-rows:56px 1fr 1fr 40px;gap:10px">
+            <div style="grid-column:1/5;border-radius:8px;background:var(--surface);border:1px solid var(--line)"></div>
+            <div style="grid-row:2/4;border-radius:8px;background:var(--sunk)"></div>
+            <div style="border-radius:8px;background:var(--surface);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:8px"><span style="height:8px;width:40%;border-radius:3px;background:var(--line2)"></span><span style="height:8px;width:80%;border-radius:3px;background:var(--sunk)"></span><span style="height:8px;width:70%;border-radius:3px;background:var(--sunk)"></span></div>
+            <div style="border-radius:8px;background:var(--accent);transform:translate(18px,-14px) rotate(2deg);box-shadow:0 18px 40px rgba(14,107,101,.25)"></div>
+            <div style="grid-row:2/4;border-radius:8px;background:var(--surface);border:1px solid var(--line)"></div>
+            <div style="grid-column:2/4;border-radius:8px;border:1.5px dashed var(--accent);background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);font-weight:500">drop here</div>
+            <div style="grid-column:1/5;border-radius:8px;background:var(--sunk)"></div>
+          </div>
+          <div style="position:absolute;left:64px;bottom:56px;max-width:420px"><div style="font-size:22px;font-weight:600;letter-spacing:-.02em;line-height:1.25">Compose the workspace you think in.</div><div style="color:var(--ink2);margin-top:6px">Every page is widgets in regions. Move them, resize them, reset any time.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>First sync after login</div>
+      <div class="dv-card" style="width:960px;height:600px;position:relative;font-size:13px;background:var(--paper)">
+        <div style="position:absolute;inset:0;display:grid;grid-template-columns:180px 1fr 240px;grid-template-rows:40px 1fr;gap:10px;padding:10px;opacity:.55">
+          <div style="grid-column:1/4;background:var(--sunk);border-radius:6px"></div>
+          <div style="background:var(--sunk);border-radius:6px"></div>
+          <div style="display:grid;grid-template-rows:70px 1fr;gap:10px"><div style="background:var(--sunk);border-radius:6px"></div><div style="background:var(--sunk);border-radius:6px"></div></div>
+          <div style="background:var(--sunk);border-radius:6px"></div>
+        </div>
+        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:380px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:22px;display:flex;flex-direction:column;gap:14px">
+          <div style="font-size:16px;font-weight:600">Restoring your workspace…</div>
+          <div style="font-size:12.5px;color:var(--ink3);margin-top:-8px">Synced from MacBook Pro · 9:41 today</div>
+          <sc-for list="{{ syncSteps }}" as="s" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:10px"><i style="font-size:17px;color:{{ s.c }}">{{ s.i }}</i><span style="flex:1;color:{{ s.tc }}">{{ s.n }}</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ s.m }}</span></div></sc-for>
+          <div style="height:4px;border-radius:2px;background:var(--sunk);overflow:hidden"><div style="width:70%;height:100%;background:var(--accent)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t2" data-screen-label="02 Home">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Home / My work</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Default “My work” layout · Main 66:34 · bottom dock</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:flex;flex-direction:column;font-size:13px">
+        <dc-import name="TF Topbar" path="Home" layout="My work" hint-size="1440px,48px"></dc-import>
+        <div style="flex:1;display:flex;min-height:0">
+          <dc-import name="TF Sidebar" active="home" hint-size="232px,820px"></dc-import>
+          <div style="flex:1;min-width:0;padding:16px;display:grid;grid-template-columns:minmax(0,66fr) minmax(0,34fr);grid-template-rows:auto minmax(0,1fr) minmax(0,auto);gap:12px;background:var(--paper)">
+            <div style="grid-column:1/3;display:flex;align-items:end;gap:16px;padding:4px 2px 4px">
+              <div><div style="font-size:22px;font-weight:600;letter-spacing:-.02em">Good morning, Maya</div><div style="color:var(--ink3);margin-top:2px">Thursday, Oct 29 · Sprint 14, day 8 of 10</div></div>
+              <div style="flex:1"></div>
+              <sc-for list="{{ homeKpis }}" as="k" hint-placeholder-count="3"><div style="padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:2px;min-width:110px"><span style="font-size:11px;color:var(--ink3)">{{ k.n }}</span><span style="font-size:18px;font-weight:600">{{ k.v }}<span style="font:500 11px 'Geist Mono';color:{{ k.tc }};margin-left:6px">{{ k.t }}</span></span></div></sc-for>
+            </div>
+            <div style="grid-row:2/4;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">list</i><span style="font-weight:600">My tasks</span><span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 7px;border-radius:5px;background:var(--sunk);font-size:11.5px;color:var(--ink2)"><i style="font-size:13px">filter_list</i>Assigned to me · open</span><div style="flex:1"></div><div style="display:flex;border:1px solid var(--line);border-radius:7px;padding:2px;gap:1px"><i style="padding:4px;color:var(--ink3)">table_rows</i><i style="padding:4px;border-radius:5px;background:var(--sunk)">list</i><i style="padding:4px;color:var(--ink3)">view_kanban</i><i style="padding:4px;color:var(--ink3)">calendar_month</i></div><i style="color:var(--ink3);padding:4px">more_horiz</i></div>
+              <div style="height:38px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line);color:var(--ink3)"><i>add</i>Add a task… <span style="font-family:'Geist Mono';font-size:11.5px">type “tomorrow @dev #auth” to set fields</span></div>
+              <sc-for list="{{ myGroups }}" as="g" hint-placeholder-count="3">
+                <div style="height:32px;display:flex;align-items:center;gap:8px;padding:0 14px;background:var(--raised);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:{{ g.c }}"><i style="font-size:15px">expand_more</i>{{ g.n }}<span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ g.count }}</span></div>
+                <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="3">
+                  <div style="height:40px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line)">
+                    <i style="font-size:17px;color:var(--line2)">radio_button_unchecked</i>
+                    <span style="font:500 11.5px 'Geist Mono';color:var(--ink3);width:50px">{{ t.id }}</span>
+                    <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span>
+                    <span style="font-size:11.5px;color:var(--ink3)">{{ t.space }}</span>
+                    <span style="height:22px;padding:0 7px;border-radius:6px;background:{{ t.sb }};color:{{ t.sc }};font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;width:92px;box-sizing:border-box"><span style="width:6px;height:6px;border-radius:50%;background:{{ t.sc }}"></span>{{ t.st }}</span>
+                    <span style="font:500 11.5px 'Geist Mono';color:{{ t.dc }};width:52px;text-align:right">{{ t.due }}</span>
+                  </div>
+                </sc-for>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;min-height:0">
+              <div style="background:var(--ink);color:var(--paper);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px;opacity:.75"><i style="font-size:15px">timer</i>Timer<span style="margin-left:auto;font-family:'Geist Mono'">today 3h 05m</span></div>
+                <div style="font:600 32px 'Geist Mono';letter-spacing:-.02em">0:42:18</div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="font:500 11px 'Geist Mono';opacity:.6">TF-148</span>Per-space notification rules<span style="margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center"><i style="font-variation-settings:'FILL' 1">pause</i></span></div>
+              </div>
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden;flex:1">
+                <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">calendar_today</i><span style="font-weight:600">Today</span><span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--ink3)">Oct 29</span></div>
+                <div style="padding:6px 0">
+                  <sc-for list="{{ agenda }}" as="a" hint-placeholder-count="4"><div style="display:flex;gap:12px;padding:8px 14px;align-items:flex-start"><span style="font:500 11.5px 'Geist Mono';color:var(--ink3);width:40px;padding-top:2px">{{ a.t }}</span><div style="flex:1;border-left:2px solid {{ a.c }};padding-left:10px"><div style="font-weight:500">{{ a.n }}</div><div style="font-size:11.5px;color:var(--ink3)">{{ a.d }}</div></div></div></sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+              <div style="height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">inbox</i><span style="font-weight:600">Inbox</span><span style="height:18px;min-width:18px;border-radius:9px;background:var(--amber);color:#fff;font:600 10.5px 'Geist Mono';display:grid;place-items:center;padding:0 4px">4</span><span style="margin-left:auto;font-size:11.5px;color:var(--ink3)">Open →</span></div>
+              <sc-for list="{{ inboxMini }}" as="n" hint-placeholder-count="3"><div style="height:40px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);font-size:12.5px"><span style="width:20px;height:20px;border-radius:50%;background:{{ n.ac }};color:#fff;font-size:8.5px;font-weight:600;display:grid;place-items:center">{{ n.ai }}</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><b style="font-weight:600">{{ n.who }}</b> {{ n.text }}</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ n.time }}</span></div></sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="height:32px;flex:none;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 14px;font-size:11.5px;color:var(--ink2);background:var(--paper)">
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--red)"></span><span style="font-family:'Geist Mono'">TF-148</span>0:42:18</span>
+          <span style="display:flex;align-items:center;gap:6px"><i style="font-size:14px;color:var(--green)">check_circle</i>acme/platform · main passing</span>
+          <div style="flex:1"></div><span style="font-family:'Geist Mono';color:var(--ink3)">G H home · G I inbox · Q quick add · E arrange</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t3" data-screen-label="03 Dashboards">
+  <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Dashboards</span></div>
+  <p class="dv-sub">Dashboards are tabs of layouts with visibility (private / team / workspace). Same widget grid, same frame.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="3a">
+      <div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Eng overview · team dashboard</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:flex;flex-direction:column;font-size:13px">
+        <dc-import name="TF Topbar" path="Dashboards / Eng overview" layout="Eng overview" hint-size="1440px,48px"></dc-import>
+        <div style="flex:1;display:flex;min-height:0">
+          <dc-import name="TF Sidebar" active="dash" hint-size="232px,852px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper)">
+            <div style="height:44px;display:flex;align-items:end;gap:2px;padding:0 16px;border-bottom:1px solid var(--line)">
+              <sc-for list="{{ dashTabs }}" as="d" hint-placeholder-count="4"><span style="height:40px;padding:0 14px;display:flex;align-items:center;gap:8px;border-bottom:2px solid {{ d.bd }};color:{{ d.c }};font-weight:{{ d.w }}">{{ d.n }}<span style="display:flex;align-items:center;gap:3px;height:18px;padding:0 6px;border-radius:9px;background:var(--sunk);font-size:10.5px;color:var(--ink3);font-weight:400"><i style="font-size:12px">{{ d.vi }}</i>{{ d.v }}</span></span></sc-for>
+              <i style="height:40px;padding:0 10px;color:var(--ink3);align-items:center">add</i>
+              <div style="flex:1"></div>
+              <span style="height:30px;margin-bottom:7px;padding:0 10px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;gap:6px;font-size:12px"><i style="font-size:15px">date_range</i>Last 30 days</span>
+            </div>
+            <div style="flex:1;padding:16px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);grid-template-rows:96px minmax(0,1fr) minmax(0,1fr);gap:12px;min-height:0">
+              <sc-for list="{{ dashKpis }}" as="k" hint-placeholder-count="4">
+                <div style="grid-column:span 3;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden">
+                  <span style="font-size:11.5px;color:var(--ink3)">{{ k.n }}</span>
+                  <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:24px;font-weight:600;letter-spacing:-.02em">{{ k.v }}</span><span style="font:500 11px 'Geist Mono';color:{{ k.tc }}">{{ k.t }}</span></div>
+                  <svg viewBox="0 0 120 30" preserveAspectRatio="none" style="position:absolute;right:12px;bottom:12px;width:110px;height:30px"><polyline points="{{ k.sp }}" fill="none" stroke="{{ k.sc }}" stroke-width="1.6" vector-effect="non-scaling-stroke"></polyline></svg>
+                </div>
+              </sc-for>
+              <div style="grid-column:span 7;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+                <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">trending_down</i><span style="font-weight:600">Burndown · Sprint 14</span><span style="font-size:11.5px;color:var(--ink3)">points</span><div style="flex:1"></div><span style="display:flex;gap:12px;font-size:11.5px;color:var(--ink3)"><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:2px;background:var(--line2)"></span>Ideal</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:2px;background:var(--accent)"></span>Remaining</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:2px;background:var(--amber)"></span>Scope</span></span><i style="color:var(--ink3);padding:4px">more_horiz</i></div>
+                <div style="flex:1;padding:14px 16px 10px 40px;position:relative">
+                  <svg viewBox="0 0 600 220" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible">
+                    <g stroke="var(--line)" stroke-width="1"><line x1="0" y1="0" x2="600" y2="0"></line><line x1="0" y1="55" x2="600" y2="55"></line><line x1="0" y1="110" x2="600" y2="110"></line><line x1="0" y1="165" x2="600" y2="165"></line><line x1="0" y1="220" x2="600" y2="220"></line></g>
+                    <polyline points="0,20 600,220" fill="none" stroke="var(--line2)" stroke-width="1.5" stroke-dasharray="4 4"></polyline>
+                    <polyline points="0,20 60,20 120,35 180,48 240,46 300,70 360,98 420,118" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"></polyline>
+                    <polyline points="0,20 180,20 240,8 600,8" fill="none" stroke="var(--amber)" stroke-width="1.5"></polyline>
+                    <circle cx="420" cy="118" r="4.5" fill="var(--accent)"></circle>
+                    <line x1="420" y1="0" x2="420" y2="220" stroke="var(--ink3)" stroke-dasharray="2 3"></line>
+                  </svg>
+                  <div style="position:absolute;left:8px;top:10px;bottom:28px;display:flex;flex-direction:column;justify-content:space-between;font:500 10.5px 'Geist Mono';color:var(--ink3)"><span>64</span><span>48</span><span>32</span><span>16</span><span>0</span></div>
+                  <div style="position:absolute;left:58%;top:36%;background:var(--ink);color:var(--paper);border-radius:6px;padding:6px 8px;font-size:11.5px;line-height:1.4"><b>Day 8</b> · 35 pts left<br><span style="opacity:.7">+4 pts scope on day 4</span></div>
+                </div>
+              </div>
+              <div style="grid-column:span 5;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+                <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">person_search</i><span style="font-weight:600">Workload per person</span><span style="font-size:11.5px;color:var(--ink3)">pts vs capacity</span><div style="flex:1"></div><i style="color:var(--ink3);padding:4px">more_horiz</i></div>
+                <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ workload }}" as="w" hint-placeholder-count="8"><div style="display:flex;align-items:center;gap:10px;font-size:12px"><span style="width:20px;height:20px;border-radius:50%;background:{{ w.c }};color:#fff;font-size:8.5px;font-weight:600;display:grid;place-items:center">{{ w.i }}</span><span style="width:86px;color:var(--ink2)">{{ w.n }}</span><div style="flex:1;height:10px;border-radius:3px;background:var(--sunk);position:relative;overflow:hidden"><div style="position:absolute;inset:0 auto 0 0;width:{{ w.pct }};background:{{ w.bc }};border-radius:3px"></div></div><span style="font:500 11px 'Geist Mono';color:{{ w.tc }};width:44px;text-align:right">{{ w.v }}</span></div></sc-for>
+                </div>
+              </div>
+              <div style="grid-column:span 5;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+                <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">stacked_line_chart</i><span style="font-weight:600">Cumulative flow</span><div style="flex:1"></div><i style="color:var(--ink3);padding:4px">more_horiz</i></div>
+                <div style="flex:1;padding:12px 14px">
+                  <svg viewBox="0 0 400 160" preserveAspectRatio="none" style="width:100%;height:100%">
+                    <path d="M0,160 L0,40 C80,36 160,30 240,24 C300,20 360,16 400,14 L400,160Z" fill="var(--sunk)"></path>
+                    <path d="M0,160 L0,90 C80,80 160,66 240,58 C300,52 360,46 400,40 L400,160Z" fill="var(--steel-soft)"></path>
+                    <path d="M0,160 L0,120 C80,112 160,100 240,90 C300,84 360,78 400,70 L400,160Z" fill="var(--amber-soft)"></path>
+                    <path d="M0,160 L0,150 C80,140 160,124 240,112 C300,104 360,96 400,88 L400,160Z" fill="var(--green-soft)" stroke="var(--green)" stroke-width="1"></path>
+                  </svg>
+                </div>
+              </div>
+              <div style="grid-column:span 4;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+                <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">timer</i><span style="font-weight:600">Cycle time</span><span style="font-size:11.5px;color:var(--ink3)">days</span><div style="flex:1"></div><i style="color:var(--ink3);padding:4px">more_horiz</i></div>
+                <div style="flex:1;padding:14px;display:flex;align-items:end;gap:6px">
+                  <sc-for list="{{ cycle }}" as="c" hint-placeholder-count="10"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end"><div style="width:100%;height:{{ c.h }};background:{{ c.c }};border-radius:3px 3px 0 0"></div><span style="font:500 10px 'Geist Mono';color:var(--ink3)">{{ c.l }}</span></div></sc-for>
+                </div>
+                <div style="padding:0 14px 12px;display:flex;gap:16px;font:500 11.5px 'Geist Mono';color:var(--ink2)"><span>p50 2.4d</span><span>p85 5.1d</span><span style="color:var(--green)">−0.6d vs S13</span></div>
+              </div>
+              <div style="grid-column:span 3;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+                <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">warning</i><span style="font-weight:600">Overdue</span><span style="font:500 11px 'Geist Mono';color:var(--amber)">6</span></div>
+                <sc-for list="{{ overdue }}" as="t" hint-placeholder-count="4"><div style="height:38px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line);font-size:12px"><span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ t.id }}</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span><span style="font:500 11px 'Geist Mono';color:var(--red)">{{ t.d }}</span></div></sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t4" data-screen-label="04 Space page">
+  <div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">Space / project page</span></div>
+  <p class="dv-sub">Each view in the view bar is a saved layout. Table view grouped by list, inline status edit open, 3 rows selected → bulk action bar.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="4a">
+      <div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>Platform · Table view</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:flex;flex-direction:column;font-size:13px;position:relative">
+        <dc-import name="TF Topbar" path="Platform / Table" layout="Table · grouped" hint-size="1440px,48px"></dc-import>
+        <div style="flex:1;display:flex;min-height:0">
+          <dc-import name="TF Sidebar" active="platform" hint-size="232px,852px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--surface)">
+            <div style="padding:16px 20px 0;display:flex;align-items:center;gap:10px;background:var(--paper)">
+              <span style="width:28px;height:28px;border-radius:7px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center"><i>deployed_code</i></span>
+              <span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Platform</span>
+              <span style="font:500 11px 'Geist Mono';color:var(--ink3)">TF · 60 tasks · acme/platform</span>
+              <div style="flex:1"></div>
+              <div style="display:flex">
+                <sc-for list="{{ people5 }}" as="p" hint-placeholder-count="5"><span style="width:24px;height:24px;border-radius:50%;background:{{ p.c }};color:#fff;font-size:9px;font-weight:600;display:grid;place-items:center;border:2px solid var(--paper);margin-right:-6px">{{ p.i }}</span></sc-for>
+              </div>
+              <span style="margin-left:10px;height:30px;padding:0 12px;border-radius:7px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;gap:6px;font-weight:500"><i style="font-size:16px">add</i>New task</span>
+            </div>
+            <div style="height:42px;display:flex;align-items:end;gap:0;padding:0 14px;border-bottom:1px solid var(--line);background:var(--paper);margin-top:8px">
+              <sc-for list="{{ views }}" as="v" hint-placeholder-count="11"><span style="height:38px;padding:0 10px;display:flex;align-items:center;gap:6px;border-bottom:2px solid {{ v.bd }};color:{{ v.c }};font-weight:{{ v.w }};font-size:12.5px;white-space:nowrap"><i style="font-size:15px">{{ v.i }}</i>{{ v.n }}</span></sc-for>
+              <span style="width:1px;height:18px;background:var(--line2);margin:0 6px 10px"></span>
+              <span style="height:38px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2)"><i style="font-size:15px;color:var(--amber)">bookmark</i>Bug triage</span>
+              <span style="height:38px;padding:0 8px;display:flex;align-items:center;color:var(--ink3)"><i>add</i></span>
+            </div>
+            <div style="height:44px;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid var(--line)">
+              <span style="height:26px;padding:0 4px 0 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500"><i style="font-size:14px">filter_alt</i>Sprint 14<i style="font-size:14px">close</i></span>
+              <span style="height:26px;padding:0 4px 0 8px;border-radius:6px;background:var(--sunk);display:flex;align-items:center;gap:4px;font-size:12px">Type ≠ Epic<i style="font-size:14px;color:var(--ink3)">close</i></span>
+              <span style="height:26px;padding:0 8px;border-radius:6px;border:1px dashed var(--line2);display:flex;align-items:center;font-size:12px;color:var(--ink3)">+ Filter</span>
+              <span style="font-size:12px;color:var(--ink3);margin-left:4px">Saved: <span style="color:var(--ink2)">My open · Blocked · No estimate</span></span>
+              <div style="flex:1"></div>
+              <span style="height:26px;padding:0 8px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;gap:4px;font-size:12px"><i style="font-size:14px">segment</i>Group: List</span>
+              <span style="height:26px;padding:0 8px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;gap:4px;font-size:12px"><i style="font-size:14px">sort</i>Priority</span>
+              <span style="height:26px;padding:0 8px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;gap:4px;font-size:12px"><i style="font-size:14px">view_week</i>Fields · 9</span>
+            </div>
+            <div style="height:34px;display:grid;grid-template-columns:36px 70px minmax(0,1fr) 120px 120px 72px 64px 80px 80px;align-items:center;padding:0 16px;gap:8px;border-bottom:1px solid var(--line);font-size:11.5px;color:var(--ink3);background:var(--raised)"><span style="width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line2)"></span><span>ID</span><span>Title</span><span>Status</span><span>Assignees</span><span>Priority</span><span>Pts</span><span>Due</span><span>PR</span></div>
+            <div style="flex:1;overflow:hidden;position:relative">
+              <sc-for list="{{ spaceGroups }}" as="g" hint-placeholder-count="2">
+                <div style="height:34px;display:flex;align-items:center;gap:8px;padding:0 16px;background:var(--paper);border-bottom:1px solid var(--line);font-size:12px;font-weight:600"><i style="font-size:15px;color:var(--ink3)">expand_more</i><i style="font-size:15px;color:var(--ink3)">list</i>{{ g.n }}<span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ g.count }}</span><span style="font-weight:400;color:var(--ink3);margin-left:8px">{{ g.pts }}</span></div>
+                <sc-for list="{{ g.rows }}" as="t" hint-placeholder-count="6">
+                  <div style="height:38px;display:grid;grid-template-columns:36px 70px minmax(0,1fr) 120px 120px 72px 64px 80px 80px;align-items:center;padding:0 16px;gap:8px;border-bottom:1px solid var(--line);background:{{ t.bg }}">
+                    <span style="width:14px;height:14px;border-radius:4px;border:1.5px solid {{ t.cbB }};background:{{ t.cbBg }};display:grid;place-items:center"><i style="font-size:12px;color:var(--accent-ink)">{{ t.cbI }}</i></span>
+                    <span style="font:500 11.5px 'Geist Mono';color:var(--ink3)">{{ t.id }}</span>
+                    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span>
+                    <span style="height:24px;padding:0 7px;border-radius:6px;background:{{ t.sb }};color:{{ t.sc }};font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;width:max-content;box-shadow:{{ t.editSh }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ t.sc }}"></span>{{ t.st }}</span>
+                    <span style="display:flex"><sc-for list="{{ t.as }}" as="a" hint-placeholder-count="1"><span style="width:22px;height:22px;border-radius:50%;background:{{ a.c }};color:#fff;font-size:8.5px;font-weight:600;display:grid;place-items:center;border:2px solid var(--surface);margin-right:-5px">{{ a.i }}</span></sc-for></span>
+                    <span style="font-size:12px;color:{{ t.pc }};display:flex;align-items:center;gap:3px"><i style="font-size:14px">{{ t.pi }}</i>{{ t.p }}</span>
+                    <span style="font:500 11.5px 'Geist Mono';color:var(--ink2)">{{ t.pts }}</span>
+                    <span style="font:500 11.5px 'Geist Mono';color:{{ t.dc }}">{{ t.due }}</span>
+                    <span style="font:500 11.5px 'Geist Mono';color:var(--ink3)">{{ t.pr }}</span>
+                  </div>
+                </sc-for>
+              </sc-for>
+              <div style="position:absolute;left:612px;top:70px;width:200px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:4px;font-size:12.5px;z-index:2">
+                <div style="height:30px;display:flex;align-items:center;padding:0 8px;color:var(--ink3);font-size:12px;border-bottom:1px solid var(--line);margin-bottom:4px"><i style="font-size:14px;margin-right:6px">search</i>Change status…</div>
+                <sc-for list="{{ statusMenu }}" as="s" hint-placeholder-count="5"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:5px;background:{{ s.bg }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.c }}"></span>{{ s.n }}<span style="margin-left:auto;font:11px 'Geist Mono';color:var(--ink3)">{{ s.k }}</span></div></sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;left:calc(50% + 116px);bottom:24px;transform:translateX(-50%);display:flex;align-items:center;gap:4px;height:44px;padding:0 6px 0 14px;border-radius:10px;background:var(--ink);color:var(--paper);font-size:12.5px;box-shadow:0 12px 32px rgba(0,0,0,.22)">
+          <span style="font-weight:600;margin-right:8px">3 selected</span>
+          <sc-for list="{{ bulk }}" as="b" hint-placeholder-count="6"><span style="height:32px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:6px;color:{{ b.c }}"><i style="font-size:15px">{{ b.i }}</i>{{ b.n }}</span></sc-for>
+          <span style="width:1px;height:20px;background:rgba(255,255,255,.2);margin:0 4px"></span><i style="padding:8px;opacity:.7">close</i>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="4b">
+      <div class="dv-olabel"><a class="dv-oid" href="#4b">4b</a>Board view · swimlanes by assignee · WIP limits</div>
+      <div class="dv-card" style="width:920px;background:var(--raised);font-size:12.5px">
+        <div style="display:grid;grid-template-columns:130px repeat(4,minmax(0,1fr));gap:8px;padding:12px">
+          <span></span>
+          <sc-for list="{{ boardCols }}" as="c" hint-placeholder-count="4"><div style="height:32px;display:flex;align-items:center;gap:6px;padding:0 8px;border-radius:6px;background:{{ c.bg }};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:{{ c.c }}"></span>{{ c.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:{{ c.wc }}">{{ c.wip }}</span></div></sc-for>
+          <sc-for list="{{ lanes }}" as="l" hint-placeholder-count="3">
+            <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 4px;border-top:1px solid var(--line)"><span style="width:22px;height:22px;border-radius:50%;background:{{ l.c }};color:#fff;font-size:9px;font-weight:600;display:grid;place-items:center">{{ l.i }}</span><div><div style="font-weight:600">{{ l.n }}</div><div style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ l.pts }}</div></div></div>
+            <sc-for list="{{ l.cells }}" as="cell" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:6px;padding:8px 0;border-top:1px solid var(--line);min-height:60px">
+                <sc-for list="{{ cell }}" as="k" hint-placeholder-count="1"><div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:8px;display:flex;flex-direction:column;gap:6px"><span style="font:500 10.5px 'Geist Mono';color:var(--ink3)">{{ k.id }}</span><span style="font-weight:500;line-height:1.35">{{ k.t }}</span></div></sc-for>
+              </div>
+            </sc-for>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t5" data-screen-label="05 Task detail">
+  <div class="dv-thd"><a class="dv-tid" href="#t5">5</a><span class="dv-tname">Task detail — full page &amp; peek</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="5a">
+      <div class="dv-olabel"><a class="dv-oid" href="#5a">5a</a>Full page · TF-142</div>
+      <div class="dv-card" style="width:1440px;height:1180px;display:flex;flex-direction:column;font-size:13px">
+        <dc-import name="TF Topbar" path="Platform / Backend / TF-142" layout="Task page" hint-size="1440px,48px"></dc-import>
+        <div style="flex:1;display:flex;min-height:0">
+          <dc-import name="TF Sidebar" active="backend" hint-size="232px,1130px"></dc-import>
+          <div style="flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;background:var(--surface)">
+            <div style="padding:24px 40px;display:flex;flex-direction:column;gap:22px;border-right:1px solid var(--line);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="height:24px;padding:0 8px;border-radius:6px;background:var(--red-soft);color:var(--red);display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500"><i style="font-size:14px">bug_report</i>Bug</span>
+                <span style="height:24px;padding:0 8px;border-radius:6px;border:1px solid var(--line2);display:flex;align-items:center;gap:6px;font:500 12px 'Geist Mono'">TF-142<i style="font-size:13px;color:var(--ink3)">content_copy</i></span>
+                <span style="height:24px;padding:0 8px;border-radius:6px;background:var(--steel-soft);color:var(--steel);display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:var(--steel)"></span>In progress<i style="font-size:14px">expand_more</i></span>
+                <span style="font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:4px"><i style="font-size:14px">repeat</i>Not recurring</span>
+                <div style="flex:1"></div>
+                <span style="height:30px;padding:0 10px;border-radius:7px;background:var(--ink);color:var(--paper);display:flex;align-items:center;gap:8px;font:500 12.5px 'Geist Mono'"><span style="width:7px;height:7px;border-radius:50%;background:var(--red)"></span>1:20:14<i style="font-size:15px;font-variation-settings:'FILL' 1">pause</i></span>
+                <i style="padding:6px;color:var(--ink3)">open_in_new</i><i style="padding:6px;color:var(--ink3)">more_horiz</i>
+              </div>
+              <div style="font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.2">Fix login crash on SSO redirect</div>
+              <div style="font-size:14px;line-height:1.65;color:var(--ink);max-width:760px;display:flex;flex-direction:column;gap:10px">
+                <p style="margin:0">After Okta redirects back to <span style="font:12.5px 'Geist Mono';background:var(--sunk);padding:1px 5px;border-radius:4px">/auth/callback</span>, <span style="font:12.5px 'Geist Mono';background:var(--sunk);padding:1px 5px;border-radius:4px">session.restore()</span> runs before the token is persisted. iOS Safari throws on null deref → white screen.</p>
+                <p style="margin:0;color:var(--ink2)"><b style="color:var(--ink);font-weight:600">Repro:</b> private window → sign in with SSO → crash on ~30% of attempts. Sentry: 214 events / 24h.</p>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:12.5px">Checklist<span style="font:500 11px 'Geist Mono';color:var(--ink3)">2/4</span><div style="flex:1;height:4px;border-radius:2px;background:var(--sunk);margin-left:6px;overflow:hidden"><div style="width:50%;height:100%;background:var(--accent)"></div></div></div>
+                  <sc-for list="{{ checklist }}" as="c" hint-placeholder-count="4"><div style="display:flex;gap:8px;align-items:center;color:{{ c.col }};text-decoration:{{ c.td }}"><i style="font-size:17px;color:{{ c.ic }};font-variation-settings:'FILL' 1">{{ c.i }}</i>{{ c.n }}</div></sc-for>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:12.5px">Subtasks<span style="font:500 11px 'Geist Mono';color:var(--ink3)">1/3</span><i style="margin-left:auto;font-size:16px;color:var(--ink3)">add</i></div>
+                  <sc-for list="{{ subtasks }}" as="s" hint-placeholder-count="3"><div style="height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border:1px solid var(--line);border-radius:7px"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.c }}"></span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ s.id }}</span><span style="flex:1">{{ s.t }}</span><span style="width:18px;height:18px;border-radius:50%;background:{{ s.ac }};color:#fff;font-size:8px;font-weight:600;display:grid;place-items:center">{{ s.ai }}</span></div></sc-for>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="font-weight:600;font-size:12.5px">Relations</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ relations }}" as="r" hint-placeholder-count="3"><span style="height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--line);display:flex;align-items:center;gap:6px;font-size:12px"><span style="color:{{ r.c }};font-weight:500">{{ r.k }}</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ r.id }}</span>{{ r.t }}</span></sc-for></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--raised)">
+                <div style="display:flex;align-items:center;gap:8px"><i style="color:var(--ink3)">code</i><span style="font-weight:600">Development</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">acme/platform</span><div style="flex:1"></div><span style="height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--line2);background:var(--surface);display:flex;align-items:center;gap:6px;font-size:12px"><i style="font-size:15px">fork_right</i>Create branch</span><span style="height:28px;padding:0 10px;border-radius:7px;background:var(--ink);color:var(--paper);display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500"><i style="font-size:15px">merge</i>Create PR</span></div>
+                <div style="display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border-radius:7px;background:var(--surface);border:1px solid var(--line)"><i style="font-size:15px;color:var(--ink3)">fork_right</i><span style="font:500 12px 'Geist Mono'">tf-142-fix-login-crash</span><span style="font-size:11.5px;color:var(--ink3)">3 commits · 2h ago</span><i style="margin-left:auto;font-size:14px;color:var(--ink3)">content_copy</i></div>
+                <div style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:7px;background:var(--surface);border:1px solid var(--line)"><i style="color:var(--steel)">merge</i><span style="font:500 12px 'Geist Mono'">#418</span><span style="font-weight:500">Fix SSO redirect loop on token restore</span><span style="height:20px;padding:0 7px;border-radius:5px;background:var(--steel-soft);color:var(--steel);font-size:11px;font-weight:500;display:flex;align-items:center">Open · review requested</span><div style="flex:1"></div><span style="display:flex;align-items:center;gap:4px;font:500 11px 'Geist Mono';color:var(--green)"><i style="font-size:14px">check_circle</i>CI 14/14</span><span style="display:flex"><span style="width:20px;height:20px;border-radius:50%;background:#8C6B47;color:#fff;font-size:8px;font-weight:600;display:grid;place-items:center;border:2px solid var(--surface)">LO</span><span style="width:20px;height:20px;border-radius:50%;background:#7F7451;color:#fff;font-size:8px;font-weight:600;display:grid;place-items:center;border:2px solid var(--surface);margin-left:-5px;opacity:.5">JB</span></span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:12.5px">Attachments<span style="font:500 11px 'Geist Mono';color:var(--ink3)">2</span></div>
+                <div style="display:flex;gap:8px"><span style="height:36px;padding:0 10px;border:1px solid var(--line);border-radius:7px;display:flex;align-items:center;gap:8px;font-size:12px"><i style="color:var(--ink3)">image</i>safari-crash.mov<span style="font:11px 'Geist Mono';color:var(--ink3)">4.2 MB</span></span><span style="height:36px;padding:0 10px;border:1px solid var(--line);border-radius:7px;display:flex;align-items:center;gap:8px;font-size:12px"><i style="color:var(--ink3)">description</i>sentry-trace.json<span style="font:11px 'Geist Mono';color:var(--ink3)">18 KB</span></span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line)"><span style="padding:8px 0;border-bottom:2px solid var(--accent);font-weight:600">Activity</span><span style="padding:8px 0;color:var(--ink2)">Comments 3</span><span style="padding:8px 0;color:var(--ink2)">History</span><span style="padding:8px 0;color:var(--ink2)">Time 3h 05m</span></div>
+                <sc-for list="{{ activity }}" as="a" hint-placeholder-count="5">
+                  <div style="display:flex;gap:10px;align-items:flex-start">
+                    <span style="width:24px;height:24px;border-radius:{{ a.r }};background:{{ a.ac }};color:{{ a.fc }};font-size:9px;font-weight:600;display:grid;place-items:center;flex:none"><i style="font-size:14px">{{ a.icon }}</i>{{ a.ai }}</span>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:4px"><div style="font-size:12.5px"><b style="font-weight:600">{{ a.who }}</b> <span style="color:var(--ink2)">{{ a.what }}</span><span style="color:var(--ink3);font-family:'Geist Mono';font-size:11px;margin-left:6px">{{ a.t }}</span></div><sc-if value="{{ a.body }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 12px;border-radius:8px;background:var(--raised);border:1px solid var(--line);line-height:1.5">{{ a.body }}</div></sc-if></div>
+                  </div>
+                </sc-for>
+                <div style="height:40px;border:1px solid var(--line2);border-radius:8px;display:flex;align-items:center;padding:0 12px;color:var(--ink3);gap:8px">Comment, @mention, or / for commands<span style="margin-left:auto;font:11px 'Geist Mono'">⌘↵</span></div>
+              </div>
+            </div>
+            <div style="padding:20px;display:flex;flex-direction:column;gap:14px;background:var(--paper)">
+              <div style="display:grid;grid-template-columns:96px 1fr;row-gap:12px;font-size:12.5px;align-items:center">
+                <sc-for list="{{ fields }}" as="f" hint-placeholder-count="12"><span style="color:var(--ink3)">{{ f.k }}</span><span style="display:flex;align-items:center;gap:6px;font-family:{{ f.ff }};color:{{ f.c }};font-weight:{{ f.w }}">{{ f.v }}</span></sc-for>
+              </div>
+              <div style="height:1px;background:var(--line)"></div>
+              <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">PEOPLE</div>
+              <sc-for list="{{ taskPeople }}" as="p" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="width:22px;height:22px;border-radius:50%;background:{{ p.c }};color:#fff;font-size:8.5px;font-weight:600;display:grid;place-items:center">{{ p.i }}</span>{{ p.n }}<span style="margin-left:auto;font-size:11.5px;color:var(--ink3)">{{ p.r }}</span></div></sc-for>
+              <div style="height:1px;background:var(--line)"></div>
+              <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">CUSTOM FIELDS</div>
+              <div style="display:grid;grid-template-columns:96px 1fr;row-gap:10px;font-size:12.5px"><span style="color:var(--ink3)">Customer</span><span>Northwind (Enterprise)</span><span style="color:var(--ink3)">Severity</span><span style="color:var(--red);font-weight:500">S2</span><span style="color:var(--ink3)">Platform</span><span>iOS Safari 18</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="5b">
+      <div class="dv-olabel"><a class="dv-oid" href="#5b">5b</a>Peek panel / right-sidebar widget</div>
+      <div class="dv-card" style="width:420px;height:900px;background:var(--surface);display:flex;flex-direction:column;font-size:12.5px">
+        <div style="height:44px;display:flex;align-items:center;gap:6px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)"><span style="font:500 12px 'Geist Mono';color:var(--ink2)">TF-142</span><i style="font-size:13px;color:var(--ink3)">content_copy</i><span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:11px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:500;margin-left:6px"><i style="font-size:13px">link</i>Board</span><div style="flex:1"></div><i style="padding:5px;color:var(--ink3)">keyboard_arrow_up</i><i style="padding:5px;color:var(--ink3)">keyboard_arrow_down</i><i style="padding:5px;color:var(--ink3)">open_in_full</i><i style="padding:5px;color:var(--ink3)">close</i></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+          <div style="font-size:18px;font-weight:600;letter-spacing:-.01em;line-height:1.3">Fix login crash on SSO redirect</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><span style="height:24px;padding:0 8px;border-radius:6px;background:var(--steel-soft);color:var(--steel);display:flex;align-items:center;gap:5px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:var(--steel)"></span>In progress</span><span style="height:24px;padding:0 8px;border-radius:6px;background:var(--amber-soft);color:var(--amber);display:flex;align-items:center;font-weight:500">High</span><span style="height:24px;padding:0 8px;border-radius:6px;border:1px solid var(--line2);display:flex;align-items:center;font:500 11.5px 'Geist Mono'">5 pts</span><span style="height:24px;padding:0 8px;border-radius:6px;border:1px solid var(--line2);display:flex;align-items:center">auth</span></div>
+          <div style="display:grid;grid-template-columns:84px 1fr;row-gap:10px;align-items:center">
+            <span style="color:var(--ink3)">Assignees</span><span style="display:flex;gap:6px;align-items:center"><span style="width:20px;height:20px;border-radius:50%;background:#5D6B8A;color:#fff;font-size:8px;font-weight:600;display:grid;place-items:center">DP</span>Dev Patel</span>
+            <span style="color:var(--ink3)">Reviewer</span><span style="display:flex;gap:6px;align-items:center"><span style="width:20px;height:20px;border-radius:50%;background:#8C6B47;color:#fff;font-size:8px;font-weight:600;display:grid;place-items:center">LO</span>Liam O'Connor</span>
+            <span style="color:var(--ink3)">Dates</span><span style="font:500 12px 'Geist Mono'">Oct 27 → Oct 30</span>
+            <span style="color:var(--ink3)">Sprint</span><span>Sprint 14</span>
+            <span style="color:var(--ink3)">Timer</span><span style="font:500 12px 'Geist Mono';color:var(--red)">● 1:20:14</span>
+          </div>
+          <div style="line-height:1.55;color:var(--ink2)">After Okta redirects back, session.restore() runs before the token is persisted. iOS Safari throws on null deref.</div>
+          <div style="display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px"><i style="color:var(--steel);font-size:15px">merge</i><span style="font:500 11.5px 'Geist Mono'">#418</span><span style="flex:1">Fix SSO redirect loop</span><span style="font:500 10.5px 'Geist Mono';color:var(--green)">CI ✓</span></div>
+          <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">LATEST</div>
+          <div style="display:flex;gap:8px"><span style="width:20px;height:20px;border-radius:5px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none"><i style="font-size:13px">bolt</i></span><div><b style="font-weight:600">Automation</b> <span style="color:var(--ink2)">moved to In review when PR #418 requested review</span><div style="font:11px 'Geist Mono';color:var(--ink3);margin-top:2px">2h ago · PR → status</div></div></div>
+          <div style="display:flex;gap:8px"><span style="width:20px;height:20px;border-radius:50%;background:#8C6B47;color:#fff;font-size:8px;font-weight:600;display:grid;place-items:center;flex:none">LO</span><div><b style="font-weight:600">Liam</b> <span style="color:var(--ink2)">Can we add a regression test for the race before merge?</span></div></div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="padding:12px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center"><div style="flex:1;height:34px;border:1px solid var(--line2);border-radius:8px;display:flex;align-items:center;padding:0 10px;color:var(--ink3)">Comment…</div><span style="font:11px 'Geist Mono';color:var(--ink3)">J/K next · ⇧↵ full page</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t6" data-screen-label="06 Sprints">
+  <div class="dv-thd"><a class="dv-tid" href="#t6">6</a><span class="dv-tname">Sprints</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="6a">
+      <div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a>Sprint planning · backlog 30 | lanes 70 · capacity strip on top</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:flex;flex-direction:column;font-size:13px">
+        <dc-import name="TF Topbar" path="Platform / Sprints" layout="Sprint planning" hint-size="1440px,48px"></dc-import>
+        <div style="flex:1;display:flex;min-height:0">
+          <dc-import name="TF Sidebar" active="sprint" hint-size="232px,852px"></dc-import>
+          <div style="flex:1;min-width:0;padding:12px;display:flex;flex-direction:column;gap:12px;background:var(--paper)">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:24px">
+              <div style="display:flex;flex-direction:column;gap:2px"><span style="font-weight:600">Sprint 14 · active</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">Oct 20 → Nov 2 · day 8/10</span></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px"><div style="height:10px;border-radius:5px;background:var(--sunk);overflow:hidden;display:flex"><span style="width:44%;background:var(--green)"></span><span style="width:22%;background:var(--steel)"></span><span style="width:12%;background:var(--amber)"></span><span style="width:4%;background:var(--red)"></span></div><div style="display:flex;gap:16px;font-size:11.5px;color:var(--ink3)"><span><b style="color:var(--green);font-weight:600">27</b> done</span><span><b style="color:var(--steel);font-weight:600">14</b> in progress</span><span><b style="color:var(--amber);font-weight:600">8</b> review</span><span><b style="color:var(--red);font-weight:600">3</b> blocked</span><span>+4 scope</span></div></div>
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;background:var(--green-soft);color:var(--green);font-weight:500;font-size:12px"><i style="font-size:15px">ecg_heart</i>Healthy · forecast 58/62</div>
+              <span style="height:30px;padding:0 12px;border-radius:7px;border:1px solid var(--line2);display:flex;align-items:center;font-weight:500">Complete sprint…</span>
+            </div>
+            <div style="flex:1;display:flex;gap:12px;min-height:0">
+              <div style="width:30%;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+                <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">inventory_2</i><span style="font-weight:600">Backlog</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">38 · 142 pts</span><div style="flex:1"></div><i style="padding:4px;color:var(--ink3)">filter_list</i></div>
+                <sc-for list="{{ backlog }}" as="t" hint-placeholder-count="12"><div style="min-height:40px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line);font-size:12.5px;background:{{ t.bg }};opacity:{{ t.op }}"><i style="font-size:14px;color:var(--line2)">drag_indicator</i><span style="font:500 11px 'Geist Mono';color:var(--ink3);width:44px">{{ t.id }}</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ t.pts }}</span></div></sc-for>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:12px;min-width:0">
+                <div style="flex:1;background:var(--surface);border:1.5px solid var(--accent);border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+                  <div style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--accent)">sprint</i><span style="font-weight:600">Sprint 15 · planning</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">Nov 3 → Nov 16</span><div style="flex:1"></div><span style="font:500 12px 'Geist Mono'">48 / 56 pts</span><div style="width:140px;height:8px;border-radius:4px;background:var(--sunk);overflow:hidden"><div style="width:86%;height:100%;background:var(--accent)"></div></div><span style="height:28px;padding:0 12px;border-radius:7px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;font-weight:500;font-size:12px">Start sprint</span></div>
+                  <div style="flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:10px;background:var(--raised)">
+                    <sc-for list="{{ planLanes }}" as="l" hint-placeholder-count="4">
+                      <div style="display:flex;flex-direction:column;gap:8px">
+                        <div style="display:flex;align-items:center;gap:8px;padding:4px"><span style="width:22px;height:22px;border-radius:50%;background:{{ l.c }};color:#fff;font-size:9px;font-weight:600;display:grid;place-items:center">{{ l.i }}</span><span style="font-weight:600;font-size:12.5px">{{ l.n }}</span><span style="margin-left:auto;font:500 11px 'Geist Mono';color:{{ l.tc }}">{{ l.cap }}</span></div>
+                        <div style="height:4px;border-radius:2px;background:var(--sunk);overflow:hidden"><div style="width:{{ l.pct }};height:100%;background:{{ l.bc }}"></div></div>
+                        <sc-for list="{{ l.cards }}" as="k" hint-placeholder-count="2"><div style="background:var(--surface);border:1px solid {{ k.bd }};border-radius:7px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;font-size:12px;border-style:{{ k.bs }}"><div style="display:flex;font:500 10.5px 'Geist Mono';color:var(--ink3)">{{ k.id }}<span style="margin-left:auto">{{ k.pts }}</span></div><span style="font-weight:500;line-height:1.35">{{ k.t }}</span></div></sc-for>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="height:200px;flex:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column">
+                  <div style="height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">speed</i><span style="font-weight:600">Velocity</span><span style="font-size:11.5px;color:var(--ink3)">last 8 sprints · avg 54</span><div style="flex:1"></div><span style="display:flex;gap:12px;font-size:11.5px;color:var(--ink3)"><span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:var(--line2);border-radius:2px"></span>Committed</span><span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:var(--accent);border-radius:2px"></span>Done</span></span></div>
+                  <div style="flex:1;display:flex;align-items:end;gap:22px;padding:12px 20px">
+                    <sc-for list="{{ velocity }}" as="v" hint-placeholder-count="8"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:end;width:100%;height:100%"><span style="flex:1;height:{{ v.c }};background:var(--line2);border-radius:3px 3px 0 0"></span><span style="flex:1;height:{{ v.d }};background:{{ v.col }};border-radius:3px 3px 0 0"></span></div><span style="font:500 10.5px 'Geist Mono';color:var(--ink3)">{{ v.n }}</span></div></sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="6b">
+      <div class="dv-olabel"><a class="dv-oid" href="#6b">6b</a>Complete sprint flow</div>
+      <div class="dv-card" style="width:520px;background:var(--surface);font-size:13px">
+        <div style="padding:20px 20px 12px"><div style="font:500 11px 'Geist Mono';color:var(--ink3);margin-bottom:6px">STEP 2 OF 3 · UNFINISHED WORK</div><div style="font-size:17px;font-weight:600">Complete Sprint 14</div><div style="color:var(--ink2);margin-top:4px">58 of 62 pts done. 3 tasks are unfinished — where should they go?</div></div>
+        <div style="padding:0 20px;display:flex;gap:6px;margin-bottom:12px"><span style="flex:1;height:4px;border-radius:2px;background:var(--accent)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--accent)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sunk)"></span></div>
+        <sc-for list="{{ unfinished }}" as="u" hint-placeholder-count="3"><div style="margin:0 20px 6px;height:44px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--line);border-radius:8px"><span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ u.id }}</span><span style="flex:1">{{ u.t }}</span><span style="height:26px;padding:0 8px;border-radius:6px;border:1px solid var(--line2);display:flex;align-items:center;gap:4px;font-size:12px">{{ u.to }}<i style="font-size:14px">expand_more</i></span></div></sc-for>
+        <div style="margin:10px 20px;display:flex;align-items:center;gap:8px;color:var(--ink2)"><span style="width:16px;height:16px;border-radius:4px;background:var(--accent);display:grid;place-items:center"><i style="font-size:13px;color:var(--accent-ink)">check</i></span>Post sprint report to #platform and run “Sprint end” automation</div>
+        <div style="padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:space-between"><span style="height:32px;padding:0 14px;display:flex;align-items:center;border:1px solid var(--line2);border-radius:7px">Back</span><span style="height:32px;padding:0 14px;display:flex;align-items:center;border-radius:7px;background:var(--ink);color:var(--paper);font-weight:500">Review &amp; complete</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t7" data-screen-label="07 Automations">
+  <div class="dv-thd"><a class="dv-tid" href="#t7">7</a><span class="dv-tname">Advanced automations</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="7a">
+      <div class="dv-olabel"><a class="dv-oid" href="#7a">7a</a>Automations list + recipes</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:flex;flex-direction:column;font-size:13px">
+        <dc-import name="TF Topbar" path="Workspace / Automations" layout="Automations" hint-size="1440px,48px"></dc-import>
+        <div style="flex:1;display:flex;min-height:0">
+          <dc-import name="TF Sidebar" active="auto" hint-size="232px,852px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--paper);padding:20px;gap:16px">
+            <div style="display:flex;align-items:center;gap:12px"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Automations</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">14 active · 2,318 runs / 7d · 99.2% ok</span><div style="flex:1"></div><span style="height:30px;padding:0 12px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;gap:6px;background:var(--surface)"><i style="font-size:15px">auto_awesome_mosaic</i>Recipes</span><span style="height:30px;padding:0 12px;border-radius:7px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;gap:6px;font-weight:500"><i style="font-size:16px">add</i>New automation</span></div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+              <div style="height:34px;display:grid;grid-template-columns:minmax(0,2.2fr) 120px minmax(0,1.6fr) 80px 120px 100px 56px;gap:12px;align-items:center;padding:0 16px;font-size:11.5px;color:var(--ink3);background:var(--raised);border-bottom:1px solid var(--line)"><span>Name</span><span>Scope</span><span>Trigger</span><span>Runs 7d</span><span>Success</span><span>Owner</span><span>On</span></div>
+              <sc-for list="{{ automations }}" as="a" hint-placeholder-count="8">
+                <div style="height:44px;display:grid;grid-template-columns:minmax(0,2.2fr) 120px minmax(0,1.6fr) 80px 120px 100px 56px;gap:12px;align-items:center;padding:0 16px;border-bottom:1px solid var(--line);opacity:{{ a.op }}">
+                  <span style="display:flex;align-items:center;gap:8px;font-weight:500;white-space:nowrap;overflow:hidden"><i style="color:var(--accent)">bolt</i>{{ a.n }}</span>
+                  <span style="font-size:12px;color:var(--ink2)">{{ a.scope }}</span>
+                  <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden"><i style="font-size:14px;color:var(--ink3)">{{ a.ti }}</i>{{ a.trig }}</span>
+                  <span style="font:500 12px 'Geist Mono'">{{ a.runs }}</span>
+                  <span style="display:flex;align-items:center;gap:8px"><span style="width:50px;height:5px;border-radius:3px;background:var(--sunk);overflow:hidden"><span style="display:block;width:{{ a.ok }};height:100%;background:{{ a.okc }}"></span></span><span style="font:500 11.5px 'Geist Mono';color:{{ a.okc }}">{{ a.ok }}</span></span>
+                  <span style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:20px;height:20px;border-radius:50%;background:{{ a.ac }};color:#fff;font-size:8px;font-weight:600;display:grid;place-items:center">{{ a.ai }}</span>{{ a.on }}</span>
+                  <span style="width:30px;height:18px;border-radius:9px;background:{{ a.tg }};position:relative"><span style="position:absolute;top:2px;left:{{ a.tl }};width:14px;height:14px;border-radius:50%;background:#fff"></span></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">RECIPE GALLERY</div>
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+              <sc-for list="{{ recipes }}" as="r" hint-placeholder-count="4"><div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;gap:6px;font:500 11px 'Geist Mono';color:var(--ink3)"><i style="font-size:15px;color:var(--accent)">{{ r.i1 }}</i>→<i style="font-size:15px;color:var(--ink2)">{{ r.i2 }}</i><span style="margin-left:auto">{{ r.uses }}</span></div><div style="font-weight:600">{{ r.n }}</div><div style="font-size:12px;color:var(--ink3);line-height:1.45">{{ r.d }}</div></div></sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="7b">
+      <div class="dv-olabel"><a class="dv-oid" href="#7b">7b</a>Flow builder · test run trace · variable picker</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:flex;flex-direction:column;font-size:13px">
+        <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--paper)">
+          <i style="color:var(--ink3)">arrow_back</i><i style="color:var(--accent)">bolt</i><span style="font-weight:600;font-size:14px">PR opened → task</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">Platform · draft v4</span>
+          <div style="flex:1"></div>
+          <span style="font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:6px"><i style="font-size:14px;color:var(--green)">cloud_done</i>Saved</span>
+          <span style="height:30px;padding:0 12px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;gap:6px;background:var(--surface)"><i style="font-size:15px">history</i>Run history</span>
+          <span style="height:30px;padding:0 12px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;gap:6px;background:var(--surface)"><i style="font-size:15px">play_arrow</i>Test run</span>
+          <span style="height:30px;padding:0 12px;border-radius:7px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;font-weight:500">Publish</span>
+        </div>
+        <div style="flex:1;display:flex;min-height:0">
+          <div style="width:240px;flex:none;border-right:1px solid var(--line);background:var(--paper);padding:12px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;overflow:hidden">
+            <div style="height:30px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;gap:6px;padding:0 8px;color:var(--ink3);background:var(--surface);margin-bottom:6px"><i style="font-size:15px">search</i>Add step</div>
+            <sc-for list="{{ palette }}" as="g" hint-placeholder-count="3">
+              <div style="font:600 10px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:8px 4px 2px">{{ g.n }}</div>
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4"><div style="height:28px;display:flex;align-items:center;gap:8px;padding:0 6px;border-radius:6px;color:var(--ink2)"><i style="font-size:15px;color:{{ g.c }}">{{ it.i }}</i>{{ it.n }}</div></sc-for>
+            </sc-for>
+          </div>
+          <div style="flex:1;position:relative;background:var(--sunk);background-image:radial-gradient(var(--line2) 1px,transparent 1px);background-size:18px 18px;overflow:hidden">
+            <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 860 848" preserveAspectRatio="xMinYMin meet">
+              <g fill="none" stroke="var(--line2)" stroke-width="1.5">
+                <path d="M340 118 V160"></path><path d="M340 262 V300"></path>
+                <path d="M340 386 C340 420 180 410 180 450"></path><path d="M340 386 C340 420 520 410 520 450"></path>
+                <path d="M180 560 V600"></path><path d="M520 560 V600"></path><path d="M180 690 V720"></path>
+              </g>
+            </svg>
+            <div style="position:absolute;left:220px;top:36px;width:240px;background:var(--surface);border:1.5px solid var(--green);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.05)"><div style="height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--accent-soft);color:var(--accent);font:600 10px 'Geist Mono';letter-spacing:.04em"><i style="font-size:13px">bolt</i>TRIGGER<i style="margin-left:auto;font-size:14px;color:var(--green)">check_circle</i></div><div style="padding:8px 10px;font-weight:500">GitHub PR opened</div><div style="padding:0 10px 8px;font:11px 'Geist Mono';color:var(--ink3)">repo = acme/platform</div></div>
+            <div style="position:absolute;left:220px;top:160px;width:240px;background:var(--surface);border:1.5px solid var(--green);border-radius:8px;overflow:hidden"><div style="height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--sunk);color:var(--ink2);font:600 10px 'Geist Mono';letter-spacing:.04em"><i style="font-size:13px">rule</i>CONDITIONS · ALL<i style="margin-left:auto;font-size:14px;color:var(--green)">check_circle</i></div><div style="padding:8px 10px;display:flex;flex-direction:column;gap:5px;font-size:12px"><span><span style="font:500 11px 'Geist Mono';color:var(--amber)">pr.draft</span> is false</span><span style="display:flex;align-items:center;gap:6px"><span style="font:600 9.5px 'Geist Mono';padding:1px 5px;border-radius:3px;background:var(--ink);color:var(--paper)">AND</span>any of</span><span style="padding-left:12px;border-left:2px solid var(--line2)"><span style="font:500 11px 'Geist Mono';color:var(--amber)">pr.labels</span> has bug <span style="font:600 9.5px 'Geist Mono';padding:1px 5px;border-radius:3px;background:var(--sunk);color:var(--ink2)">OR</span> feature</span></div></div>
+            <div style="position:absolute;left:250px;top:300px;width:180px;height:86px;background:var(--surface);border:1.5px solid var(--green);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><span style="font:600 10px 'Geist Mono';color:var(--ink2);display:flex;align-items:center;gap:4px"><i style="font-size:13px">call_split</i>IF / ELSE</span><span style="font-size:12px">PR body has <span style="font:500 11px 'Geist Mono';color:var(--amber)">TF-\d+</span></span></div>
+            <span style="position:absolute;left:150px;top:418px;font:600 10px 'Geist Mono';color:var(--green);background:var(--surface);padding:1px 6px;border-radius:4px;border:1px solid var(--line)">IF · taken</span>
+            <span style="position:absolute;left:520px;top:418px;font:600 10px 'Geist Mono';color:var(--ink3);background:var(--surface);padding:1px 6px;border-radius:4px;border:1px solid var(--line)">ELSE</span>
+            <div style="position:absolute;left:60px;top:450px;width:240px;background:var(--surface);border:1.5px solid var(--green);border-radius:8px;overflow:hidden"><div style="height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--sunk);color:var(--ink2);font:600 10px 'Geist Mono';letter-spacing:.04em"><i style="font-size:13px">link</i>ACTION<i style="margin-left:auto;font-size:14px;color:var(--green)">check_circle</i></div><div style="padding:8px 10px;font-size:12px;line-height:1.5">Link PR to <span style="font:500 11px 'Geist Mono';padding:1px 4px;border-radius:4px;background:var(--amber-soft);color:var(--amber)">{{ vMatch }}</span><br>Set status → In review</div></div>
+            <div style="position:absolute;left:400px;top:450px;width:250px;background:var(--surface);border:2px solid var(--accent);box-shadow:0 0 0 4px var(--accent-soft);border-radius:8px;overflow:hidden"><div style="height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--sunk);color:var(--ink2);font:600 10px 'Geist Mono';letter-spacing:.04em"><i style="font-size:13px">add_task</i>ACTION · CREATE TASK</div><div style="padding:8px 10px;font-size:12px;line-height:1.6">From template <b style="font-weight:600">PR ticket</b><br>Title: <span style="font:500 11px 'Geist Mono';padding:1px 4px;border-radius:4px;background:var(--amber-soft);color:var(--amber)">{{ vTitle }}</span><br>List: Backend · Sprint: current</div></div>
+            <div style="position:absolute;left:60px;top:600px;width:240px;background:var(--surface);border:1.5px solid var(--green);border-radius:8px;overflow:hidden"><div style="height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--sunk);color:var(--ink2);font:600 10px 'Geist Mono';letter-spacing:.04em"><i style="font-size:13px">chat</i>ACTION<i style="margin-left:auto;font-size:14px;color:var(--green)">check_circle</i></div><div style="padding:8px 10px;font-size:12px">Comment on PR “Linked to TF-142”</div></div>
+            <div style="position:absolute;left:400px;top:600px;width:250px;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;opacity:.7"><div style="height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--sunk);color:var(--ink2);font:600 10px 'Geist Mono';letter-spacing:.04em"><i style="font-size:13px">person_add</i>ASSIGN · LEAST BUSY</div><div style="padding:8px 10px;font-size:12px">Team: Platform · measure points</div></div>
+            <div style="position:absolute;left:60px;top:720px;width:240px;background:var(--surface);border:1.5px solid var(--green);border-radius:8px;overflow:hidden"><div style="height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--sunk);color:var(--ink2);font:600 10px 'Geist Mono';letter-spacing:.04em"><i style="font-size:13px">hourglass_top</i>WAIT<i style="margin-left:auto;font-size:14px;color:var(--green)">check_circle</i></div><div style="padding:8px 10px;font-size:12px">Until CI completes · max 30m</div></div>
+            <div style="position:absolute;left:660px;top:470px;width:220px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);font-size:12px;z-index:2">
+              <div style="padding:8px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;color:var(--ink3)"><i style="font-size:14px">data_object</i>Insert variable · pr.</div>
+              <sc-for list="{{ vars }}" as="v" hint-placeholder-count="6"><div style="height:28px;display:flex;align-items:center;gap:8px;padding:0 10px;background:{{ v.bg }}"><span style="font:500 11px 'Geist Mono';color:var(--amber)">{{ v.k }}</span><span style="margin-left:auto;color:var(--ink3);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">{{ v.e }}</span></div></sc-for>
+            </div>
+          </div>
+          <div style="width:340px;flex:none;border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column">
+            <div style="height:44px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--green)">check_circle</i><span style="font-weight:600">Test run</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">PR #418 · 1.42s</span><div style="flex:1"></div><span style="font-size:12px;color:var(--accent);font-weight:500">Re-run</span></div>
+            <div style="padding:12px 14px;display:flex;flex-direction:column;gap:0">
+              <sc-for list="{{ trace }}" as="s" hint-placeholder-count="6">
+                <div style="display:flex;gap:10px">
+                  <div style="display:flex;flex-direction:column;align-items:center"><span style="width:20px;height:20px;border-radius:50%;background:{{ s.bg }};color:{{ s.c }};display:grid;place-items:center"><i style="font-size:13px">{{ s.i }}</i></span><span style="flex:1;width:1.5px;background:var(--line);min-height:14px"></span></div>
+                  <div style="flex:1;padding-bottom:12px"><div style="display:flex;font-weight:500;font-size:12.5px">{{ s.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--ink3)">{{ s.ms }}</span></div><div style="font:11.5px 'Geist Mono';color:var(--ink3);margin-top:3px;line-height:1.5">{{ s.d }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:auto;border-top:1px solid var(--line);padding:10px 14px;display:flex;flex-direction:column;gap:6px">
+              <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">RUN HISTORY</div>
+              <sc-for list="{{ runs }}" as="r" hint-placeholder-count="4"><div style="height:30px;display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:7px;height:7px;border-radius:50%;background:{{ r.c }}"></span><span style="font:500 11px 'Geist Mono'">{{ r.id }}</span><span style="color:var(--ink2);flex:1">{{ r.t }}</span><span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ r.ago }}</span><i style="font-size:15px;color:var(--ink3)">replay</i></div></sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Continued in <a href="TaskFlow App Screens 2.dc.html">App Screens 2</a>: GitHub, Docs, Templates, Inbox, Admin, HR &amp; time, tablet &amp; mobile.</p>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const S={todo:['To do','var(--ink3)','var(--sunk)'],prog:['In progress','var(--steel)','var(--steel-soft)'],rev:['In review','var(--amber)','var(--amber-soft)'],done:['Done','var(--green)','var(--green-soft)'],blk:['Blocked','var(--red)','var(--red-soft)']};
+    const P={MC:['Maya Chen','#5B7A6E'],DP:['Dev Patel','#5D6B8A'],SR:['Sofia Rossi','#8A5D5D'],JB:['Jonas Berg','#7F7451'],AT:['Aiko Tanaka','#4F6F7A'],LO:["Liam O'Connor",'#8C6B47'],NH:['Nadia Haddad','#6E7A5B'],TS:['Tomás Silva','#7A6A58']};
+    const st=k=>({st:S[k][0],sc:S[k][1],sb:S[k][2]});
+    const syncSteps=[['check_circle','var(--green)','Account & workspace','Acme'],['check_circle','var(--green)','12 page layouts','v38'],['check_circle','var(--green)','Sidebar & pinned tabs','3 tabs'],['progress_activity','var(--accent)','Widget data','6 / 9'],['radio_button_unchecked','var(--line2)','Office presence','']].map(([i,c,n,m])=>({i,c,n,m,tc:c==='var(--line2)'?'var(--ink3)':'var(--ink)'}));
+    const homeKpis=[{n:'Due today',v:'4',t:'1 overdue',tc:'var(--red)'},{n:'Done this week',v:'11',t:'+3',tc:'var(--green)'},{n:'In review',v:'2',t:'PRs',tc:'var(--ink3)'}];
+    const mt=(id,title,space,k,due,dc='var(--ink3)')=>({id,title,space,...st(k),due,dc});
+    const myGroups=[
+      {n:'Overdue',c:'var(--red)',count:'1',items:[mt('TF-155','Flaky e2e: checkout timeout','Web','blk','Oct 28','var(--red)')]},
+      {n:'Today',c:'var(--ink)',count:'4',items:[mt('TF-148','Per-space notification rules','Backend','prog','Today'),mt('TF-147','Review: rate-limit token refresh','Backend','rev','Today'),mt('TF-152','Export sprint report PDF','Web','todo','Today'),mt('TF-133','1:1 notes — Dev, Sofia','Ops desk','todo','Today')]},
+      {n:'This week',c:'var(--ink)',count:'5',items:[mt('TF-156','Webhook retries with backoff','Backend','todo','Fri'),mt('TF-139','Dashboard tile: cycle time p85','Web','todo','Fri'),mt('TF-160','SAML metadata auto-refresh','Backend','todo','Sat'),mt('TF-145','Search: fuzzy match on IDs','Web','todo','Sun'),mt('TF-136','Recurring tasks: monthly by weekday','Backend','todo','Sun')]}
+    ];
+    const agenda=[{t:'09:30',n:'Stand-up · Platform',d:'15m · Meet',c:'var(--accent)'},{t:'11:00',n:'Sprint 14 mid-review',d:'30m · Meeting room',c:'var(--steel)'},{t:'14:00',n:'Focus block',d:'2h · DND on',c:'var(--green)'},{t:'16:30',n:'1:1 Sofia',d:'30m',c:'var(--amber)'}];
+    const inboxMini=[{ai:'LO',ac:P.LO[1],who:'Liam',text:'requested your review on #421',time:'8m'},{ai:'DP',ac:P.DP[1],who:'Dev',text:'mentioned you in TF-142',time:'22m'},{ai:'TS',ac:P.TS[1],who:'Tomás',text:'marked TF-155 blocked',time:'1h'}];
+    const T=(n,v,vi,on)=>({n,v,vi,bd:on?'var(--accent)':'transparent',c:on?'var(--ink)':'var(--ink2)',w:on?600:400});
+    const dashTabs=[T('Eng overview','Team','group',true),T('Sprint health','Workspace','domain'),T('Incidents · Q4','Team','group'),T('My stats','Private','lock')];
+    const dashKpis=[{n:'Throughput · 30d',v:'164',t:'+12%',tc:'var(--green)',sc:'var(--accent)',sp:'0,24 15,20 30,22 45,16 60,18 75,12 90,10 105,8 120,6'},{n:'Cycle time p50',v:'2.4d',t:'−0.6d',tc:'var(--green)',sc:'var(--accent)',sp:'0,8 15,10 30,12 45,14 60,16 75,15 90,18 105,22 120,22'},{n:'Open bugs',v:'23',t:'+4',tc:'var(--amber)',sc:'var(--amber)',sp:'0,20 20,18 40,22 60,16 80,14 100,10 120,8'},{n:'Deploys · 30d',v:'48',t:'98% ok',tc:'var(--ink3)',sc:'var(--ink3)',sp:'0,14 15,18 30,12 45,16 60,10 75,14 90,12 105,16 120,12'}];
+    const workload=[['DP',42,40],['LO',30,36],['SR',22,32],['JB',44,40],['NH',0,0],['AT',18,24],['TS',14,30],['MC',8,16]].map(([i,v,c])=>({i,n:P[i][0],c:P[i][1],pct:c?Math.min(100,v/c*100)+'%':'0%',v:c?v+'/'+c:'leave',bc:v>c?'var(--red)':'var(--accent)',tc:v>c?'var(--red)':'var(--ink3)'}));
+    const cycle=[['1d',38],['2d',72],['3d',90],['4d',58],['5d',40],['6d',26],['7d',18],['8d',10],['9d',8],['10d+',14]].map(([l,h],i)=>({l,h:h+'%',c:i===2?'var(--accent)':'var(--accent-soft)'}));
+    const overdue=[['TF-155','Flaky e2e: checkout','1d'],['TF-128','Rotate staging certs','3d'],['TF-122','Billing webhook docs','4d'],['TF-119','Fix tz in reports','6d']].map(([id,title,d])=>({id,title,d}));
+    const V=(i,n,on)=>({i,n,bd:on?'var(--accent)':'transparent',c:on?'var(--ink)':'var(--ink2)',w:on?600:400});
+    const views=[V('list','List'),V('view_kanban','Board'),V('table_rows','Table',true),V('calendar_month','Calendar'),V('view_timeline','Timeline'),V('groups','Team planner'),V('timer','Time'),V('sprint','Sprints'),V('monitoring','Dashboard'),V('bolt','Automations'),V('settings','Settings')];
+    const pr={urg:['Urgent','keyboard_double_arrow_up','var(--red)'],hi:['High','keyboard_arrow_up','var(--amber)'],med:['Medium','remove','var(--ink3)'],lo:['Low','keyboard_arrow_down','var(--ink3)']};
+    const row=(id,title,k,as,p,pts,due,prn,sel,edit)=>({id,title,...st(k),as:as.map(i=>({i,c:P[i][1]})),p:pr[p][0],pi:pr[p][1],pc:pr[p][2],pts,due,dc:k==='blk'?'var(--red)':'var(--ink3)',pr:prn||'—',bg:sel?'var(--accent-soft)':'transparent',cbB:sel?'var(--accent)':'var(--line2)',cbBg:sel?'var(--accent)':'transparent',cbI:sel?'check':'',editSh:edit?'0 0 0 2px var(--accent)':'none'});
+    const spaceGroups=[
+      {n:'Backend',count:'8',pts:'34 pts',rows:[row('TF-142','Fix login crash on SSO redirect','prog',['DP'],'hi',5,'Oct 30','#418',true,true),row('TF-147','Rate-limit token refresh endpoint','rev',['LO','DP'],'hi',3,'Oct 31','#421',true),row('TF-149','Audit log export as CSV','todo',['LO'],'med',5,'Nov 3','',true),row('TF-157','Paginate /v2/tasks responses','todo',['DP'],'med',5,'Nov 4',''),row('TF-138','Migrate session store to Redis 7','done',['JB'],'med',8,'Oct 27','#409'),row('TF-159','Alert on CI queue > 10 min','todo',['JB'],'lo',2,'Nov 5',''),row('TF-140','Health check for worker pool','done',['JB'],'lo',2,'Oct 25','#402'),row('TF-143','Remove legacy v1 auth routes','done',['DP'],'med',3,'Oct 24','#398')]},
+      {n:'Web',count:'6',pts:'14 pts',rows:[row('TF-155','Flaky e2e: checkout timeout','blk',['TS'],'urg',3,'Oct 29',''),row('TF-151','Settings page skeleton states','prog',['SR'],'med',2,'Nov 1',''),row('TF-144','Dark mode tokens for web app','rev',['NH','AT'],'med',3,'Oct 30','#416'),row('TF-146','Keyboard nav in command palette','prog',['NH'],'med',3,'Oct 31',''),row('TF-150','Avatar upload crops incorrectly','rev',['SR'],'lo',2,'Oct 31','#419'),row('TF-153','Onboarding empty states copy','todo',['AT'],'lo',1,'Nov 2','')]}
+    ];
+    const statusMenu=[['To do','var(--ink3)','1'],['In progress','var(--steel)','2'],['In review','var(--amber)','3'],['Blocked','var(--red)','4'],['Done','var(--green)','5']].map(([n,c,k],i)=>({n,c,k,bg:i===2?'var(--sunk)':'transparent'}));
+    const bulk=[['radio_button_checked','Status'],['person_add','Assign'],['sprint','Sprint'],['sell','Labels'],['drive_file_move','Move'],['delete','Delete']].map(([i,n])=>({i,n,c:n==='Delete'?'#E8968A':'inherit'}));
+    const bc=(n,c,wip,over,bg)=>({n,c,wip,wc:over?'var(--amber)':'var(--ink3)',bg:over?'var(--amber-soft)':'var(--sunk)'});
+    const boardCols=[bc('To do','var(--ink3)','5'),bc('In progress','var(--steel)','4 / 4',true),bc('In review','var(--amber)','3 / 4'),bc('Done','var(--green)','12')];
+    const K=(id,t)=>({id,t});
+    const lanes=[
+      {i:'DP',n:'Dev',c:P.DP[1],pts:'13 pts',cells:[[K('TF-157','Paginate /v2/tasks')],[K('TF-142','Fix login crash on SSO redirect')],[],[K('TF-143','Remove v1 auth routes')]]},
+      {i:'LO',n:'Liam',c:P.LO[1],pts:'8 pts',cells:[[K('TF-149','Audit log export CSV')],[],[K('TF-147','Rate-limit token refresh')],[]]},
+      {i:'NH',n:'Nadia',c:P.NH[1],pts:'6 pts',cells:[[],[K('TF-146','Keyboard nav in palette')],[K('TF-144','Dark mode tokens')],[]]}
+    ];
+    const checklist=[['Reproduce on iOS 18 Safari',1],['Persist token before restore',1],['Regression test for redirect race',0],['Update auth runbook',0]].map(([n,d])=>({n,i:d?'check_box':'check_box_outline_blank',ic:d?'var(--accent)':'var(--line2)',col:d?'var(--ink3)':'var(--ink)',td:d?'line-through':'none'}));
+    const subtasks=[['TF-142.1','Guard restore() on missing token','done','DP'],['TF-142.2','Add Safari to e2e matrix','prog','TS'],['TF-142.3','Sentry alert threshold','todo','JB']].map(([id,t,k,a])=>({id,t,c:S[k][1],ai:a,ac:P[a][1]}));
+    const relations=[{k:'Blocks',c:'var(--red)',id:'TF-160',t:'SAML metadata auto-refresh'},{k:'Blocked by',c:'var(--amber)',id:'TF-138',t:'Session store → Redis 7'},{k:'Duplicates',c:'var(--ink3)',id:'TF-127',t:'White screen after login'}];
+    const activity=[
+      {ai:'',icon:'bolt',ac:'var(--accent-soft)',fc:'var(--accent)',r:'6px',who:'Automation',what:'“PR opened → task” linked PR #418 and set status → In progress',t:'2h',body:''},
+      {ai:'LO',icon:'',ac:P.LO[1],fc:'#fff',r:'50%',who:"Liam O'Connor",what:'commented',t:'1h',body:'Can we add a regression test for the race before merge? Happy to pair after stand-up.'},
+      {ai:'DP',icon:'',ac:P.DP[1],fc:'#fff',r:'50%',who:'Dev Patel',what:'logged 1h 45m · changed estimate 3 → 5 pts',t:'45m',body:''},
+      {ai:'',icon:'check_circle',ac:'var(--green-soft)',fc:'var(--green)',r:'6px',who:'CI',what:'acme/platform · tf-142-fix-login-crash passed 14/14',t:'12m',body:''}
+    ];
+    const f=(k,v,o={})=>({k,v,ff:'Geist',c:'var(--ink)',w:400,...o});
+    const fields=[f('Type','Bug'),f('Status','In progress',{c:'var(--steel)',w:500}),f('Priority','High',{c:'var(--amber)',w:500}),f('Start','Oct 27',{ff:'Geist Mono'}),f('Due','Oct 30',{ff:'Geist Mono'}),f('Estimate','1d',{ff:'Geist Mono'}),f('Points','5',{ff:'Geist Mono'}),f('Sprint','Sprint 14'),f('List','Platform › Backend'),f('Labels','auth · ios · sev2'),f('Time logged','3h 05m',{ff:'Geist Mono'}),f('Recurring','—',{c:'var(--ink3)'})];
+    const taskPeople=[{i:'DP',n:'Dev Patel',r:'Assignee',c:P.DP[1]},{i:'TS',n:'Tomás Silva',r:'Assignee',c:P.TS[1]},{i:'LO',n:"Liam O'Connor",r:'Reviewer',c:P.LO[1]},{i:'MC',n:'Maya Chen',r:'Reporter',c:P.MC[1]}];
+    const backlog=[['TF-160','SAML metadata auto-refresh',5,1],['TF-158','Bulk move tasks between lists',3],['TF-156','Webhook retries with backoff',5],['TF-154','Time entries: round to 15m',2],['TF-152','Export sprint report PDF',3],['TF-148','Per-space notification rules',8],['TF-145','Search: fuzzy match on IDs',2],['TF-141','iOS: offline queue for comments',8],['TF-139','Dashboard tile: cycle time p85',3],['TF-137','Admin: deny-list for embeds',2],['TF-136','Recurring tasks: monthly by weekday',5],['TF-134','Docs: task embed hover card',3]].map(([id,title,pts,drag])=>({id,title,pts,bg:drag?'var(--accent-soft)':'transparent',op:drag?.6:1}));
+    const ck=(id,t,pts,ghost)=>({id,t,pts:pts+' pts',bd:ghost?'var(--accent)':'var(--line)',bs:ghost?'dashed':'solid'});
+    const planLanes=[
+      {i:'DP',n:'Dev',c:P.DP[1],cap:'16/16',pct:'100%',bc:'var(--amber)',tc:'var(--amber)',cards:[ck('TF-157','Paginate /v2/tasks',5),ck('TF-148','Per-space notification rules',8),ck('TF-145','Fuzzy match on IDs',2),ck('TF-160','SAML metadata refresh',5,true)]},
+      {i:'LO',n:'Liam',c:P.LO[1],cap:'10/14',pct:'71%',bc:'var(--accent)',tc:'var(--ink3)',cards:[ck('TF-156','Webhook retries',5),ck('TF-149','Audit log CSV',5)]},
+      {i:'SR',n:'Sofia',c:P.SR[1],cap:'12/14',pct:'86%',bc:'var(--accent)',tc:'var(--ink3)',cards:[ck('TF-152','Sprint report PDF',3),ck('TF-139','Cycle time tile',3),ck('TF-158','Bulk move tasks',3)]},
+      {i:'NH',n:'Nadia',c:P.NH[1],cap:'leave 3d',pct:'40%',bc:'var(--ink3)',tc:'var(--amber)',cards:[ck('TF-134','Task embed hover',3)]}
+    ];
+    const velocity=[['S7',50,46],['S8',52,50],['S9',55,41],['S10',54,52],['S11',58,55],['S12',56,54],['S13',60,57],['S14',62,58]].map(([n,c,d],i)=>({n,c:(c/64*100)+'%',d:(d/64*100)+'%',col:i===7?'var(--accent)':'var(--accent-soft)'}));
+    const unfinished=[{id:'TF-155',t:'Flaky e2e: checkout timeout',to:'Sprint 15'},{id:'TF-146',t:'Keyboard nav in palette',to:'Sprint 15'},{id:'TF-151',t:'Settings skeletons',to:'Backlog'}];
+    const au=(n,scope,ti,trig,runs,ok,ai,on=true)=>({n,scope,ti,trig,runs,ok:ok+'%',okc:ok<95?'var(--amber)':'var(--green)',ai,ac:P[ai][1],on:P[ai][0].split(' ')[0],tg:on?'var(--accent)':'var(--line2)',tl:on?'14px':'2px',op:on?1:.6});
+    const automations=[au('PR opened → task','Platform','merge','GitHub PR opened',212,99.5,'MC'),au('PR merged → Done','Platform','merge','GitHub PR merged',188,100,'MC'),au('CI failed → reopen + notify','Platform','error','CI failed on main',14,92.8,'JB'),au('Due soon reminder','Workspace','alarm','Due in 24h',640,100,'MC'),au('Round-robin ops requests','Ops desk','person_add','Task created',96,100,'TS'),au('Sprint end report','Platform','sprint','Sprint ended',2,100,'MC'),au('Weekly release checklist','Platform','schedule','Every Mon 09:00',4,100,'JB'),au('Webhook: PagerDuty → task','Ops desk','webhook','Incoming webhook',31,87.1,'JB',false)];
+    const recipes=[{i1:'merge',i2:'add_task',n:'PR as ticket',d:'Create a task from every new PR, link it and move with PR state.',uses:'1.2k'},{i1:'error',i2:'notifications',n:'CI failed → alert owner',d:'Reopen linked task, notify assignee and comment on PR.',uses:'860'},{i1:'alarm',i2:'person_add',n:'Overdue → escalate',d:'If overdue 2d and P1, assign lead and add to stand-up.',uses:'540'},{i1:'play_circle',i2:'checklist',n:'Release checklist button',d:'Manual trigger creates release task with a 12-step checklist.',uses:'410'}];
+    const palette=[{n:'TRIGGERS',c:'var(--accent)',items:[['merge','PR opened / merged'],['error','CI failed'],['swap_horiz','Status changed'],['alarm','Due soon / overdue'],['schedule','Schedule'],['webhook','Incoming webhook']]},{n:'LOGIC',c:'var(--ink2)',items:[['rule','AND / OR group'],['call_split','If / else'],['hourglass_top','Wait / delay']]},{n:'ACTIONS',c:'var(--ink2)',items:[['add_task','Create task from template'],['edit','Set fields'],['person_add','Assign (round-robin…)'],['fork_right','Create GitHub branch'],['chat','Comment on PR'],['send','Notify / webhook']]}].map(g=>({...g,items:g.items.map(([i,n])=>({i,n}))}));
+    const vars=[['pr.title','Fix SSO redirect…'],['pr.number','418'],['pr.author','dev-patel'],['pr.branch','tf-142-fix-…'],['pr.labels','bug, auth'],['pr.url','github.com/…']].map(([k,e],i)=>({k:'{{'+k+'}}',e,bg:i===0?'var(--sunk)':'transparent'}));
+    const tr=(n,ms,d,ok=true,skip=false)=>({n,ms,d,i:skip?'remove':(ok?'check':'close'),bg:skip?'var(--sunk)':'var(--green-soft)',c:skip?'var(--ink3)':'var(--green)'});
+    const trace=[tr('Trigger · PR opened','0ms','#418 by dev-patel'),tr('Conditions · ALL','4ms','draft=false ✓ · labels has bug ✓'),tr('If · body has TF-\\d+','2ms','matched TF-142 → IF branch'),tr('Link PR + set status','310ms','TF-142 → In progress'),tr('Comment on PR','640ms','posted comment #c-88231'),tr('Wait until CI','420ms','CI passed in dry-run (mocked)'),tr('ELSE branch','—','skipped',true,true)];
+    const runs=[{id:'r-2318',t:'PR #421 · ok',ago:'8m',c:'var(--green)'},{id:'r-2317',t:'PR #420 · ok',ago:'1h',c:'var(--green)'},{id:'r-2316',t:'PR #419 · GitHub 502',ago:'3h',c:'var(--red)'},{id:'r-2315',t:'PR #418 · ok',ago:'5h',c:'var(--green)'}];
+    return { theme:this.props.theme ?? 'light', syncSteps, homeKpis, myGroups, agenda, inboxMini, dashTabs, dashKpis, workload, cycle, overdue, views, spaceGroups, statusMenu, bulk, boardCols, lanes, people5:['MC','DP','LO','SR','JB'].map(i=>({i,c:P[i][1]})), checklist, subtasks, relations, activity, fields, taskPeople, backlog, planLanes, velocity, unfinished, automations, recipes, palette, vars, trace, runs, vMatch:'{{match[0]}}', vTitle:'{{pr.title}}' };
+  }
+}
+</script>
+</body>
+</html>

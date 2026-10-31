@@ -4,95 +4,124 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * TaskFlow design tokens. Teal primary, amber accent, slate neutrals.
+ * TaskFlow v2 design tokens: zinc neutrals, hairline borders and one user-chosen accent.
  * Components use the semantic names (bg-primary, text-muted-foreground, …), never raw colours.
+ * <html> carries the `dark` class plus data-accent, data-radius, data-density and data-font
+ * (see core/preferences/appearance.ts). Values follow docs/design/v2 (README §3).
  */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.985 0.003 247);
-  --foreground: oklch(0.22 0.03 257);
-  --card: oklch(1 0 0);
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #ffffff;
   --card-foreground: var(--foreground);
-  --popover: oklch(1 0 0);
+  --popover: #ffffff;
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.51 0.09 186);
-  --primary-foreground: oklch(0.99 0.01 186);
-  --secondary: oklch(0.955 0.01 250);
-  --secondary-foreground: oklch(0.3 0.03 257);
-  --muted: oklch(0.955 0.008 250);
-  --muted-foreground: oklch(0.52 0.025 257);
-  --accent: oklch(0.94 0.035 186);
-  --accent-foreground: oklch(0.3 0.06 186);
-  --highlight: oklch(0.82 0.15 80);
-  --destructive: oklch(0.58 0.21 27);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.91 0.01 250);
-  --input: oklch(0.89 0.012 250);
-  --ring: oklch(0.6 0.1 186);
-  --sidebar: oklch(0.21 0.03 230);
-  --sidebar-foreground: oklch(0.9 0.015 230);
-  --sidebar-muted: oklch(0.68 0.025 230);
-  --sidebar-accent: oklch(0.29 0.035 230);
-  --sidebar-border: oklch(0.3 0.03 230);
+  /* The accent; each data-accent below replaces these three. */
+  --primary: #ea580c;
+  --primary-foreground: #ffffff;
+  --ring: #f97316;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --subtle-foreground: #a1a1aa;
+  --accent: #f4f4f5;
+  --accent-foreground: var(--foreground);
+  --selected: #ececee;
+  --highlight: #f59e0b;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --input: #e4e4e7;
+  --rail: #fafafa;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #09090b;
+  --sidebar-muted: #71717a;
+  --sidebar-accent: #ececee;
+  --sidebar-border: #e4e4e7;
 
-  --status-todo: oklch(0.62 0.02 257);
-  --status-in-progress: oklch(0.58 0.15 245);
-  --status-in-review: oklch(0.72 0.15 70);
-  --status-done: oklch(0.6 0.13 160);
+  --status-todo: #a1a1aa;
+  --status-in-progress: #60a5fa;
+  --status-in-review: #f59e0b;
+  --status-done: #22c55e;
+  --status-blocked: #ef4444;
 
-  --priority-urgent: oklch(0.58 0.21 27);
-  --priority-high: oklch(0.68 0.17 50);
-  --priority-normal: oklch(0.62 0.12 230);
-  --priority-low: oklch(0.65 0.03 257);
+  --priority-urgent: #dc2626;
+  --priority-high: #ea580c;
+  --priority-normal: #2563eb;
+  --priority-low: #a1a1aa;
 
   /* Chart roles (categorical slots 1 and 2 of the validated chart palette). */
   --chart-1: #2a78d6;
   --chart-2: #eb6834;
-  --chart-grid: oklch(0.92 0.006 250);
-  --good: oklch(0.55 0.14 155);
-  --warning: oklch(0.65 0.15 70);
-  --critical: oklch(0.57 0.21 27);
+  --chart-grid: #e4e4e7;
+  --good: #16a34a;
+  --warning: #d97706;
+  --critical: #dc2626;
+  --info: #2563eb;
+
+  --popover-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
 }
 
 .dark {
-  /* Near-neutral charcoal, so status and project colours carry the colour. */
-  --background: oklch(0.165 0.004 285);
-  --foreground: oklch(0.94 0.004 285);
-  --card: oklch(0.2 0.005 285);
-  --card-foreground: var(--foreground);
-  --popover: oklch(0.22 0.006 285);
-  --popover-foreground: var(--foreground);
-  --primary: oklch(0.7 0.11 186);
-  --primary-foreground: oklch(0.18 0.03 186);
-  --secondary: oklch(0.25 0.006 285);
-  --secondary-foreground: oklch(0.9 0.005 285);
-  --muted: oklch(0.24 0.006 285);
-  --muted-foreground: oklch(0.68 0.01 285);
-  --accent: oklch(0.27 0.02 285);
-  --accent-foreground: oklch(0.94 0.01 285);
-  --border: oklch(0.28 0.006 285);
-  --input: oklch(0.31 0.008 285);
-  --ring: oklch(0.7 0.11 186);
-  --sidebar: oklch(0.185 0.005 285);
-  --sidebar-foreground: oklch(0.9 0.005 285);
-  --sidebar-muted: oklch(0.64 0.01 285);
-  --sidebar-accent: oklch(0.26 0.012 285);
-  --sidebar-border: oklch(0.27 0.006 285);
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #111113;
+  --popover: #111113;
+  --primary: #f97316;
+  --primary-foreground: #09090b;
+  --ring: #f97316;
+  --secondary: #232327;
+  --secondary-foreground: #fafafa;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --subtle-foreground: #71717a;
+  --accent: #232327;
+  --selected: #232327;
+  --destructive: #ef4444;
+  --border: #27272a;
+  --border-strong: #3f3f46;
+  --input: #27272a;
+  --rail: #0c0c0e;
+  --sidebar: #0c0c0e;
+  --sidebar-foreground: #fafafa;
+  --sidebar-muted: #a1a1aa;
+  --sidebar-accent: #232327;
+  --sidebar-border: #27272a;
+
+  --priority-urgent: #ef4444;
+  --priority-high: #f97316;
+  --priority-normal: #60a5fa;
+  --priority-low: #71717a;
 
   --chart-1: #3987e5;
   --chart-2: #d95926;
-  --chart-grid: oklch(0.3 0.006 285);
-  --good: oklch(0.72 0.15 155);
-  --warning: oklch(0.82 0.15 85);
-  --critical: oklch(0.68 0.19 25);
+  --chart-grid: #27272a;
+  --good: #22c55e;
+  --warning: #f59e0b;
+  --critical: #ef4444;
+  --info: #60a5fa;
+
+  --popover-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+:root {
+  /* A soft wash of the accent for selected chips, badges and focus halos. */
+  --primary-soft: color-mix(in oklab, var(--ring) 14%, transparent);
+  --primary-soft-strong: color-mix(in oklab, var(--ring) 40%, transparent);
 }
 
 @theme inline {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--ui-font), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* --r is the control radius, --r2 the card radius (data-radius below). */
+  --radius-sm: calc(var(--r) / 2);
+  --radius-md: var(--r);
+  --radius-lg: calc((var(--r) + var(--r2)) / 2);
+  --radius-xl: var(--r2);
+  --radius-2xl: calc(var(--r2) + 4px);
+  --shadow-popover: var(--popover-shadow);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -105,6 +134,12 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-selected: var(--selected);
+  --color-border-strong: var(--border-strong);
+  --color-rail: var(--rail);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-strong: var(--primary-soft-strong);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-highlight: var(--highlight);
@@ -122,6 +157,7 @@
   --color-status-in-progress: var(--status-in-progress);
   --color-status-in-review: var(--status-in-review);
   --color-status-done: var(--status-done);
+  --color-status-blocked: var(--status-blocked);
   --color-priority-urgent: var(--priority-urgent);
   --color-priority-high: var(--priority-high);
   --color-priority-normal: var(--priority-normal);
@@ -132,6 +168,7 @@
   --color-good: var(--good);
   --color-warning: var(--warning);
   --color-critical: var(--critical);
+  --color-info: var(--info);
 }
 
 @layer base {
@@ -208,26 +245,40 @@
 }
 
 /*
- * Accent palettes (Settings → Appearance). Each sets the primary colour and the focus ring
- * for light and dark. The default palette above applies when no accent is set.
+ * Accent palettes (Settings → Appearance). Each sets the primary colour and the focus ring.
+ * Light mode uses the deeper shade so white text on primary stays readable; dark mode uses
+ * the bright shade with near-black text. The v2 five are orange, blue, green (emerald),
+ * rose and slate (zinc); violet, teal and amber are kept for people who already chose them.
  */
-:root[data-accent='violet'] { --primary: oklch(0.55 0.2 290); --primary-foreground: oklch(0.99 0.01 290); --ring: oklch(0.62 0.18 290); }
-:root[data-accent='blue'] { --primary: oklch(0.55 0.17 255); --primary-foreground: oklch(0.99 0.01 255); --ring: oklch(0.62 0.15 255); }
-:root[data-accent='teal'] { --primary: oklch(0.51 0.09 186); --primary-foreground: oklch(0.99 0.01 186); --ring: oklch(0.6 0.1 186); }
-:root[data-accent='green'] { --primary: oklch(0.55 0.14 150); --primary-foreground: oklch(0.99 0.01 150); --ring: oklch(0.62 0.13 150); }
-:root[data-accent='amber'] { --primary: oklch(0.7 0.15 75); --primary-foreground: oklch(0.22 0.04 75); --ring: oklch(0.72 0.14 75); }
-:root[data-accent='orange'] { --primary: oklch(0.62 0.18 45); --primary-foreground: oklch(0.99 0.01 45); --ring: oklch(0.66 0.16 45); }
-:root[data-accent='rose'] { --primary: oklch(0.58 0.2 15); --primary-foreground: oklch(0.99 0.01 15); --ring: oklch(0.64 0.18 15); }
-:root[data-accent='slate'] { --primary: oklch(0.42 0.03 260); --primary-foreground: oklch(0.99 0 0); --ring: oklch(0.55 0.03 260); }
-:root.dark[data-accent='violet'] { --primary: oklch(0.68 0.17 290); --primary-foreground: oklch(0.16 0.03 290); --ring: oklch(0.68 0.17 290); }
-:root.dark[data-accent='blue'] { --primary: oklch(0.68 0.15 255); --primary-foreground: oklch(0.16 0.03 255); --ring: oklch(0.68 0.15 255); }
-:root.dark[data-accent='teal'] { --primary: oklch(0.7 0.11 186); --primary-foreground: oklch(0.18 0.03 186); --ring: oklch(0.7 0.11 186); }
-:root.dark[data-accent='green'] { --primary: oklch(0.7 0.15 150); --primary-foreground: oklch(0.17 0.03 150); --ring: oklch(0.7 0.15 150); }
-:root.dark[data-accent='amber'] { --primary: oklch(0.78 0.14 75); --primary-foreground: oklch(0.2 0.04 75); --ring: oklch(0.78 0.14 75); }
-:root.dark[data-accent='orange'] { --primary: oklch(0.72 0.16 45); --primary-foreground: oklch(0.18 0.03 45); --ring: oklch(0.72 0.16 45); }
-:root.dark[data-accent='rose'] { --primary: oklch(0.7 0.17 15); --primary-foreground: oklch(0.17 0.03 15); --ring: oklch(0.7 0.17 15); }
-:root.dark[data-accent='slate'] { --primary: oklch(0.78 0.02 260); --primary-foreground: oklch(0.18 0.01 260); --ring: oklch(0.7 0.02 260); }
+:root[data-accent='orange'] { --primary: #ea580c; --primary-foreground: #ffffff; --ring: #f97316; }
+:root[data-accent='blue'] { --primary: #2563eb; --primary-foreground: #ffffff; --ring: #3b82f6; }
+:root[data-accent='green'] { --primary: #059669; --primary-foreground: #ffffff; --ring: #10b981; }
+:root[data-accent='rose'] { --primary: #e11d48; --primary-foreground: #ffffff; --ring: #f43f5e; }
+:root[data-accent='slate'] { --primary: #3f3f46; --primary-foreground: #ffffff; --ring: #71717a; }
+:root[data-accent='violet'] { --primary: #7c3aed; --primary-foreground: #ffffff; --ring: #8b5cf6; }
+:root[data-accent='teal'] { --primary: #0d9488; --primary-foreground: #ffffff; --ring: #14b8a6; }
+:root[data-accent='amber'] { --primary: #d97706; --primary-foreground: #ffffff; --ring: #f59e0b; }
+:root.dark[data-accent='orange'] { --primary: #f97316; --primary-foreground: #09090b; --ring: #f97316; }
+:root.dark[data-accent='blue'] { --primary: #3b82f6; --primary-foreground: #ffffff; --ring: #3b82f6; }
+:root.dark[data-accent='green'] { --primary: #10b981; --primary-foreground: #09090b; --ring: #10b981; }
+:root.dark[data-accent='rose'] { --primary: #f43f5e; --primary-foreground: #ffffff; --ring: #f43f5e; }
+:root.dark[data-accent='slate'] { --primary: #a1a1aa; --primary-foreground: #09090b; --ring: #a1a1aa; }
+:root.dark[data-accent='violet'] { --primary: #8b5cf6; --primary-foreground: #ffffff; --ring: #8b5cf6; }
+:root.dark[data-accent='teal'] { --primary: #14b8a6; --primary-foreground: #09090b; --ring: #14b8a6; }
+:root.dark[data-accent='amber'] { --primary: #f59e0b; --primary-foreground: #09090b; --ring: #f59e0b; }
 
-/* Compact density tightens text and spacing everywhere a component uses the density tokens. */
-:root { --row-height: 2.5rem; --density-gap: 0.75rem; }
-:root[data-density='compact'] { --row-height: 2rem; --density-gap: 0.5rem; font-size: 15px; }
+/* Corner radius: --r for controls, --r2 for cards. Pills and avatars stay fully round. */
+:root, :root[data-radius='md'] { --r: 8px; --r2: 12px; --radius: 10px; }
+:root[data-radius='sm'] { --r: 4px; --r2: 6px; --radius: 5px; }
+:root[data-radius='lg'] { --r: 12px; --r2: 16px; --radius: 14px; }
+
+/* Density scales row heights and gaps by 0.85 / 1 / 1.15. Compact also tightens text. */
+:root, :root[data-density='default'] { --density: 1; }
+:root[data-density='compact'] { --density: 0.85; font-size: 15px; }
+:root[data-density='comfortable'] { --density: 1.15; }
+:root { --row-height: calc(2.5rem * var(--density)); --density-gap: calc(0.75rem * var(--density)); }
+
+/* UI typeface. Geist Mono (font-mono) stays the face for IDs, times and code. */
+:root, :root[data-font='geist'] { --ui-font: 'Geist Variable'; }
+:root[data-font='inter'] { --ui-font: 'Inter Variable'; }
+:root[data-font='plex'] { --ui-font: 'IBM Plex Sans Variable'; }

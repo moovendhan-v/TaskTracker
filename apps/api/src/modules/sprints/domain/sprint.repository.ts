@@ -10,4 +10,6 @@ export abstract class SprintRepository {
   abstract delete(workspaceId: string, sprintId: string): Promise<void>;
   /** Moves every task in the sprint that isn't done; returns how many moved. */
   abstract moveOpenTasks(workspaceId: string, fromSprintId: string, toSprintId: string | null): Promise<number>;
+  /** Moves the listed tasks, but only those still open in `fromSprintId`; returns how many moved. */
+  abstract moveTasks(workspaceId: string, fromSprintId: string, taskIds: readonly string[], toSprintId: string | null): Promise<number>;
 }

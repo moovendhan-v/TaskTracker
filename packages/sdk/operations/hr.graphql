@@ -60,3 +60,7 @@ mutation CancelLeaveRequest($workspaceId: ID!, $requestId: ID!) {
 query MyLeaveBalances($workspaceId: ID!, $year: Int) {
   myLeaveBalances(workspaceId: $workspaceId, year: $year) { ...LeaveBalanceFields }
 }
+
+query TeamAvailability($workspaceId: ID!, $from: String!, $to: String!) {
+  teamAvailability(workspaceId: $workspaceId, from: $from, to: $to) { userId startDate endDate }
+}

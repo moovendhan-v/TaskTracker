@@ -1,23 +1,35 @@
-import { Link } from '@tanstack/react-router';
-import { LogOutIcon, MoonIcon, ShieldAlertIcon, SunIcon } from 'lucide-react';
+import { Link, useParams } from '@tanstack/react-router';
+import { LogOutIcon, MoonIcon, PaletteIcon, ShieldAlertIcon, SunIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useCurrentUser } from '@/core/auth/use-current-user';
+import { useRealtimeStatus } from '@/core/realtime/realtime-status.store';
+import { cn } from '@/lib/cn';
 import { resolvedTheme } from '@/core/preferences/appearance';
 import { usePreferenceMutations, usePreferences } from '@/core/preferences/use-preferences';
 import { useSignOut } from '@/modules/auth';
 
-/** The signed-in person's menu: a full row (sidebar) or just the avatar (top bar). */
-export function UserMenu({ variant = 'row' }: { variant?: 'row' | 'avatar' }) {
+/** The signed-in person's menu: a full row, just the avatar (top bar) or the avatar with a presence dot (rail). */
+export function UserMenu({ variant = 'row' }: { variant?: 'row' | 'avatar' | 'rail' }) {
   const { data: me } = useCurrentUser();
+  const status = useRealtimeStatus((state) => state.status);
   const signOut = useSignOut();
+  const { workspaceId } = useParams({ strict: false });
   const theme = resolvedTheme(usePreferences().theme);
   const { update } = usePreferenceMutations();
   const toggleTheme = () => update.mutate({ theme: theme === 'dark' ? 'light' : 'dark' });
 
   return (
     <DropdownMenu>
-      {variant === 'avatar' ? (
+      {variant === 'rail' ? (
+        <DropdownMenuTrigger className="relative rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={`Account: ${me?.name ?? ''}`}>
+          <UserAvatar name={me?.name ?? '?'} className="size-8" />
+          <span
+            aria-hidden
+            className={cn('absolute -right-px -bottom-px size-[11px] rounded-full border-2 border-rail', status === 'live' ? 'bg-status-done' : status === 'connecting' ? 'bg-status-in-review' : 'bg-subtle-foreground')}
+          />
+        </DropdownMenuTrigger>
+      ) : variant === 'avatar' ? (
         <DropdownMenuTrigger className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={`Account: ${me?.name ?? ''}`}>
           <UserAvatar name={me?.name ?? '?'} className="size-8" />
         </DropdownMenuTrigger>
@@ -30,8 +42,8 @@ export function UserMenu({ variant = 'row' }: { variant?: 'row' | 'avatar' }) {
           </span>
         </DropdownMenuTrigger>
       )}
-      <DropdownMenuContent side={variant === 'avatar' ? 'bottom' : 'top'} align={variant === 'avatar' ? 'end' : 'start'} className="w-56">
-        {variant === 'avatar' && me ? (
+      <DropdownMenuContent side={variant === 'avatar' ? 'bottom' : variant === 'rail' ? 'right' : 'top'} align={variant === 'avatar' || variant === 'rail' ? 'end' : 'start'} className="w-56">
+        {variant !== 'row' && me ? (
           <div className="px-2 py-1.5">
             <div className="truncate text-sm font-medium">{me.name}</div>
             <div className="truncate text-xs text-muted-foreground">{me.email}</div>
@@ -48,6 +60,13 @@ export function UserMenu({ variant = 'row' }: { variant?: 'row' | 'avatar' }) {
         <DropdownMenuItem onSelect={toggleTheme}>
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />} {theme === 'dark' ? 'Light mode' : 'Dark mode'}
         </DropdownMenuItem>
+        {workspaceId ? (
+          <DropdownMenuItem asChild>
+            <Link to="/w/$workspaceId/appearance" params={{ workspaceId }}>
+              <PaletteIcon /> Appearance…
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => signOut.mutate()}>
           <LogOutIcon /> Sign out

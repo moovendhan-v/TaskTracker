@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { StatusCategory } from '@taskflow/shared-types';
-import { burndown, formatMinutes, sprintTiming, summarize, workload } from './sprint-metrics';
+import { burndown, forecast, formatMinutes, sprintTiming, summarize, velocity, workload } from './sprint-metrics';
 
 const task = (category: StatusCategory, extra: { completedAt?: string | null; estimateMinutes?: number | null; assigneeId?: string | null } = {}) => ({
   status: { id: category, spaceId: 's', name: category, color: '#000000', category, position: 0 },
@@ -36,5 +36,30 @@ describe('sprint metrics', () => {
       { assigneeId: 'a', open: 1, estimateMinutes: 0 },
     ]);
     expect(formatMinutes(390)).toBe('6 h 30 m');
+  });
+});
+
+describe('forecast', () => {
+  it('projects the current pace over the days left', () => {
+    expect(forecast({ done: 4, total: 10 }, { elapsedDays: 4, daysLeft: 6 })).toEqual({ projectedDone: 10, total: 10, health: 'healthy' });
+    expect(forecast({ done: 2, total: 10 }, { elapsedDays: 5, daysLeft: 5 })).toEqual({ projectedDone: 4, total: 10, health: 'off-track' });
+    expect(forecast({ done: 4, total: 10 }, { elapsedDays: 5, daysLeft: 5 })?.health).toBe('at-risk');
+  });
+
+  it('gives no forecast before day one or for an empty sprint', () => {
+    expect(forecast({ done: 0, total: 5 }, { elapsedDays: 0, daysLeft: 10 })).toBeNull();
+    expect(forecast({ done: 0, total: 0 }, { elapsedDays: 3, daysLeft: 7 })).toBeNull();
+  });
+});
+
+describe('velocity', () => {
+  it('keeps the last sprints, oldest first, with the average done', () => {
+    const sprint = (id: string, endDate: string, doneTasks: number, committedTasks: number | null) => ({ id, name: id, endDate, totalTasks: doneTasks, doneTasks, committedTasks });
+    const result = velocity([sprint('c', '2026-03-01', 9, 12), sprint('a', '2026-01-01', 4, 8), sprint('b', '2026-02-01', 5, null)], 2);
+    expect(result.rows).toEqual([
+      { key: 'b', label: 'b', committed: 5, done: 5 },
+      { key: 'c', label: 'c', committed: 12, done: 9 },
+    ]);
+    expect(result.average).toBe(7);
   });
 });
