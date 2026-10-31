@@ -572,7 +572,8 @@ src/app/                              composition root (like app.module.ts on th
 ├── routes.tsx                        the whole typed route tree; session guards; pages come from module index.ts files
 ├── query-client.ts                   retries (none on client error codes), stale times, UNAUTHENTICATED → sign-in
 └── layouts/
-    ├── workspace-layout.tsx          sidebar, top bar and <Outlet/>; the open task (?task=) shows over any page
+    ├── workspace-layout.tsx          sidebar, top bar, workbench tabs and <Outlet/>; the open task (?task=) shows over any page
+    ├── workbench-tabs.tsx            tab strip: pin, reorder (drag or menu), close, Alt+T / W / 1–9 / ⇧[ ] shortcuts
     ├── workspace-sidebar.tsx         navigation, projects with live counts, workspace and people pages; resizable
     ├── app-topbar.tsx                sidebar toggle, workspace switcher, search, timer, live status, inbox, new task
     └── user-menu.tsx                 account menu, theme toggle, sign out (sidebar row or top-bar avatar)
@@ -603,6 +604,11 @@ src/core/
 │   ├── invalidations.ts              entity type → query keys to refresh
 │   ├── realtime-status.store.ts      Zustand: live | connecting | offline
 │   └── realtime-indicator.tsx        status dot in the top bar
+├── workbench/
+│   ├── tabs.ts                       pure tab rules: follow navigation, pin, close, reorder, limits
+│   ├── describe-path.ts              label and icon for an in-app path
+│   ├── workbench.store.ts            Zustand: open tabs (active tab remembered per browser)
+│   └── use-workbench-sync.ts         loads tabs from preferences, saves changes (debounced 800 ms)
 └── theme/use-theme.ts                light/dark preference
 
 src/components/

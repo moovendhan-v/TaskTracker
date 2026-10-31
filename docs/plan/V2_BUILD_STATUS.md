@@ -9,7 +9,7 @@ Legend: ✅ built · 🟡 partial · ⬜ not started. "Gap" lists what v2 adds o
 | # | Module | Status | What exists | Gap to v2 |
 |---|---|---|---|---|
 | A1 | Theme tokens + Appearance | ✅ | v2 zinc tokens, accents, `data-radius` / `data-density` / `data-font`, Geist + Geist Mono, Settings → Appearance with a live preview; all saved per user (`user_prefs` jsonb) | Sidebar mode, tab behaviour, reduced motion and code font prefs (they belong with A2) |
-| A2 | App shell: Rail + Workbench tabs | 🟡 | Sidebar + top bar shell; `tabs` are stored in preferences (API + SDK), but no UI uses them yet | 60px rail, Huly-style tab strip (pin, reorder, split, restore), ⌘T / ⌘W / ⌘1–9 shortcuts |
+| A2 | App shell: Rail + Workbench tabs | 🟡 | Tab strip under the top bar: every page opens in a tab that follows navigation; pin (icon only, keeps its page), close, close others, reorder by drag or menu, real names for projects / lists / docs / sprints; saved to the account and restored on any device; Alt+T / Alt+W / Alt+1–9 / Alt+⇧[ ] | 60px rail, split view, per-tab scroll restore, search and Arrange in the strip. Shortcuts use Alt because browsers reserve ⌘T / ⌘W |
 | A3 | Org → Workspaces → Spaces | 🟡 | Workspace → Space → List, workspace switcher, platform admin console | An org layer above workspaces (billing, shared HR / IAM / audit), ARN-like resource names |
 | A4 | Auth, SSO, workspace restore | 🟡 | Better Auth email + password, password reset, Turnstile CAPTCHA, email verification | SSO, GitHub login, passkeys, the "Restoring your workspace…" screen |
 | B1 | Block frame + states | ⬜ | Dashboard panels and stat cards (fixed layout) | Generic block frame with loading / empty / error / no-access states and a per-block error boundary |
@@ -36,7 +36,7 @@ Legend: ✅ built · 🟡 partial · ⬜ not started. "Gap" lists what v2 adds o
 
 Following the handoff's build order (§10), with A1 done:
 
-1. **A2 workbench tabs**: the tab model is already stored server-side, so this is mostly UI: tab strip, open-as-tab on navigation, pin / close / reorder, shortcuts.
+1. **A2 rest**: the 60px rail replacing the wide sidebar (sidebar mode preference), then split view.
 2. **B1 block frame**: a shared frame with all the states, then move the existing dashboard panels into it. This sets up B2–B4 and C4.
 3. **C1 / C2 visual pass** against `TaskFlow v2 Features.dc.html` `#13a` and `#14a`.
 
