@@ -1,8 +1,7 @@
 import { GitBranchIcon, PlusIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { isClosedCategory, type Permission, type TaskResponse, type TaskStatusResponse } from '@taskflow/shared-types';
 import { Section } from '@/components/kit/section';
-import { StatusPill } from '@/components/kit/status-pill';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/cn';
 import { usePermissions } from '@/modules/workspaces';
@@ -33,7 +32,11 @@ interface ListViewProps {
   hideEmpty?: boolean;
 }
 
-const GRID = 'grid grid-cols-[2rem_minmax(14rem,1fr)_7rem_11rem_8rem_9rem] items-center gap-2';
+const GRID = 'grid grid-cols-[1.75rem_3.25rem_minmax(12rem,1fr)_9rem_7rem_7.5rem_9rem] items-center gap-2';
+
+function isEditable(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+}
 
 /** Tasks in groups with column headers, inline editing, quick add and multi-select. */
 export function ListView({ workspaceId, tasks, statuses, groupBy, defaultListId, spaceId, scopeKey, onOpen, hideEmpty = false }: ListViewProps) {
@@ -43,9 +46,40 @@ export function ListView({ workspaceId, tasks, statuses, groupBy, defaultListId,
   const groups = groupTasks(tasks, groupBy, statuses, memberName).filter((group) => !hideEmpty || group.tasks.length > 0);
   const selectedIds = [...selected].filter((id) => tasks.some((task) => task.id === id));
   const bulk = (body: Parameters<typeof updateMany.mutate>[0]['body']) => updateMany.mutate({ taskIds: selectedIds, body }, { onSuccess: () => setSelected(new Set()) });
+  const container = useRef<HTMLDivElement>(null);
+
+  // J / K move between rows, X selects the focused row, Enter opens it (v2 tracker keys).
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || isEditable(event.target) || document.querySelector('[role="dialog"],[role="menu"]')) return;
+      const rows = [...(container.current?.querySelectorAll<HTMLElement>('[data-task-row]') ?? [])];
+      if (rows.length === 0) return;
+      const current = rows.findIndex((row) => row.contains(document.activeElement));
+      const key = event.key.toLowerCase();
+      if (key === 'j' || key === 'k') {
+        event.preventDefault();
+        const next = current === -1 ? 0 : Math.min(rows.length - 1, Math.max(0, current + (key === 'j' ? 1 : -1)));
+        rows[next]!.focus();
+        rows[next]!.scrollIntoView({ block: 'nearest' });
+      } else if (key === 'x' && current !== -1) {
+        event.preventDefault();
+        const id = rows[current]!.dataset['taskRow']!;
+        setSelected((previous) => {
+          const next = new Set(previous);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        });
+      } else if (event.key === 'Escape' && selected.size > 0) {
+        setSelected(new Set());
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected.size]);
 
   return (
-    <div className="grid gap-5 pb-24">
+    <div ref={container} className="grid gap-5 pb-24">
       {groups.map((group) => (
         <GroupBlock key={group.key} workspaceId={workspaceId} group={group} defaultListId={defaultListId} spaceId={spaceId} scopeKey={scopeKey} selected={selected} onSelect={setSelected} onOpen={onOpen} />
       ))}
@@ -94,7 +128,12 @@ function GroupBlock({ workspaceId, group, defaultListId, spaceId, scopeKey, sele
   return (
     <Section
       storageKey={`${scopeKey}:${group.key}`}
-      title={group.status ? <StatusPill status={group.status} /> : <span className="text-sm font-semibold">{group.label}</span>}
+      title={
+        <span className="flex items-center gap-2 text-[13px] font-semibold">
+          {group.status ? <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: group.status.color }} /> : null}
+          {group.label}
+        </span>
+      }
       count={group.tasks.length}
       actions={
         <>
@@ -108,15 +147,14 @@ function GroupBlock({ workspaceId, group, defaultListId, spaceId, scopeKey, sele
       }
     >
       <div role="table" aria-label={group.label} className="text-sm">
-        <div role="row" className={cn(GRID, 'border-b px-2 pb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase')}>
+        <div role="row" className={cn(GRID, 'h-8 border-b px-2 font-mono text-[10.5px] font-semibold tracking-[0.06em] text-subtle-foreground uppercase')}>
           <span role="columnheader" aria-label="Select" />
-          <span role="columnheader" className="pl-6">
-            Name
-          </span>
-          <span role="columnheader">Assignee</span>
-          <span role="columnheader">Dates</span>
-          <span role="columnheader">Priority</span>
+          <span role="columnheader">ID</span>
+          <span role="columnheader">Title</span>
           <span role="columnheader">Status</span>
+          <span role="columnheader">Assignees</span>
+          <span role="columnheader">Priority</span>
+          <span role="columnheader">Dates</span>
         </div>
         {group.tasks.map((task) => (
           <TaskRow
@@ -168,21 +206,43 @@ function TaskRow({ workspaceId, task, selected, onSelect, onOpen }: TaskRowProps
   const setStatus = (status: TaskStatusResponse) => update.mutate({ taskId: task.id, body: { statusId: status.id }, status });
 
   return (
-    <div role="row" aria-selected={selected} className={cn(GRID, 'group rounded-md px-2 hover:bg-muted/50', selected && 'bg-primary/10')} style={{ minHeight: 'var(--row-height)' }}>
-      <span role="cell" className={cn('transition-opacity', !selected && 'opacity-0 group-hover:opacity-100 focus-within:opacity-100')}>
+    <div
+      role="row"
+      aria-selected={selected}
+      tabIndex={-1}
+      data-task-row={task.id}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' || event.target !== event.currentTarget) return;
+        // Without this, the same Enter would also press whatever the opened task focuses (its close button).
+        event.preventDefault();
+        onOpen(task.id);
+      }}
+      className={cn(
+        GRID,
+        'group border-b border-border/70 px-2 transition-colors hover:bg-muted/50 focus-visible:bg-muted/60 focus-visible:shadow-[inset_2px_0_0_var(--ring)] focus-visible:outline-none',
+        selected && 'bg-primary-soft hover:bg-primary-soft',
+      )}
+      style={{ minHeight: 'calc(var(--row-height) + 2px)' }}
+    >
+      <span role="cell" className={cn('transition-opacity', !selected && 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 focus-within:opacity-100')}>
         <Checkbox aria-label={`Select ${task.title}`} checked={selected} onCheckedChange={(checked) => onSelect(checked === true)} />
       </span>
+      <span role="cell" className="font-mono text-[11.5px] font-medium text-subtle-foreground tabular-nums">
+        #{task.number}
+      </span>
       <span role="cell" className="flex min-w-0 items-center gap-1.5">
-        <StatusPicker compact workspaceId={workspaceId} value={task.status} disabled={!canEdit} onChange={setStatus} />
-        <button type="button" onClick={() => onOpen(task.id)} className={cn('truncate text-left font-medium hover:text-primary', closed && 'text-muted-foreground line-through')}>
+        <button type="button" onClick={() => onOpen(task.id)} className={cn('truncate text-left text-[13px] hover:text-primary', closed && 'text-muted-foreground line-through')}>
           {task.title}
         </button>
         {task.subtaskCount > 0 ? (
-          <span className="inline-flex shrink-0 items-center gap-0.5 text-xs text-muted-foreground" aria-label={`${task.subtaskCount} subtasks`}>
+          <span className="inline-flex shrink-0 items-center gap-0.5 font-mono text-[11px] text-subtle-foreground" aria-label={`${task.subtaskCount} subtasks`}>
             <GitBranchIcon className="size-3" />
             {task.subtaskCount}
           </span>
         ) : null}
+      </span>
+      <span role="cell" className="min-w-0">
+        <StatusPicker variant="pill" workspaceId={workspaceId} value={task.status} disabled={!canEdit} onChange={setStatus} />
       </span>
       <span role="cell">
         <AssigneePicker
@@ -193,13 +253,10 @@ function TaskRow({ workspaceId, task, selected, onSelect, onOpen }: TaskRowProps
         />
       </span>
       <span role="cell">
-        <TaskDates startDate={task.startDate} dueDate={task.dueDate} closed={closed} />
-      </span>
-      <span role="cell">
         <PriorityPicker showLabel value={task.priority} disabled={!canEdit} onChange={(priority) => update.mutate({ taskId: task.id, body: { priority } })} />
       </span>
-      <span role="cell">
-        <StatusPicker variant="pill" workspaceId={workspaceId} value={task.status} disabled={!canEdit} onChange={setStatus} />
+      <span role="cell" className="text-xs">
+        <TaskDates startDate={task.startDate} dueDate={task.dueDate} closed={closed} />
       </span>
     </div>
   );

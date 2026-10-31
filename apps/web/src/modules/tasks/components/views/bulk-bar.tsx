@@ -24,7 +24,7 @@ const action = 'inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm h
 export function BulkBar({ workspaceId, count, statuses, onStatus, onPriority, onAssignee, onExport, onClear }: BulkBarProps) {
   const { data: members = [] } = useMembers(workspaceId);
   return (
-    <div role="toolbar" aria-label="Selected tasks" className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border bg-popover p-1.5 shadow-2xl">
+    <div role="toolbar" aria-label="Selected tasks" className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-border-strong bg-card p-1.5 shadow-popover">
       <span className="flex items-center gap-2 px-2 text-sm font-medium">
         <span className="flex size-6 items-center justify-center rounded-md bg-primary text-xs text-primary-foreground tabular-nums">{count}</span> selected
       </span>

@@ -42,9 +42,10 @@ function SprintTitle({ workspaceId, tab, sprintId }: { workspaceId: string; tab:
 function Rename({ tab, title }: { tab: WorkspaceTab; title: string | undefined }) {
   const rename = useWorkbenchStore((state) => state.rename);
   const trimmed = title?.trim().slice(0, 120);
+  // Also re-applies the name when navigation reset the tab's title to its generic label.
   useEffect(() => {
-    if (trimmed) rename(tab.id, trimmed);
-  }, [rename, tab.id, trimmed]);
+    if (trimmed && trimmed !== tab.title) rename(tab.id, trimmed);
+  }, [rename, tab.id, tab.title, trimmed]);
   return null;
 }
 

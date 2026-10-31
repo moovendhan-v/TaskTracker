@@ -17,7 +17,7 @@ Legend: ✅ built · 🟡 partial · ⬜ not started. "Gap" lists what v2 adds o
 | B3 | Block config drawer | ⬜ | | Data source vs view config per block |
 | B4 | Layout persistence, menu, reset, versions, sync conflict | 🟡 | `dashboard_layout` table (RLS: own rows in the current workspace), `myLayout` / `saveLayout` (optimistic `baseVersion`, CONFLICT on mismatch) / `resetLayout`; server validates with the shared rules; debounced 800 ms saves; "Layout changed on another device — Keep this / Use other"; Reset with confirm | Team / workspace defaults and the resolution order, locks, version history, sharing, save-as / rename / duplicate, reset preview |
 | B5 | Sidebar presets + templates gallery | 🟡 | Project templates (gallery, save as template, download) | Sidebar presets, layout / automation / doc templates, `.tflow` import / export |
-| C1 | Tracker views | ✅ | List, Board, Table, Calendar, Timeline, Team planner, Time report, saved views, filters, bulk bar, grouping | v2 visual pass, swimlanes, WIP limits, J/K/X keyboard navigation, number-key status shortcuts |
+| C1 | Tracker: Kanban / Table / List / Calendar / Timeline | ✅ | List, Board, Table, Calendar, Timeline, Team planner, Time report, saved views, filters, grouping. v2 pass on List: soft status pills everywhere, mono `#ID` column, 42px hairline rows, mono column headers, group headers with dot + count; status menu with 1–9 keys; J / K / X / Enter / Esc keyboard; v2 bulk bar | Table and Calendar visual pass, swimlanes, WIP limits, points (no points field yet: estimates are in minutes), PR column |
 | C2 | Task detail (full page + peek) | ✅ | Modal / side / page modes, subtasks, comments, time, multiple assignees, custom fields, linked PRs | Checklist, relations (blocks / duplicates), Development card (create branch / PR), activity tabs, ↑/↓ stepping in peek |
 | C3 | Sprints | 🟡 | Sprint list, planning (backlog ↔ sprint lanes), board, progress, burndown, velocity, complete-sprint dialog | Per-person capacity lanes with leave, health strip with forecast, 3-step complete flow with report + "Sprint end" automation |
 | C4 | Dashboards | 🟡 | Home overview and per-project dashboards with KPIs and charts | Multiple dashboard tabs with visibility (Private / Team / Workspace), built on the block grid (needs B1–B4) |
@@ -40,7 +40,7 @@ Current state in [docs/screenshots/v2](../screenshots/v2).
 
 Following the handoff's build order (§10), with A1, A2 and B1 done, and B2 / B4 under way:
 
-1. **C1 / C2 visual pass** against `TaskFlow v2 Features.dc.html` `#13a` / `#14a` (tracker table and task detail).
+1. **C2 task detail** against `TaskFlow v2 Features.dc.html` `#14a`: header (type, ID, status, timer), property panel, Development card, activity tabs.
 2. **B2 / B4 next steps**: the project dashboard on the grid, then team defaults (B4).
 3. **B3 block config drawer**: per-block data source and view settings, kept separate.
 
