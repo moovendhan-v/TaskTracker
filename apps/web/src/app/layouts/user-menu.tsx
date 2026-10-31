@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router';
-import { LogOutIcon, MoonIcon, ShieldAlertIcon, SunIcon } from 'lucide-react';
+import { Link, useParams } from '@tanstack/react-router';
+import { LogOutIcon, MoonIcon, PaletteIcon, ShieldAlertIcon, SunIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useCurrentUser } from '@/core/auth/use-current-user';
@@ -11,6 +11,7 @@ import { useSignOut } from '@/modules/auth';
 export function UserMenu({ variant = 'row' }: { variant?: 'row' | 'avatar' }) {
   const { data: me } = useCurrentUser();
   const signOut = useSignOut();
+  const { workspaceId } = useParams({ strict: false });
   const theme = resolvedTheme(usePreferences().theme);
   const { update } = usePreferenceMutations();
   const toggleTheme = () => update.mutate({ theme: theme === 'dark' ? 'light' : 'dark' });
@@ -48,6 +49,13 @@ export function UserMenu({ variant = 'row' }: { variant?: 'row' | 'avatar' }) {
         <DropdownMenuItem onSelect={toggleTheme}>
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />} {theme === 'dark' ? 'Light mode' : 'Dark mode'}
         </DropdownMenuItem>
+        {workspaceId ? (
+          <DropdownMenuItem asChild>
+            <Link to="/w/$workspaceId/appearance" params={{ workspaceId }}>
+              <PaletteIcon /> Appearance…
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => signOut.mutate()}>
           <LogOutIcon /> Sign out

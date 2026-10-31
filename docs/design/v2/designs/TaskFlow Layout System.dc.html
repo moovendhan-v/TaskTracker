@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400,0..1,0&display=block">
+<style>
+:root,[data-theme=light]{--paper:#F5F3EE;--surface:#FFFFFF;--raised:#FBFAF7;--sunk:#ECE9E2;--line:#E4E0D7;--line2:#D3CEC3;--ink:#1E2023;--ink2:#53575D;--ink3:#878A8F;--accent:#0E6B65;--accent-ink:#FFFFFF;--accent-soft:#DDEBE8;--amber:#A86B12;--amber-soft:#F6E9CF;--green:#4B7A57;--green-soft:#E2ECE2;--red:#AE4636;--red-soft:#F4E1DC;--steel:#4E6E86;--steel-soft:#E1E8EE;--shadow:0 1px 2px rgba(30,32,35,.06),0 8px 24px rgba(30,32,35,.08);--canvas:#E9E6DF}
+[data-theme=dark]{--paper:#17191B;--surface:#1F2225;--raised:#24282B;--sunk:#131517;--line:#2D3135;--line2:#3B4045;--ink:#ECEAE5;--ink2:#A8ACB1;--ink3:#767B81;--accent:#3EA79C;--accent-ink:#0D1B1A;--accent-soft:#183431;--amber:#D9A04A;--amber-soft:#3A2F1C;--green:#6FA67B;--green-soft:#1D2E22;--red:#D9705E;--red-soft:#3A221E;--steel:#8AA6BB;--steel-soft:#1E2A33;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);--canvas:#0F1112}
+body{margin:0;background:var(--canvas);font-family:Geist,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+i{font-family:'Material Symbols Rounded';font-style:normal;font-size:16px;line-height:1;display:inline-flex;font-feature-settings:'liga';user-select:none;flex:none}
+.dv-turn{padding:48px 56px 40px;border-bottom:1px solid var(--line);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:12px;margin:0 0 6px}.dv-tid{font:600 11px 'Geist Mono',monospace;padding:3px 8px;background:var(--ink);color:var(--paper);border-radius:4px;text-decoration:none}.dv-tname{font:600 20px/1.2 Geist,sans-serif;color:var(--ink);letter-spacing:-.01em}.dv-sub{font:400 13px/1.5 Geist,sans-serif;color:var(--ink2);margin:0 0 24px;max-width:860px}.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}.dv-oid{font:600 10.5px 'Geist Mono',monospace;padding:3px 7px;background:var(--sunk);color:var(--ink);border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 Geist,sans-serif;color:var(--ink2)}.dv-card{max-width:100%;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}.dv-opt:target .dv-oid{background:var(--accent);color:var(--accent-ink)}.dv-next{margin:24px 0 0;font:12px/1.5 Geist,sans-serif;color:var(--ink3)}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="background:var(--canvas);color:var(--ink);min-height:100vh">
+
+<section class="dv-turn" id="t0" data-screen-label="00 Overview">
+  <div style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:48px;max-width:1440px">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <div style="width:28px;height:28px;border-radius:8px;background:var(--accent);display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:6px;box-sizing:border-box"><span style="background:var(--accent-ink);border-radius:2px"></span><span style="background:var(--accent-ink);border-radius:2px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:2px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:2px"></span></div>
+        <span style="font-weight:600;font-size:17px;letter-spacing:-.01em">TaskFlow</span>
+        <span style="font:500 11px 'Geist Mono',monospace;color:var(--ink3);margin-left:6px">LAYOUT SYSTEM · v0.1</span>
+      </div>
+      <h1 style="font-size:44px;line-height:1.05;letter-spacing:-.03em;font-weight:600;margin:0 0 16px;text-wrap:pretty">Every page is a layout.<br><span style="color:var(--ink3)">Every layout is widgets.</span></h1>
+      <p style="font-size:15px;line-height:1.55;color:var(--ink2);max-width:560px;margin:0 0 24px;text-wrap:pretty">This file covers the composable layout system: the component sheet, Arrange mode before/after, sidebar variations, splits, saving &amp; sync states and the templates gallery. The virtual office and the app screens live in their own files.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="TaskFlow Virtual Office.dc.html" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:13px;font-weight:500;background:var(--surface)"><i>apartment</i>Virtual office →</a>
+        <a href="TaskFlow App Screens.dc.html" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:13px;font-weight:500;background:var(--surface)"><i>dashboard</i>App screens →</a>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:12px;color:var(--ink2)">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px">
+        <div style="font:600 10.5px 'Geist Mono',monospace;color:var(--ink3);letter-spacing:.06em;margin-bottom:12px">COLOUR</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+          <div style="height:36px;border-radius:6px;background:var(--paper);border:1px solid var(--line)"></div>
+          <div style="height:36px;border-radius:6px;background:var(--ink)"></div>
+          <div style="height:36px;border-radius:6px;background:var(--accent)"></div>
+          <div style="height:36px;border-radius:6px;background:var(--amber)"></div>
+          <div style="height:20px;border-radius:4px;background:var(--steel)"></div>
+          <div style="height:20px;border-radius:4px;background:var(--green)"></div>
+          <div style="height:20px;border-radius:4px;background:var(--red)"></div>
+          <div style="height:20px;border-radius:4px;background:var(--ink3)"></div>
+        </div>
+        <div style="margin-top:10px;line-height:1.5">Paper canvas, graphite ink, one teal accent, amber for attention. Status colours stay muted.</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px">
+        <div style="font:600 10.5px 'Geist Mono',monospace;color:var(--ink3);letter-spacing:.06em;margin-bottom:12px">TYPE</div>
+        <div style="font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(--ink)">Geist 600</div>
+        <div style="font-size:13px;color:var(--ink);margin:4px 0">Geist 400 · 13/20 UI body</div>
+        <div style="font:500 12px 'Geist Mono',monospace;color:var(--accent)">TF-142 · tf-142-fix-login · 1h 20m</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px">
+        <div style="font:600 10.5px 'Geist Mono',monospace;color:var(--ink3);letter-spacing:.06em;margin-bottom:12px">SHAPE</div>
+        <div style="display:flex;gap:8px;align-items:end"><div style="width:40px;height:40px;border:1px solid var(--line2);border-radius:8px"></div><div style="width:40px;height:36px;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)"></div><div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">8r · 1px · 4pt · 36/40 rows</div></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px">
+        <div style="font:600 10.5px 'Geist Mono',monospace;color:var(--ink3);letter-spacing:.06em;margin-bottom:12px">ASSUMPTIONS</div>
+        <div style="line-height:1.5">Team of 8 in workspace Acme. Space Platform → Backend, Web. Sprint 14, TF-101…160, repo acme/platform. Toggle dark in Tweaks.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t1" data-screen-label="01 Component sheet">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Component sheet</span></div>
+  <p class="dv-sub">One widget frame for everything. Data source is separate from the view — the switcher changes presentation in place and keeps the filter chip.</p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Widget frame — anatomy &amp; states</div>
+      <div class="dv-card" style="width:1120px;padding:24px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;background:var(--paper)">
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">DEFAULT</div>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;border-bottom:1px solid var(--line)">
+              <i style="color:var(--ink3)">table_rows</i><span style="font-weight:600;font-size:13px">Tasks</span>
+              <span style="display:flex;align-items:center;gap:4px;height:20px;padding:0 6px;border-radius:5px;background:var(--sunk);font-size:11px;color:var(--ink2)"><i style="font-size:13px">filter_list</i>Sprint 14 · Me</span>
+              <div style="flex:1"></div>
+              <div style="display:flex;border:1px solid var(--line);border-radius:6px;padding:1px;gap:1px"><i style="padding:3px;border-radius:4px;background:var(--sunk);font-size:14px">table_rows</i><i style="padding:3px;font-size:14px;color:var(--ink3)">view_kanban</i><i style="padding:3px;font-size:14px;color:var(--ink3)">calendar_month</i><i style="padding:3px;font-size:14px;color:var(--ink3)">view_timeline</i></div>
+              <i style="color:var(--ink3);padding:4px">more_horiz</i>
+            </div>
+            <sc-for list="{{ tasks4 }}" as="t" hint-placeholder-count="4">
+              <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line);font-size:12.5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{ t.sc }}"></span>
+                <span style="font:500 11px 'Geist Mono',monospace;color:var(--ink3);width:46px">{{ t.id }}</span>
+                <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span>
+                <span style="width:20px;height:20px;border-radius:50%;background:{{ t.ac }};color:#fff;font-size:9px;font-weight:600;display:grid;place-items:center">{{ t.ai }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">FOCUSED · MENU OPEN</div>
+          <div style="position:relative;background:var(--surface);border:1px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft);border-radius:8px;height:181px">
+            <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;border-bottom:1px solid var(--line)">
+              <i style="color:var(--ink3)">view_kanban</i><span style="font-weight:600;font-size:13px">Tasks</span>
+              <span style="display:flex;align-items:center;gap:4px;height:20px;padding:0 6px;border-radius:5px;background:var(--sunk);font-size:11px;color:var(--ink2)"><i style="font-size:13px">filter_list</i>Sprint 14 · Me</span>
+              <div style="flex:1"></div>
+              <i style="padding:4px;border-radius:5px;background:var(--sunk)">more_horiz</i>
+            </div>
+            <div style="position:absolute;right:6px;top:34px;width:212px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:4px;font-size:12.5px;z-index:2">
+              <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:5px;background:var(--sunk)"><i>tune</i>Configure<span style="margin-left:auto;font:11px 'Geist Mono';color:var(--ink3)">C</span></div>
+              <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px"><i>content_copy</i>Duplicate<span style="margin-left:auto;font:11px 'Geist Mono';color:var(--ink3)">⌘D</span></div>
+              <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px"><i>open_in_full</i>Maximise<span style="margin-left:auto;font:11px 'Geist Mono';color:var(--ink3)">M</span></div>
+              <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px"><i>right_panel_open</i>Pop out to right sidebar</div>
+              <div style="height:1px;background:var(--line);margin:4px 0"></div>
+              <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;color:var(--red)"><i>delete</i>Remove<span style="margin-left:auto;font:11px 'Geist Mono';color:var(--ink3)">⌫</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">ARRANGE MODE · GRIP + HANDLES</div>
+          <div style="position:relative;background:var(--surface);border:1px dashed var(--accent);border-radius:8px;height:181px">
+            <div style="height:36px;display:flex;align-items:center;gap:6px;padding:0 6px 0 4px;border-bottom:1px solid var(--line);background:var(--accent-soft);border-radius:8px 8px 0 0">
+              <i style="color:var(--accent);cursor:grab">drag_indicator</i><i style="color:var(--ink3)">table_rows</i><span style="font-weight:600;font-size:13px">Tasks</span>
+              <div style="flex:1"></div>
+              <span style="font:500 10.5px 'Geist Mono',monospace;color:var(--accent)">6 × 4</span>
+              <i style="padding:4px;color:var(--ink2)">tune</i><i style="padding:4px;color:var(--ink2)">close</i>
+            </div>
+            <div style="padding:12px;display:flex;flex-direction:column;gap:8px"><div style="height:10px;width:80%;background:var(--sunk);border-radius:3px"></div><div style="height:10px;width:60%;background:var(--sunk);border-radius:3px"></div><div style="height:10px;width:70%;background:var(--sunk);border-radius:3px"></div></div>
+            <div style="position:absolute;right:-5px;top:50%;width:8px;height:28px;margin-top:-14px;border-radius:4px;background:var(--surface);border:1.5px solid var(--accent)"></div>
+            <div style="position:absolute;bottom:-5px;left:50%;width:28px;height:8px;margin-left:-14px;border-radius:4px;background:var(--surface);border:1.5px solid var(--accent)"></div>
+            <div style="position:absolute;right:-5px;bottom:-5px;width:10px;height:10px;border-radius:3px;background:var(--accent)"></div>
+            <div style="position:absolute;left:12px;bottom:10px;font:500 10.5px 'Geist Mono',monospace;color:var(--ink3)">⌥ + arrows to move · ⇧⌥ to resize</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">LOADING · SKELETON</div>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;height:181px;overflow:hidden">
+            <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">show_chart</i><span style="font-weight:600;font-size:13px">Burndown</span><div style="flex:1"></div><span style="width:44px;height:14px;border-radius:4px;background:var(--sunk)"></span></div>
+            <div style="padding:16px;display:flex;align-items:end;gap:8px;height:110px">
+              <div style="flex:1;height:90%;background:var(--sunk);border-radius:3px"></div><div style="flex:1;height:75%;background:var(--sunk);border-radius:3px"></div><div style="flex:1;height:68%;background:var(--sunk);border-radius:3px"></div><div style="flex:1;height:52%;background:var(--sunk);border-radius:3px"></div><div style="flex:1;height:40%;background:var(--sunk);border-radius:3px"></div><div style="flex:1;height:30%;background:var(--sunk);border-radius:3px"></div><div style="flex:1;height:18%;background:var(--sunk);border-radius:3px"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">ERROR · RETRY (PAGE KEEPS WORKING)</div>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;height:181px;display:flex;flex-direction:column">
+            <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">merge</i><span style="font-weight:600;font-size:13px">GitHub PRs</span><span style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">acme/platform</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:0 24px">
+              <i style="color:var(--red);font-size:22px">cloud_off</i>
+              <div style="font-size:13px;font-weight:500">Couldn't reach GitHub</div>
+              <div style="font-size:12px;color:var(--ink3)">Rate limited · last success 4 min ago</div>
+              <div style="display:flex;gap:6px"><span style="height:26px;padding:0 10px;border:1px solid var(--line2);border-radius:6px;display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500"><i style="font-size:14px">refresh</i>Retry</span><span style="height:26px;padding:0 10px;display:flex;align-items:center;font-size:12px;color:var(--ink2)">Details</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">NO ACCESS TO THIS DATA</div>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;height:181px;display:flex;flex-direction:column">
+            <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">payments</i><span style="font-weight:600;font-size:13px">Timesheet</span><span style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">Finance</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:0 24px;background:repeating-linear-gradient(135deg,transparent 0 8px,var(--sunk) 8px 9px)">
+              <i style="color:var(--ink3);font-size:22px">lock</i>
+              <div style="font-size:13px;font-weight:500">You can't view the Finance space</div>
+              <div style="font-size:12px;color:var(--ink3);text-wrap:pretty">Policy <span style="font-family:'Geist Mono'">deny:space/finance/*</span> applies to Engineers.</div>
+              <span style="height:26px;padding:0 10px;border:1px solid var(--line2);border-radius:6px;display:flex;align-items:center;font-size:12px;font-weight:500;background:var(--surface)">Request access</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">STACKED · TABS IN ONE SLOT</div>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div style="height:36px;display:flex;align-items:end;gap:2px;padding:0 6px 0 8px;border-bottom:1px solid var(--line)">
+              <span style="height:32px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;border-bottom:2px solid var(--accent)">Backlog<span style="font:500 10.5px 'Geist Mono';color:var(--ink3)">38</span></span>
+              <span style="height:32px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2)">Bugs<span style="font:500 10.5px 'Geist Mono';color:var(--amber)">7</span></span>
+              <span style="height:32px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2)">Mine<span style="font:500 10.5px 'Geist Mono';color:var(--ink3)">5</span></span>
+              <i style="height:32px;padding:0 6px;color:var(--ink3);align-items:center">add</i>
+              <div style="flex:1"></div><i style="height:32px;padding:0 4px;color:var(--ink3);align-items:center">more_horiz</i>
+            </div>
+            <sc-for list="{{ tasks3b }}" as="t" hint-placeholder-count="3">
+              <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line);font-size:12.5px">
+                <span style="font:500 11px 'Geist Mono',monospace;color:var(--ink3);width:46px">{{ t.id }}</span>
+                <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span>
+                <span style="font:500 11px 'Geist Mono';color:var(--ink3)">{{ t.pts }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">EMPTY REGION · INVITES COMPOSITION</div>
+          <div style="height:181px;border:1.5px dashed var(--line2);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:0 24px;box-sizing:border-box">
+            <div style="display:grid;grid-template-columns:repeat(3,14px);gap:3px"><span style="height:14px;border-radius:3px;background:var(--line2)"></span><span style="height:14px;border-radius:3px;background:var(--accent)"></span><span style="height:14px;border-radius:3px;background:var(--line2)"></span></div>
+            <div style="font-size:13px;font-weight:500">This region is empty</div>
+            <div style="font-size:12px;color:var(--ink3)">Drag a widget here or pick a layout</div>
+            <div style="display:flex;gap:6px"><span style="height:26px;padding:0 10px;border-radius:6px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500"><i style="font-size:14px">add</i>Add widget</span><span style="height:26px;padding:0 10px;border:1px solid var(--line2);border-radius:6px;display:flex;align-items:center;font-size:12px;font-weight:500">Layouts</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'Geist Mono',monospace;color:var(--ink3)">LINKED · FOLLOWS PAGE CONTEXT</div>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;height:181px;overflow:hidden">
+            <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">description</i><span style="font-weight:600;font-size:13px">Task detail</span><div style="flex:1"></div>
+              <span style="display:flex;align-items:center;gap:4px;height:20px;padding:0 7px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:500"><i style="font-size:13px">link</i>Linked to Tasks · Table</span></div>
+            <div style="padding:12px;display:flex;flex-direction:column;gap:8px">
+              <div style="font:500 11px 'Geist Mono';color:var(--ink3)">TF-142</div>
+              <div style="font-size:14px;font-weight:600">Fix login crash on SSO redirect</div>
+              <div style="display:flex;gap:6px"><span style="height:20px;padding:0 7px;border-radius:5px;background:var(--steel-soft);color:var(--steel);font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:var(--steel)"></span>In progress</span><span style="height:20px;padding:0 7px;border-radius:5px;background:var(--amber-soft);color:var(--amber);font-size:11px;font-weight:500;display:flex;align-items:center">P1 · High</span></div>
+              <div style="font-size:12px;color:var(--ink3)">Updates when you select a row in the Tasks table.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>One data source, six views</div>
+      <div class="dv-card" style="width:560px;padding:20px;background:var(--paper);display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)"><span style="font:500 11px 'Geist Mono';color:var(--ink3)">SOURCE</span><span style="height:24px;padding:0 8px;border-radius:6px;border:1px solid var(--line2);display:flex;align-items:center;gap:6px;background:var(--surface)"><i style="font-size:14px">database</i>Sprint 14 · assignee = me · 9 tasks</span></div>
+        <div style="display:flex;gap:2px;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--surface);align-self:flex-start">
+          <span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12px;border-radius:6px;color:var(--ink2)"><i style="font-size:15px">table_rows</i>Table</span>
+          <span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12px;border-radius:6px;color:var(--ink2)"><i style="font-size:15px">list</i>List</span>
+          <span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12px;border-radius:6px;background:var(--ink);color:var(--paper);font-weight:500"><i style="font-size:15px">view_kanban</i>Kanban</span>
+          <span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12px;border-radius:6px;color:var(--ink2)"><i style="font-size:15px">calendar_month</i>Calendar</span>
+          <span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12px;border-radius:6px;color:var(--ink2)"><i style="font-size:15px">view_timeline</i>Timeline</span>
+          <span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12px;border-radius:6px;color:var(--ink2)"><i style="font-size:15px">grid_view</i>Cards</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px"><div style="font:500 10px 'Geist Mono';color:var(--ink3)">TABLE</div><div style="height:6px;background:var(--sunk);border-radius:2px"></div><div style="height:6px;background:var(--sunk);border-radius:2px"></div><div style="height:6px;background:var(--sunk);border-radius:2px"></div><div style="height:6px;background:var(--sunk);border-radius:2px"></div></div>
+          <div style="background:var(--surface);border:2px solid var(--accent);border-radius:8px;padding:7px;display:flex;flex-direction:column;gap:4px"><div style="font:500 10px 'Geist Mono';color:var(--accent)">KANBAN</div><div style="display:flex;gap:4px"><div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="height:10px;background:var(--sunk);border-radius:2px"></div><div style="height:10px;background:var(--sunk);border-radius:2px"></div></div><div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="height:10px;background:var(--steel-soft);border-radius:2px"></div><div style="height:10px;background:var(--steel-soft);border-radius:2px"></div><div style="height:10px;background:var(--steel-soft);border-radius:2px"></div></div><div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="height:10px;background:var(--green-soft);border-radius:2px"></div></div></div></div>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px"><div style="font:500 10px 'Geist Mono';color:var(--ink3)">TIMELINE</div><div style="height:6px;width:60%;background:var(--accent-soft);border-radius:2px"></div><div style="height:6px;width:40%;margin-left:30%;background:var(--accent-soft);border-radius:2px"></div><div style="height:6px;width:50%;margin-left:45%;background:var(--accent-soft);border-radius:2px"></div></div>
+        </div>
+        <div style="font-size:12px;color:var(--ink3);line-height:1.5">Switching view keeps filter, sort and selection. Group by and fields are per-view; the source is per-widget.</div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Region divider &amp; drop zones</div>
+      <div class="dv-card" style="width:560px;padding:20px;background:var(--paper);display:flex;flex-direction:column;gap:16px">
+        <div style="position:relative;height:150px;display:flex;gap:0">
+          <div style="width:33%;background:var(--surface);border:1px solid var(--line);border-radius:8px"></div>
+          <div style="width:12px;position:relative;display:flex;justify-content:center">
+            <div style="width:2px;height:100%;background:var(--accent);border-radius:1px"></div>
+            <div style="position:absolute;top:50%;margin-top:-16px;width:10px;height:32px;border-radius:5px;background:var(--accent);display:grid;place-items:center"><span style="width:2px;height:12px;border-left:1px solid var(--accent-ink);border-right:1px solid var(--accent-ink);opacity:.7"></span></div>
+            <div style="position:absolute;top:10px;padding:4px 8px;border-radius:6px;background:var(--ink);color:var(--paper);font:600 11px 'Geist Mono';white-space:nowrap">33 : 67</div>
+          </div>
+          <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:8px"></div>
+          <div style="position:absolute;left:0;right:0;bottom:-14px;height:10px;display:flex;font:500 9.5px 'Geist Mono';color:var(--ink3)"><span style="position:absolute;left:25%">25</span><span style="position:absolute;left:33%;color:var(--accent);font-weight:600">33</span><span style="position:absolute;left:50%">50</span><span style="position:absolute;left:66%">66</span><span style="position:absolute;left:75%">75</span></div>
+        </div>
+        <div style="height:4px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="height:92px;border:1.5px dashed var(--line2);border-radius:8px;display:grid;place-items:center;font-size:12px;color:var(--ink3)">Drop zone · idle</div>
+          <div style="height:92px;border:1.5px solid var(--accent);background:var(--accent-soft);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;color:var(--accent);font-weight:500"><i>download</i>Drop here · Main, right of Tasks</div>
+        </div>
+        <div style="font-size:12px;color:var(--ink3);line-height:1.5">Divider shows the live ratio, snaps at 25/33/50/66/75 with a soft tick. Double-click resets to 50. Focus a divider and use ←/→ in 5% steps.</div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Widget library drawer</div>
+      <div class="dv-card" style="width:340px;background:var(--surface)">
+        <div style="padding:14px 14px 10px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:14px">Add widgets</span><div style="flex:1"></div><span style="font:500 10.5px 'Geist Mono';color:var(--ink3);border:1px solid var(--line);border-radius:4px;padding:1px 5px">A</span><i style="color:var(--ink3)">close</i></div>
+          <div style="height:32px;border:1px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft);border-radius:8px;display:flex;align-items:center;gap:8px;padding:0 10px;font-size:13px"><i style="color:var(--ink3)">search</i><span>burn</span><span style="width:1px;height:16px;background:var(--ink)"></span></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap"><span style="height:22px;padding:0 8px;border-radius:11px;background:var(--ink);color:var(--paper);font-size:11px;display:flex;align-items:center">All</span><sc-for list="{{ libCats }}" as="c" hint-placeholder-count="6"><span style="height:22px;padding:0 8px;border-radius:11px;border:1px solid var(--line);font-size:11px;color:var(--ink2);display:flex;align-items:center">{{ c }}</span></sc-for></div>
+        </div>
+        <div style="padding:8px 8px 12px;display:flex;flex-direction:column;gap:2px;max-height:520px;overflow:hidden">
+          <sc-for list="{{ library }}" as="g" hint-placeholder-count="4">
+            <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:10px 6px 4px">{{ g.name }}</div>
+            <sc-for list="{{ g.items }}" as="w" hint-placeholder-count="3">
+              <div style="height:36px;display:flex;align-items:center;gap:10px;padding:0 6px;border-radius:6px;font-size:12.5px">
+                <span style="width:26px;height:26px;border-radius:6px;background:var(--sunk);display:grid;place-items:center"><i style="font-size:15px;color:var(--ink2)">{{ w.i }}</i></span>
+                <span style="flex:1">{{ w.n }}</span><i style="color:var(--ink3);font-size:15px">drag_indicator</i>
+              </div>
+            </sc-for>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1e">
+      <div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Widget config drawer</div>
+      <div class="dv-card" style="width:360px;background:var(--surface);font-size:12.5px">
+        <div style="padding:14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">view_kanban</i><span style="font-weight:600;font-size:14px">Configure · Tasks</span><div style="flex:1"></div><i style="color:var(--ink3)">close</i></div>
+        <div style="padding:14px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;color:var(--ink2)">Data source</span>
+            <div style="display:flex;gap:2px;background:var(--sunk);border-radius:7px;padding:2px;font-size:11.5px"><span style="flex:1;text-align:center;padding:4px 0;color:var(--ink2)">Space</span><span style="flex:1;text-align:center;padding:4px 0;color:var(--ink2)">List</span><span style="flex:1;text-align:center;padding:4px 0;background:var(--surface);border-radius:5px;font-weight:500;box-shadow:0 1px 1px rgba(0,0,0,.06)">Sprint</span><span style="flex:1;text-align:center;padding:4px 0;color:var(--ink2)">Filter</span><span style="flex:1;text-align:center;padding:4px 0;color:var(--ink2)">Person</span></div>
+            <div style="height:32px;border:1px solid var(--line2);border-radius:8px;display:flex;align-items:center;padding:0 10px;gap:8px"><i style="font-size:15px;color:var(--ink3)">sprint</i>Platform · Sprint 14<i style="margin-left:auto;color:var(--ink3)">expand_more</i></div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap"><span style="height:22px;padding:0 4px 0 8px;border-radius:5px;background:var(--sunk);display:flex;align-items:center;gap:4px;font-size:11.5px">assignee = me<i style="font-size:13px;color:var(--ink3)">close</i></span><span style="height:22px;padding:0 4px 0 8px;border-radius:5px;background:var(--sunk);display:flex;align-items:center;gap:4px;font-size:11.5px">status ≠ Done<i style="font-size:13px;color:var(--ink3)">close</i></span><span style="height:22px;padding:0 8px;border-radius:5px;border:1px dashed var(--line2);display:flex;align-items:center;font-size:11.5px;color:var(--ink3)">+ filter</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;color:var(--ink2)">Fields on card</span>
+            <div style="display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px">
+              <div style="height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3);font-size:15px">drag_indicator</i>ID<span style="margin-left:auto;width:26px;height:16px;border-radius:8px;background:var(--accent);position:relative"><span style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fff"></span></span></div>
+              <div style="height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3);font-size:15px">drag_indicator</i>Assignees<span style="margin-left:auto;width:26px;height:16px;border-radius:8px;background:var(--accent);position:relative"><span style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fff"></span></span></div>
+              <div style="height:32px;display:flex;align-items:center;gap:8px;padding:0 8px"><i style="color:var(--ink3);font-size:15px">drag_indicator</i>Linked PR<span style="margin-left:auto;width:26px;height:16px;border-radius:8px;background:var(--line2);position:relative"><span style="position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fff"></span></span></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;color:var(--ink2)">Group by</span><div style="height:30px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;padding:0 8px">Status</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;color:var(--ink2)">Sort</span><div style="height:30px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;padding:0 8px">Priority ↓</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;color:var(--ink2)">Measure</span><div style="height:30px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;padding:0 8px">Points</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;color:var(--ink2)">Date range</span><div style="height:30px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;padding:0 8px;font-family:'Geist Mono';font-size:11.5px">Oct 20 – Nov 2</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;color:var(--ink2)">Refresh</span><div style="height:30px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;padding:0 8px">Live</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;color:var(--ink2)">Title &amp; colour</span><div style="display:flex;gap:8px;align-items:center"><div style="flex:1;height:30px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;padding:0 8px">My sprint</div><span style="width:20px;height:20px;border-radius:50%;background:var(--ink3)"></span><span style="width:20px;height:20px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--accent)"></span><span style="width:20px;height:20px;border-radius:50%;background:var(--amber)"></span><span style="width:20px;height:20px;border-radius:50%;background:var(--steel)"></span></div></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:var(--accent-soft)"><i style="color:var(--accent)">link</i><div style="flex:1"><div style="font-weight:500">Follow page context</div><div style="font-size:11.5px;color:var(--ink2)">Filters to the selected project</div></div><span style="width:26px;height:16px;border-radius:8px;background:var(--accent);position:relative"><span style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fff"></span></span></div>
+        </div>
+        <div style="padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end"><span style="height:30px;padding:0 12px;display:flex;align-items:center;border-radius:7px;color:var(--ink2)">Reset widget</span><span style="height:30px;padding:0 14px;display:flex;align-items:center;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-weight:500">Done</span></div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1f">
+      <div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Layout menu</div>
+      <div class="dv-card" style="width:300px;padding:16px;background:var(--paper)">
+        <div style="display:flex;align-items:center;gap:6px;height:30px;padding:0 8px;border:1px solid var(--line2);border-radius:7px;background:var(--surface);font-size:12.5px;font-weight:500;align-self:flex-start;width:max-content;margin-bottom:6px"><i style="font-size:15px;color:var(--ink3)">dashboard_customize</i>My sprint view<i style="color:var(--ink3)">expand_more</i></div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:4px;font-size:12.5px">
+          <div style="padding:8px 8px 6px;font-size:11px;color:var(--ink3);display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--green)"></span>Saved · synced 12s ago</div>
+          <sc-for list="{{ layoutMenu }}" as="m" hint-placeholder-count="8">
+            <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:5px;color:{{ m.c }}"><i style="color:var(--ink3)">{{ m.i }}</i>{{ m.n }}<span style="margin-left:auto;font:11px 'Geist Mono';color:var(--ink3)">{{ m.k }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1g">
+      <div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Reset dialog with default preview</div>
+      <div class="dv-card" style="width:480px;background:var(--surface)">
+        <div style="padding:20px 20px 0"><div style="font-size:16px;font-weight:600;margin-bottom:6px">Reset “Sprint 14” page to default?</div><div style="font-size:13px;color:var(--ink2);line-height:1.5">Your 6 widgets and 2 splits will be replaced with the team default. You can undo for 10 seconds, or restore from version history.</div></div>
+        <div style="margin:16px 20px;display:grid;grid-template-columns:1fr 24px 1fr;align-items:center;gap:8px">
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 10.5px 'Geist Mono';color:var(--ink3)">CURRENT</span><div style="height:110px;border:1px solid var(--line);border-radius:6px;padding:5px;display:grid;grid-template-columns:18% 30% 1fr;grid-template-rows:1fr 1fr;gap:3px;background:var(--paper)"><span style="grid-row:span 2;background:var(--sunk);border-radius:2px"></span><span style="grid-row:span 2;background:var(--line);border-radius:2px"></span><span style="background:var(--accent-soft);border-radius:2px"></span><span style="background:var(--amber-soft);border-radius:2px"></span></div></div>
+          <i style="color:var(--ink3)">arrow_forward</i>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 10.5px 'Geist Mono';color:var(--accent)">TEAM DEFAULT</span><div style="height:110px;border:1.5px solid var(--accent);border-radius:6px;padding:5px;display:grid;grid-template-columns:18% 1fr 26%;gap:3px;background:var(--paper)"><span style="background:var(--sunk);border-radius:2px"></span><span style="background:var(--line);border-radius:2px"></span><span style="background:var(--sunk);border-radius:2px"></span></div></div>
+        </div>
+        <div style="margin:0 20px 16px;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)"><span style="width:16px;height:16px;border-radius:4px;border:1.5px solid var(--line2)"></span>Also reset left sidebar</div>
+        <div style="padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;font-size:13px"><span style="height:32px;padding:0 14px;display:flex;align-items:center;border:1px solid var(--line2);border-radius:7px">Cancel</span><span style="height:32px;padding:0 14px;display:flex;align-items:center;border-radius:7px;background:var(--ink);color:var(--paper);font-weight:500;gap:8px">Reset layout<span style="font:11px 'Geist Mono';opacity:.6">↵</span></span></div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1h">
+      <div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Primitives</div>
+      <div class="dv-card" style="width:1120px;padding:24px;background:var(--paper);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;font-size:12px">
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">STATUS PILLS</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ statuses }}" as="s" hint-placeholder-count="6"><span style="height:22px;padding:0 8px;border-radius:6px;background:{{ s.bg }};color:{{ s.c }};font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:{{ s.c }}"></span>{{ s.n }}</span></sc-for></div>
+          <span style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);margin-top:6px">PRIORITY · LABELS</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="height:22px;padding:0 7px;border-radius:6px;background:var(--red-soft);color:var(--red);font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:4px"><i style="font-size:13px">keyboard_double_arrow_up</i>Urgent</span><span style="height:22px;padding:0 7px;border-radius:6px;background:var(--amber-soft);color:var(--amber);font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:4px"><i style="font-size:13px">keyboard_arrow_up</i>High</span><span style="height:22px;padding:0 7px;border-radius:6px;border:1px solid var(--line2);color:var(--ink2);font-size:11.5px;display:flex;align-items:center">auth</span><span style="height:22px;padding:0 7px;border-radius:6px;border:1px solid var(--line2);color:var(--ink2);font-size:11.5px;display:flex;align-items:center">backend</span><span style="height:22px;padding:0 7px;border-radius:6px;border:1px solid var(--line2);color:var(--ink2);font:500 11px 'Geist Mono';display:flex;align-items:center">5 pts</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">AVATARS · PRESENCE</span>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><sc-for list="{{ people }}" as="p" hint-placeholder-count="8"><span style="position:relative;width:28px;height:28px;border-radius:50%;background:{{ p.c }};color:#fff;font-size:10.5px;font-weight:600;display:grid;place-items:center">{{ p.i }}<span style="position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;background:{{ p.pc }};border:2px solid var(--paper)"></span></span></sc-for></div>
+          <div style="display:flex;gap:12px;color:var(--ink2);flex-wrap:wrap"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:var(--green)"></span>Online</span><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:var(--amber)"></span>Away</span><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:var(--red)"></span>Focus</span><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ink3);box-sizing:border-box"></span>Offline</span></div>
+          <div style="display:flex"><sc-for list="{{ people5 }}" as="p" hint-placeholder-count="4"><span style="width:24px;height:24px;border-radius:50%;background:{{ p.c }};color:#fff;font-size:9.5px;font-weight:600;display:grid;place-items:center;border:2px solid var(--paper);margin-right:-6px">{{ p.i }}</span></sc-for><span style="width:24px;height:24px;border-radius:50%;background:var(--sunk);color:var(--ink2);font-size:9.5px;font-weight:600;display:grid;place-items:center;border:2px solid var(--paper)">+3</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">PR CHIP · CI · BRANCH</span>
+          <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)"><i style="color:var(--green);font-size:15px">merge</i><span style="font:500 11.5px 'Geist Mono'">#418</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Fix SSO redirect loop</span><span style="width:7px;height:7px;border-radius:50%;background:var(--green)"></span></div>
+          <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)"><i style="color:var(--steel);font-size:15px">call_split</i><span style="font:500 11.5px 'Geist Mono'">#421</span><span style="flex:1">Draft · rate limiter</span><span style="font:500 10.5px 'Geist Mono';color:var(--red)">CI ✕</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font:500 11.5px 'Geist Mono';color:var(--ink2)"><i style="font-size:14px">fork_right</i>tf-142-fix-login-crash<i style="font-size:13px;color:var(--ink3)">content_copy</i></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">AUTOMATION NODE</span>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)">
+            <div style="height:28px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--accent-soft);color:var(--accent);font:600 10.5px 'Geist Mono';letter-spacing:.04em"><i style="font-size:14px">bolt</i>TRIGGER</div>
+            <div style="padding:10px;font-size:12.5px;font-weight:500">GitHub PR opened</div>
+            <div style="padding:0 10px 10px;font:11px 'Geist Mono';color:var(--ink3)">repo = acme/platform</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div style="height:28px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--sunk);color:var(--ink2);font:600 10.5px 'Geist Mono';letter-spacing:.04em"><i style="font-size:14px">add_task</i>ACTION</div>
+            <div style="padding:10px;font-size:12.5px">Create task <span style="font:500 11px 'Geist Mono';padding:1px 4px;border-radius:4px;background:var(--amber-soft);color:var(--amber)">{{ prTitleVar }}</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;grid-column:span 2"><span style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">TOASTS · SYNC</span>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:7px;font-size:12px;color:var(--ink2);border:1px solid var(--line);background:var(--surface)"><i style="font-size:14px;color:var(--green)">cloud_done</i>Saved · synced</span>
+            <span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:7px;font-size:12px;color:var(--ink2);border:1px solid var(--line);background:var(--surface)"><i style="font-size:14px;color:var(--ink3)">sync</i>Saving…</span>
+            <span style="height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:7px;font-size:12px;color:var(--amber);border:1px solid var(--line);background:var(--surface)"><i style="font-size:14px">cloud_off</i>Offline · will sync</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;height:44px;padding:0 6px 0 14px;border-radius:8px;background:var(--ink);color:var(--paper);font-size:12.5px;width:max-content"><span>Removed “Burndown”</span><span style="height:28px;padding:0 10px;display:flex;align-items:center;border-radius:6px;background:rgba(255,255,255,.12);font-weight:500">Undo <span style="font:11px 'Geist Mono';opacity:.6;margin-left:6px">⌘Z</span></span></div>
+          <div style="display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 8px 8px 14px;border-radius:8px;background:var(--surface);border:1px solid var(--amber);box-shadow:var(--shadow);font-size:12.5px;width:max-content"><i style="color:var(--amber)">devices</i><span><b style="font-weight:600">Layout changed on another device</b> · MacBook, 2 min ago</span><span style="height:28px;padding:0 10px;display:flex;align-items:center;border-radius:6px;border:1px solid var(--line2);font-weight:500">Keep this</span><span style="height:28px;padding:0 10px;display:flex;align-items:center;border-radius:6px;background:var(--ink);color:var(--paper);font-weight:500">Use other</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">OFFICE AVATAR</span>
+          <div style="display:flex;gap:18px;align-items:end;padding:8px 4px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="position:relative;width:22px;height:34px"><span style="position:absolute;left:5px;top:0;width:12px;height:12px;border-radius:50%;background:#C9A88A"></span><span style="position:absolute;left:2px;top:13px;width:18px;height:21px;border-radius:9px 9px 3px 3px;background:var(--accent)"></span></div><span style="font-size:10.5px;color:var(--ink2)">Working</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.4"><div style="position:relative;width:22px;height:34px"><span style="position:absolute;left:5px;top:0;width:12px;height:12px;border-radius:50%;background:#C9A88A"></span><span style="position:absolute;left:2px;top:13px;width:18px;height:21px;border-radius:9px 9px 3px 3px;background:var(--ink3)"></span></div><span style="font-size:10.5px;color:var(--ink2)">Away</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="position:relative;width:22px;height:34px"><span style="position:absolute;left:5px;top:0;width:12px;height:12px;border-radius:50%;background:#8E6E55"></span><span style="position:absolute;left:3px;top:-2px;width:16px;height:9px;border:2.5px solid var(--ink);border-bottom:none;border-radius:9px 9px 0 0;box-sizing:border-box"></span><span style="position:absolute;left:2px;top:13px;width:18px;height:21px;border-radius:9px 9px 3px 3px;background:var(--steel)"></span></div><span style="font-size:10.5px;color:var(--ink2)">Focus</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3)">KEYS · FOCUS RING</span>
+          <div style="display:flex;gap:4px;flex-wrap:wrap"><sc-for list="{{ keys }}" as="k" hint-placeholder-count="6"><span style="min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;font:500 11px 'Geist Mono';display:grid;place-items:center;background:var(--surface)">{{ k }}</span></sc-for></div>
+          <span style="height:30px;padding:0 12px;display:flex;align-items:center;border-radius:7px;border:1px solid var(--line2);background:var(--surface);box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--accent);width:max-content;font-weight:500">Focused button</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="dv-turn" id="t2" data-screen-label="02 Arrange mode">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Arrange mode — before, during, after</span></div>
+  <p class="dv-sub">Sprint 14 page. Default → press <b>E</b> → drag Backlog into a new left slot, divider snapped to 30:70, Tasks switched from Table to Kanban. Task detail stays linked in the right sidebar.</p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Before — team default</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:flex;flex-direction:column;font-size:13px">
+        <div style="height:48px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px 0 14px;border-bottom:1px solid var(--line);background:var(--paper)">
+          <div style="width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:5px;box-sizing:border-box"><span style="background:var(--accent-ink);border-radius:1px"></span><span style="background:var(--accent-ink);border-radius:1px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:1px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:1px"></span></div>
+          <span style="font-weight:600">Acme</span><span style="color:var(--line2)">/</span><span style="color:var(--ink2)">Platform</span><span style="color:var(--line2)">/</span><span style="font-weight:500">Sprint 14</span>
+          <span style="display:flex;align-items:center;gap:4px;height:26px;padding:0 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;color:var(--ink2);margin-left:6px"><i style="font-size:14px">dashboard_customize</i>Team default<i style="font-size:14px;color:var(--ink3)">lock</i><i style="font-size:15px">expand_more</i></span>
+          <div style="flex:1;display:flex;justify-content:center"><div style="width:380px;height:30px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--ink3);font-size:12.5px"><i>search</i>Search or run a command<span style="margin-left:auto;font:11px 'Geist Mono'">⌘K</span></div></div>
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><i style="font-size:14px;color:var(--green)">cloud_done</i>Saved · synced</span>
+          <span style="display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line2);border-radius:7px;font-size:12.5px;font-weight:500;background:var(--surface)"><i style="font-size:15px">dashboard_customize</i>Arrange<span style="font:11px 'Geist Mono';color:var(--ink3);border:1px solid var(--line);border-radius:4px;padding:0 4px">E</span></span>
+          <i style="color:var(--ink2);padding:6px">notifications</i>
+          <span style="width:28px;height:28px;border-radius:50%;background:#5B7A6E;color:#fff;font-size:10.5px;font-weight:600;display:grid;place-items:center">MC</span>
+        </div>
+        <div style="flex:1;display:flex;min-height:0">
+          <div style="width:232px;flex:none;border-right:1px solid var(--line);background:var(--paper);display:flex;flex-direction:column;padding:10px 8px;gap:2px;font-size:12.5px">
+            <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-weight:500;margin-bottom:8px"><i style="font-size:16px">add</i>Quick add<span style="margin-left:auto;font:11px 'Geist Mono';opacity:.7">Q</span></div>
+            <sc-for list="{{ navTop }}" as="n" hint-placeholder-count="4"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:var(--ink2)"><i style="font-size:17px">{{ n.i }}</i>{{ n.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--ink3)">{{ n.b }}</span></div></sc-for>
+            <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:14px 8px 4px">SPACES</div>
+            <sc-for list="{{ spaces }}" as="s" hint-placeholder-count="6"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px 0 {{ s.pad }};border-radius:6px;color:{{ s.c }};background:{{ s.bg }};font-weight:{{ s.w }}"><i style="font-size:16px;color:var(--ink3)">{{ s.i }}</i>{{ s.n }}</div></sc-for>
+            <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:14px 8px 4px">FAVOURITES</div>
+            <sc-for list="{{ favs }}" as="f" hint-placeholder-count="3"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:var(--ink2)"><i style="font-size:16px;color:var(--ink3)">{{ f.i }}</i>{{ f.n }}</div></sc-for>
+            <div style="flex:1"></div>
+            <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:10px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:var(--green)"></span>5 online<span style="margin-left:auto;font-weight:400;color:var(--ink3)">Office →</span></div>
+              <div style="display:flex"><sc-for list="{{ people5 }}" as="p" hint-placeholder-count="5"><span style="width:22px;height:22px;border-radius:50%;background:{{ p.c }};color:#fff;font-size:9px;font-weight:600;display:grid;place-items:center;border:2px solid var(--surface);margin-right:-5px">{{ p.i }}</span></sc-for></div>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;min-width:0;background:var(--paper);padding:12px;gap:12px">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+              <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+                  <span style="font-size:11.5px;color:var(--ink3)">{{ k.n }}</span>
+                  <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:22px;font-weight:600;letter-spacing:-.02em">{{ k.v }}</span><span style="font:500 11px 'Geist Mono';color:{{ k.tc }}">{{ k.t }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+              <div style="height:40px;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)">
+                <i style="color:var(--ink3)">table_rows</i><span style="font-weight:600">Tasks</span>
+                <span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 7px;border-radius:5px;background:var(--sunk);font-size:11.5px;color:var(--ink2)"><i style="font-size:13px">filter_list</i>Sprint 14 · all</span>
+                <span style="font-size:11.5px;color:var(--ink3)">Group: Status</span>
+                <div style="flex:1"></div>
+                <div style="display:flex;border:1px solid var(--line);border-radius:7px;padding:2px;gap:1px"><i style="padding:4px;border-radius:5px;background:var(--sunk)">table_rows</i><i style="padding:4px;color:var(--ink3)">list</i><i style="padding:4px;color:var(--ink3)">view_kanban</i><i style="padding:4px;color:var(--ink3)">calendar_month</i><i style="padding:4px;color:var(--ink3)">view_timeline</i><i style="padding:4px;color:var(--ink3)">grid_view</i></div>
+                <i style="color:var(--ink3);padding:4px">more_horiz</i>
+              </div>
+              <div style="height:32px;display:grid;grid-template-columns:28px 70px minmax(0,1fr) 110px 90px 60px 70px 72px;align-items:center;padding:0 14px;gap:8px;border-bottom:1px solid var(--line);font-size:11.5px;color:var(--ink3);background:var(--raised)"><span></span><span>ID</span><span>Title</span><span>Status</span><span>Assignee</span><span>Pts</span><span>Due</span><span>PR</span></div>
+              <sc-for list="{{ tasksTable }}" as="t" hint-placeholder-count="14">
+                <div style="height:38px;flex:none;display:grid;grid-template-columns:28px 70px minmax(0,1fr) 110px 90px 60px 70px 72px;align-items:center;padding:0 14px;gap:8px;border-bottom:1px solid var(--line);background:{{ t.rowBg }};box-shadow:{{ t.rowSh }}">
+                  <span style="width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line2)"></span>
+                  <span style="font:500 11.5px 'Geist Mono';color:var(--ink3)">{{ t.id }}</span>
+                  <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span>
+                  <span style="height:22px;padding:0 7px;border-radius:6px;background:{{ t.sb }};color:{{ t.sc }};font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;width:max-content"><span style="width:6px;height:6px;border-radius:50%;background:{{ t.sc }}"></span>{{ t.st }}</span>
+                  <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2)"><span style="width:20px;height:20px;border-radius:50%;background:{{ t.ac }};color:#fff;font-size:8.5px;font-weight:600;display:grid;place-items:center">{{ t.ai }}</span>{{ t.an }}</span>
+                  <span style="font:500 11.5px 'Geist Mono';color:var(--ink2)">{{ t.pts }}</span>
+                  <span style="font:500 11.5px 'Geist Mono';color:{{ t.dc }}">{{ t.due }}</span>
+                  <span style="font:500 11.5px 'Geist Mono';color:var(--ink3)">{{ t.pr }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="width:340px;flex:none;border-left:1px solid var(--line);background:var(--paper);padding:12px 12px 12px 0;display:flex;flex-direction:column;gap:12px">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;flex:1;display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:40px;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">description</i><span style="font-weight:600">Task detail</span><div style="flex:1"></div><span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:11px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:500"><i style="font-size:13px">link</i>Tasks · Table</span></div>
+              <div style="padding:14px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:6px;font:500 11.5px 'Geist Mono';color:var(--ink3)"><i style="font-size:14px;color:var(--red)">bug_report</i>TF-142<i style="font-size:13px">content_copy</i></div>
+                <div style="font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.3">Fix login crash on SSO redirect</div>
+                <div style="display:grid;grid-template-columns:84px 1fr;row-gap:10px;font-size:12.5px;align-items:center">
+                  <span style="color:var(--ink3)">Status</span><span style="height:22px;padding:0 7px;border-radius:6px;background:var(--steel-soft);color:var(--steel);font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;width:max-content"><span style="width:6px;height:6px;border-radius:50%;background:var(--steel)"></span>In progress</span>
+                  <span style="color:var(--ink3)">Assignees</span><span style="display:flex;align-items:center;gap:6px"><span style="width:20px;height:20px;border-radius:50%;background:#5D6B8A;color:#fff;font-size:8.5px;font-weight:600;display:grid;place-items:center">DP</span>Dev Patel</span>
+                  <span style="color:var(--ink3)">Priority</span><span style="color:var(--amber);font-weight:500">High</span>
+                  <span style="color:var(--ink3)">Estimate</span><span style="font-family:'Geist Mono';font-size:12px">5 pts · 1d</span>
+                  <span style="color:var(--ink3)">Branch</span><span style="font-family:'Geist Mono';font-size:11.5px;color:var(--ink2)">tf-142-fix-login-crash</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:8px"><i style="color:var(--green);font-size:15px">merge</i><span style="font:500 11.5px 'Geist Mono'">#418</span><span style="flex:1">Fix SSO redirect loop</span><span style="font:500 10.5px 'Geist Mono';color:var(--green)">CI ✓</span></div>
+                <div style="font-size:12.5px;color:var(--ink2);line-height:1.55">After Okta redirects back, <span style="font-family:'Geist Mono';font-size:11.5px">session.restore()</span> runs before the token is persisted, causing a null deref on iOS Safari.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="height:32px;flex:none;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 14px;font-size:11.5px;color:var(--ink2);background:var(--paper)">
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--red)"></span><span style="font-family:'Geist Mono'">TF-142</span>1:20:14</span>
+          <span style="display:flex;align-items:center;gap:6px"><i style="font-size:14px;color:var(--green)">check_circle</i>main · CI passing</span>
+          <div style="flex:1"></div>
+          <span style="font-family:'Geist Mono';color:var(--ink3)">J/K move · ↵ open · E arrange · ? shortcuts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2b">
+      <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>During — Arrange mode, dragging Backlog from the library</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:flex;flex-direction:column;font-size:13px;position:relative">
+        <div style="height:48px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px 0 14px;border-bottom:1px solid var(--line);background:var(--ink);color:var(--paper)">
+          <i style="color:var(--accent)">dashboard_customize</i><span style="font-weight:600">Arranging · Sprint 14</span>
+          <span style="font-size:12px;opacity:.6">Drag widgets, drop into a region, drag dividers. Changes save as you go.</span>
+          <div style="flex:1"></div>
+          <span style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:7px;background:rgba(255,255,255,.1);font-size:12px"><i style="font-size:15px">view_quilt</i>Regions</span>
+          <span style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:7px;background:rgba(255,255,255,.1);font-size:12px"><i style="font-size:15px">undo</i>Undo</span>
+          <span style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:7px;background:rgba(255,255,255,.1);font-size:12px"><i style="font-size:15px">restart_alt</i>Reset</span>
+          <span style="display:flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-size:12.5px;font-weight:600">Done<span style="font:11px 'Geist Mono';opacity:.7">E</span></span>
+        </div>
+        <div style="flex:1;display:flex;min-height:0;padding:10px;gap:10px;background:var(--sunk);background-image:radial-gradient(var(--line2) 1px,transparent 1px);background-size:16px 16px">
+          <div style="width:220px;flex:none;border:1.5px dashed var(--line2);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;position:relative">
+            <span style="position:absolute;top:-9px;left:10px;padding:0 6px;background:var(--sunk);font:600 10px 'Geist Mono';color:var(--ink3);letter-spacing:.05em">LEFT SIDEBAR · 232</span>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;height:36px;display:flex;align-items:center;gap:6px;padding:0 6px;font-size:12px"><i style="color:var(--ink3)">drag_indicator</i>Quick add</div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;height:120px;display:flex;align-items:flex-start;gap:6px;padding:8px 6px;font-size:12px"><i style="color:var(--ink3)">drag_indicator</i>Navigation</div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;height:150px;display:flex;align-items:flex-start;gap:6px;padding:8px 6px;font-size:12px"><i style="color:var(--ink3)">drag_indicator</i>Spaces tree</div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;height:80px;display:flex;align-items:flex-start;gap:6px;padding:8px 6px;font-size:12px"><i style="color:var(--ink3)">drag_indicator</i>Favourites</div>
+            <div style="flex:1"></div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;height:64px;display:flex;align-items:flex-start;gap:6px;padding:8px 6px;font-size:12px"><i style="color:var(--ink3)">drag_indicator</i>Who's online</div>
+          </div>
+          <div style="flex:1;border:1.5px dashed var(--accent);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:8px;position:relative;min-width:0">
+            <span style="position:absolute;top:-9px;left:10px;padding:0 6px;background:var(--sunk);font:600 10px 'Geist Mono';color:var(--accent);letter-spacing:.05em">MAIN</span>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;height:68px">
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:6px;display:flex;gap:4px;font-size:11.5px"><i style="color:var(--ink3);font-size:15px">drag_indicator</i>Committed</div>
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:6px;display:flex;gap:4px;font-size:11.5px"><i style="color:var(--ink3);font-size:15px">drag_indicator</i>Done</div>
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:6px;display:flex;gap:4px;font-size:11.5px"><i style="color:var(--ink3);font-size:15px">drag_indicator</i>Blocked</div>
+              <div style="background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:6px;display:flex;gap:4px;font-size:11.5px"><i style="color:var(--ink3);font-size:15px">drag_indicator</i>Days left</div>
+            </div>
+            <div style="flex:1;display:flex;gap:0;min-height:0">
+              <div style="width:30%;border:2px solid var(--accent);background:var(--accent-soft);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--accent);position:relative">
+                <i style="font-size:24px">download</i><span style="font-weight:600">Drop here</span><span style="font-size:12px;opacity:.8">New column, left of Tasks</span>
+                <div style="position:absolute;left:12px;right:12px;top:12px;height:150px;border:1.5px dashed var(--accent);border-radius:7px;opacity:.6"></div>
+              </div>
+              <div style="width:14px;position:relative;display:flex;justify-content:center">
+                <div style="width:2px;height:100%;background:var(--accent)"></div>
+                <div style="position:absolute;top:50%;margin-top:-18px;width:10px;height:36px;border-radius:5px;background:var(--accent)"></div>
+                <div style="position:absolute;top:40%;padding:5px 9px;border-radius:6px;background:var(--ink);color:var(--paper);font:600 12px 'Geist Mono';white-space:nowrap;box-shadow:var(--shadow)">30 : 70</div>
+              </div>
+              <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:8px;opacity:.9;display:flex;flex-direction:column;min-width:0">
+                <div style="height:36px;display:flex;align-items:center;gap:6px;padding:0 8px 0 4px;border-bottom:1px solid var(--line);background:var(--raised);border-radius:8px 8px 0 0"><i style="color:var(--ink3)">drag_indicator</i><i style="color:var(--ink3)">table_rows</i><span style="font-weight:600">Tasks</span><div style="flex:1"></div><span style="font:500 10.5px 'Geist Mono';color:var(--ink3)">Table</span><i style="padding:4px;color:var(--ink3)">tune</i></div>
+                <div style="padding:12px;display:flex;flex-direction:column;gap:10px"><sc-for list="{{ skel }}" as="s" hint-placeholder-count="10"><div style="display:flex;gap:10px"><span style="width:50px;height:8px;border-radius:3px;background:var(--sunk)"></span><span style="width:{{ s }};height:8px;border-radius:3px;background:var(--sunk)"></span></div></sc-for></div>
+              </div>
+            </div>
+          </div>
+          <div style="width:300px;flex:none;border:1.5px dashed var(--line2);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:8px;position:relative">
+            <span style="position:absolute;top:-9px;left:10px;padding:0 6px;background:var(--sunk);font:600 10px 'Geist Mono';color:var(--ink3);letter-spacing:.05em">RIGHT SIDEBAR · 340</span>
+            <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:8px 6px;display:flex;gap:6px;font-size:12px;align-items:flex-start"><i style="color:var(--ink3)">drag_indicator</i>Task detail<span style="margin-left:auto;font-size:10.5px;color:var(--accent);display:flex;align-items:center;gap:2px"><i style="font-size:12px">link</i>Tasks</span></div>
+          </div>
+        </div>
+        <div style="position:absolute;left:520px;top:280px;width:260px;transform:rotate(-2deg);background:var(--surface);border:1px solid var(--accent);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,.18);opacity:.95;z-index:3">
+          <div style="height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--line)"><i style="color:var(--accent)">inventory_2</i><span style="font-weight:600">Backlog</span><span style="margin-left:auto;font:500 10.5px 'Geist Mono';color:var(--ink3)">38</span></div>
+          <div style="padding:10px;display:flex;flex-direction:column;gap:8px"><div style="height:8px;width:80%;background:var(--sunk);border-radius:3px"></div><div style="height:8px;width:65%;background:var(--sunk);border-radius:3px"></div><div style="height:8px;width:72%;background:var(--sunk);border-radius:3px"></div></div>
+          <i style="position:absolute;right:-14px;bottom:-16px;font-size:22px;color:var(--ink);font-variation-settings:'FILL' 1">pan_tool</i>
+        </div>
+        <div style="position:absolute;right:10px;top:58px;bottom:10px;width:300px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);display:flex;flex-direction:column;z-index:2">
+          <div style="padding:12px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)">
+            <div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Add widgets</span><div style="flex:1"></div><i style="color:var(--ink3)">close</i></div>
+            <div style="height:30px;border:1px solid var(--line2);border-radius:7px;display:flex;align-items:center;gap:8px;padding:0 10px;font-size:12.5px;color:var(--ink3)"><i>search</i>Search 52 widgets</div>
+          </div>
+          <div style="padding:6px 8px;display:flex;flex-direction:column;overflow:hidden">
+            <sc-for list="{{ library2 }}" as="g" hint-placeholder-count="3">
+              <div style="font:600 10px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:10px 6px 4px">{{ g.name }}</div>
+              <sc-for list="{{ g.items }}" as="w" hint-placeholder-count="3">
+                <div style="height:34px;display:flex;align-items:center;gap:10px;padding:0 6px;border-radius:6px;font-size:12.5px;background:{{ w.bg }};color:{{ w.c }}"><span style="width:24px;height:24px;border-radius:6px;background:var(--sunk);display:grid;place-items:center"><i style="font-size:14px;color:var(--ink2)">{{ w.i }}</i></span>{{ w.n }}</div>
+              </sc-for>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2c">
+      <div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>After — custom 30:70, Tasks as Kanban</div>
+      <div class="dv-card" style="width:1440px;height:900px;display:flex;flex-direction:column;font-size:13px;position:relative">
+        <div style="height:48px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px 0 14px;border-bottom:1px solid var(--line);background:var(--paper)">
+          <div style="width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:5px;box-sizing:border-box"><span style="background:var(--accent-ink);border-radius:1px"></span><span style="background:var(--accent-ink);border-radius:1px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:1px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:1px"></span></div>
+          <span style="font-weight:600">Acme</span><span style="color:var(--line2)">/</span><span style="color:var(--ink2)">Platform</span><span style="color:var(--line2)">/</span><span style="font-weight:500">Sprint 14</span>
+          <span style="display:flex;align-items:center;gap:4px;height:26px;padding:0 8px;border:1px solid var(--accent);border-radius:7px;font-size:12px;color:var(--accent);margin-left:6px;background:var(--accent-soft)"><i style="font-size:14px">dashboard_customize</i>Maya's sprint view<span style="font-size:10.5px;opacity:.75">· edited</span><i style="font-size:15px">expand_more</i></span>
+          <div style="flex:1;display:flex;justify-content:center"><div style="width:380px;height:30px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--ink3);font-size:12.5px"><i>search</i>Search or run a command<span style="margin-left:auto;font:11px 'Geist Mono'">⌘K</span></div></div>
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><i style="font-size:14px;color:var(--green)">cloud_done</i>Saved · synced</span>
+          <span style="display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line2);border-radius:7px;font-size:12.5px;font-weight:500;background:var(--surface)"><i style="font-size:15px">dashboard_customize</i>Arrange<span style="font:11px 'Geist Mono';color:var(--ink3);border:1px solid var(--line);border-radius:4px;padding:0 4px">E</span></span>
+          <i style="color:var(--ink2);padding:6px">notifications</i>
+          <span style="width:28px;height:28px;border-radius:50%;background:#5B7A6E;color:#fff;font-size:10.5px;font-weight:600;display:grid;place-items:center">MC</span>
+        </div>
+        <div style="flex:1;display:flex;min-height:0">
+          <div style="width:52px;flex:none;border-right:1px solid var(--line);background:var(--paper);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:4px">
+            <span style="width:34px;height:34px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center"><i>add</i></span>
+            <sc-for list="{{ rail }}" as="r" hint-placeholder-count="6"><span style="width:34px;height:34px;border-radius:8px;display:grid;place-items:center;color:{{ r.c }};background:{{ r.bg }}"><i style="font-size:18px">{{ r.i }}</i></span></sc-for>
+            <div style="flex:1"></div>
+            <i style="color:var(--ink3);padding:8px">left_panel_open</i>
+          </div>
+          <div style="flex:1;display:flex;min-width:0;background:var(--paper);padding:12px;gap:0">
+            <div style="width:30%;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:40px;display:flex;align-items:end;gap:2px;padding:0 6px 0 8px;border-bottom:1px solid var(--line);flex:none">
+                <span style="height:36px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;border-bottom:2px solid var(--accent)"><i style="font-size:15px;color:var(--ink3)">inventory_2</i>Backlog<span style="font:500 10.5px 'Geist Mono';color:var(--ink3)">38</span></span>
+                <span style="height:36px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2)">Bugs<span style="font:500 10.5px 'Geist Mono';color:var(--amber)">7</span></span>
+                <span style="height:36px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2)">Mine<span style="font:500 10.5px 'Geist Mono';color:var(--ink3)">5</span></span>
+                <div style="flex:1"></div><i style="height:36px;padding:0 4px;color:var(--ink3);align-items:center">more_horiz</i>
+              </div>
+              <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line);color:var(--ink3);font-size:12.5px;flex:none"><i style="font-size:16px">add</i>Add to backlog…</div>
+              <sc-for list="{{ backlog }}" as="t" hint-placeholder-count="12">
+                <div style="min-height:40px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line);font-size:12.5px;flex:none">
+                  <i style="font-size:14px;color:var(--line2)">drag_indicator</i>
+                  <span style="font:500 11px 'Geist Mono';color:var(--ink3);width:44px;flex:none">{{ t.id }}</span>
+                  <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span>
+                  <span style="font:500 11px 'Geist Mono';color:var(--ink3);min-width:16px;text-align:right">{{ t.pts }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="width:12px;flex:none"></div>
+            <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+              <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)">
+                <i style="color:var(--ink3)">view_kanban</i><span style="font-weight:600">Tasks</span>
+                <span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 7px;border-radius:5px;background:var(--sunk);font-size:11.5px;color:var(--ink2)"><i style="font-size:13px">filter_list</i>Sprint 14 · all</span>
+                <span style="font-size:11.5px;color:var(--ink3)">Swimlanes: none · WIP on</span>
+                <div style="flex:1"></div>
+                <div style="display:flex;border:1px solid var(--line);border-radius:7px;padding:2px;gap:1px"><i style="padding:4px;color:var(--ink3)">table_rows</i><i style="padding:4px;color:var(--ink3)">list</i><i style="padding:4px;border-radius:5px;background:var(--ink);color:var(--paper)">view_kanban</i><i style="padding:4px;color:var(--ink3)">calendar_month</i><i style="padding:4px;color:var(--ink3)">view_timeline</i><i style="padding:4px;color:var(--ink3)">grid_view</i></div>
+                <i style="color:var(--ink3);padding:4px">more_horiz</i>
+              </div>
+              <div style="flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:10px;background:var(--raised);min-height:0">
+                <sc-for list="{{ kanban }}" as="col" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+                    <div style="height:28px;display:flex;align-items:center;gap:6px;padding:0 4px;font-size:12px;font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:{{ col.c }}"></span>{{ col.n }}<span style="font:500 11px 'Geist Mono';color:{{ col.wc }};margin-left:auto">{{ col.wip }}</span></div>
+                    <sc-for list="{{ col.cards }}" as="k" hint-placeholder-count="3">
+                      <div style="background:var(--surface);border:1px solid {{ k.bd }};box-shadow:{{ k.sh }};border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px">
+                        <div style="display:flex;align-items:center;gap:6px;font:500 11px 'Geist Mono';color:var(--ink3)"><i style="font-size:13px;color:{{ k.tc }}">{{ k.ti }}</i>{{ k.id }}<span style="margin-left:auto">{{ k.pts }}</span></div>
+                        <div style="font-size:12.5px;line-height:1.35;font-weight:500;text-wrap:pretty">{{ k.title }}</div>
+                        <div style="display:flex;align-items:center;gap:6px"><span style="height:18px;padding:0 6px;border-radius:4px;border:1px solid var(--line);font-size:10.5px;color:var(--ink2);display:flex;align-items:center">{{ k.lab }}</span><span style="font:500 10.5px 'Geist Mono';color:var(--ink3)">{{ k.pr }}</span><span style="margin-left:auto;width:20px;height:20px;border-radius:50%;background:{{ k.ac }};color:#fff;font-size:8.5px;font-weight:600;display:grid;place-items:center">{{ k.ai }}</span></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="width:340px;flex:none;border-left:1px solid var(--line);background:var(--paper);padding:12px 12px 12px 0;display:flex;flex-direction:column">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;flex:1;display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:40px;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">description</i><span style="font-weight:600">Task detail</span><div style="flex:1"></div><span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:11px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:500"><i style="font-size:13px">link</i>Tasks · Kanban</span></div>
+              <div style="padding:14px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:6px;font:500 11.5px 'Geist Mono';color:var(--ink3)"><i style="font-size:14px;color:var(--red)">bug_report</i>TF-142<i style="font-size:13px">content_copy</i></div>
+                <div style="font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.3">Fix login crash on SSO redirect</div>
+                <div style="display:grid;grid-template-columns:84px 1fr;row-gap:10px;font-size:12.5px;align-items:center">
+                  <span style="color:var(--ink3)">Status</span><span style="height:22px;padding:0 7px;border-radius:6px;background:var(--steel-soft);color:var(--steel);font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;width:max-content"><span style="width:6px;height:6px;border-radius:50%;background:var(--steel)"></span>In progress</span>
+                  <span style="color:var(--ink3)">Assignees</span><span style="display:flex;align-items:center;gap:6px"><span style="width:20px;height:20px;border-radius:50%;background:#5D6B8A;color:#fff;font-size:8.5px;font-weight:600;display:grid;place-items:center">DP</span>Dev Patel</span>
+                  <span style="color:var(--ink3)">Timer</span><span style="font-family:'Geist Mono';font-size:12px;color:var(--red);display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--red)"></span>1:20:14</span>
+                </div>
+                <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);margin-top:4px">CHECKLIST · 2/4</div>
+                <div style="display:flex;flex-direction:column;gap:8px;font-size:12.5px">
+                  <span style="display:flex;gap:8px;align-items:center;color:var(--ink3);text-decoration:line-through"><i style="font-size:16px;color:var(--accent);font-variation-settings:'FILL' 1">check_box</i>Reproduce on iOS 18 Safari</span>
+                  <span style="display:flex;gap:8px;align-items:center;color:var(--ink3);text-decoration:line-through"><i style="font-size:16px;color:var(--accent);font-variation-settings:'FILL' 1">check_box</i>Persist token before restore</span>
+                  <span style="display:flex;gap:8px;align-items:center"><i style="font-size:16px;color:var(--line2)">check_box_outline_blank</i>Regression test for redirect</span>
+                  <span style="display:flex;gap:8px;align-items:center"><i style="font-size:16px;color:var(--line2)">check_box_outline_blank</i>Update auth runbook</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="height:32px;flex:none;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 14px;font-size:11.5px;color:var(--ink2);background:var(--paper)">
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--red)"></span><span style="font-family:'Geist Mono'">TF-142</span>1:20:14</span>
+          <span style="display:flex;align-items:center;gap:6px"><i style="font-size:14px;color:var(--green)">check_circle</i>main · CI passing</span>
+          <div style="flex:1"></div>
+          <span style="font-family:'Geist Mono';color:var(--ink3)">H/L column · ⇧H/L move card · ↵ open</span>
+        </div>
+        <div style="position:absolute;left:50%;bottom:48px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;height:44px;padding:0 6px 0 14px;border-radius:8px;background:var(--ink);color:var(--paper);font-size:12.5px;box-shadow:var(--shadow)"><i style="font-size:16px;color:var(--accent)">check_circle</i><span>Saved as “Maya's sprint view” · synced to 2 devices</span><span style="height:28px;padding:0 10px;display:flex;align-items:center;border-radius:6px;background:rgba(255,255,255,.12);font-weight:500">Undo</span></div>
+      </div>
+    </div>
+
+  </div>
+  <p class="dv-next">Try next: "show <a class="dv-oid" href="#2c">2c</a> in dark" (Tweaks → theme) · "add swimlanes by assignee to the Kanban"</p>
+</section>
+
+<section class="dv-turn" id="t3" data-screen-label="03 Splits and regions">
+  <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Regions &amp; splits</span></div>
+  <p class="dv-sub">Five regions, each showable / hideable. Sidebars collapse to a 52px icon rail. Main splits into any ratio; the three canonical ones below.</p>
+  <div class="dv-opts">
+    <sc-for list="{{ splits }}" as="sp" hint-placeholder-count="4">
+      <div class="dv-opt" id="{{ sp.id }}">
+        <div class="dv-olabel"><a class="dv-oid" href="#{{ sp.id }}">{{ sp.id }}</a>{{ sp.label }}</div>
+        <div class="dv-card" style="width:420px;height:270px;padding:10px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;background:var(--paper)">
+          <div style="height:{{ sp.top }};border:1px dashed var(--line2);border-radius:5px;display:flex;align-items:center;padding:0 8px;font:500 9.5px 'Geist Mono';color:var(--ink3)">{{ sp.topLabel }}</div>
+          <div style="flex:1;display:flex;gap:6px;min-height:0">
+            <div style="width:{{ sp.left }};border-radius:5px;background:var(--sunk);flex:none"></div>
+            <sc-for list="{{ sp.cols }}" as="c" hint-placeholder-count="2">
+              <div style="flex:{{ c.f }};background:var(--surface);border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font:600 13px 'Geist Mono';color:{{ c.col }};position:relative">{{ c.f }}<span style="position:absolute;bottom:6px;font:400 10px Geist;color:var(--ink3)">{{ c.n }}</span></div>
+            </sc-for>
+            <div style="width:{{ sp.right }};border-radius:5px;background:var(--sunk);flex:none"></div>
+          </div>
+          <div style="height:14px;border:1px dashed var(--line2);border-radius:4px"></div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section class="dv-turn" id="t4" data-screen-label="04 Sidebar variations">
+  <div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">The sidebar is a layout too</span></div>
+  <p class="dv-sub">Built from navigation widgets. Each section has a grip in Arrange mode; users add links and folders, reorder, or drop a mini KPI / who's online at the bottom.</p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="4a">
+      <div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>Default</div>
+      <div class="dv-card" style="width:248px;height:720px;display:flex;flex-direction:column;padding:10px 8px;gap:2px;font-size:12.5px;box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 8px 10px"><span style="width:22px;height:22px;border-radius:6px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:11px;font-weight:700">A</span><span style="font-weight:600">Acme</span><i style="color:var(--ink3);margin-left:auto">unfold_more</i></div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-weight:500;margin-bottom:8px"><i>add</i>Quick add<span style="margin-left:auto;font:11px 'Geist Mono';opacity:.7">Q</span></div>
+        <sc-for list="{{ navTop }}" as="n" hint-placeholder-count="4"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:var(--ink2)"><i style="font-size:17px">{{ n.i }}</i>{{ n.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--ink3)">{{ n.b }}</span></div></sc-for>
+        <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:14px 8px 4px">SPACES</div>
+        <sc-for list="{{ spaces }}" as="s" hint-placeholder-count="6"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px 0 {{ s.pad }};border-radius:6px;color:{{ s.c }};background:{{ s.bg }};font-weight:{{ s.w }}"><i style="font-size:16px;color:var(--ink3)">{{ s.i }}</i>{{ s.n }}</div></sc-for>
+        <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:14px 8px 4px">FAVOURITES</div>
+        <sc-for list="{{ favs }}" as="f" hint-placeholder-count="3"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:var(--ink2)"><i style="font-size:16px;color:var(--ink3)">{{ f.i }}</i>{{ f.n }}</div></sc-for>
+        <div style="flex:1"></div>
+        <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:10px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:var(--green)"></span>5 online</div>
+          <div style="display:flex"><sc-for list="{{ people5 }}" as="p" hint-placeholder-count="5"><span style="width:22px;height:22px;border-radius:50%;background:{{ p.c }};color:#fff;font-size:9px;font-weight:600;display:grid;place-items:center;border:2px solid var(--surface);margin-right:-5px">{{ p.i }}</span></sc-for></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="4b">
+      <div class="dv-olabel"><a class="dv-oid" href="#4b">4b</a>Minimal — favourites + inbox</div>
+      <div class="dv-card" style="width:248px;height:720px;display:flex;flex-direction:column;padding:10px 8px;gap:2px;font-size:12.5px;box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 8px 14px"><span style="width:22px;height:22px;border-radius:6px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:11px;font-weight:700">A</span><span style="font-weight:600">Acme</span></div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;background:var(--sunk);font-weight:500"><i style="font-size:17px">inbox</i>Inbox<span style="margin-left:auto;height:18px;min-width:18px;border-radius:9px;background:var(--amber);color:#fff;font:600 10.5px 'Geist Mono';display:grid;place-items:center;padding:0 4px">4</span></div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:var(--ink2)"><i style="font-size:17px">check_circle</i>My tasks<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--ink3)">9</span></div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:var(--ink2)"><i style="font-size:17px">sprint</i>Sprint 14</div>
+        <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:18px 8px 4px;display:flex">FAVOURITES<i style="margin-left:auto;font-size:14px">add</i></div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;color:var(--ink2)"><i style="font-size:16px;color:var(--amber);font-variation-settings:'FILL' 1">star</i>Web · Board</div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;color:var(--ink2)"><i style="font-size:16px;color:var(--amber);font-variation-settings:'FILL' 1">star</i>TF-142 Fix login crash</div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;color:var(--ink2)"><i style="font-size:16px;color:var(--ink3)">folder</i>Release notes</div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px 0 30px;color:var(--ink2)"><i style="font-size:16px;color:var(--ink3)">link</i>Grafana · auth</div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px 0 30px;color:var(--ink2)"><i style="font-size:16px;color:var(--ink3)">link</i>Status page</div>
+        <div style="flex:1"></div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;color:var(--ink3);border:1px dashed var(--line2);border-radius:7px"><i style="font-size:16px">add</i>Add widget to sidebar</div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="4c">
+      <div class="dv-olabel"><a class="dv-oid" href="#4c">4c</a>Manager — teams, workload, dashboards</div>
+      <div class="dv-card" style="width:248px;height:720px;display:flex;flex-direction:column;padding:10px 8px;gap:2px;font-size:12.5px;box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 8px 10px"><span style="width:22px;height:22px;border-radius:6px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:11px;font-weight:700">A</span><span style="font-weight:600">Acme</span><i style="color:var(--ink3);margin-left:auto;font-size:15px">lock</i></div>
+        <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:6px 8px 4px">DASHBOARDS</div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;background:var(--sunk);font-weight:500"><i style="font-size:16px">monitoring</i>Eng overview</div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;color:var(--ink2)"><i style="font-size:16px;color:var(--ink3)">monitoring</i>Sprint health</div>
+        <div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;color:var(--ink2)"><i style="font-size:16px;color:var(--ink3)">monitoring</i>Incidents · Q4</div>
+        <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:14px 8px 4px">TEAMS</div>
+        <sc-for list="{{ teams }}" as="t" hint-placeholder-count="3"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;color:var(--ink2)"><span style="width:8px;height:8px;border-radius:2px;background:{{ t.c }}"></span>{{ t.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--ink3)">{{ t.m }}</span></div></sc-for>
+        <div style="font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--ink3);padding:14px 8px 6px">WORKLOAD · SPRINT 14</div>
+        <div style="display:flex;flex-direction:column;gap:7px;padding:0 8px">
+          <sc-for list="{{ workload }}" as="w" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:8px;font-size:11.5px"><span style="width:18px;height:18px;border-radius:50%;background:{{ w.c }};color:#fff;font-size:8px;font-weight:600;display:grid;place-items:center">{{ w.i }}</span><div style="flex:1;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden"><div style="width:{{ w.pct }};height:100%;background:{{ w.bc }}"></div></div><span style="font:500 10.5px 'Geist Mono';color:{{ w.tc }};width:28px;text-align:right">{{ w.v }}</span></div>
+          </sc-for>
+        </div>
+        <div style="flex:1"></div>
+        <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:11px;color:var(--ink3)">Overdue · team</span>
+          <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:20px;font-weight:600">6</span><span style="font:500 11px 'Geist Mono';color:var(--amber)">+2 wk</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="dv-turn" id="t5" data-screen-label="05 Saving and sync">
+  <div class="dv-thd"><a class="dv-tid" href="#t5">5</a><span class="dv-tname">Saving, sync, versions &amp; locks</span></div>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="5a">
+      <div class="dv-olabel"><a class="dv-oid" href="#5a">5a</a>Restoring your workspace… (after login)</div>
+      <div class="dv-card" style="width:560px;height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--paper)">
+        <div style="display:grid;grid-template-columns:40px 70px 110px 50px;grid-template-rows:20px 20px 20px;gap:5px">
+          <span style="grid-row:span 3;border-radius:4px;background:var(--accent-soft)"></span>
+          <span style="grid-row:span 3;border-radius:4px;background:var(--sunk)"></span>
+          <span style="border-radius:4px;background:var(--accent)"></span>
+          <span style="grid-row:span 3;border-radius:4px;background:var(--sunk)"></span>
+          <span style="border-radius:4px;background:var(--accent-soft)"></span>
+          <span style="border-radius:4px;border:1.5px dashed var(--line2)"></span>
+        </div>
+        <div style="text-align:center"><div style="font-size:15px;font-weight:600;margin-bottom:4px">Restoring your workspace…</div><div style="font-size:12.5px;color:var(--ink3)">12 layouts · 3 pinned tabs · from your MacBook, 9:41</div></div>
+        <div style="width:220px;height:4px;border-radius:2px;background:var(--sunk);overflow:hidden"><div style="width:64%;height:100%;background:var(--accent)"></div></div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="5b">
+      <div class="dv-olabel"><a class="dv-oid" href="#5b">5b</a>Version history</div>
+      <div class="dv-card" style="width:400px;background:var(--surface);font-size:12.5px">
+        <div style="padding:14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)"><i style="color:var(--ink3)">history</i><span style="font-weight:600;font-size:14px">Version history</span><span style="font-size:11.5px;color:var(--ink3)">Sprint 14 page</span></div>
+        <sc-for list="{{ versions }}" as="v" hint-placeholder-count="5">
+          <div style="display:flex;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center;background:{{ v.bg }}">
+            <span style="width:56px;height:36px;border:1px solid var(--line);border-radius:4px;padding:3px;box-sizing:border-box;display:flex;gap:2px;background:var(--paper)"><span style="width:{{ v.a }};background:var(--sunk);border-radius:1px"></span><span style="flex:1;background:var(--line);border-radius:1px"></span><span style="width:{{ v.b }};background:var(--sunk);border-radius:1px"></span></span>
+            <div style="flex:1"><div style="font-weight:500">{{ v.n }}</div><div style="font-size:11.5px;color:var(--ink3)">{{ v.m }}</div></div>
+            <span style="font-size:12px;color:var(--accent);font-weight:500">{{ v.act }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="5c">
+      <div class="dv-olabel"><a class="dv-oid" href="#5c">5c</a>Locked team layout — personalise unlocked regions</div>
+      <div class="dv-card" style="width:560px;height:360px;padding:14px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;background:var(--sunk);background-image:radial-gradient(var(--line2) 1px,transparent 1px);background-size:14px 14px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:8px 10px;background:var(--surface);border:1px solid var(--line);border-radius:8px"><i style="color:var(--ink2);font-size:15px">shield_lock</i><span><b style="font-weight:600">Platform team layout</b> · published by Maya Chen. Locked regions can't be moved.</span></div>
+        <div style="flex:1;display:flex;gap:8px">
+          <div style="width:110px;border:1.5px solid var(--line2);border-radius:8px;background:repeating-linear-gradient(135deg,var(--surface) 0 8px,var(--paper) 8px 9px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink3);font-size:11px"><i>lock</i>Sidebar</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+            <div style="height:60px;border:1.5px solid var(--line2);border-radius:8px;background:repeating-linear-gradient(135deg,var(--surface) 0 8px,var(--paper) 8px 9px);display:flex;align-items:center;justify-content:center;gap:6px;color:var(--ink3);font-size:11px"><i>lock</i>Sprint KPIs · locked by admin</div>
+            <div style="flex:1;border:1.5px dashed var(--accent);border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;gap:6px;color:var(--accent);font-size:12px;font-weight:500"><i>lock_open</i>Main · yours to arrange</div>
+          </div>
+          <div style="width:130px;border:1.5px dashed var(--accent);border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:11px;font-weight:500"><i>lock_open</i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="5d">
+      <div class="dv-olabel"><a class="dv-oid" href="#5d">5d</a>Share layout</div>
+      <div class="dv-card" style="width:400px;background:var(--surface);font-size:12.5px">
+        <div style="padding:16px 16px 12px"><div style="font-size:15px;font-weight:600">Share “Maya's sprint view”</div><div style="color:var(--ink3);margin-top:4px">Others get a copy; your edits don't change theirs unless you publish.</div></div>
+        <div style="padding:0 16px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px"><i style="color:var(--ink3)">person</i><span style="flex:1">Only me</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1.5px solid var(--accent);border-radius:8px;background:var(--accent-soft)"><i style="color:var(--accent)">group</i><span style="flex:1;font-weight:500">Platform team · 5</span><i style="color:var(--accent);font-variation-settings:'FILL' 1">radio_button_checked</i></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px"><i style="color:var(--ink3)">domain</i><span style="flex:1">Workspace · Acme</span></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 2px;color:var(--ink2)"><span style="width:16px;height:16px;border-radius:4px;background:var(--accent);display:grid;place-items:center"><i style="font-size:13px;color:var(--accent-ink)">check</i></span>Set as team default for Sprint pages</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:0 2px 8px;color:var(--ink2)"><span style="width:16px;height:16px;border-radius:4px;border:1.5px solid var(--line2)"></span>Lock sidebar and top strip <i style="font-size:14px;color:var(--ink3)">lock</i></div>
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px"><span style="height:30px;padding:0 12px;display:flex;align-items:center;border:1px solid var(--line2);border-radius:7px">Cancel</span><span style="height:30px;padding:0 14px;display:flex;align-items:center;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-weight:500">Share</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="dv-turn" id="t6" data-screen-label="06 Templates gallery">
+  <div class="dv-thd"><a class="dv-tid" href="#t6">6</a><span class="dv-tname">Layout templates gallery</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="6a">
+      <div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a>Gallery · 1440</div>
+      <div class="dv-card" style="width:1440px;font-size:13px;background:var(--paper)">
+        <div style="padding:28px 32px 20px;display:flex;align-items:end;gap:16px;border-bottom:1px solid var(--line)">
+          <div><div style="font:500 11px 'Geist Mono';color:var(--ink3);margin-bottom:6px">TEMPLATES / LAYOUTS</div><div style="font-size:26px;font-weight:600;letter-spacing:-.02em">Start from a layout</div><div style="color:var(--ink2);margin-top:4px">Every template is just widgets in regions. Use it, then rearrange anything.</div></div>
+          <div style="flex:1"></div>
+          <div style="width:280px;height:32px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--ink3)"><i>search</i>Search layouts</div>
+          <span style="height:32px;padding:0 12px;display:flex;align-items:center;gap:6px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:500"><i style="font-size:16px">add</i>Save current layout</span>
+        </div>
+        <div style="padding:14px 32px;display:flex;gap:6px;border-bottom:1px solid var(--line)">
+          <span style="height:28px;padding:0 12px;border-radius:14px;background:var(--ink);color:var(--paper);display:flex;align-items:center;font-size:12px">All · 11</span>
+          <span style="height:28px;padding:0 12px;border-radius:14px;border:1px solid var(--line2);display:flex;align-items:center;font-size:12px;color:var(--ink2)">Built-in · 9</span>
+          <span style="height:28px;padding:0 12px;border-radius:14px;border:1px solid var(--line2);display:flex;align-items:center;font-size:12px;color:var(--ink2)">Acme workspace · 2</span>
+          <span style="height:28px;padding:0 12px;border-radius:14px;border:1px solid var(--line2);display:flex;align-items:center;font-size:12px;color:var(--ink2)">Mine</span>
+        </div>
+        <div style="padding:24px 32px 32px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px">
+          <sc-for list="{{ templates }}" as="tp" hint-placeholder-count="8">
+            <div style="background:var(--surface);border:1px solid {{ tp.bd }};border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
+              <div style="height:170px;background:var(--sunk);padding:12px;box-sizing:border-box;position:relative">
+                <div style="position:relative;width:100%;height:100%;background:var(--paper);border-radius:6px;border:1px solid var(--line);overflow:hidden">
+                  <sc-for list="{{ tp.rects }}" as="r" hint-placeholder-count="3"><span style="position:absolute;left:{{ r.x }};top:{{ r.y }};width:{{ r.w }};height:{{ r.h }};background:{{ r.c }};border-radius:3px"></span></sc-for>
+                </div>
+                <span style="position:absolute;top:18px;right:18px;height:20px;padding:0 7px;border-radius:5px;background:var(--surface);border:1px solid var(--line);font-size:10.5px;color:var(--ink2);display:flex;align-items:center">{{ tp.tag }}</span>
+              </div>
+              <div style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:4px;flex:1">
+                <div style="font-weight:600">{{ tp.n }}</div>
+                <div style="font-size:12px;color:var(--ink3);line-height:1.45;flex:1;text-wrap:pretty">{{ tp.d }}</div>
+                <div style="display:flex;gap:6px;margin-top:10px"><span style="height:28px;padding:0 12px;display:flex;align-items:center;border-radius:7px;background:var(--ink);color:var(--paper);font-size:12px;font-weight:500">Use</span><span style="height:28px;padding:0 12px;display:flex;align-items:center;border-radius:7px;border:1px solid var(--line2);font-size:12px">Preview</span><span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--ink3);align-self:center">{{ tp.w }}</span></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const S = {
+      todo:{n:'To do',c:'var(--ink3)',bg:'var(--sunk)'},
+      prog:{n:'In progress',c:'var(--steel)',bg:'var(--steel-soft)'},
+      rev:{n:'In review',c:'var(--amber)',bg:'var(--amber-soft)'},
+      done:{n:'Done',c:'var(--green)',bg:'var(--green-soft)'},
+      blk:{n:'Blocked',c:'var(--red)',bg:'var(--red-soft)'}
+    };
+    const P = {
+      MC:{n:'Maya Chen',c:'#5B7A6E'}, DP:{n:'Dev Patel',c:'#5D6B8A'}, SR:{n:'Sofia Rossi',c:'#8A5D5D'}, JB:{n:'Jonas Berg',c:'#7F7451'},
+      AT:{n:'Aiko Tanaka',c:'#4F6F7A'}, LO:{n:"Liam O'Connor",c:'#8C6B47'}, NH:{n:'Nadia Haddad',c:'#6E7A5B'}, TS:{n:'Tomás Silva',c:'#7A6A58'}
+    };
+    const T = [
+      ['TF-142','Fix login crash on SSO redirect','prog','DP',5,'Oct 30','#418'],
+      ['TF-147','Rate-limit token refresh endpoint','rev','LO',3,'Oct 31','#421'],
+      ['TF-151','Web: settings page skeleton states','prog','SR',2,'Nov 1',''],
+      ['TF-138','Migrate session store to Redis 7','done','JB',8,'Oct 27','#409'],
+      ['TF-155','Flaky e2e: checkout timeout','blk','TS',3,'Oct 29',''],
+      ['TF-149','Audit log export as CSV','todo','LO',5,'Nov 3',''],
+      ['TF-144','Dark mode tokens for web app','rev','NH',3,'Oct 30','#416'],
+      ['TF-153','Onboarding empty states copy','todo','AT',1,'Nov 2',''],
+      ['TF-140','Health check for worker pool','done','JB',2,'Oct 25','#402'],
+      ['TF-157','Paginate /v2/tasks responses','todo','DP',5,'Nov 4',''],
+      ['TF-146','Keyboard nav in command palette','prog','NH',3,'Oct 31',''],
+      ['TF-159','Alert on CI queue > 10 min','todo','JB',2,'Nov 5',''],
+      ['TF-143','Remove legacy v1 auth routes','done','DP',3,'Oct 24','#398'],
+      ['TF-150','Avatar upload crops incorrectly','rev','SR',2,'Oct 31','#419']
+    ];
+    const tasksTable = T.map((r,i)=>{const s=S[r[2]],p=P[r[3]];return {id:r[0],title:r[1],st:s.n,sc:s.c,sb:s.bg,ai:r[3],ac:p.c,an:p.n.split(' ')[0],pts:r[4],due:r[5],dc:r[2]==='blk'?'var(--red)':'var(--ink3)',pr:r[6]||'—',rowBg:i===0?'var(--accent-soft)':'transparent',rowSh:i===0?'inset 2px 0 0 var(--accent)':'none'};});
+    const tasks4 = tasksTable.slice(0,4).map(t=>({...t}));
+    const backlogRaw = [['TF-160','SAML metadata auto-refresh',5],['TF-158','Bulk move tasks between lists',3],['TF-156','Webhook retries with backoff',5],['TF-154','Time entries: round to 15m',2],['TF-152','Export sprint report PDF',3],['TF-148','Per-space notification rules',8],['TF-145','Search: fuzzy match on IDs',2],['TF-141','iOS: offline queue for comments',8],['TF-139','Dashboard tile: cycle time p85',3],['TF-137','Admin: deny-list for embeds',2],['TF-136','Recurring tasks: monthly by weekday',5],['TF-134','Docs: task embed hover card',3]];
+    const backlog = backlogRaw.map(b=>({id:b[0],title:b[1],pts:b[2]}));
+    const card=(id,title,ai,pts,lab,pr,type,sel)=>({id,title,ai,ac:P[ai].c,pts:pts+' pts',lab,pr,ti:type==='bug'?'bug_report':'check_box_outline_blank',tc:type==='bug'?'var(--red)':'var(--ink3)',bd:sel?'var(--accent)':'var(--line)',sh:sel?'0 0 0 3px var(--accent-soft)':'0 1px 1px rgba(0,0,0,.03)'});
+    const kanban = [
+      {n:'To do',c:'var(--ink3)',wip:'4',wc:'var(--ink3)',cards:[card('TF-149','Audit log export as CSV','LO',5,'backend','','t'),card('TF-157','Paginate /v2/tasks responses','DP',5,'api','','t'),card('TF-153','Onboarding empty states copy','AT',1,'design','','t')]},
+      {n:'In progress',c:'var(--steel)',wip:'4 / 4',wc:'var(--amber)',cards:[card('TF-142','Fix login crash on SSO redirect','DP',5,'auth','#418','bug',true),card('TF-151','Web: settings page skeleton states','SR',2,'web','','t'),card('TF-146','Keyboard nav in command palette','NH',3,'web','','t')]},
+      {n:'In review',c:'var(--amber)',wip:'3 / 3',wc:'var(--ink3)',cards:[card('TF-147','Rate-limit token refresh endpoint','LO',3,'backend','#421','t'),card('TF-144','Dark mode tokens for web app','NH',3,'web','#416','t'),card('TF-150','Avatar upload crops incorrectly','SR',2,'web','#419','bug')]},
+      {n:'Done',c:'var(--green)',wip:'12',wc:'var(--ink3)',cards:[card('TF-138','Migrate session store to Redis 7','JB',8,'infra','#409','t'),card('TF-140','Health check for worker pool','JB',2,'infra','#402','t')]}
+    ];
+    const people = Object.entries(P).map(([i,p],k)=>({i,c:p.c,pc:['var(--green)','var(--green)','var(--amber)','var(--green)','var(--red)','var(--green)','var(--ink3)','var(--amber)'][k]}));
+    const lib = [
+      {name:'TASKS',items:[['table_rows','Table'],['list','List'],['view_kanban','Kanban'],['calendar_month','Calendar'],['view_timeline','Timeline / Gantt'],['groups','Team planner'],['inventory_2','Backlog'],['description','Task detail'],['add_box','Quick add']]},
+      {name:'PLANNING',items:[['sprint','Sprint board'],['ecg_heart','Sprint health'],['trending_down','Burndown'],['trending_up','Burnup'],['speed','Velocity'],['battery_5_bar','Capacity'],['route','Roadmap']]},
+      {name:'INSIGHTS',items:[['monitoring','KPI tile with trend'],['bar_chart','Bar / line / pie'],['stacked_line_chart','Cumulative flow'],['person_search','Workload per person'],['timer','Cycle time']]},
+      {name:'DEV',items:[['merge','GitHub PRs'],['fork_right','Branches'],['check_circle','CI status'],['move_to_inbox','PR → task inbox']]}
+    ];
+    const library = lib.map(g=>({name:g.name,items:g.items.map(([i,n])=>({i,n}))}));
+    const library2 = [
+      {name:'TASKS',items:[{i:'inventory_2',n:'Backlog',bg:'var(--accent-soft)',c:'var(--accent)'},{i:'view_kanban',n:'Kanban',bg:'transparent',c:'var(--ink)'},{i:'description',n:'Task detail',bg:'transparent',c:'var(--ink)'},{i:'add_box',n:'Quick add',bg:'transparent',c:'var(--ink)'}]},
+      {name:'PLANNING',items:[{i:'trending_down',n:'Burndown',bg:'transparent',c:'var(--ink)'},{i:'battery_5_bar',n:'Capacity',bg:'transparent',c:'var(--ink)'},{i:'speed',n:'Velocity',bg:'transparent',c:'var(--ink)'}]},
+      {name:'PEOPLE',items:[{i:'apartment',n:'Virtual office',bg:'transparent',c:'var(--ink)'},{i:'circle',n:"Who's online",bg:'transparent',c:'var(--ink)'},{i:'event_busy',n:'Leave calendar',bg:'transparent',c:'var(--ink)'}]},
+      {name:'AUTOMATION',items:[{i:'play_circle',n:'Trigger button',bg:'transparent',c:'var(--ink)'},{i:'history',n:'Automation runs',bg:'transparent',c:'var(--ink)'}]}
+    ];
+    const navTop=[{i:'home',n:'Home',b:''},{i:'check_circle',n:'My tasks',b:'9'},{i:'inbox',n:'Inbox',b:'4'},{i:'monitoring',n:'Dashboards',b:''}];
+    const spaces=[{i:'expand_more',n:'Platform',pad:'8px',c:'var(--ink)',bg:'transparent',w:500},{i:'list',n:'Backend',pad:'28px',c:'var(--ink2)',bg:'transparent',w:400},{i:'list',n:'Web',pad:'28px',c:'var(--ink2)',bg:'transparent',w:400},{i:'sprint',n:'Sprint 14',pad:'28px',c:'var(--ink)',bg:'var(--sunk)',w:500},{i:'chevron_right',n:'Design',pad:'8px',c:'var(--ink2)',bg:'transparent',w:400},{i:'chevron_right',n:'Ops desk',pad:'8px',c:'var(--ink2)',bg:'transparent',w:400}];
+    const favs=[{i:'star',n:'Release 2.8 checklist'},{i:'filter_alt',n:'Bugs · untriaged'},{i:'description',n:'Auth runbook'}];
+    const rail=[{i:'home',c:'var(--ink2)',bg:'transparent'},{i:'check_circle',c:'var(--ink2)',bg:'transparent'},{i:'inbox',c:'var(--ink2)',bg:'transparent'},{i:'sprint',c:'var(--ink)',bg:'var(--sunk)'},{i:'monitoring',c:'var(--ink2)',bg:'transparent'},{i:'apartment',c:'var(--ink2)',bg:'transparent'}];
+    const kpis=[{n:'Committed',v:'62 pts',t:'14 tasks',tc:'var(--ink3)'},{n:'Done',v:'27 pts',t:'+8 today',tc:'var(--green)'},{n:'Blocked',v:'1',t:'TF-155',tc:'var(--red)'},{n:'Days left',v:'4',t:'ends Nov 2',tc:'var(--ink3)'}];
+    const layoutMenu=[
+      {i:'add',n:'Save as new layout',k:'⇧⌘S',c:'var(--ink)'},{i:'edit',n:'Rename',k:'',c:'var(--ink)'},{i:'content_copy',n:'Duplicate',k:'',c:'var(--ink)'},
+      {i:'group',n:'Share with team / workspace…',k:'',c:'var(--ink)'},{i:'push_pin',n:'Set as default for this page',k:'',c:'var(--ink)'},
+      {i:'history',n:'Version history',k:'',c:'var(--ink)'},{i:'restart_alt',n:'Reset to default…',k:'',c:'var(--red)'}
+    ];
+    const statuses=Object.values(S);
+    const keys=['⌘K','E','A','Q','J','K','⌥←','⇧⌥→','?'];
+    const splits=[
+      {id:'3a',label:'30 : 70 — backlog | sprint',top:'14px',topLabel:'TOP STRIP',left:'34px',right:'0px',cols:[{f:30,n:'Backlog',col:'var(--ink2)'},{f:70,n:'Kanban',col:'var(--accent)'}]},
+      {id:'3b',label:'50 : 50 — table | detail',top:'0px',topLabel:'',left:'34px',right:'0px',cols:[{f:50,n:'Untriaged',col:'var(--ink2)'},{f:50,n:'Task detail',col:'var(--ink2)'}]},
+      {id:'3c',label:'20 : 55 : 25 — three columns',top:'14px',topLabel:'TOP STRIP',left:'10px',right:'0px',cols:[{f:20,n:'PRs',col:'var(--ink2)'},{f:55,n:'Linked tasks',col:'var(--accent)'},{f:25,n:'CI',col:'var(--ink2)'}]},
+      {id:'3d',label:'Sidebars as icon rails, right hidden',top:'0px',topLabel:'',left:'14px',right:'14px',cols:[{f:100,n:'Main',col:'var(--ink2)'}]}
+    ];
+    const teams=[{n:'Platform',c:'var(--accent)',m:'4'},{n:'Web',c:'var(--steel)',m:'2'},{n:'Design',c:'var(--amber)',m:'1'},{n:'Ops',c:'var(--ink3)',m:'1'}];
+    const workload=[['DP',92],['LO',78],['SR',64],['JB',110],['NH',70],['TS',45]].map(([i,v])=>({i,c:P[i].c,pct:Math.min(v,100)+'%',v:v+'%',bc:v>100?'var(--red)':'var(--accent)',tc:v>100?'var(--red)':'var(--ink3)'}));
+    const versions=[
+      {n:'Current',m:'You · just now · 30:70, Kanban',act:'',a:'26%',b:'22%',bg:'var(--accent-soft)'},
+      {n:'Added Burndown to top strip',m:'You · today 10:12',act:'Restore',a:'18%',b:'22%',bg:'transparent'},
+      {n:'Hid right sidebar',m:'You · yesterday',act:'Restore',a:'18%',b:'0%',bg:'transparent'},
+      {n:'Team default v3',m:'Maya Chen · Oct 21',act:'Restore',a:'18%',b:'22%',bg:'transparent'},
+      {n:'Team default v2',m:'Maya Chen · Oct 7',act:'Restore',a:'14%',b:'26%',bg:'transparent'}
+    ];
+    const A='var(--accent)',AS='var(--accent-soft)',L='var(--line)',SK='var(--sunk)',AM='var(--amber-soft)',ST='var(--steel-soft)',G='var(--green-soft)';
+    const R=(x,y,w,h,c)=>({x:x+'%',y:y+'%',w:w+'%',h:h+'%',c});
+    const templates=[
+      {n:'Sprint planning',d:'Backlog 30 | sprint lanes 70, capacity bar on top.',tag:'Built-in',w:'5 widgets',bd:'var(--line)',rects:[R(3,5,94,10,AM),R(3,20,28,75,SK),R(34,20,15,75,L),R(51,20,15,75,L),R(68,20,14,75,ST),R(84,20,13,75,G)]},
+      {n:'Daily stand-up',d:'Per-person yesterday / today / blocked, sprint burndown.',tag:'Built-in',w:'4 widgets',bd:'var(--line)',rects:[R(3,5,64,28,SK),R(3,37,64,28,SK),R(3,69,64,26,SK),R(70,5,27,90,AS)]},
+      {n:'Bug triage',d:'Untriaged table | task detail, quick actions strip.',tag:'Built-in',w:'3 widgets',bd:'var(--line)',rects:[R(3,5,94,9,L),R(3,18,55,77,SK),R(61,18,36,77,AS)]},
+      {n:'My focus day',d:"Today's tasks, timer, calendar and inbox.",tag:'Built-in',w:'4 widgets',bd:'var(--line)',rects:[R(3,5,45,90,SK),R(51,5,46,22,A),R(51,31,46,34,L),R(51,69,46,26,SK)]},
+      {n:'Release / PR review',d:'GitHub PRs | linked tasks | CI status.',tag:'Built-in',w:'3 widgets',bd:'var(--line)',rects:[R(3,5,20,90,SK),R(26,5,53,90,L),R(82,5,15,90,G)]},
+      {n:'Manager overview',d:'Workload, cycle time, overdue and team presence.',tag:'Built-in',w:'6 widgets',bd:'var(--line)',rects:[R(3,5,30,20,AS),R(36,5,30,20,AS),R(69,5,28,20,AM),R(3,29,60,66,SK),R(66,29,31,66,L)]},
+      {n:'Roadmap',d:'Timeline with epics and milestones.',tag:'Built-in',w:'3 widgets',bd:'var(--line)',rects:[R(3,5,94,10,L),R(3,20,40,10,AS),R(25,34,45,10,AS),R(50,48,40,10,AS),R(10,62,30,10,ST),R(3,80,94,15,SK)]},
+      {n:'Client / ops desk',d:'Requests table, SLA timers, assignee rotation.',tag:'Built-in',w:'4 widgets',bd:'var(--line)',rects:[R(3,5,66,90,SK),R(72,5,25,40,AM),R(72,49,25,46,L)]},
+      {n:'Virtual office',d:'Isometric team floor with presence and live work.',tag:'Built-in',w:'2 widgets',bd:'var(--line)',rects:[R(3,5,70,90,AS),R(76,5,21,90,L)]},
+      {n:'Platform on-call',d:'CI status, incidents list, runbook doc, who is on call.',tag:'Acme',w:'5 widgets',bd:'var(--line)',rects:[R(3,5,30,30,G),R(3,39,30,56,SK),R(36,5,61,90,L)]},
+      {n:"Maya's sprint view",d:'Backlog tabs 30 | Kanban 70, linked task detail.',tag:'Mine',w:'3 widgets',bd:'var(--accent)',rects:[R(3,5,28,90,SK),R(34,5,40,90,ST),R(77,5,20,90,AS)]}
+    ];
+    return {
+      theme: this.props.theme ?? 'light',
+      tasks4, tasks3b: backlog.slice(0,3), tasksTable, backlog, kanban, people, people5: people.slice(0,5),
+      library, library2, libCats:['Tasks','Planning','Insights','Navigation','Collab','Dev','Automation','People'],
+      navTop, spaces, favs, rail, kpis, layoutMenu, statuses, keys, splits, teams, workload, versions, templates,
+      prTitleVar: '{{pr.title}}',
+      skel:['70%','55%','62%','48%','66%','58%','40%','61%','52%','45%']
+    };
+  }
+}
+</script>
+</body>
+</html>

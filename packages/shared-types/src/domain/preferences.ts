@@ -9,8 +9,17 @@ export type Theme = (typeof THEMES)[number];
 export const ACCENTS = ['violet', 'blue', 'teal', 'green', 'amber', 'orange', 'rose', 'slate'] as const;
 export type Accent = (typeof ACCENTS)[number];
 
-export const DENSITIES = ['comfortable', 'compact'] as const;
+/** Row height and spacing: 0.85×, 1× and 1.15× of the default. */
+export const DENSITIES = ['compact', 'default', 'comfortable'] as const;
 export type Density = (typeof DENSITIES)[number];
+
+/** Corner radius scale: controls and cards get 4/6, 8/12 or 12/16 px. */
+export const RADII = ['sm', 'md', 'lg'] as const;
+export type Radius = (typeof RADII)[number];
+
+/** UI typeface. IDs, times and code always use Geist Mono. */
+export const FONTS = ['geist', 'inter', 'plex'] as const;
+export type Font = (typeof FONTS)[number];
 
 export const TASK_VIEWS = ['list', 'board', 'table', 'calendar', 'timeline', 'planner'] as const;
 export type TaskView = (typeof TASK_VIEWS)[number];
@@ -78,6 +87,8 @@ export interface UserPreferences {
   theme: Theme;
   accent: Accent;
   density: Density;
+  radius: Radius;
+  font: Font;
   sidebarCollapsed: boolean;
   sidebarWidth: number;
   defaultTaskView: TaskView;
@@ -93,8 +104,10 @@ export interface UserPreferences {
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   theme: 'system',
-  accent: 'violet',
-  density: 'comfortable',
+  accent: 'orange',
+  density: 'default',
+  radius: 'md',
+  font: 'geist',
   sidebarCollapsed: false,
   sidebarWidth: 260,
   defaultTaskView: 'list',
@@ -130,6 +143,8 @@ export function readPreferences(stored: unknown): UserPreferences {
     theme: oneOf(THEMES, data.theme, d.theme),
     accent: oneOf(ACCENTS, data.accent, d.accent),
     density: oneOf(DENSITIES, data.density, d.density),
+    radius: oneOf(RADII, data.radius, d.radius),
+    font: oneOf(FONTS, data.font, d.font),
     sidebarCollapsed: typeof data.sidebarCollapsed === 'boolean' ? data.sidebarCollapsed : d.sidebarCollapsed,
     sidebarWidth: clamp(data.sidebarWidth, PREFERENCE_LIMITS.sidebarWidthMin, PREFERENCE_LIMITS.sidebarWidthMax, d.sidebarWidth),
     defaultTaskView: oneOf(TASK_VIEWS, data.defaultTaskView, d.defaultTaskView),

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,300,0..1,0&display=block">
+<style>
+[data-theme=dark]{--bg:#09090b;--rail:#0c0c0e;--card:#111113;--muted:#18181b;--muted2:#232327;--border:#27272a;--border2:#3f3f46;--fg:#fafafa;--fg2:#a1a1aa;--fg3:#71717a;--canvas:#050506;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#60a5fa}
+[data-theme=light]{--bg:#ffffff;--rail:#fafafa;--card:#ffffff;--muted:#f4f4f5;--muted2:#ececee;--border:#e4e4e7;--border2:#d4d4d8;--fg:#09090b;--fg2:#52525b;--fg3:#a1a1aa;--canvas:#f4f4f5;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--info:#2563eb}
+[data-accent=orange]{--acc:#f97316;--acc2:#ea580c}[data-accent=blue]{--acc:#3b82f6;--acc2:#2563eb}[data-accent=emerald]{--acc:#10b981;--acc2:#059669}[data-accent=rose]{--acc:#f43f5e;--acc2:#e11d48}[data-accent=zinc]{--acc:#a1a1aa;--acc2:#71717a}
+[data-accent]{--acc-soft:color-mix(in oklab,var(--acc) 14%,transparent);--acc-soft2:color-mix(in oklab,var(--acc) 40%,transparent)}
+[data-radius=sm]{--r:4px;--r2:6px}[data-radius=md]{--r:8px;--r2:12px}[data-radius=lg]{--r:12px;--r2:16px}
+body{margin:0;background:#050506;font-family:Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+i{font-family:'Material Symbols Rounded';font-style:normal;font-size:16px;line-height:1;display:inline-flex;font-feature-settings:'liga';user-select:none;flex:none}
+.dv-turn{padding:56px 64px 48px;border-bottom:1px solid var(--border)}.dv-thd{display:flex;align-items:baseline;gap:12px;margin:0 0 6px}.dv-tid{font:600 11px 'Geist Mono',monospace;padding:3px 8px;background:var(--fg);color:var(--bg);border-radius:4px;text-decoration:none}.dv-tname{font:600 22px/1.2 Geist,sans-serif;color:var(--fg);letter-spacing:-.02em}.dv-sub{font:400 13.5px/1.55 Geist,sans-serif;color:var(--fg2);margin:0 0 32px;max-width:900px}.dv-opts{display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:14px;scroll-margin-top:16px}.dv-oid{font:600 10.5px 'Geist Mono',monospace;padding:3px 7px;background:var(--muted2);color:var(--fg);border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 Geist,sans-serif;color:var(--fg2)}.dv-opt:target .dv-oid{background:var(--acc);color:#fff}.dv-next{margin:28px 0 0;font:12px/1.5 Geist,sans-serif;color:var(--fg3)}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" data-accent="{{ accent }}" data-radius="{{ radius }}" style="background:var(--canvas);background-image:radial-gradient(color-mix(in oklab,var(--fg) 7%,transparent) 1px,transparent 1px);background-size:6px 6px;color:var(--fg);min-height:100vh">
+
+<section class="dv-turn" id="t5" data-screen-label="05 Organization and workspaces">
+  <div style="max-width:1100px;margin-bottom:36px">
+    <div style="font:500 11px 'Geist Mono';color:var(--fg3);letter-spacing:.08em;margin-bottom:14px">TASKFLOW v2 · PLATFORM · continues <a href="TaskFlow v2.dc.html">Tracker / Chat / Calls / Appearance</a></div>
+    <div style="font-size:56px;font-weight:600;letter-spacing:-.045em;line-height:1">Organization → workspaces → spaces.<br><span style="color:var(--fg3)">Everything is a block.</span></div>
+  </div>
+  <div class="dv-thd"><a class="dv-tid" href="#t5">5</a><span class="dv-tname">Organization &amp; workspaces</span></div>
+  <p class="dv-sub">One organization (Acme Inc) owns billing, identity (IAM), HR and audit. Under it live any number of workspaces, each with its own spaces, automations and integrations. Switch from the logo at the top of the rail.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="5a">
+      <div class="dv-olabel"><a class="dv-oid" href="#5a">5a</a>Org home · workspace switcher open</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px;position:relative">
+        <dc-import name="TF2 Rail" active="admin" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="org" label="Acme Inc · Organization" icon="corporate_fare" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="width:236px;flex:none;border-right:1px solid var(--border);background:var(--rail);padding:16px 12px;display:flex;flex-direction:column;gap:2px">
+              <div style="display:flex;align-items:center;gap:10px;padding:0 8px 14px"><span style="width:28px;height:28px;border-radius:8px;background:var(--fg);color:var(--bg);font:700 13px Geist;display:grid;place-items:center">A</span><div><div style="font-weight:600">Acme Inc</div><div style="font-size:11px;color:var(--fg3)">Enterprise · 142 seats</div></div></div>
+              <sc-for list="{{ orgNav }}" as="n" hint-placeholder-count="9"><div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:var(--r);color:{{ n.c }};background:{{ n.bg }};font-weight:{{ n.w }}"><i style="font-size:17px">{{ n.i }}</i>{{ n.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--fg3)">{{ n.b }}</span></div></sc-for>
+            </div>
+            <div style="flex:1;min-width:0;padding:24px 28px;display:flex;flex-direction:column;gap:20px;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px"><div><div style="font-size:24px;font-weight:600;letter-spacing:-.02em">Workspaces</div><div style="color:var(--fg2);margin-top:2px">4 workspaces · identity, HR and billing shared across all of them</div></div><div style="flex:1"></div><span style="height:34px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:6px"><i style="font-size:16px">upload</i>Import</span><span style="height:34px;padding:0 14px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;gap:6px;font-weight:500"><i style="font-size:16px">add</i>New workspace</span></div>
+              <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+                <sc-for list="{{ orgKpis }}" as="k" hint-placeholder-count="4"><div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:14px 16px;display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:var(--fg3)">{{ k.n }}</span><span style="font-size:24px;font-weight:600;letter-spacing:-.02em">{{ k.v }}<span style="font:500 11.5px 'Geist Mono';color:{{ k.tc }};margin-left:8px">{{ k.t }}</span></span></div></sc-for>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+                <sc-for list="{{ workspaces }}" as="w" hint-placeholder-count="4">
+                  <div style="border:1px solid {{ w.bd }};border-radius:var(--r2);background:var(--card);padding:16px;display:flex;flex-direction:column;gap:14px;box-shadow:{{ w.sh }}">
+                    <div style="display:flex;align-items:center;gap:12px"><span style="width:36px;height:36px;border-radius:10px;background:{{ w.g }};color:#fff;display:grid;place-items:center"><i style="font-size:19px">{{ w.i }}</i></span><div style="flex:1"><div style="font-weight:600;font-size:14.5px">{{ w.n }}</div><div style="font-size:12px;color:var(--fg3)">{{ w.d }}</div></div><span style="height:22px;padding:0 8px;border-radius:999px;background:var(--muted2);font-size:11px;color:var(--fg2);display:flex;align-items:center">{{ w.role }}</span></div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+                      <sc-for list="{{ w.stats }}" as="s" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font:600 15px Geist">{{ s.v }}</span><span style="font-size:11px;color:var(--fg3)">{{ s.n }}</span></div></sc-for>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px"><div style="display:flex"><sc-for list="{{ w.av }}" as="a" hint-placeholder-count="4"><span style="width:22px;height:22px;border-radius:50%;background:{{ a.g }};color:#fff;font:600 8.5px Geist;display:grid;place-items:center;border:2px solid var(--card);margin-right:-6px">{{ a.i }}</span></sc-for></div><span style="font-size:11.5px;color:var(--fg3);margin-left:8px">{{ w.apps }}</span><div style="flex:1"></div><span style="font-size:12px;color:var(--acc);font-weight:500">Open ↗</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="width:320px;flex:none;border-left:1px solid var(--border);background:var(--rail);padding:18px;display:flex;flex-direction:column;gap:14px">
+              <div style="font-weight:600">Org-level apps</div>
+              <sc-for list="{{ orgApps }}" as="a" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:var(--r2);background:var(--card)"><span style="width:32px;height:32px;border-radius:9px;background:var(--muted2);display:grid;place-items:center"><i style="font-size:18px;color:var(--fg)">{{ a.i }}</i></span><div style="flex:1;min-width:0"><div style="font-weight:500">{{ a.n }}</div><div style="font-size:11.5px;color:var(--fg3)">{{ a.d }}</div></div><i style="color:var(--fg3)">chevron_right</i></div></sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;left:68px;top:52px;width:300px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);box-shadow:0 24px 60px rgba(0,0,0,.5);padding:6px;z-index:3">
+          <div style="padding:8px 10px;font:600 10.5px 'Geist Mono';letter-spacing:.06em;color:var(--fg3)">ACME INC · WORKSPACES</div>
+          <sc-for list="{{ wsSwitch }}" as="w" hint-placeholder-count="4"><div style="height:44px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:var(--r);background:{{ w.bg }}"><span style="width:26px;height:26px;border-radius:7px;background:{{ w.g }};color:#fff;display:grid;place-items:center"><i style="font-size:15px">{{ w.i }}</i></span><div style="flex:1"><div style="font-weight:500">{{ w.n }}</div><div style="font-size:11px;color:var(--fg3)">{{ w.m }}</div></div><span style="font:500 10.5px 'Geist Mono';color:var(--fg3)">{{ w.k }}</span></div></sc-for>
+          <div style="height:1px;background:var(--border);margin:6px 0"></div>
+          <div style="height:34px;display:flex;align-items:center;gap:10px;padding:0 10px;color:var(--fg2)"><i style="font-size:17px">add</i>Create workspace</div>
+          <div style="height:34px;display:flex;align-items:center;gap:10px;padding:0 10px;color:var(--fg2)"><i style="font-size:17px">swap_horiz</i>Switch organization<span style="margin-left:auto;font-size:11.5px;color:var(--fg3)">2 more</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t6" data-screen-label="06 Composable dashboard">
+  <div class="dv-thd"><a class="dv-tid" href="#t6">6</a><span class="dv-tname">Lego dashboard — Arrange mode</span></div>
+  <p class="dv-sub">Every page is a grid of blocks. Press <b>E</b>: blocks get grips and resize handles, the library slides in, and dragging shows a ghost and a lit drop slot. Remove with ×, undo with ⌘Z, reset any time.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="6a">
+      <div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a>Home · arranging · dragging “Clock-in” from the library</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--acc);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 0 0 4px var(--acc-soft),0 30px 80px -20px rgba(0,0,0,.6);font-size:13px;position:relative">
+        <dc-import name="TF2 Rail" active="" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="home" label="Home" icon="home" arranging="{{ true }}" hint-size="1380px,42px"></dc-import>
+          <div style="height:46px;flex:none;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--border);background:var(--acc-soft)">
+            <i style="color:var(--acc)">dashboard_customize</i><span style="font-weight:600">Arranging “Home”</span><span style="color:var(--fg2)">12-col grid · drag to move · drag corners to resize · ⌥←→ with keyboard</span><div style="flex:1"></div>
+            <span style="font-size:12px;color:var(--fg2);display:flex;align-items:center;gap:6px"><i style="font-size:14px;color:var(--ok)">cloud_done</i>Saved · synced</span>
+            <span style="height:30px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px;background:var(--bg)"><i style="font-size:15px">undo</i>Undo</span>
+            <span style="height:30px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px;background:var(--bg)"><i style="font-size:15px">restart_alt</i>Reset</span>
+            <span style="height:30px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px;background:var(--bg)"><i style="font-size:15px">bookmark_add</i>Save as layout</span>
+            <span style="height:30px;padding:0 14px;border-radius:var(--r);background:var(--acc);color:#fff;display:flex;align-items:center;font-weight:600">Done</span>
+          </div>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="flex:1;min-width:0;padding:16px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:repeat(6,minmax(0,1fr));gap:12px;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:calc((100% - 32px)/12) calc((100% - 32px)/6);background-position:16px 16px">
+              <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="7">
+                <div style="grid-column:{{ b.col }};grid-row:{{ b.row }};position:relative;border:1px {{ b.bs }} {{ b.bd }};border-radius:var(--r2);background:{{ b.bg }};display:flex;flex-direction:column;overflow:visible;box-shadow:{{ b.sh }}">
+                  <div style="height:36px;flex:none;display:flex;align-items:center;gap:6px;padding:0 6px 0 4px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3);font-size:17px">drag_indicator</i><i style="color:var(--fg2);font-size:16px">{{ b.i }}</i><span style="font-weight:600">{{ b.n }}</span><span style="font:500 10.5px 'Geist Mono';color:var(--fg3);margin-left:4px">{{ b.size }}</span><div style="flex:1"></div><i style="padding:4px;color:var(--fg3);font-size:15px">tune</i><i style="padding:4px;color:var(--fg3);font-size:15px">close</i></div>
+                  <div style="flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;opacity:.85">
+                    <sc-for list="{{ b.lines }}" as="l" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:8px"><span style="width:6px;height:6px;border-radius:50%;background:{{ l.c }}"></span><span style="height:8px;border-radius:3px;background:var(--muted2);width:{{ l.w }}"></span></div></sc-for>
+                  </div>
+                  <span style="position:absolute;right:-5px;bottom:-5px;width:12px;height:12px;border-radius:4px;background:var(--bg);border:2px solid var(--acc)"></span>
+                  <span style="position:absolute;right:-5px;top:50%;margin-top:-12px;width:8px;height:24px;border-radius:4px;background:var(--bg);border:1.5px solid var(--border2)"></span>
+                </div>
+              </sc-for>
+              <div style="grid-column:9 / 13;grid-row:5 / 7;border:2px dashed var(--acc);border-radius:var(--r2);background:var(--acc-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--acc);font-weight:600"><i style="font-size:24px">download</i>Drop here · 4 × 2<span style="font-weight:400;font-size:12px;color:var(--fg2)">Blocks below shift down</span></div>
+            </div>
+            <div style="width:320px;flex:none;border-left:1px solid var(--border);background:var(--rail);display:flex;flex-direction:column">
+              <div style="padding:14px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center"><span style="font-weight:600;font-size:15px">Blocks</span><span style="margin-left:8px;font:500 11px 'Geist Mono';color:var(--fg3)">64</span><i style="margin-left:auto;color:var(--fg3)">close</i></div>
+                <div style="height:34px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--fg3);background:var(--card)"><i style="font-size:16px">search</i>Search blocks</div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap"><sc-for list="{{ blockCats }}" as="c" hint-placeholder-count="8"><span style="height:24px;padding:0 9px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.c }};font-size:11.5px;display:flex;align-items:center">{{ c.n }}</span></sc-for></div>
+              </div>
+              <div style="padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:hidden;grid-auto-rows:min-content">
+                <sc-for list="{{ library }}" as="w" hint-placeholder-count="12"><div style="border:1px solid {{ w.bd }};border-radius:var(--r);background:var(--card);padding:10px;display:flex;flex-direction:column;gap:8px;opacity:{{ w.op }}"><div style="height:34px;border-radius:6px;background:var(--muted);display:grid;place-items:center"><i style="font-size:20px;color:{{ w.c }}">{{ w.i }}</i></div><span style="font-size:12px;font-weight:500">{{ w.n }}</span><span style="font-size:10.5px;color:var(--fg3);margin-top:-6px">{{ w.cat }}</span></div></sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;left:1010px;top:520px;width:230px;transform:rotate(-3deg);border:1px solid var(--acc);border-radius:var(--r2);background:var(--card);box-shadow:0 24px 50px rgba(0,0,0,.5);z-index:4">
+          <div style="height:34px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border)"><i style="color:var(--acc);font-size:16px">badge</i><span style="font-weight:600">Clock-in</span><span style="margin-left:auto;font:500 10.5px 'Geist Mono';color:var(--fg3)">HR</span></div>
+          <div style="padding:12px;display:flex;align-items:center;gap:10px"><span style="font:600 22px 'Geist Mono'">07:42</span><span style="margin-left:auto;height:28px;padding:0 10px;border-radius:var(--r);background:var(--ok);color:#fff;display:flex;align-items:center;font-size:12px;font-weight:600">Clock in</span></div>
+          <i style="position:absolute;right:8px;bottom:-4px;font-size:24px;color:var(--fg);font-variation-settings:'FILL' 1">pan_tool</i>
+        </div>
+        <div style="position:absolute;left:40%;bottom:20px;display:flex;align-items:center;gap:12px;height:44px;padding:0 6px 0 14px;border-radius:var(--r2);background:var(--fg);color:var(--bg);box-shadow:0 12px 30px rgba(0,0,0,.4);z-index:4"><span>Removed “Velocity”</span><span style="height:30px;padding:0 10px;border-radius:var(--r);background:color-mix(in oklab,var(--bg) 14%,transparent);display:flex;align-items:center;font-weight:600">Undo ⌘Z</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t7" data-screen-label="07 Automations builder">
+  <div class="dv-thd"><a class="dv-tid" href="#t7">7</a><span class="dv-tname">Automations — node canvas, end to end</span></div>
+  <p class="dv-sub">An n8n / Zapier-style canvas. Any event in TaskFlow, GitHub, HR or a webhook can trigger a flow; data from each node is mappable into the next. Test with real sample data, see every step's input and output, replay failed runs.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="7a">
+      <div class="dv-olabel"><a class="dv-oid" href="#7a">7a</a>Flow: “Bug PR → task → assign least busy → notify” · executing</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="auto" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="flow" label="Bug PR → task" icon="account_tree" hint-size="1380px,42px"></dc-import>
+          <div style="height:50px;flex:none;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--border)">
+            <span style="color:var(--fg3)">Automations /</span><span style="font-weight:600;font-size:14.5px">Bug PR → task</span><span style="height:22px;padding:0 8px;border-radius:999px;background:color-mix(in oklab,var(--ok) 16%,transparent);color:var(--ok);font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ok)"></span>Active · v7</span>
+            <span style="font-size:12px;color:var(--fg3)">Workspace: Engineering · runs as <span style="font-family:'Geist Mono'">svc:automation</span></span>
+            <div style="flex:1"></div>
+            <div style="display:flex;padding:3px;border-radius:var(--r);background:var(--muted);gap:2px"><span style="height:26px;padding:0 10px;display:flex;align-items:center;border-radius:calc(var(--r) - 2px);background:var(--bg);font-weight:500">Editor</span><span style="height:26px;padding:0 10px;display:flex;align-items:center;color:var(--fg2)">Executions · 1,284</span><span style="height:26px;padding:0 10px;display:flex;align-items:center;color:var(--fg2)">Versions</span></div>
+            <span style="height:32px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px"><i style="font-size:16px">science</i>Test with sample</span>
+            <span style="height:32px;padding:0 14px;border-radius:var(--r);background:var(--acc);color:#fff;display:flex;align-items:center;font-weight:600">Publish</span>
+          </div>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="width:250px;flex:none;border-right:1px solid var(--border);background:var(--rail);padding:12px;display:flex;flex-direction:column;gap:4px;overflow:hidden">
+              <div style="height:32px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--fg3);background:var(--card);margin-bottom:6px"><i style="font-size:15px">search</i>Add node…<span style="margin-left:auto;font:500 10.5px 'Geist Mono'">Tab</span></div>
+              <sc-for list="{{ nodeCats }}" as="g" hint-placeholder-count="4">
+                <div style="font:600 10px 'Geist Mono';letter-spacing:.06em;color:var(--fg3);padding:8px 4px 2px">{{ g.n }}</div>
+                <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4"><div style="height:30px;display:flex;align-items:center;gap:8px;padding:0 6px;border-radius:var(--r);color:var(--fg2)"><span style="width:22px;height:22px;border-radius:6px;background:{{ g.bg }};display:grid;place-items:center"><i style="font-size:14px;color:{{ g.c }}">{{ it.i }}</i></span>{{ it.n }}</div></sc-for>
+              </sc-for>
+            </div>
+            <div style="flex:1;min-width:0;position:relative;overflow:hidden;background:var(--bg);background-image:radial-gradient(color-mix(in oklab,var(--fg) 12%,transparent) 1px,transparent 1px);background-size:20px 20px">
+              <svg style="position:absolute;left:0;top:0;width:770px;height:808px;overflow:visible" viewBox="0 0 770 808">
+                <g fill="none" stroke-width="2">
+<path d="M196 98 C 240 98, 240 98, 270 98" stroke="var(--ok)"></path>
+<path d="M466 98 C 520 98, 500 190, 120 190 C 60 190, 60 240, 98 252" stroke="var(--ok)"></path>
+<path d="M262 252 C 320 252, 330 228, 380 228" stroke="var(--ok)"></path>
+<path d="M262 268 C 320 268, 330 368, 380 368" stroke="var(--border2)" stroke-dasharray="5 5"></path>
+<path d="M576 228 C 620 228, 600 330, 150 380 C 80 388, 70 410, 98 428" stroke="var(--acc)" stroke-dasharray="6 6"></path>
+<path d="M262 428 C 320 428, 330 498, 380 498" stroke="var(--border2)"></path>
+<path d="M478 556 C 478 590, 320 568, 262 568" stroke="var(--border2)"></path>
+</g>
+              </svg>
+              <sc-for list="{{ flowNodes }}" as="n" hint-placeholder-count="8">
+                <div style="position:absolute;left:{{ n.x }};top:{{ n.y }};width:{{ n.w }};border:1.5px solid {{ n.bd }};border-radius:var(--r2);background:var(--card);box-shadow:{{ n.sh }};overflow:visible">
+                  <div style="display:flex;align-items:center;gap:10px;padding:10px 12px">
+                    <span style="width:30px;height:30px;border-radius:8px;background:{{ n.ib }};display:grid;place-items:center;flex:none"><i style="font-size:17px;color:{{ n.ic }}">{{ n.i }}</i></span>
+                    <div style="flex:1;min-width:0"><div style="font:600 10px 'Geist Mono';letter-spacing:.05em;color:var(--fg3)">{{ n.k }}</div><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.n }}</div></div>
+                    <i style="font-size:17px;color:{{ n.sc }};font-variation-settings:'FILL' 1">{{ n.si }}</i>
+                  </div>
+                  <div style="padding:0 12px 10px;font:11.5px/1.5 'Geist Mono';color:var(--fg2)">{{ n.d }}</div>
+                  <div style="padding:6px 12px;border-top:1px solid var(--border);font:500 10.5px 'Geist Mono';color:var(--fg3);display:flex">{{ n.meta }}</div>
+                  <span style="position:absolute;left:-6px;top:22px;width:10px;height:10px;border-radius:50%;background:var(--bg);border:2px solid var(--border2);display:{{ n.inp }}"></span>
+                  <span style="position:absolute;right:-6px;top:22px;width:10px;height:10px;border-radius:50%;background:{{ n.oc }};border:2px solid var(--bg)"></span>
+                </div>
+              </sc-for>
+              <span style="position:absolute;left:272px;top:216px;font:600 10px 'Geist Mono';color:var(--ok);background:var(--card);border:1px solid var(--border);padding:1px 6px;border-radius:4px">true · 1 item</span>
+              <span style="position:absolute;left:272px;top:330px;font:600 10px 'Geist Mono';color:var(--fg3);background:var(--card);border:1px solid var(--border);padding:1px 6px;border-radius:4px">false</span>
+              <div style="position:absolute;right:14px;top:14px;display:flex;gap:4px;padding:4px;border:1px solid var(--border);border-radius:var(--r);background:var(--card)"><i style="padding:6px;color:var(--fg2)">zoom_out</i><span style="font:500 11px 'Geist Mono';color:var(--fg3);align-self:center;padding:0 4px">86%</span><i style="padding:6px;color:var(--fg2)">zoom_in</i><i style="padding:6px;color:var(--fg2)">fit_screen</i><i style="padding:6px;color:var(--fg2)">auto_fix_high</i></div>
+              <div style="position:absolute;left:14px;right:14px;bottom:14px;height:96px;z-index:2;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column">
+                <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border);font-size:12px"><span style="font-weight:600">Execution #1285</span><span style="color:var(--acc);display:flex;align-items:center;gap:4px"><i style="font-size:14px">progress_activity</i>running · step 5 of 7</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">trigger: PR #422 opened · 1.8s</span></div>
+                <div style="flex:1;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 12px;overflow:hidden"><sc-for list="{{ execSteps }}" as="s" hint-placeholder-count="7"><span style="height:28px;padding:0 10px;border-radius:999px;border:1px solid {{ s.bd }};background:{{ s.bg }};color:{{ s.c }};display:flex;align-items:center;gap:5px;font-size:11.5px;white-space:nowrap"><i style="font-size:14px">{{ s.i }}</i>{{ s.n }}<span style="font:500 10.5px 'Geist Mono';color:var(--fg3)">{{ s.ms }}</span></span></sc-for></div>
+              </div>
+            </div>
+            <div style="width:360px;flex:none;border-left:1px solid var(--border);background:var(--rail);display:flex;flex-direction:column">
+              <div style="height:48px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--border)"><span style="width:26px;height:26px;border-radius:7px;background:var(--acc-soft);display:grid;place-items:center"><i style="font-size:15px;color:var(--acc)">add_task</i></span><span style="font-weight:600">Create task</span><div style="flex:1"></div><div style="display:flex;padding:2px;border-radius:var(--r);background:var(--muted);gap:2px;font-size:12px"><span style="height:24px;padding:0 8px;display:flex;align-items:center;border-radius:6px;background:var(--bg);font-weight:500">Parameters</span><span style="height:24px;padding:0 8px;display:flex;align-items:center;color:var(--fg2)">Output</span></div></div>
+              <div style="padding:14px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+                <sc-for list="{{ params }}" as="p" hint-placeholder-count="6">
+                  <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:var(--fg2)">{{ p.k }}</span><div style="min-height:34px;border:1px solid {{ p.bd }};border-radius:var(--r);background:var(--card);display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:4px 8px;box-sizing:border-box;font-size:12.5px">{{ p.pre }}<sc-for list="{{ p.vars }}" as="v" hint-placeholder-count="1"><span style="height:22px;padding:0 6px;border-radius:5px;background:var(--acc-soft);color:var(--acc);font:500 11px 'Geist Mono';display:flex;align-items:center;gap:4px"><i style="font-size:12px">data_object</i>{{ v }}</span></sc-for>{{ p.post }}</div></div>
+                </sc-for>
+                <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);overflow:hidden">
+                  <div style="height:32px;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--border);font-size:12px;color:var(--fg2)"><i style="font-size:14px">input</i>Input from “GitHub PR opened”<span style="margin-left:auto;font:500 10.5px 'Geist Mono';color:var(--fg3)">drag to map</span></div>
+                  <sc-for list="{{ inputTree }}" as="f" hint-placeholder-count="6"><div style="height:28px;display:flex;align-items:center;gap:8px;padding:0 10px 0 {{ f.pad }};font:11.5px 'Geist Mono'"><span style="color:var(--fg2)">{{ f.k }}</span><span style="margin-left:auto;color:var(--fg3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">{{ f.v }}</span></div></sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="7b">
+      <div class="dv-olabel"><a class="dv-oid" href="#7b">7b</a>Every trigger and action in the product</div>
+      <div style="width:1440px;border-radius:16px;border:1px solid var(--border2);background:var(--bg);padding:28px;box-sizing:border-box;font-size:13px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Node catalogue</span><span style="color:var(--fg3)">86 triggers · 112 actions · plus HTTP, code and webhooks</span><div style="flex:1"></div><span style="height:32px;width:280px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--fg3)"><i style="font-size:15px">search</i>Search events and actions</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+          <sc-for list="{{ catalogue }}" as="g" hint-placeholder-count="8">
+            <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:8px;background:{{ g.bg }};display:grid;place-items:center"><i style="font-size:17px;color:{{ g.c }}">{{ g.i }}</i></span><span style="font-weight:600">{{ g.n }}</span><span style="margin-left:auto;font:500 10.5px 'Geist Mono';color:var(--fg3)">{{ g.kind }}</span></div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px"><sc-for list="{{ g.items }}" as="x" hint-placeholder-count="6"><span style="height:24px;padding:0 8px;border-radius:6px;background:var(--muted);border:1px solid var(--border);font-size:11.5px;color:var(--fg2);display:flex;align-items:center">{{ x }}</span></sc-for></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="7c">
+      <div class="dv-olabel"><a class="dv-oid" href="#7c">7c</a>Automations list · templates</div>
+      <div style="width:1440px;border-radius:16px;border:1px solid var(--border2);background:var(--bg);overflow:hidden;font-size:13px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+        <div style="padding:20px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Automations</span><span style="font:500 11.5px 'Geist Mono';color:var(--fg3)">18 active · 9,410 runs / 7d · 99.1% success</span><div style="flex:1"></div><span style="height:32px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px"><i style="font-size:16px">auto_awesome_mosaic</i>Templates</span><span style="height:32px;padding:0 14px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;gap:6px;font-weight:500"><i style="font-size:16px">add</i>New flow</span></div>
+        <div style="height:36px;display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1.6fr) 130px 120px 150px 110px 60px;gap:14px;align-items:center;padding:0 24px;font-size:11.5px;color:var(--fg3);border-bottom:1px solid var(--border)"><span>Flow</span><span>Trigger → steps</span><span>Workspace</span><span>Runs 7d</span><span>Success</span><span>Owner</span><span>On</span></div>
+        <sc-for list="{{ flows }}" as="f" hint-placeholder-count="7">
+          <div style="height:52px;display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1.6fr) 130px 120px 150px 110px 60px;gap:14px;align-items:center;padding:0 24px;border-bottom:1px solid var(--border);opacity:{{ f.op }}">
+            <span style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.n }}</span>
+            <span style="display:flex;align-items:center;gap:4px"><sc-for list="{{ f.chain }}" as="c" hint-placeholder-count="3"><span style="width:24px;height:24px;border-radius:6px;background:var(--muted2);display:grid;place-items:center"><i style="font-size:14px;color:var(--fg2)">{{ c }}</i></span></sc-for><span style="font-size:11.5px;color:var(--fg3);margin-left:4px">{{ f.steps }}</span></span>
+            <span style="color:var(--fg2)">{{ f.ws }}</span>
+            <span style="font:500 12px 'Geist Mono'">{{ f.runs }}</span>
+            <span style="display:flex;align-items:end;gap:2px;height:20px"><sc-for list="{{ f.spark }}" as="s" hint-placeholder-count="10"><span style="width:6px;height:{{ s.h }};border-radius:2px;background:{{ s.c }}"></span></sc-for><span style="font:500 11.5px 'Geist Mono';color:{{ f.okc }};margin-left:8px">{{ f.ok }}</span></span>
+            <span style="display:flex;align-items:center;gap:6px;color:var(--fg2)"><span style="width:20px;height:20px;border-radius:50%;background:{{ f.g }};color:#fff;font:600 8px Geist;display:grid;place-items:center">{{ f.ai }}</span>{{ f.on }}</span>
+            <span style="width:32px;height:18px;border-radius:9px;background:{{ f.tg }};position:relative"><span style="position:absolute;top:2px;left:{{ f.tl }};width:14px;height:14px;border-radius:50%;background:#fff"></span></span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t8" data-screen-label="08 GitHub two-way sync">
+  <div class="dv-thd"><a class="dv-tid" href="#t8">8</a><span class="dv-tname">GitHub — two-way sync</span></div>
+  <p class="dv-sub">Issues, PRs and Projects stay in sync both ways. Choose direction per field, set who wins on conflict, and watch every change flow in the live log.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="8a">
+      <div class="dv-olabel"><a class="dv-oid" href="#8a">8a</a>acme/platform · field mapping · live log · conflict</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:-40px 0 90px -40px var(--acc),40px 0 90px -40px #3b82f6,0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="admin" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="gh" label="GitHub · acme/platform" icon="sync_alt" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="flex:1;min-width:0;padding:22px 26px;display:flex;flex-direction:column;gap:18px;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:14px">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r2);background:var(--card)"><span style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center"><i style="color:#fff;font-size:17px">task_alt</i></span><div><div style="font-weight:600">Engineering › Platform</div><div style="font:500 11px 'Geist Mono';color:var(--fg3)">prefix TF · 60 tasks</div></div></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;height:2px;background:linear-gradient(90deg,var(--acc),#3b82f6);border-radius:1px;position:relative"><span style="position:absolute;left:50%;top:-14px;margin-left:-15px;width:30px;height:30px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border2);display:grid;place-items:center"><i style="font-size:17px">sync_alt</i></span></div><span style="font:500 11px 'Geist Mono';color:var(--ok);margin-top:16px">● live · last event 4s ago · 1,204 events / 24h</span></div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r2);background:var(--card)"><span style="width:30px;height:30px;border-radius:8px;background:var(--fg);display:grid;place-items:center"><i style="color:var(--bg);font-size:17px">code</i></span><div><div style="font-weight:600">acme/platform</div><div style="font:500 11px 'Geist Mono';color:var(--fg3)">Issues · PRs · Project “Roadmap”</div></div></div>
+              </div>
+              <div style="display:flex;gap:4px;border-bottom:1px solid var(--border)"><sc-for list="{{ ghTabs }}" as="t" hint-placeholder-count="5"><span style="height:38px;padding:0 12px;display:flex;align-items:center;gap:6px;border-bottom:2px solid {{ t.bd }};color:{{ t.c }};font-weight:{{ t.w }}">{{ t.n }}<span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ t.b }}</span></span></sc-for></div>
+              <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);overflow:hidden">
+                <div style="height:36px;display:grid;grid-template-columns:200px 120px 200px minmax(0,1fr) 140px;gap:12px;align-items:center;padding:0 16px;font-size:11.5px;color:var(--fg3);border-bottom:1px solid var(--border);background:var(--muted)"><span>TaskFlow field</span><span style="text-align:center">Direction</span><span>GitHub field</span><span>Transform</span><span>On conflict</span></div>
+                <sc-for list="{{ fieldMap }}" as="m" hint-placeholder-count="9">
+                  <div style="height:44px;display:grid;grid-template-columns:200px 120px 200px minmax(0,1fr) 140px;gap:12px;align-items:center;padding:0 16px;border-bottom:1px solid var(--border)">
+                    <span style="display:flex;align-items:center;gap:8px;font-weight:500"><i style="font-size:15px;color:var(--fg3)">{{ m.i }}</i>{{ m.tf }}</span>
+                    <div style="display:flex;justify-content:center"><div style="display:flex;padding:2px;border-radius:var(--r);background:var(--muted);gap:1px"><sc-for list="{{ m.dirs }}" as="d" hint-placeholder-count="3"><span style="width:28px;height:22px;border-radius:5px;display:grid;place-items:center;background:{{ d.bg }};color:{{ d.c }}"><i style="font-size:14px">{{ d.i }}</i></span></sc-for></div></div>
+                    <span style="font:500 12px 'Geist Mono';color:var(--fg2)">{{ m.gh }}</span>
+                    <span style="font-size:12px;color:var(--fg3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.tr }}</span>
+                    <span style="height:26px;padding:0 8px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:space-between;font-size:12px">{{ m.cf }}<i style="font-size:14px;color:var(--fg3)">unfold_more</i></span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:10px"><div style="font-weight:600">Status ⇄ PR / issue state</div><sc-for list="{{ statusMap }}" as="s" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="width:150px;display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.c }}"></span>{{ s.a }}</span><i style="font-size:15px;color:var(--fg3)">sync_alt</i><span style="font:500 12px 'Geist Mono';color:var(--fg2)">{{ s.b }}</span></div></sc-for></div>
+                <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:10px"><div style="font-weight:600">Scope</div><sc-for list="{{ syncScope }}" as="s" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:10px;font-size:12.5px"><span style="flex:1">{{ s.n }}</span><span style="width:32px;height:18px;border-radius:9px;background:{{ s.tg }};position:relative"><span style="position:absolute;top:2px;left:{{ s.tl }};width:14px;height:14px;border-radius:50%;background:#fff"></span></span></div></sc-for></div>
+              </div>
+            </div>
+            <div style="width:380px;flex:none;border-left:1px solid var(--border);background:var(--rail);display:flex;flex-direction:column">
+              <div style="margin:14px;border:1.5px solid var(--warn);border-radius:var(--r2);background:color-mix(in oklab,var(--warn) 8%,var(--card));padding:14px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:8px"><i style="color:var(--warn)">merge_type</i><span style="font-weight:600">Conflict on TF-147 · title</span></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+                  <div style="border:1px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--card)"><div style="font:500 10.5px 'Geist Mono';color:var(--acc);margin-bottom:4px">TASKFLOW · Liam · 10:41</div>Rate-limit token refresh + burst cap</div>
+                  <div style="border:1px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--card)"><div style="font:500 10.5px 'Geist Mono';color:var(--info);margin-bottom:4px">GITHUB · liam-oc · 10:42</div>Rate limit /auth/refresh</div>
+                </div>
+                <div style="display:flex;gap:6px"><span style="flex:1;height:30px;border-radius:var(--r);border:1px solid var(--border2);display:grid;place-items:center;font-size:12px">Keep TaskFlow</span><span style="flex:1;height:30px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:grid;place-items:center;font-size:12px;font-weight:500">Keep GitHub</span></div>
+              </div>
+              <div style="padding:0 14px 8px;display:flex;align-items:center;gap:8px"><span style="font-weight:600">Live sync log</span><span style="width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px color-mix(in oklab,var(--ok) 25%,transparent)"></span><span style="margin-left:auto;font-size:12px;color:var(--fg3)">All · Errors</span></div>
+              <sc-for list="{{ syncLog }}" as="l" hint-placeholder-count="9"><div style="display:flex;gap:10px;padding:9px 14px;border-top:1px solid var(--border);font-size:12px"><span style="width:22px;height:22px;border-radius:6px;background:{{ l.bg }};display:grid;place-items:center;flex:none"><i style="font-size:14px;color:{{ l.c }}">{{ l.i }}</i></span><div style="flex:1;min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="font:500 11px 'Geist Mono';color:var(--fg3)">{{ l.id }}</span> {{ l.t }}</div><div style="font:500 10.5px 'Geist Mono';color:var(--fg3);margin-top:2px">{{ l.m }}</div></div></div></sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t9" data-screen-label="09 IAM">
+  <div class="dv-thd"><a class="dv-tid" href="#t9">9</a><span class="dv-tname">Identity &amp; access — policies, groups, simulator</span></div>
+  <p class="dv-sub">AWS-IAM-style, org-wide. Every action in the product has an action name (<span style="font-family:'Geist Mono'">task:Delete</span>, <span style="font-family:'Geist Mono'">automation:Publish</span>, <span style="font-family:'Geist Mono'">hr:ApproveLeave</span>…). Policies allow or deny actions on resources with conditions; attach them to users, groups or roles. Explicit deny always wins.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="9a">
+      <div class="dv-olabel"><a class="dv-oid" href="#9a">9a</a>Policy editor · visual + JSON</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="admin" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="iam" label="IAM · EngineerAccess" icon="policy" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;display:flex;min-height:0">
+            <div style="width:236px;flex:none;border-right:1px solid var(--border);background:var(--rail);padding:16px 12px;display:flex;flex-direction:column;gap:2px">
+              <div style="font-size:20px;font-weight:600;letter-spacing:-.02em;padding:0 8px 12px">IAM</div>
+              <sc-for list="{{ iamNav }}" as="n" hint-placeholder-count="7"><div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:var(--r);color:{{ n.c }};background:{{ n.bg }};font-weight:{{ n.w }}"><i style="font-size:17px">{{ n.i }}</i>{{ n.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--fg3)">{{ n.b }}</span></div></sc-for>
+            </div>
+            <div style="flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 420px">
+              <div style="padding:22px 24px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px;font-weight:600;letter-spacing:-.02em">EngineerAccess</span><span style="height:22px;padding:0 8px;border-radius:999px;background:var(--muted2);font-size:11px;color:var(--fg2);display:flex;align-items:center">Customer managed · v4</span><div style="flex:1"></div><span style="height:32px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px"><i style="font-size:16px">science</i>Simulate</span><span style="height:32px;padding:0 14px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;font-weight:500">Save v5</span></div>
+                <div style="font-size:12.5px;color:var(--fg2)">Attached to <b style="color:var(--fg);font-weight:500">Engineers</b> group (24 users) and role <b style="color:var(--fg);font-weight:500">OnCall</b>. Applies across workspaces Engineering, Ops.</div>
+                <sc-for list="{{ statements }}" as="s" hint-placeholder-count="3">
+                  <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);overflow:hidden">
+                    <div style="height:40px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--border)"><span style="height:22px;padding:0 8px;border-radius:5px;background:{{ s.eb }};color:{{ s.ec }};font:600 11px 'Geist Mono';display:flex;align-items:center">{{ s.e }}</span><span style="font-weight:500">{{ s.sid }}</span><div style="flex:1"></div><i style="color:var(--fg3)">content_copy</i><i style="color:var(--fg3);margin-left:8px">delete</i></div>
+                    <div style="padding:12px 14px;display:grid;grid-template-columns:92px 1fr;row-gap:10px;align-items:start;font-size:12.5px">
+                      <span style="color:var(--fg3);padding-top:3px">Actions</span><span style="display:flex;gap:5px;flex-wrap:wrap"><sc-for list="{{ s.a }}" as="x" hint-placeholder-count="3"><span style="height:24px;padding:0 8px;border-radius:6px;background:var(--muted2);font:500 11.5px 'Geist Mono';display:flex;align-items:center">{{ x }}</span></sc-for><span style="height:24px;padding:0 8px;border-radius:6px;border:1px dashed var(--border2);color:var(--fg3);font-size:11.5px;display:flex;align-items:center">+ action</span></span>
+                      <span style="color:var(--fg3);padding-top:3px">Resources</span><span style="display:flex;gap:5px;flex-wrap:wrap"><sc-for list="{{ s.r }}" as="x" hint-placeholder-count="2"><span style="height:24px;padding:0 8px;border-radius:6px;border:1px solid var(--border2);font:500 11.5px 'Geist Mono';color:var(--fg2);display:flex;align-items:center">{{ x }}</span></sc-for></span>
+                      <span style="color:var(--fg3);padding-top:3px">Conditions</span><span style="display:flex;gap:5px;flex-wrap:wrap"><sc-for list="{{ s.c }}" as="x" hint-placeholder-count="1"><span style="height:24px;padding:0 8px;border-radius:6px;background:var(--acc-soft);color:var(--acc);font:500 11.5px 'Geist Mono';display:flex;align-items:center">{{ x }}</span></sc-for></span>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="height:40px;border:1.5px dashed var(--border2);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;gap:6px;color:var(--fg3)"><i style="font-size:16px">add</i>Add statement</div>
+              </div>
+              <div style="border-left:1px solid var(--border);background:var(--rail);display:flex;flex-direction:column">
+                <div style="height:44px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="font-size:16px;color:var(--fg3)">data_object</i><span style="font-weight:600">JSON</span><span style="font-size:11.5px;color:var(--ok);margin-left:6px">✓ valid</span><div style="flex:1"></div><i style="color:var(--fg3)">content_copy</i></div>
+                <div style="flex:1;padding:14px;font:12px/1.7 'Geist Mono';color:var(--fg2);white-space:pre;overflow:hidden">{{ policyJson }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="9b">
+      <div class="dv-olabel"><a class="dv-oid" href="#9b">9b</a>User group · members · attach policies</div>
+      <div style="width:1440px;height:760px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px;position:relative">
+        <div style="width:300px;flex:none;border-right:1px solid var(--border);background:var(--rail);display:flex;flex-direction:column">
+          <div style="height:56px;display:flex;align-items:center;padding:0 16px;gap:8px"><span style="font-size:17px;font-weight:600">User groups</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">9</span><span style="margin-left:auto;height:28px;padding:0 10px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;font-size:12px;font-weight:500">New group</span></div>
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="9"><div style="padding:10px 16px;border-top:1px solid var(--border);background:{{ g.bg }};box-shadow:{{ g.sh }}"><div style="display:flex;align-items:center;gap:8px;font-weight:500"><i style="font-size:16px;color:var(--fg3)">group</i>{{ g.n }}<span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--fg3)">{{ g.m }}</span></div><div style="font-size:11.5px;color:var(--fg3);margin-top:3px;padding-left:24px">{{ g.p }}</div></div></sc-for>
+        </div>
+        <div style="flex:1;min-width:0;padding:22px 26px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:10px;background:var(--muted2);display:grid;place-items:center"><i style="font-size:20px">group</i></span><div><div style="font-size:20px;font-weight:600;letter-spacing:-.02em">Engineers</div><div style="font-size:12px;color:var(--fg3)">24 members · synced from Okta group “eng-all” · SCIM</div></div></div>
+          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border)"><span style="height:36px;padding:0 12px;display:flex;align-items:center;color:var(--fg3)">Members 24</span><span style="height:36px;padding:0 12px;display:flex;align-items:center;border-bottom:2px solid var(--acc);font-weight:500">Permissions 4</span><span style="height:36px;padding:0 12px;display:flex;align-items:center;color:var(--fg3)">Access Advisor</span><span style="height:36px;padding:0 12px;display:flex;align-items:center;color:var(--fg3)">Activity</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">Attached policies</span><div style="flex:1"></div><span style="height:30px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;gap:6px;font-size:12.5px">Detach</span><span style="height:30px;padding:0 12px;border-radius:var(--r);background:var(--acc);color:#fff;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600"><i style="font-size:15px">add_link</i>Attach policies</span></div>
+          <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);overflow:hidden">
+            <div style="height:34px;display:grid;grid-template-columns:28px minmax(0,1fr) 160px 140px 160px;gap:12px;align-items:center;padding:0 14px;font-size:11.5px;color:var(--fg3);background:var(--muted);border-bottom:1px solid var(--border)"><span></span><span>Policy</span><span>Type</span><span>Statements</span><span>Attached via</span></div>
+            <sc-for list="{{ attached }}" as="p" hint-placeholder-count="4"><div style="height:46px;display:grid;grid-template-columns:28px minmax(0,1fr) 160px 140px 160px;gap:12px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border)"><span style="width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2)"></span><span style="display:flex;align-items:center;gap:8px;font-weight:500"><i style="font-size:16px;color:var(--fg3)">policy</i>{{ p.n }}</span><span style="font-size:12px;color:var(--fg2)">{{ p.t }}</span><span style="font:500 12px 'Geist Mono';color:var(--fg2)">{{ p.s }}</span><span style="font-size:12px;color:var(--fg3)">{{ p.v }}</span></div></sc-for>
+          </div>
+          <div style="font-weight:600;margin-top:4px">Effective permissions</div>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px"><sc-for list="{{ effective }}" as="e" hint-placeholder-count="8"><div style="border:1px solid var(--border);border-radius:var(--r);background:var(--card);padding:10px 12px;display:flex;align-items:center;gap:8px"><i style="font-size:16px;color:{{ e.c }}">{{ e.i }}</i><span style="font:500 12px 'Geist Mono'">{{ e.n }}</span><span style="margin-left:auto;font-size:11px;color:var(--fg3)">{{ e.s }}</span></div></sc-for></div>
+        </div>
+        <div style="position:absolute;right:28px;top:120px;width:460px;border:1px solid var(--border2);border-radius:var(--r2);background:var(--card);box-shadow:0 30px 70px rgba(0,0,0,.55);z-index:3">
+          <div style="padding:16px 16px 10px"><div style="font-weight:600;font-size:15px">Attach policies to Engineers</div><div style="height:34px;margin-top:10px;border:1px solid var(--acc);box-shadow:0 0 0 3px var(--acc-soft);border-radius:var(--r);display:flex;align-items:center;gap:8px;padding:0 10px"><i style="font-size:16px;color:var(--fg3)">search</i>github<span style="width:1.5px;height:16px;background:var(--fg)"></span></div></div>
+          <div style="display:flex;gap:4px;padding:0 16px 8px"><span style="height:24px;padding:0 9px;border-radius:999px;background:var(--fg);color:var(--bg);font-size:11.5px;display:flex;align-items:center">All</span><span style="height:24px;padding:0 9px;border-radius:999px;border:1px solid var(--border2);font-size:11.5px;color:var(--fg2);display:flex;align-items:center">TaskFlow managed</span><span style="height:24px;padding:0 9px;border-radius:999px;border:1px solid var(--border2);font-size:11.5px;color:var(--fg2);display:flex;align-items:center">Customer managed</span></div>
+          <sc-for list="{{ attachList }}" as="p" hint-placeholder-count="5"><div style="min-height:52px;display:flex;align-items:center;gap:12px;padding:6px 16px;border-top:1px solid var(--border)"><span style="width:16px;height:16px;border-radius:4px;border:1.5px solid {{ p.cb }};background:{{ p.cbg }};display:grid;place-items:center"><i style="font-size:13px;color:#fff">{{ p.ck }}</i></span><div style="flex:1;min-width:0"><div style="font-weight:500;font:500 12.5px 'Geist Mono'">{{ p.n }}</div><div style="font-size:11.5px;color:var(--fg3)">{{ p.d }}</div></div><span style="font-size:11px;color:var(--fg3)">{{ p.t }}</span></div></sc-for>
+          <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--fg3)">2 selected</span><div style="flex:1"></div><span style="height:32px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center">Cancel</span><span style="height:32px;padding:0 14px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:flex;align-items:center;font-weight:500">Attach 2</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="9c">
+      <div class="dv-olabel"><a class="dv-oid" href="#9c">9c</a>Policy simulator</div>
+      <div style="width:640px;border-radius:16px;border:1px solid var(--border2);background:var(--bg);padding:20px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;font-size:13px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+        <div style="font-weight:600;font-size:15px">Policy simulator</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><sc-for list="{{ simInputs }}" as="s" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:11.5px;color:var(--fg3)">{{ s.k }}</span><div style="height:34px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;padding:0 10px;font:500 12px 'Geist Mono';background:var(--card)">{{ s.v }}</div></div></sc-for></div>
+        <div style="border:1.5px solid var(--bad);border-radius:var(--r2);background:color-mix(in oklab,var(--bad) 8%,var(--card));padding:14px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;gap:8px"><i style="color:var(--bad)">block</i><span style="font-weight:600">Explicitly denied</span><span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--fg3)">evaluated 4 policies</span></div><div style="font:12px/1.7 'Geist Mono';color:var(--fg2)"><div style="color:var(--ok)">✓ EngineerAccess › AllowWork — matched task:*</div><div style="color:var(--bad)">✕ EngineerAccess › NoDeleteOutsideHome — deny task:Delete</div><div style="color:var(--fg3)">   condition: space NOT IN [platform, design] → ops-desk ✓</div></div></div>
+        <div style="font-size:12.5px;color:var(--fg2)">Users see this as: “You can't delete tasks in Ops desk — your Engineers policy only allows deletes in Platform and Design.” with Request access.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t10" data-screen-label="10 HR clock-in">
+  <div class="dv-thd"><a class="dv-tid" href="#t10">10</a><span class="dv-tname">HR — clock-in, attendance, leave, timesheets</span></div>
+  <p class="dv-sub">Org-level HR shared by every workspace. Clock in from web, phone (with location / Wi-Fi rules) or a kiosk. Tracked time links to tasks; approvals and payroll export run through automations.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="10a">
+      <div class="dv-olabel"><a class="dv-oid" href="#10a">10a</a>People &amp; time · manager view</div>
+      <div style="width:1440px;height:900px;border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;background:var(--bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-size:13px">
+        <dc-import name="TF2 Rail" active="hr" hint-size="60px,900px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <dc-import name="TF2 Tabs" active="hr" label="People & time" icon="badge" hint-size="1380px,42px"></dc-import>
+          <div style="flex:1;padding:14px;display:grid;grid-template-columns:320px minmax(0,1fr) 340px;grid-template-rows:auto minmax(0,1fr) minmax(0,1fr);gap:12px;min-height:0">
+            <div style="grid-row:1 / 4;border:1px solid var(--border);border-radius:var(--r2);background:radial-gradient(circle at 50% 0%,color-mix(in oklab,var(--ok) 18%,transparent),transparent 60%),var(--card);padding:20px;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;align-items:center;gap:8px"><i style="color:var(--fg3)">badge</i><span style="font-weight:600">My shift</span><span style="margin-left:auto;font:500 11px 'Geist Mono';color:var(--fg3)">Thu Oct 29</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0"><span style="height:24px;padding:0 10px;border-radius:999px;background:color-mix(in oklab,var(--ok) 18%,transparent);color:var(--ok);font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:var(--ok)"></span>Clocked in · 08:58</span><span style="font:600 48px 'Geist Mono';letter-spacing:-.03em">3:42:18</span><span style="font-size:12px;color:var(--fg3)">Office · Lisbon HQ · Wi-Fi verified</span></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><span style="height:42px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:6px;font-weight:500"><i style="font-size:17px">coffee</i>Start break</span><span style="height:42px;border-radius:var(--r);background:var(--bad);color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600"><i style="font-size:17px">logout</i>Clock out</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:var(--fg3)">Working on</span><div style="height:38px;border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:8px;padding:0 10px"><span style="font:500 11px 'Geist Mono';color:var(--fg3)">TF-142</span>Fix login crash<span style="margin-left:auto;font:500 11.5px 'Geist Mono';color:var(--acc)">1:20</span></div></div>
+              <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--fg3)">Today</span><div style="height:12px;border-radius:6px;background:var(--muted2);display:flex;overflow:hidden"><span style="width:38%;background:var(--ok)"></span><span style="width:4%;background:var(--warn)"></span><span style="width:12%;background:var(--ok)"></span></div><div style="display:flex;justify-content:space-between;font:500 10.5px 'Geist Mono';color:var(--fg3)"><span>09:00</span><span>13:00</span><span>18:00</span></div></div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:auto"><sc-for list="{{ myStats }}" as="s" hint-placeholder-count="3"><div style="border:1px solid var(--border);border-radius:var(--r);padding:8px 10px"><div style="font:600 15px 'Geist Mono'">{{ s.v }}</div><div style="font-size:11px;color:var(--fg3)">{{ s.n }}</div></div></sc-for></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;grid-column:2 / 4">
+              <sc-for list="{{ hrKpis }}" as="k" hint-placeholder-count="4"><div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg3);display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:{{ k.c }}"></span>{{ k.n }}</span><span style="font-size:22px;font-weight:600">{{ k.v }}<span style="font-size:12px;color:var(--fg3);font-weight:400;margin-left:6px">{{ k.t }}</span></span></div></sc-for>
+            </div>
+            <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">groups</i><span style="font-weight:600">Attendance · live</span><span style="font-size:12px;color:var(--fg3)">Engineering</span><div style="flex:1"></div><span style="font-size:12px;color:var(--fg3)">All · In · Out · Late</span></div>
+              <sc-for list="{{ attendance }}" as="a" hint-placeholder-count="8"><div style="height:40px;display:grid;grid-template-columns:28px minmax(0,1fr) 110px 80px 90px 100px;gap:10px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border)"><span style="position:relative;width:24px;height:24px;border-radius:50%;background:{{ a.g }};color:#fff;font:600 9px Geist;display:grid;place-items:center">{{ a.i }}</span><span style="font-weight:500">{{ a.n }}</span><span style="height:22px;padding:0 8px;border-radius:999px;background:{{ a.sb }};color:{{ a.sc }};font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:5px;width:max-content"><span style="width:6px;height:6px;border-radius:50%;background:{{ a.sc }}"></span>{{ a.s }}</span><span style="font:500 12px 'Geist Mono';color:var(--fg2)">{{ a.in }}</span><span style="font:500 12px 'Geist Mono';color:var(--fg2)">{{ a.dur }}</span><span style="font-size:12px;color:var(--fg3);display:flex;align-items:center;gap:4px"><i style="font-size:14px">{{ a.li }}</i>{{ a.loc }}</span></div></sc-for>
+            </div>
+            <div style="grid-row:2 / 4;grid-column:3;border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden">
+              <div style="height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">approval</i><span style="font-weight:600">Approvals</span><span style="min-width:18px;height:18px;border-radius:9px;background:var(--acc);color:#fff;font:600 10.5px Geist;display:grid;place-items:center;padding:0 5px;box-sizing:border-box">5</span></div>
+              <sc-for list="{{ approvals }}" as="p" hint-placeholder-count="5"><div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;background:{{ p.g }};color:#fff;font:600 9px Geist;display:grid;place-items:center">{{ p.i }}</span><span style="font-weight:500">{{ p.n }}</span><span style="height:20px;padding:0 7px;border-radius:5px;background:var(--muted2);font-size:11px;color:var(--fg2);display:flex;align-items:center;margin-left:auto">{{ p.k }}</span></div><div style="font-size:12px;color:var(--fg2)">{{ p.d }}</div><div style="display:flex;gap:6px"><span style="flex:1;height:28px;border-radius:var(--r);border:1px solid var(--border2);display:grid;place-items:center;font-size:12px">Decline</span><span style="flex:1;height:28px;border-radius:var(--r);background:var(--fg);color:var(--bg);display:grid;place-items:center;font-size:12px;font-weight:500">Approve</span></div></div></sc-for>
+            </div>
+            <div style="border:1px solid var(--border);border-radius:var(--r2);background:var(--card);display:flex;flex-direction:column;overflow:hidden;grid-column:2 / 3">
+              <div style="height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)"><i style="color:var(--fg3)">calendar_month</i><span style="font-weight:600">Shifts &amp; leave</span><span style="font:500 11px 'Geist Mono';color:var(--fg3)">Week 44</span><div style="flex:1"></div><span style="height:28px;padding:0 10px;border-radius:var(--r);border:1px solid var(--border2);display:flex;align-items:center;font-size:12px">Export payroll CSV</span></div>
+              <div style="display:grid;grid-template-columns:130px repeat(7,minmax(0,1fr));font:500 10.5px 'Geist Mono';color:var(--fg3);border-bottom:1px solid var(--border)"><span></span><sc-for list="{{ weekDays }}" as="d" hint-placeholder-count="7"><span style="height:26px;display:grid;place-items:center;color:{{ d.c }}">{{ d.n }}</span></sc-for></div>
+              <sc-for list="{{ shifts }}" as="r" hint-placeholder-count="5"><div style="height:36px;display:grid;grid-template-columns:130px repeat(7,minmax(0,1fr));align-items:center;border-bottom:1px solid var(--border);gap:0"><span style="padding-left:14px;display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:{{ r.g }};color:#fff;font:600 7.5px Geist;display:grid;place-items:center">{{ r.i }}</span>{{ r.n }}</span><sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7"><span style="height:24px;margin:0 3px;border-radius:5px;background:{{ c.bg }};color:{{ c.c }};font-size:10.5px;font-weight:500;display:grid;place-items:center;white-space:nowrap;overflow:hidden">{{ c.n }}</span></sc-for></div></sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="10b">
+      <div class="dv-olabel"><a class="dv-oid" href="#10b">10b</a>Phone · clock in with location</div>
+      <div style="width:390px;height:844px;border-radius:44px;border:10px solid #000;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;font-size:14px;position:relative;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)">
+        <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:600 14px Geist"><span>8:57</span><span style="display:flex;gap:4px"><i style="font-size:16px">signal_cellular_alt</i><i style="font-size:16px">wifi</i><i style="font-size:16px">battery_full</i></span></div>
+        <div style="padding:8px 20px;display:flex;align-items:center;gap:10px"><span style="font-size:24px;font-weight:600;letter-spacing:-.02em">Good morning, Maya</span></div>
+        <div style="margin:10px 16px;height:200px;border-radius:20px;border:1px solid var(--border);background:radial-gradient(circle at 55% 50%,color-mix(in oklab,var(--ok) 25%,transparent) 0 40px,transparent 41px),repeating-linear-gradient(45deg,var(--muted) 0 1px,transparent 1px 22px),repeating-linear-gradient(-45deg,var(--muted) 0 1px,transparent 1px 22px),var(--card);position:relative"><span style="position:absolute;left:55%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 4px #fff3"></span><span style="position:absolute;left:12px;bottom:12px;height:26px;padding:0 10px;border-radius:999px;background:var(--bg);border:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:6px"><i style="font-size:14px;color:var(--ok)">location_on</i>Inside Lisbon HQ · 18 m</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+          <div style="width:196px;height:196px;border-radius:50%;background:radial-gradient(circle,var(--ok),color-mix(in oklab,var(--ok) 60%,#000));box-shadow:0 0 0 12px color-mix(in oklab,var(--ok) 15%,transparent),0 0 60px -10px var(--ok);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:4px"><i style="font-size:40px">fingerprint</i><span style="font-size:20px;font-weight:600">Clock in</span><span style="font:500 12px 'Geist Mono';opacity:.85">Shift 09:00 – 18:00</span></div>
+          <span style="font-size:12.5px;color:var(--fg3)">Hold to confirm · Face ID</span>
+        </div>
+        <div style="height:80px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 8px 22px;background:var(--rail)"><sc-for list="{{ phoneTabs }}" as="t" hint-placeholder-count="4"><span style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:{{ t.c }}"><i style="font-size:22px">{{ t.i }}</i>{{ t.n }}</span></sc-for></div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Next: “Sprints, Docs, Templates, Virtual office in v2 style” · “mobile chat + call” · “light theme pass” (Tweaks → theme)</p>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;orange&quot;,&quot;blue&quot;,&quot;emerald&quot;,&quot;rose&quot;,&quot;zinc&quot;],&quot;default&quot;:&quot;orange&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;radius&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sm&quot;,&quot;md&quot;,&quot;lg&quot;],&quot;default&quot;:&quot;md&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const G={MC:'linear-gradient(135deg,#0f766e,#134e4a)',DP:'linear-gradient(135deg,#334155,#1e293b)',SR:'linear-gradient(135deg,#9f1239,#4c0519)',JB:'linear-gradient(135deg,#4d7c0f,#1a2e05)',AT:'linear-gradient(135deg,#0369a1,#082f49)',LO:'linear-gradient(135deg,#a16207,#713f12)',NH:'linear-gradient(135deg,#7c2d12,#431407)',TS:'linear-gradient(135deg,#57534e,#292524)'};
+    const N={MC:'Maya Chen',DP:'Dev Patel',SR:'Sofia Rossi',JB:'Jonas Berg',AT:'Aiko Tanaka',LO:"Liam O'Connor",NH:'Nadia Haddad',TS:'Tomás Silva'};
+    const nav=(i,n,b,on)=>({i,n,b:b||'',bg:on?'var(--muted2)':'transparent',c:on?'var(--fg)':'var(--fg2)',w:on?500:400});
+    const soft=c=>`color-mix(in oklab,${c} 16%,transparent)`;
+    const orgNav=[nav('space_dashboard','Overview','',1),nav('workspaces','Workspaces','4'),nav('group','People','142'),nav('shield_person','IAM'),nav('badge','HR & time'),nav('extension','Integrations'),nav('history','Audit log'),nav('payments','Billing'),nav('settings','Org settings')];
+    const orgKpis=[{n:'Active members',v:'128',t:'/142 seats',tc:'var(--fg3)'},{n:'Clocked in now',v:'86',t:'+4 late',tc:'var(--warn)'},{n:'Automations runs · 7d',v:'9.4k',t:'99.1%',tc:'var(--ok)'},{n:'Policy denials · 24h',v:'12',t:'3 users',tc:'var(--fg3)'}];
+    const ws=(i,n,d,g,role,stats,av,apps,on)=>({i,n,d,g,role,stats:stats.map(([v,n])=>({v,n})),av:av.map(x=>({i:x,g:G[x]})),apps,bd:on?'var(--acc)':'var(--border)',sh:on?'0 0 0 3px var(--acc-soft)':'none'});
+    const workspaces=[ws('code','Engineering','Platform, Web, Design spaces','linear-gradient(135deg,#f97316,#c2410c)','Admin',[['6','spaces'],['48','members'],['18','automations'],['2','repos']],['MC','DP','LO','SR'],'Tracker · Chat · GitHub · Office',1),ws('support_agent','Operations','Ops desk, incidents, vendors','linear-gradient(135deg,#3b82f6,#1d4ed8)','Member',[['3','spaces'],['22','members'],['9','automations'],['—','repos']],['TS','JB'],'Tracker · Chat · SLA'),ws('campaign','Marketing','Campaigns, content calendar','linear-gradient(135deg,#f43f5e,#9f1239)','Guest',[['4','spaces'],['31','members'],['6','automations'],['—','repos']],['AT','NH'],'Tracker · Docs'),ws('handshake','Client portal','Shared with 6 external clients','linear-gradient(135deg,#10b981,#047857)','Admin',[['6','spaces'],['41','members'],['4','automations'],['—','repos']],['MC','SR','TS'],'Requests · Docs')];
+    const orgApps=[{i:'shield_person',n:'Identity & access',d:'9 groups · 23 policies · SSO + SCIM'},{i:'badge',n:'HR & time',d:'Clock-in, leave, shifts, payroll export'},{i:'sync_alt',n:'GitHub',d:'3 orgs connected · two-way sync'},{i:'history',n:'Audit log',d:'Retained 2 years · SIEM stream'},{i:'palette',n:'Brand & themes',d:'Default theme for all workspaces'}];
+    const wsSwitch=[['code','Engineering','48 members · current','linear-gradient(135deg,#f97316,#c2410c)','⌘1',1],['support_agent','Operations','22 members','linear-gradient(135deg,#3b82f6,#1d4ed8)','⌘2'],['campaign','Marketing','31 members','linear-gradient(135deg,#f43f5e,#9f1239)','⌘3'],['handshake','Client portal','41 members','linear-gradient(135deg,#10b981,#047857)','⌘4']].map(([i,n,m,g,k,on])=>({i,n,m,g,k,bg:on?'var(--muted2)':'transparent'}));
+    const ln=(c,w)=>({c,w});
+    const blk=(n,i,col,row,size,lines,bd='var(--border)',bs='solid',bg='var(--card)',sh='none')=>({n,i,col,row,size,lines,bd,bs,bg,sh});
+    const blocks=[
+      blk('My tasks','list','1 / 6','1 / 4','5×3',[ln('#60a5fa','70%'),ln('#a1a1aa','55%'),ln('#f87171','64%'),ln('#60a5fa','48%'),ln('#a1a1aa','60%')],'var(--acc)','solid','var(--card)','0 0 0 3px var(--acc-soft)'),
+      blk('Sprint 14','ecg_heart','6 / 9','1 / 3','3×2',[ln('#22c55e','80%'),ln('#60a5fa','50%')]),
+      blk('#platform','tag','9 / 13','1 / 3','4×2',[ln('var(--acc)','75%'),ln('#a1a1aa','52%'),ln('#a1a1aa','66%')]),
+      blk('Calendar','calendar_today','6 / 9','3 / 5','3×2',[ln('#3b82f6','60%'),ln('#22c55e','40%')]),
+      blk('GitHub PRs','merge','9 / 13','3 / 5','4×2',[ln('#22c55e','70%'),ln('#60a5fa','58%')]),
+      blk('Inbox','inbox','1 / 6','4 / 7','5×3',[ln('var(--acc)','66%'),ln('var(--acc)','50%'),ln('#a1a1aa','58%')]),
+      blk('Burndown','trending_down','6 / 9','5 / 7','3×2',[ln('var(--acc)','85%')])
+    ];
+    const bc=(n,on)=>({n,bd:on?'var(--fg)':'var(--border2)',bg:on?'var(--fg)':'transparent',c:on?'var(--bg)':'var(--fg2)'});
+    const blockCats=[bc('All',1),bc('Tasks'),bc('Chat'),bc('Calls'),bc('HR'),bc('Dev'),bc('Insights'),bc('Automation')];
+    const lw=(i,n,cat,c,on,op=1)=>({i,n,cat,c,bd:on?'var(--acc)':'var(--border)',op});
+    const library=[lw('badge','Clock-in','HR','var(--acc)',1,.35),lw('event_busy','Leave calendar','HR','var(--fg2)'),lw('view_kanban','Kanban','Tasks','var(--fg2)'),lw('view_timeline','Timeline','Tasks','var(--fg2)'),lw('forum','Channel','Chat','var(--fg2)'),lw('videocam','Call / huddle','Calls','var(--fg2)'),lw('merge','PR inbox','Dev','var(--fg2)'),lw('check_circle','CI status','Dev','var(--fg2)'),lw('monitoring','KPI tile','Insights','var(--fg2)'),lw('stacked_line_chart','Cumulative flow','Insights','var(--fg2)'),lw('play_circle','Run flow button','Automation','var(--fg2)'),lw('apartment','Virtual office','People','var(--fg2)')];
+    const ncat=(n,c,items)=>({n,c,bg:soft(c),items:items.map(([i,n])=>({i,n}))});
+    const nodeCats=[ncat('TRIGGERS','#f97316',[['bolt','Task event'],['merge','GitHub event'],['badge','HR event'],['schedule','Schedule / cron'],['webhook','Webhook']]),ncat('FLOW','#a1a1aa',[['call_split','If / Switch'],['repeat','Loop over items'],['hourglass_top','Wait / delay'],['merge_type','Merge']]),ncat('ACTIONS','#60a5fa',[['add_task','Create / update task'],['person_add','Assign'],['forum','Send chat message'],['fork_right','GitHub branch / PR'],['http','HTTP request'],['code','Run code (JS)']])];
+    const fn=(x,y,w,k,n,i,ib,ic,d,meta,state,inp=true)=>({x:x+'px',y:y+'px',w:w+'px',k,n,i,ib,ic,d,meta,inp:inp?'block':'none',bd:state==='run'?'var(--acc)':state==='ok'?'color-mix(in oklab,var(--ok) 55%,var(--border))':'var(--border)',sh:state==='run'?'0 0 0 4px var(--acc-soft),0 0 40px -10px var(--acc)':'0 6px 20px rgba(0,0,0,.25)',si:state==='ok'?'check_circle':state==='run'?'progress_activity':state==='skip'?'remove_circle':'radio_button_unchecked',sc:state==='ok'?'var(--ok)':state==='run'?'var(--acc)':'var(--fg3)',oc:state==='ok'?'var(--ok)':state==='run'?'var(--acc)':'var(--border2)'});
+    const O='#f97316',B='#60a5fa',Z='#a1a1aa';
+    const flowNodes=[
+      fn(20,70,176,'TRIGGER','PR opened','merge',soft(O),O,'repo = acme/platform','1 item · 0ms','ok',false),
+      fn(270,70,196,'FILTER','Labels has “bug”','filter_alt',soft(Z),Z,'pr.labels contains bug','1 → 1 · 2ms','ok'),
+      fn(98,230,164,'IF','Mentions TF-id?','call_split',soft(Z),Z,'/TF-\\d+/ in pr.body','true · 3ms','ok'),
+      fn(380,200,196,'ACTION','Create task','add_task',soft(B),B,'Backend · template “PR bug”','running…','run'),
+      fn(380,340,196,'ACTION','Link to existing','link',soft(B),B,'TF-{{ match }} ← PR','skipped','skip'),
+      fn(98,400,164,'ACTION','Assign least busy','person_add',soft(B),B,'team Platform · by points','waiting','idle'),
+      fn(380,470,196,'ACTION','Post in #platform','forum',soft(B),B,'“New bug PR {{pr.number}}”','waiting','idle'),
+      fn(98,540,196,'ACTION','Comment on PR','chat',soft(B),B,'“Tracked as {{task.id}}”','waiting','idle')
+    ];
+    const es=(n,i,ms,state)=>({n,i,ms,bd:state==='ok'?'color-mix(in oklab,var(--ok) 40%,var(--border))':state==='run'?'var(--acc)':'var(--border)',bg:state==='ok'?soft('#22c55e'):state==='run'?'var(--acc-soft)':'transparent',c:state==='ok'?'var(--ok)':state==='run'?'var(--acc)':'var(--fg3)'});
+    const execSteps=[es('PR opened','check','0ms','ok'),es('Filter','check','2ms','ok'),es('If','check','3ms','ok'),es('Create task','progress_activity','…','run'),es('Assign','schedule','','idle'),es('Post','schedule','','idle'),es('Comment','schedule','','idle')];
+    const p=(k,pre,vars,post,focus)=>({k,pre,vars,post,bd:focus?'var(--acc)':'var(--border)'});
+    const params=[p('Workspace / space','Engineering › Platform › Backend',[],''),p('Template','PR bug ticket',[],''),p('Title','[Bug] ',['pr.title'],'',1),p('Description','From ',['pr.html_url'],' by ',),p('Labels','bug, ',['pr.labels'],''),p('Sprint','Current sprint (auto)',[],'')];
+    params[3].vars=['pr.html_url','pr.user.login'];
+    const inputTree=[['pr','{ }','10px'],['number','422','24px'],['title','Fix SAML refresh race','24px'],['labels','["bug","auth"]','24px'],['user.login','jonas-berg','24px'],['head.ref','tf-160-saml-refresh','24px'],['html_url','github.com/acme/platform/pull/422','24px']].map(([k,v,pad])=>({k,v,pad}));
+    const cg=(n,i,c,kind,items)=>({n,i,c,bg:soft(c),kind,items});
+    const catalogue=[
+      cg('Tasks','task_alt',O,'trigger + action',['Created','Updated','Status changed','Assigned','Unassigned','Priority changed','Due soon','Overdue','Moved list','Label added','Checklist done','Subtask done','Estimate changed','Archived','Deleted']),
+      cg('Sprints & projects','sprint',O,'trigger + action',['Sprint started','Sprint ended','Scope changed','Capacity exceeded','Milestone reached','Project created','Member added']),
+      cg('Comments & chat','forum',B,'trigger + action',['Comment added','Mentioned','Reaction added','Message in channel','Thread resolved','Huddle started','Call ended (notes ready)']),
+      cg('GitHub','merge','#a1a1aa','trigger + action',['PR opened','PR merged','PR closed','Review requested','Review submitted','Push','CI failed','CI passed','Issue opened','Issue closed','Create branch','Comment on PR','Add label']),
+      cg('HR & time','badge','#22c55e','trigger + action',['Clocked in','Clocked out','Late arrival','Missed clock-out','Leave requested','Leave approved','Timesheet submitted','Overtime > 2h','Birthday / anniversary']),
+      cg('People & access','shield_person','#f43f5e','trigger + action',['User joined','User left','Group changed','Policy denied','Role assigned','Guest invited']),
+      cg('Docs & files','description','#3b82f6','trigger + action',['Doc created','Doc edited','Doc shared','File uploaded','Export PDF']),
+      cg('Utility','construction','#a1a1aa','flow',['Schedule / cron','Webhook in','HTTP request','Run JS','If / Switch','Loop','Wait until','Delay','Merge','Set variable','Approval step','Error handler'])
+    ];
+    const spark=(fails)=>Array.from({length:10},(_,k)=>({h:(8+((k*7)%12))+'px',c:fails.includes(k)?'#ef4444':'var(--ok)'}));
+    const fl=(n,chain,steps,wsn,runs,ok,ai,fails=[],on=true)=>({n,chain,steps,ws:wsn,runs,ok:ok+'%',okc:ok<97?'var(--warn)':'var(--ok)',ai,g:G[ai],on:N[ai].split(' ')[0],spark:spark(fails),tg:on?'var(--acc)':'var(--border2)',tl:on?'16px':'2px',op:on?1:.55});
+    const flows=[fl('Bug PR → task → assign → notify',['merge','add_task','person_add'],'7 steps','Engineering','1,284',99.6,'MC'),fl('PR merged → Done + release note',['merge','edit','description'],'4 steps','Engineering','962',100,'MC'),fl('CI failed on main → reopen + page on-call',['error','forum','call'],'6 steps','Engineering','41',92.7,'JB',[3,7]),fl('Missed clock-out → remind + flag timesheet',['badge','forum','flag'],'3 steps','Org · HR','118',100,'TS'),fl('Leave approved → block calendar + reassign tasks',['event_busy','calendar_today','person_add'],'5 steps','Org · HR','26',100,'MC'),fl('Client request email → task with SLA',['mail','add_task','timer'],'4 steps','Client portal','340',98.2,'SR',[5]),fl('Nightly: overdue digest to managers',['schedule','filter_alt','forum'],'3 steps','All workspaces','7',100,'MC',[],false)];
+    const gt=(n,b,on)=>({n,b,bd:on?'var(--acc)':'transparent',c:on?'var(--fg)':'var(--fg3)',w:on?500:400});
+    const ghTabs=[gt('Field mapping','',1),gt('Repositories','3'),gt('Projects','1'),gt('Sync log','1.2k'),gt('Webhook & secret','')];
+    const D={both:'sync_alt',to:'arrow_forward',from:'arrow_back'};
+    const fm=(i,tf,dir,gh,tr,cf)=>({i,tf,gh,tr,cf,dirs:['from','both','to'].map(k=>({i:D[k],bg:k===dir?'var(--bg)':'transparent',c:k===dir?'var(--acc)':'var(--fg3)'}))});
+    const fieldMap=[fm('title','Title','both','issue.title','—','Latest wins'),fm('notes','Description','both','issue.body','Markdown ⇄ rich text','Latest wins'),fm('radio_button_checked','Status','both','state + Project.Status','see status map','TaskFlow wins'),fm('person','Assignees','both','assignees[]','match by email / GitHub login','Merge'),fm('sell','Labels','both','labels[]','prefix “tf:” ignored','Merge'),fm('sprint','Sprint','to','milestone','Sprint 14 → “Sprint 14”','TaskFlow wins'),fm('flag','Priority','to','Project.Priority','P1 → “High”','TaskFlow wins'),fm('chat','Comments','both','issue comments','mirrored with author','Append'),fm('merge','Linked PRs','from','timeline · cross-ref','auto-link by branch tf-###','GitHub wins')];
+    const statusMap=[['To do','#a1a1aa','open · Todo'],['In progress','#60a5fa','open · In progress / draft PR'],['In review','#f59e0b','PR ready · review requested'],['Done','#22c55e','closed (completed) · merged']].map(([a,c,b])=>({a,c,b}));
+    const ss=(n,on)=>({n,tg:on?'var(--acc)':'var(--border2)',tl:on?'16px':'2px'});
+    const syncScope=[ss('Create TaskFlow task for every new issue',1),ss('Create GitHub issue for tasks in Backend, Web',1),ss('Sync closed issues older than 90 days',0),ss('Mirror GitHub Project “Roadmap” as Timeline view',1)];
+    const lg=(dir,id,t,m)=>({id,t,m,i:dir==='in'?'south_west':dir==='out'?'north_east':'error',c:dir==='in'?'var(--info)':dir==='out'?'var(--acc)':'var(--bad)',bg:dir==='err'?soft('#ef4444'):dir==='in'?soft('#60a5fa'):'var(--acc-soft)'});
+    const syncLog=[lg('in','#422','PR opened → created TF-161','GitHub → TaskFlow · 4s ago'),lg('out','TF-142','Status → In review → PR #418 ready','TaskFlow → GitHub · 22s'),lg('in','#418','Review approved by liam-oc','GitHub → TaskFlow · 1m'),lg('out','TF-149','Assignee + Dev Patel','TaskFlow → GitHub · 3m'),lg('in','#5052','Label “enhancement” added','GitHub → TaskFlow · 6m'),lg('err','#5049','Rate limited (secondary) · retry in 30s','retrying · 8m'),lg('out','TF-160','Comment mirrored (Jonas)','TaskFlow → GitHub · 12m'),lg('in','#421','Merged → TF-147 Done','GitHub → TaskFlow · 15m')];
+    const iamNav=[nav('person','Users','142'),nav('group','User groups','9'),nav('badge','Roles','6'),nav('policy','Policies','23',1),nav('key','Access keys & tokens','14'),nav('science','Simulator'),nav('history','Access log')];
+    const st=(e,sid,a,r,c)=>({e,sid,a,r,c,eb:e==='Allow'?soft('#22c55e'):soft('#ef4444'),ec:e==='Allow'?'var(--ok)':'var(--bad)'});
+    const statements=[st('Allow','AllowWorkInEngineering',['task:*','sprint:Read','sprint:Update','doc:*','chat:*','layout:Edit'],['ws/engineering/space/*'],['MFA = true']),st('Allow','AllowRunAutomations',['automation:Run','automation:Read','github:Sync'],['ws/engineering/automation/*'],['time 07:00–22:00 local']),st('Deny','NoDeleteOutsideHome',['task:Delete','space:Delete','automation:Publish'],['ws/*/space/*'],['space NOT IN [platform, design]'])];
+    const policyJson=`{
+  "Version": "2026-01-01",
+  "Statement": [
+    {
+      "Sid": "AllowWorkInEngineering",
+      "Effect": "Allow",
+      "Action": ["task:*", "sprint:Read",
+                 "sprint:Update", "doc:*",
+                 "chat:*", "layout:Edit"],
+      "Resource": "tf:ws/engineering/space/*",
+      "Condition": { "Bool": { "tf:MFA": true } }
+    },
+    {
+      "Sid": "AllowRunAutomations",
+      "Effect": "Allow",
+      "Action": ["automation:Run",
+                 "automation:Read", "github:Sync"],
+      "Resource": "tf:ws/engineering/automation/*"
+    },
+    {
+      "Sid": "NoDeleteOutsideHome",
+      "Effect": "Deny",
+      "Action": ["task:Delete", "space:Delete",
+                 "automation:Publish"],
+      "Resource": "tf:ws/*/space/*",
+      "Condition": { "StringNotIn": {
+        "tf:space": ["platform", "design"] } }
+    }
+  ]
+}`;
+    const gr=(n,m,p,on)=>({n,m,p,bg:on?'var(--acc-soft)':'transparent',sh:on?'inset 2px 0 0 var(--acc)':'none'});
+    const groups=[gr('Org admins','3','AdministratorAccess'),gr('Engineers','24','EngineerAccess +3',1),gr('Engineering managers','5','ManagerAccess, HRApprover'),gr('Ops','12','OpsDeskAccess'),gr('Marketing','31','MarketingAccess'),gr('HR','4','HRFullAccess'),gr('Finance','3','BillingAccess, PayrollExport'),gr('Contractors','8','ReadOnly + time-boxed'),gr('Client guests','41','ClientPortalAccess')];
+    const attached=[['EngineerAccess','Customer managed','3','Group'],['TaskFlowChatUser','TaskFlow managed','2','Group'],['GitHubSyncOperator','TaskFlow managed','4','Group'],['HRSelfService','TaskFlow managed','5','Org default']].map(([n,t,s,v])=>({n,t,s,v}));
+    const ef=(n,s,ok)=>({n,s,i:ok?'check_circle':'block',c:ok?'var(--ok)':'var(--bad)'});
+    const effective=[ef('task:*','allow',1),ef('task:Delete','deny*',0),ef('chat:*','allow',1),ef('github:Sync','allow',1),ef('automation:Run','allow',1),ef('automation:Publish','deny*',0),ef('hr:ClockIn','allow',1),ef('hr:ApproveLeave','implicit deny',0)];
+    const al=(n,d,t,on)=>({n,d,t,cb:on?'var(--acc)':'var(--border2)',cbg:on?'var(--acc)':'transparent',ck:on?'check':''});
+    const attachList=[al('GitHubSyncOperator','Configure repos, mapping, resolve conflicts','Managed'),al('GitHubReadOnly','View sync log and PR inbox','Managed',1),al('GitHubBranchCreator','github:CreateBranch, github:CreatePR','Managed',1),al('GitHubAdmin','Connect orgs, rotate webhook secrets','Managed'),al('ReleaseManagers-GitHub','Custom · merge-based automations','Customer')];
+    const simInputs=[{k:'Principal',v:"user/liam.oconnor"},{k:'Action',v:'task:Delete'},{k:'Resource',v:'ws/ops/space/ops-desk/TF-133'}];
+    const myStats=[{n:'This week',v:'31:15'},{n:'Overtime',v:'0:45'},{n:'Leave left',v:'14d'}];
+    const hrKpis=[{n:'Clocked in',v:'38',t:'/ 48',c:'var(--ok)'},{n:'On break',v:'4',t:'',c:'var(--warn)'},{n:'Late today',v:'3',t:'avg 12m',c:'var(--bad)'},{n:'On leave',v:'5',t:'2 sick',c:'#a1a1aa'}];
+    const at=(i,s,inT,dur,loc,li)=>{const m={In:['var(--ok)',soft('#22c55e')],Break:['var(--warn)',soft('#f59e0b')],Late:['var(--bad)',soft('#ef4444')],Leave:['var(--fg3)','var(--muted2)'],Remote:['var(--info)',soft('#60a5fa')]}[s];return {i,g:G[i],n:N[i],s,sc:m[0],sb:m[1],in:inT,dur,loc,li};};
+    const attendance=[at('MC','In','08:58','3:42','Lisbon HQ','apartment'),at('DP','In','08:41','4:01','Lisbon HQ','apartment'),at('LO','Remote','09:05','3:35','Dublin · VPN','home'),at('SR','Break','09:12','3:10','Milan office','apartment'),at('JB','In','07:55','4:45','Berlin · kiosk','tablet_mac'),at('TS','Late','10:24','2:16','São Paulo','home'),at('AT','Remote','09:00','3:40','Tokyo','home'),at('NH','Leave','—','—','Back Nov 4','event_busy')];
+    const ap=(i,k,d)=>({i,g:G[i],n:N[i],k,d});
+    const approvals=[ap('SR','Leave','Nov 11 – 15 · 5 days annual · 9 left after'),ap('TS','Correction','Clock-out missing Oct 28 · requests 18:30'),ap('LO','Timesheet','Week 43 · 41h 20m · 1h 20m overtime'),ap('AT','Leave','Nov 13 – 14 · conference'),ap('JB','Shift swap','Sat on-call ↔ Dev Patel')];
+    const weekDays=['Mon 26','Tue 27','Wed 28','Thu 29','Fri 30','Sat 31','Sun 1'].map((n,k)=>({n,c:k===3?'var(--acc)':'var(--fg3)'}));
+    const C={d:['09–18','var(--muted2)','var(--fg2)'],e:['07–16','var(--muted2)','var(--fg2)'],o:['On-call',soft('#f97316'),'var(--acc)'],l:['Leave',soft('#f59e0b'),'var(--warn)'],s:['Sick',soft('#ef4444'),'var(--bad)'],x:['','transparent','var(--fg3)'],r:['Remote',soft('#60a5fa'),'var(--info)']};
+    const sh=(i,codes)=>({i,g:G[i],n:N[i].split(' ')[0],cells:codes.split('').map(k=>({n:C[k][0],bg:C[k][1],c:C[k][2]}))});
+    const shifts=[sh('DP','dddddox'),sh('JB','eeeeexo'),sh('LO','rrdrrxx'),sh('TS','ddsddxx'),sh('NH','llllldx')];
+    const phoneTabs=[['badge','Clock','var(--acc)'],['task_alt','Tasks','var(--fg2)'],['forum','Chat','var(--fg2)'],['person','Me','var(--fg2)']].map(([i,n,c])=>({i,n,c}));
+    return { theme:this.props.theme ?? 'dark', accent:this.props.accent ?? 'orange', radius:this.props.radius ?? 'md', orgNav, orgKpis, workspaces, orgApps, wsSwitch, blocks, blockCats, library, nodeCats, flowNodes, execSteps, params, inputTree, catalogue, flows, ghTabs, fieldMap, statusMap, syncScope, syncLog, iamNav, statements, policyJson, groups, attached, effective, attachList, simInputs, myStats, hrKpis, attendance, approvals, weekDays, shifts, phoneTabs };
+  }
+}
+</script>
+</body>
+</html>

@@ -709,6 +709,7 @@ src/modules/
 ├── hr/              pages/{directory,departments,time-off,approvals,leave-types}.page.tsx, lib/{hr-labels,working-days}.ts
 │                    components/{profile-dialog,leave-request-dialog,leave-type-dialog,leave-balance-card,leave-status-badge}.tsx
 ├── inbox/           pages/inbox.page.tsx, components/notification-item.tsx, lib/describe-notification.ts
+├── preferences/     pages/appearance.page.tsx (theme, accent, radius, density, font), components/{appearance-preview,theme-card}.tsx, lib/appearance-options.ts
 ├── audit-log/       pages/workspace-audit-log.page.tsx, components/{audit-log-table,audit-filter}.tsx
 └── admin/           pages/{admin-users,admin-workspaces,admin-audit-log}.page.tsx, components/{admin-layout,pager,search-box}.tsx
 ```

@@ -131,6 +131,8 @@ fragment PreferencesFields on Preferences {
   theme
   accent
   density
+  radius
+  font
   sidebarCollapsed
   sidebarWidth
   defaultTaskView

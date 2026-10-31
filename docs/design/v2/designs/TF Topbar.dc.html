@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="height:48px;display:flex;align-items:center;gap:12px;padding:0 12px 0 14px;border-bottom:1px solid var(--line);background:var(--paper);font-family:Geist,system-ui,sans-serif;font-size:13px;color:var(--ink);box-sizing:border-box">
+  <div style="width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:5px;box-sizing:border-box;flex:none"><span style="background:var(--accent-ink);border-radius:1px"></span><span style="background:var(--accent-ink);border-radius:1px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:1px;opacity:.55"></span><span style="background:var(--accent-ink);border-radius:1px"></span></div>
+  <span style="font-weight:600">Acme</span>
+  <sc-for list="{{ crumbs }}" as="c" hint-placeholder-count="2"><span style="color:var(--line2)">/</span><span style="color:{{ c.col }};font-weight:{{ c.w }}">{{ c.n }}</span></sc-for>
+  <span style="display:flex;align-items:center;gap:4px;height:26px;padding:0 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;color:var(--ink2);margin-left:6px;white-space:nowrap"><i style="font-size:14px">dashboard_customize</i>{{ layout }}<i style="font-size:15px">expand_more</i></span>
+  <div style="flex:1;display:flex;justify-content:center"><div style="width:360px;height:30px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--ink3);font-size:12.5px;box-sizing:border-box;white-space:nowrap"><i>search</i>Search or run a command<span style="margin-left:auto;font:11px 'Geist Mono',monospace">⌘K</span></div></div>
+  <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3);white-space:nowrap"><i style="font-size:14px;color:var(--green)">cloud_done</i>Saved · synced</span>
+  <span style="display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line2);border-radius:7px;font-size:12.5px;font-weight:500;background:var(--surface);box-sizing:border-box"><i style="font-size:15px">dashboard_customize</i>Arrange<span style="font:11px 'Geist Mono',monospace;color:var(--ink3);border:1px solid var(--line);border-radius:4px;padding:0 4px">E</span></span>
+  <span style="position:relative;display:flex"><i style="color:var(--ink2);padding:6px">notifications</i><span style="position:absolute;right:5px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--amber);border:1.5px solid var(--paper)"></span></span>
+  <span style="width:28px;height:28px;border-radius:50%;background:#5B7A6E;color:#fff;font-size:10.5px;font-weight:600;display:grid;place-items:center;flex:none">MC</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:48},&quot;path&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Platform / Sprint 14&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;layout&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Default layout&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const parts = (this.props.path ?? 'Platform / Sprint 14').split(' / ');
+    return {
+      crumbs: parts.map((n,i)=>({n, col:i===parts.length-1?'var(--ink)':'var(--ink2)', w:i===parts.length-1?500:400})),
+      layout: this.props.layout ?? 'Default layout'
+    };
+  }
+}
+</script>
+</body>
+</html>

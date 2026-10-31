@@ -281,6 +281,8 @@ input CreateSprintInput {
 
 input CreateTaskInput {
   assigneeId: ID
+
+  """All assigned user IDs"""
   assigneeIds: [ID!]
 
   """Values keyed by custom field id"""
@@ -1246,6 +1248,8 @@ type Preferences {
   dateFormat: String!
   defaultTaskView: String!
   density: String!
+  font: String!
+  radius: String!
   savedViews: [SavedView!]!
   sidebarCollapsed: Boolean!
   sidebarWidth: Int!
@@ -1634,7 +1638,7 @@ input SaveViewInput {
   id: ID
   name: String!
   pinned: Boolean! = false
-  resource: String!
+  resource: String! = "tasks"
   scope: String
   sort: [SortInput!]
   where: String
@@ -1775,6 +1779,8 @@ input TableLayoutInput {
 
 type Task {
   assigneeId: ID
+
+  """All assigned user IDs"""
   assigneeIds: [ID!]!
   completedAt: String
   createdAt: String!
@@ -2002,6 +2008,8 @@ input UpdatePreferencesInput {
   dateFormat: String
   defaultTaskView: String
   density: String
+  font: String
+  radius: String
   sidebarCollapsed: Boolean
   sidebarWidth: Int
   taskDetailMode: String
@@ -2038,6 +2046,8 @@ input UpdateSprintInput {
 
 input UpdateTaskInput {
   assigneeId: ID
+
+  """All assigned user IDs"""
   assigneeIds: [ID!]
 
   """Merged into the current values; null clears a field"""

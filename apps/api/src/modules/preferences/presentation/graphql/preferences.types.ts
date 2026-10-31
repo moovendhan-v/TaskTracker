@@ -6,8 +6,10 @@ import {
   COLOR_PATTERN,
   DATE_FORMATS,
   DENSITIES,
+  FONTS,
   FILTER_LIMITS,
   PREFERENCE_LIMITS,
+  RADII,
   TASK_DETAIL_MODES,
   TASK_VIEWS,
   THEMES,
@@ -15,7 +17,9 @@ import {
   type Accent,
   type DateFormat,
   type Density,
+  type Font,
   type PreferenceSettings,
+  type Radius,
   type SavedView,
   type TableLayout,
   type TaskDetailMode,
@@ -72,6 +76,8 @@ export class PreferencesGql implements UserPreferences {
   @Field(() => String) theme: Theme;
   @Field(() => String) accent: Accent;
   @Field(() => String) density: Density;
+  @Field(() => String) radius: Radius;
+  @Field(() => String) font: Font;
   @Field() sidebarCollapsed: boolean;
   @Field(() => Int) sidebarWidth: number;
   @Field(() => String) defaultTaskView: TaskView;
@@ -90,6 +96,8 @@ export class UpdatePreferencesInput implements Partial<PreferenceSettings> {
   @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(THEMES) theme?: Theme;
   @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(ACCENTS) accent?: Accent;
   @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(DENSITIES) density?: Density;
+  @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(RADII) radius?: Radius;
+  @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(FONTS) font?: Font;
   @Field({ nullable: true }) @IsOmittable() @IsBoolean() sidebarCollapsed?: boolean;
   @Field(() => Int, { nullable: true })
   @IsOmittable()
