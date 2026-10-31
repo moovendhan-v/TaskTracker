@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { CalendarClockIcon, ChartBarStackedIcon, ClockIcon, HistoryIcon, ListTreeIcon, TimerIcon, TriangleAlertIcon, UsersRoundIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { SpaceResponse } from '@taskflow/shared-types';
 import { ErrorState } from '@/components/common/error-state';
-import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { Meter } from '@/components/kit/charts';
-import { Panel } from '@/components/kit/panel';
+import { Block } from '@/components/kit/block';
+import { blockStateOf } from '@/components/kit/block-state';
 import { usePreferences } from '@/core/preferences/use-preferences';
 import { queryKeys } from '@/lib/query-keys';
 import { formatNumericDate, type Period } from '@/lib/periods';
@@ -14,7 +15,7 @@ import { formatMinutes } from '@/modules/time';
 import { useDashboard } from '../hooks/use-dashboard';
 import { dashboardInput } from '../lib/dashboard-input';
 import { DashboardFilters } from './dashboard-filters';
-import { HoursByTask, HoursPerDay, KpiRow, StatusBreakdown, Workload } from './dashboard-panels';
+import { HoursByTask, HoursPerDay, KpiRow, KpiRowSkeleton, StatusBreakdown, Workload } from './dashboard-panels';
 import { DashboardTaskList } from './dashboard-task-list';
 import { SpaceStatusChip } from './space-status-chip';
 
@@ -27,6 +28,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   const [weekAhead] = useState(() => Date.now() + 7 * 86_400_000);
   const dashboard = useDashboard(workspaceId, dashboardInput(period, weekStart, { spaceId: space.id }));
   const data = dashboard.data;
+  const state = blockStateOf(dashboard, { what: 'this project' });
   const { data: fields = [] } = useCustomFields(workspaceId, 'space');
   const attributes = fields
     .filter((field) => !field.spaceId || field.spaceId === space.id)
@@ -46,9 +48,8 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
         refreshing={dashboard.isFetching}
         onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
       />
-      {dashboard.isLoading ? <FullPageSpinner /> : null}
       {dashboard.isError ? <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} /> : null}
-      {data ? (
+      {!dashboard.isError ? (
         <>
           <section className="grid gap-6 rounded-xl border bg-card p-5 lg:grid-cols-2">
             <div className="grid content-start gap-2">
@@ -78,22 +79,22 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
               </dl>
             </div>
           </section>
-          <KpiRow data={data} mode="project" />
-          <Panel title="Status breakdown">
-            <StatusBreakdown data={data} openOnly={false} />
-          </Panel>
+          {data ? <KpiRow data={data} mode="project" /> : <KpiRowSkeleton tiles={6} />}
+          <Block title="Status breakdown" icon={ChartBarStackedIcon} state={state} maximisable>
+            {data ? <StatusBreakdown data={data} openOnly={false} /> : null}
+          </Block>
           <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Hours per day">
-              <HoursPerDay data={data} height={200} />
-            </Panel>
-            <Panel title="Where the time went" aside="top tasks" maxBodyHeight={320}>
-              <HoursByTask data={data} />
-            </Panel>
+            <Block title="Hours per day" icon={ClockIcon} state={state} skeleton="chart" maximisable>
+              {data ? <HoursPerDay data={data} height={200} /> : null}
+            </Block>
+            <Block title="Where the time went" icon={TimerIcon} aside="top tasks" state={state} maxBodyHeight={320} maximisable>
+              {data ? <HoursByTask data={data} /> : null}
+            </Block>
           </div>
-          <Panel title="Phases" aside="parent tasks and their subtasks">
-            {data.phases.length === 0 ? <p className="py-4 text-center text-sm text-muted-foreground">No tasks with subtasks yet.</p> : null}
+          <Block title="Phases" icon={ListTreeIcon} aside="parent tasks and their subtasks" state={state} maximisable>
+            {data?.phases.length === 0 ? <p className="py-4 text-center text-sm text-muted-foreground">No tasks with subtasks yet.</p> : null}
             <ul className="divide-y">
-              {data.phases.map((phase) => (
+              {data?.phases.map((phase) => (
                 <li key={phase.id}>
                   <button type="button" onClick={() => openTask(phase.id)} className="grid w-full grid-cols-[minmax(0,1fr)_8rem_5rem_6rem_6rem] items-center gap-4 py-3 text-left hover:bg-muted/40">
                     <span className="min-w-0">
@@ -114,21 +115,21 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
                 </li>
               ))}
             </ul>
-          </Panel>
+          </Block>
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="People">
-              <Workload data={data} />
-            </Panel>
-            <Panel title={`Overdue (${data.summary.overdue})`} maxBodyHeight={420}>
-              <DashboardTaskList tasks={data.overdueTasks} variant="number" empty="Nothing overdue." />
-            </Panel>
-            <Panel title={`Due in the next 7 days (${data.summary.dueSoon})`} maxBodyHeight={420}>
-              <DashboardTaskList tasks={data.dueSoonTasks.filter((task) => task.dueDate && new Date(task.dueDate).getTime() < weekAhead)} variant="number" empty="Nothing due this week." />
-            </Panel>
+            <Block title="People" icon={UsersRoundIcon} state={state} maximisable>
+              {data ? <Workload data={data} /> : null}
+            </Block>
+            <Block title="Overdue" icon={TriangleAlertIcon} chip={data ? { label: String(data.summary.overdue) } : undefined} state={state} maxBodyHeight={420} maximisable>
+              {data ? <DashboardTaskList tasks={data.overdueTasks} variant="number" empty="Nothing overdue." /> : null}
+            </Block>
+            <Block title="Due in the next 7 days" icon={CalendarClockIcon} chip={data ? { label: String(data.summary.dueSoon) } : undefined} state={state} maxBodyHeight={420} maximisable>
+              {data ? <DashboardTaskList tasks={data.dueSoonTasks.filter((task) => task.dueDate && new Date(task.dueDate).getTime() < weekAhead)} variant="number" empty="Nothing due this week." /> : null}
+            </Block>
           </div>
-          <Panel title="Recently updated">
-            <DashboardTaskList tasks={data.recentlyUpdated} variant="number" date="updated" />
-          </Panel>
+          <Block title="Recently updated" icon={HistoryIcon} state={state} maximisable>
+            {data ? <DashboardTaskList tasks={data.recentlyUpdated} variant="number" date="updated" /> : null}
+          </Block>
         </>
       ) : null}
     </div>

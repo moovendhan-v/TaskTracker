@@ -632,7 +632,7 @@ src/components/
 │   ├── section.tsx                   collapsible block (accordion item), controlled or remembered per browser
 │   ├── option-picker.tsx             popover list with search, optional clear row and a check on the current value
 │   ├── range-calendar.tsx            day-range picker
-│   ├── segmented.tsx  panel.tsx  stat-card.tsx  status-pill.tsx
+│   ├── segmented.tsx  block.tsx (+ block-state.ts)  stat-card.tsx  status-pill.tsx
 │   ├── charts.tsx                    columns, grouped columns, stacked bar, bar list, meter, line chart (no chart library)
 │   └── notify.ts                     toast presets: success, info, error, undoable, promise
 └── layout/

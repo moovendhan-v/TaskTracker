@@ -17,6 +17,11 @@ export function isClientError(error: unknown): boolean {
   return error instanceof GraphQLRequestError && CLIENT_ERROR_CODES.has(error.code ?? '');
 }
 
+/** The server refused because of a permission or policy. */
+export function isForbidden(error: unknown): boolean {
+  return error instanceof GraphQLRequestError && error.code === 'FORBIDDEN';
+}
+
 export function isUnauthenticated(error: unknown): boolean {
   return error instanceof GraphQLRequestError && error.code === 'UNAUTHENTICATED';
 }
