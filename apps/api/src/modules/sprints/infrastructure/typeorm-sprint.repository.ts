@@ -38,7 +38,7 @@ export class TypeOrmSprintRepository extends SprintRepository {
   }
 
   create(sprint: NewSprint): Promise<Sprint> {
-    return this.repository.save(this.repository.create({ ...sprint, status: 'planned', completedAt: null }));
+    return this.repository.save(this.repository.create({ ...sprint, status: 'planned', completedAt: null, committedTasks: null }));
   }
 
   save(sprint: Sprint): Promise<Sprint> {
@@ -57,6 +57,19 @@ export class TypeOrmSprintRepository extends SprintRepository {
          AND status_id NOT IN (SELECT id FROM task_status WHERE workspace_id = $2 AND category IN ('done', 'cancelled'))
        RETURNING id`,
       [toSprintId, workspaceId, fromSprintId],
+    );
+    return countReturnedRows(moved);
+  }
+
+  async moveTasks(workspaceId: string, fromSprintId: string, taskIds: readonly string[], toSprintId: string | null): Promise<number> {
+    if (taskIds.length === 0) return 0;
+    // Same guard as moveOpenTasks: only open tasks of the sprint being completed can move.
+    const moved: unknown = await this.transactional.manager.query(
+      `UPDATE task SET sprint_id = $1, updated_at = now()
+       WHERE workspace_id = $2 AND sprint_id = $3 AND id = ANY($4::uuid[])
+         AND status_id NOT IN (SELECT id FROM task_status WHERE workspace_id = $2 AND category IN ('done', 'cancelled'))
+       RETURNING id`,
+      [toSprintId, workspaceId, fromSprintId, [...taskIds]],
     );
     return countReturnedRows(moved);
   }

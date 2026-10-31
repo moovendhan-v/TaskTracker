@@ -13,6 +13,8 @@ export interface SprintResponse {
   totalTasks: number;
   doneTasks: number;
   completedAt: string | null;
+  /** Tasks in the sprint when it was completed (before unfinished work moved out); null before then. */
+  committedTasks: number | null;
 }
 
 export interface CreateSprintRequest {
@@ -27,4 +29,9 @@ export type UpdateSprintRequest = Partial<CreateSprintRequest>;
 export interface CompleteSprintRequest {
   /** Where unfinished tasks go: another planned sprint in the same space, or null for the backlog. */
   moveOpenTasksToSprintId: string | null;
+  /** Per-task exceptions to that: each listed open task goes to its own sprint (null: backlog). */
+  moves?: { taskId: string; sprintId: string | null }[];
 }
+
+/** Most per-task destinations one completion can carry. */
+export const SPRINT_COMPLETE_MAX_MOVES = 500;

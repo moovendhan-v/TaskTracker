@@ -22,8 +22,8 @@ export const sprintsApi = {
   update: async (path: SprintPath, input: UpdateSprintRequest) => (await graphql(UpdateSprintDocument, { ...path, input })).updateSprint,
   remove: async (path: SprintPath) => (await graphql(DeleteSprintDocument, path)).deleteSprint,
   start: async (path: SprintPath) => (await graphql(StartSprintDocument, path)).startSprint,
-  complete: async (path: SprintPath, options: CompleteSprintRequest) =>
-    (await graphql(CompleteSprintDocument, { ...path, ...options })).completeSprint,
+  complete: async (path: SprintPath, { moveOpenTasksToSprintId, moves }: CompleteSprintRequest) =>
+    (await graphql(CompleteSprintDocument, { ...path, moveOpenTasksToSprintId, rollover: moves?.length ? { moves } : null })).completeSprint,
   tasks: async (path: SprintPath) => (await graphql(SprintTasksDocument, path)).sprintTasks,
   backlog: async (workspaceId: string, spaceId: string) => (await graphql(BacklogDocument, { workspaceId, spaceId })).backlog,
 };

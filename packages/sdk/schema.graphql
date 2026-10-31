@@ -196,6 +196,10 @@ input CommentInput {
   body: String!
 }
 
+input CompleteSprintMovesInput {
+  moves: [SprintTaskMoveInput!]!
+}
+
 input ConnectGithubInput {
   """owner/name"""
   repo: String!
@@ -990,7 +994,14 @@ type Mutation {
   """
   Unfinished tasks move to another planned sprint in the space, or to the backlog when omitted
   """
-  completeSprint(moveOpenTasksToSprintId: ID, sprintId: ID!, workspaceId: ID!): Sprint!
+  completeSprint(
+    moveOpenTasksToSprintId: ID
+
+    """Per-task destinations for unfinished tasks"""
+    rollover: CompleteSprintMovesInput
+    sprintId: ID!
+    workspaceId: ID!
+  ): Sprint!
   connectGithub(input: ConnectGithubInput!, workspaceId: ID!): GithubSecret!
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
@@ -1761,6 +1772,8 @@ enum SpaceStatus {
 }
 
 type Sprint {
+  """Tasks in the sprint when it was completed; null before then"""
+  committedTasks: Int
   completedAt: String
   doneTasks: Int!
 
@@ -1781,6 +1794,12 @@ enum SprintStatus {
   active
   completed
   planned
+}
+
+input SprintTaskMoveInput {
+  """A planned sprint in the same space; null for the backlog"""
+  sprintId: ID
+  taskId: ID!
 }
 
 input StartTimerInput {

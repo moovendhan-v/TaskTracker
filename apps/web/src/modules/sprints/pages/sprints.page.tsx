@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { HistoryIcon, PlusIcon, RocketIcon } from 'lucide-react';
 import { ErrorState } from '@/components/common/error-state';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
-import { ColumnChart } from '@/components/kit/charts';
+import { GroupedColumnChart } from '@/components/kit/charts';
 import { Section } from '@/components/kit/section';
 import { Button } from '@/components/ui/button';
 import { useOpenTask } from '@/modules/tasks';
@@ -13,6 +13,7 @@ import { SprintFormDialog } from '../components/sprint-form-dialog';
 import { SprintLane } from '../components/sprint-lane';
 import { useSprintMutations, useSprints } from '../hooks/use-sprints';
 import { formatSprintRange } from '../lib/sprint-dates';
+import { velocity } from '../lib/sprint-metrics';
 
 interface SprintsPageProps {
   workspaceId: string;
@@ -35,6 +36,7 @@ export function SprintsPage({ workspaceId, spaceId }: SprintsPageProps) {
   const planned = all.filter((sprint) => sprint.status === 'planned').sort((a, b) => a.startDate.localeCompare(b.startDate));
   const completed = all.filter((sprint) => sprint.status === 'completed').sort((a, b) => b.endDate.localeCompare(a.endDate));
   const lanes = [...(active ? [active] : []), ...planned];
+  const history = velocity(completed);
 
   const lane = (sprint: (typeof all)[number]) => (
     <SprintLane
@@ -82,7 +84,7 @@ export function SprintsPage({ workspaceId, spaceId }: SprintsPageProps) {
           sprint={active}
           plannedSprints={planned}
           canManage={canManage}
-          onComplete={(moveOpenTasksToSprintId) => mutations.complete.mutateAsync({ sprintId: active.id, body: { moveOpenTasksToSprintId } })}
+          onComplete={(body) => mutations.complete.mutateAsync({ sprintId: active.id, body })}
         />
       ) : (
         <div className="flex items-center gap-4 rounded-2xl border border-dashed bg-card px-5 py-4">
@@ -119,14 +121,14 @@ export function SprintsPage({ workspaceId, spaceId }: SprintsPageProps) {
           <div className="grid gap-6 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
             <div className="grid content-start gap-2">
               <h3 className="text-sm font-semibold">Velocity</h3>
-              <p className="text-xs text-muted-foreground">Tasks finished per sprint, oldest to newest.</p>
-              <ColumnChart
-                label="Tasks finished per completed sprint"
-                data={[...completed]
-                  .reverse()
-                  .slice(-8)
-                  .map((sprint) => ({ key: sprint.id, label: sprint.name, value: sprint.doneTasks, tooltip: `${sprint.name} · ${sprint.doneTasks} of ${sprint.totalTasks} done` }))}
-                showValues
+              <p className="text-xs text-muted-foreground">Tasks committed and done in the last {history.rows.length} sprints · average {history.average} done.</p>
+              <GroupedColumnChart
+                label="Tasks committed and done per completed sprint"
+                series={[
+                  { key: 'committed', label: 'Committed', color: 'var(--subtle-foreground)' },
+                  { key: 'done', label: 'Done', color: 'var(--ring)' },
+                ]}
+                groups={history.rows.map((row) => ({ key: row.key, label: row.label, values: [row.committed, row.done] }))}
               />
             </div>
             <ul className="divide-y rounded-lg border">
@@ -137,7 +139,7 @@ export function SprintsPage({ workspaceId, spaceId }: SprintsPageProps) {
                   </Link>
                   <span className="text-xs text-muted-foreground">{formatSprintRange(sprint.startDate, sprint.endDate)}</span>
                   <span className="w-24 text-right text-xs tabular-nums">
-                    {sprint.doneTasks}/{sprint.totalTasks} done
+                    {sprint.doneTasks}/{sprint.committedTasks ?? sprint.totalTasks} done
                   </span>
                 </li>
               ))}

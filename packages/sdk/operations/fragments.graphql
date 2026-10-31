@@ -63,7 +63,7 @@ fragment CustomFieldFields on CustomField { id spaceId entity name type required
 fragment CommentFields on Comment { id taskId authorId authorName body createdAt updatedAt }
 
 fragment SprintFields on Sprint {
-  id spaceId name goal status startDate endDate completedAt totalTasks doneTasks
+  id spaceId name goal status startDate endDate completedAt totalTasks doneTasks committedTasks
 }
 
 fragment DocumentSummaryFields on DocumentSummary { id spaceId parentId kind title icon position createdById updatedAt }

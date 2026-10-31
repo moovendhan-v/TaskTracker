@@ -1,14 +1,21 @@
 import { Link } from '@tanstack/react-router';
 import { CheckCheckIcon, KanbanIcon, TargetIcon } from 'lucide-react';
-import type { SprintResponse } from '@taskflow/shared-types';
+import type { CompleteSprintRequest, SprintResponse } from '@taskflow/shared-types';
+import { cn } from '@/lib/cn';
 import { UserAvatar } from '@/components/common/user-avatar';
-import { BarList, LineChart, Meter, StackedBar } from '@/components/kit/charts';
+import { BarList, LineChart, Meter } from '@/components/kit/charts';
 import { Button } from '@/components/ui/button';
 import { useMemberName } from '@/modules/members';
 import { useSprintTasks } from '../hooks/use-sprints';
 import { formatSprintRange } from '../lib/sprint-dates';
-import { burndown, formatMinutes, localToday, sprintTiming, summarize, workload } from '../lib/sprint-metrics';
+import { burndown, forecast, formatMinutes, localToday, sprintTiming, summarize, workload, type SprintHealth } from '../lib/sprint-metrics';
 import { CompleteSprintDialog } from './complete-sprint-dialog';
+
+const HEALTH: Record<SprintHealth, { label: string; className: string }> = {
+  healthy: { label: 'Healthy', className: 'bg-good/15 text-good' },
+  'at-risk': { label: 'At risk', className: 'bg-warning/15 text-warning' },
+  'off-track': { label: 'Off track', className: 'bg-critical/15 text-critical' },
+};
 
 const dayLabel = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
@@ -17,7 +24,7 @@ interface ActiveSprintPanelProps {
   sprint: SprintResponse;
   plannedSprints: SprintResponse[];
   canManage: boolean;
-  onComplete: (moveOpenTasksToSprintId: string | null) => Promise<unknown>;
+  onComplete: (request: CompleteSprintRequest) => Promise<unknown>;
 }
 
 /** The running sprint at a glance: how far through it is, how much is done, where the work sits, and who has it. */
@@ -29,6 +36,7 @@ export function ActiveSprintPanel({ workspaceId, sprint, plannedSprints, canMana
   const timing = sprintTiming(sprint, today);
   const summary = summarize(items);
   const points = burndown(sprint, items, today);
+  const prediction = forecast(summary, timing);
   // Ahead when the share of work done keeps up with the share of time gone.
   const pace = summary.total === 0 ? null : summary.donePercent >= timing.elapsedPercent ? 'on pace' : 'behind';
 
@@ -38,20 +46,22 @@ export function ActiveSprintPanel({ workspaceId, sprint, plannedSprints, canMana
 
   return (
     <section aria-label={`Active sprint: ${sprint.name}`} className="overflow-hidden rounded-2xl border bg-card">
-      <div className="flex flex-wrap items-start gap-4 border-b bg-gradient-to-r from-primary/10 via-transparent to-transparent px-5 py-4">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold tracking-wide text-primary uppercase">Active sprint</p>
-          <h2 className="truncate text-xl font-semibold">{sprint.name}</h2>
-          <p className="text-sm text-muted-foreground">
-            {formatSprintRange(sprint.startDate, sprint.endDate)} · {timing.daysLeft === 0 ? 'ends today or has ended' : `${timing.daysLeft} ${timing.daysLeft === 1 ? 'day' : 'days'} left`}
-          </p>
-          {sprint.goal ? (
-            <p className="mt-2 flex items-start gap-1.5 text-sm">
-              <TargetIcon className="mt-0.5 size-4 shrink-0 text-primary" /> {sprint.goal}
-            </p>
+      {/* Health strip (v2 Features #15a): where the sprint stands in one glance. */}
+      <div className="grid gap-3 border-b px-5 py-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h2 className="truncate text-base font-semibold tracking-tight">{sprint.name}</h2>
+          <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-ring">Active</span>
+          <span className="font-mono text-[11.5px] text-muted-foreground">{formatSprintRange(sprint.startDate, sprint.endDate)}</span>
+          <span className="font-mono text-[11.5px] text-muted-foreground">
+            day {timing.elapsedDays} / {timing.totalDays}
+          </span>
+          <div className="flex-1" />
+          {prediction ? (
+            <span className={cn('flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium', HEALTH[prediction.health].className)}>
+              <span aria-hidden className="size-1.5 rounded-full bg-current" />
+              {HEALTH[prediction.health].label} · forecast {prediction.projectedDone}/{prediction.total}
+            </span>
           ) : null}
-        </div>
-        <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link to="/w/$workspaceId/sprints/$sprintId" params={{ workspaceId, sprintId: sprint.id }}>
               <KanbanIcon /> Open board
@@ -61,15 +71,38 @@ export function ActiveSprintPanel({ workspaceId, sprint, plannedSprints, canMana
             <CompleteSprintDialog
               trigger={
                 <Button size="sm">
-                  <CheckCheckIcon /> Complete sprint
+                  <CheckCheckIcon /> Complete sprint…
                 </Button>
               }
+              workspaceId={workspaceId}
               sprint={sprint}
               plannedSprints={plannedSprints}
               onComplete={onComplete}
             />
           ) : null}
         </div>
+        {sprint.goal ? (
+          <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
+            <TargetIcon className="mt-0.5 size-4 shrink-0 text-ring" /> {sprint.goal}
+          </p>
+        ) : null}
+        {statusSegments.length ? (
+          <div className="grid gap-2">
+            <div className="flex h-2 overflow-hidden rounded-full bg-muted" role="img" aria-label={statusSegments.map((segment) => `${segment.value} ${segment.label}`).join(', ')}>
+              {statusSegments.map((segment) => (
+                <span key={segment.key} style={{ flex: segment.value, backgroundColor: segment.color }} />
+              ))}
+            </div>
+            <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              {statusSegments.map((segment) => (
+                <span key={segment.key} className="flex items-center gap-1.5">
+                  <span aria-hidden className="size-1.5 rounded-full" style={{ backgroundColor: segment.color }} />
+                  <span className="font-mono text-foreground">{segment.value}</span> {segment.label.toLowerCase()}
+                </span>
+              ))}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
@@ -101,10 +134,6 @@ export function ActiveSprintPanel({ workspaceId, sprint, plannedSprints, canMana
           )}
         </div>
         <div className="grid content-start gap-5">
-          <div className="grid gap-2">
-            <h3 className="text-sm font-semibold">By status</h3>
-            {statusSegments.length ? <StackedBar segments={statusSegments} label="Sprint tasks by status" /> : <p className="text-sm text-muted-foreground">No tasks yet.</p>}
-          </div>
           <div className="grid gap-2">
             <h3 className="text-sm font-semibold">Open work by person</h3>
             <BarList

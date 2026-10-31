@@ -68,6 +68,10 @@ export type CommentInput = {
   body: string;
 };
 
+export type CompleteSprintMovesInput = {
+  moves: Array<SprintTaskMoveInput>;
+};
+
 export type ConnectGithubInput = {
   /** owner/name */
   repo: string;
@@ -553,6 +557,12 @@ export type SprintStatus =
   | 'completed'
   | 'planned';
 
+export type SprintTaskMoveInput = {
+  /** A planned sprint in the same space; null for the backlog */
+  sprintId?: string | null | undefined;
+  taskId: string;
+};
+
 export type StartTimerInput = {
   note?: string | null | undefined;
   spaceId?: string | null | undefined;
@@ -1024,7 +1034,7 @@ export type CustomFieldFieldsFragment = { id: string, spaceId: string | null, en
 
 export type CommentFieldsFragment = { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string };
 
-export type SprintFieldsFragment = { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number };
+export type SprintFieldsFragment = { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null };
 
 export type DocumentSummaryFieldsFragment = { id: string, spaceId: string | null, parentId: string | null, kind: DocKind, title: string, icon: IconKey | null, position: number, createdById: string, updatedAt: string };
 
@@ -1668,7 +1678,7 @@ export type SprintsQueryVariables = Exact<{
 }>;
 
 
-export type SprintsQuery = { sprints: Array<{ id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number }> };
+export type SprintsQuery = { sprints: Array<{ id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null }> };
 
 export type SprintQueryVariables = Exact<{
   workspaceId: string;
@@ -1676,7 +1686,7 @@ export type SprintQueryVariables = Exact<{
 }>;
 
 
-export type SprintQuery = { sprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type SprintQuery = { sprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type CreateSprintMutationVariables = Exact<{
   workspaceId: string;
@@ -1685,7 +1695,7 @@ export type CreateSprintMutationVariables = Exact<{
 }>;
 
 
-export type CreateSprintMutation = { createSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type CreateSprintMutation = { createSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type UpdateSprintMutationVariables = Exact<{
   workspaceId: string;
@@ -1694,7 +1704,7 @@ export type UpdateSprintMutationVariables = Exact<{
 }>;
 
 
-export type UpdateSprintMutation = { updateSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type UpdateSprintMutation = { updateSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type DeleteSprintMutationVariables = Exact<{
   workspaceId: string;
@@ -1710,16 +1720,17 @@ export type StartSprintMutationVariables = Exact<{
 }>;
 
 
-export type StartSprintMutation = { startSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type StartSprintMutation = { startSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type CompleteSprintMutationVariables = Exact<{
   workspaceId: string;
   sprintId: string;
   moveOpenTasksToSprintId?: string | null | undefined;
+  rollover?: CompleteSprintMovesInput | null | undefined;
 }>;
 
 
-export type CompleteSprintMutation = { completeSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number } };
+export type CompleteSprintMutation = { completeSprint: { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null } };
 
 export type StatusesQueryVariables = Exact<{
   workspaceId: string;
@@ -2331,6 +2342,7 @@ export const SprintFieldsFragmentDoc = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }
     `, {"fragmentName":"SprintFields"}) as unknown as TypedDocumentString<SprintFieldsFragment, unknown>;
 export const DocumentSummaryFieldsFragmentDoc = new TypedDocumentString(`
@@ -4989,6 +5001,7 @@ export const SprintsDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<SprintsQuery, SprintsQueryVariables>;
 export const SprintDocument = new TypedDocumentString(`
     query Sprint($workspaceId: ID!, $sprintId: ID!) {
@@ -5007,6 +5020,7 @@ export const SprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<SprintQuery, SprintQueryVariables>;
 export const CreateSprintDocument = new TypedDocumentString(`
     mutation CreateSprint($workspaceId: ID!, $spaceId: ID!, $input: CreateSprintInput!) {
@@ -5025,6 +5039,7 @@ export const CreateSprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<CreateSprintMutation, CreateSprintMutationVariables>;
 export const UpdateSprintDocument = new TypedDocumentString(`
     mutation UpdateSprint($workspaceId: ID!, $sprintId: ID!, $input: UpdateSprintInput!) {
@@ -5043,6 +5058,7 @@ export const UpdateSprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<UpdateSprintMutation, UpdateSprintMutationVariables>;
 export const DeleteSprintDocument = new TypedDocumentString(`
     mutation DeleteSprint($workspaceId: ID!, $sprintId: ID!) {
@@ -5066,13 +5082,15 @@ export const StartSprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<StartSprintMutation, StartSprintMutationVariables>;
 export const CompleteSprintDocument = new TypedDocumentString(`
-    mutation CompleteSprint($workspaceId: ID!, $sprintId: ID!, $moveOpenTasksToSprintId: ID) {
+    mutation CompleteSprint($workspaceId: ID!, $sprintId: ID!, $moveOpenTasksToSprintId: ID, $rollover: CompleteSprintMovesInput) {
   completeSprint(
     workspaceId: $workspaceId
     sprintId: $sprintId
     moveOpenTasksToSprintId: $moveOpenTasksToSprintId
+    rollover: $rollover
   ) {
     ...SprintFields
   }
@@ -5088,6 +5106,7 @@ export const CompleteSprintDocument = new TypedDocumentString(`
   completedAt
   totalTasks
   doneTasks
+  committedTasks
 }`) as unknown as TypedDocumentString<CompleteSprintMutation, CompleteSprintMutationVariables>;
 export const StatusesDocument = new TypedDocumentString(`
     query Statuses($workspaceId: ID!, $spaceId: ID!) {
