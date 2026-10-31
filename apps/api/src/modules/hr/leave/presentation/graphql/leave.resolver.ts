@@ -17,6 +17,7 @@ import {
   LeaveRequestPageGql,
   LeaveTypeGql,
   RequestLeaveInput,
+  TeamAbsenceGql,
   UpdateLeaveTypeInput,
 } from './leave.types.js';
 
@@ -76,6 +77,17 @@ export class LeaveResolver {
   @RequirePermissions('leave.request')
   myLeaveRequests(@WorkspaceIdArg() _workspaceId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<LeaveRequestGql[]> {
     return this.leaveRequestsService.mine(actor, access.workspaceId);
+  }
+
+  @Query(() => [TeamAbsenceGql], { complexity: cappedListComplexity(1000), description: 'Who is away when (approved leave, dates only), for sprint capacity planning' })
+  @RequirePermissions('sprint.manage')
+  teamAvailability(
+    @WorkspaceIdArg() _workspaceId: string,
+    @Args('from', { description: 'yyyy-mm-dd' }) from: string,
+    @Args('to', { description: 'yyyy-mm-dd' }) to: string,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<TeamAbsenceGql[]> {
+    return this.leaveRequestsService.teamAvailability(access.workspaceId, from.slice(0, 10), to.slice(0, 10));
   }
 
   @Query(() => LeaveRequestPageGql, { complexity: pagedComplexity, description: 'Approver queue, oldest first' })

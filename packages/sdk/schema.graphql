@@ -1515,6 +1515,18 @@ type Query {
   taskWatchers(taskId: ID!, workspaceId: ID!): [ID!]!
 
   """
+  Who is away when (approved leave, dates only), for sprint capacity planning
+  """
+  teamAvailability(
+    """yyyy-mm-dd"""
+    from: String!
+
+    """yyyy-mm-dd"""
+    to: String!
+    workspaceId: ID!
+  ): [TeamAbsence!]!
+
+  """
   Entries started in [from, to), oldest first, at most 1000. Without time.view_all, only your own.
   """
   timeEntries(query: TimeEntryQueryInput!, workspaceId: ID!): [TimeEntry!]!
@@ -1972,6 +1984,16 @@ enum TaskType {
   milestone
   phase
   task
+}
+
+"""Approved leave, dates only: no type, reason or notes"""
+type TeamAbsence {
+  """yyyy-mm-dd"""
+  endDate: String!
+
+  """yyyy-mm-dd"""
+  startDate: String!
+  userId: ID!
 }
 
 enum TemplateCategory {

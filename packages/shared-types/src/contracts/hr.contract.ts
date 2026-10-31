@@ -105,3 +105,18 @@ export interface LeaveBalanceResponse {
   /** null means unlimited. */
   remainingDays: number | null;
 }
+
+/**
+ * Who is away when, for capacity planning: approved leave only, without the
+ * type, reason or notes (those stay with the person and their approvers).
+ */
+export interface TeamAbsenceResponse {
+  userId: string;
+  /** yyyy-mm-dd */
+  startDate: string;
+  /** yyyy-mm-dd */
+  endDate: string;
+}
+
+/** Longest range one availability query may cover (at least the longest sprint). */
+export const AVAILABILITY_MAX_DAYS = 92;

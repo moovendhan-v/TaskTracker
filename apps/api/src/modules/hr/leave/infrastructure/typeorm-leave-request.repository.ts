@@ -77,6 +77,21 @@ export class TypeOrmLeaveRequestRepository extends LeaveRequestRepository {
       .getExists();
   }
 
+  async approvedInRange(workspaceId: string, from: string, to: string, limit: number): Promise<{ userId: string; startDate: string; endDate: string }[]> {
+    const rows = await this.repository
+      .createQueryBuilder('request')
+      .select('request.user_id', 'user_id')
+      .addSelect("to_char(request.start_date, 'YYYY-MM-DD')", 'start_date')
+      .addSelect("to_char(request.end_date, 'YYYY-MM-DD')", 'end_date')
+      .where('request.workspace_id = :workspaceId', { workspaceId })
+      .andWhere('request.status = :approved', { approved: 'approved' })
+      .andWhere('request.start_date <= :to AND request.end_date >= :from', { from, to })
+      .orderBy('request.start_date', 'ASC')
+      .limit(limit)
+      .getRawMany<{ user_id: string; start_date: string; end_date: string }>();
+    return rows.map((row) => ({ userId: row.user_id, startDate: row.start_date, endDate: row.end_date }));
+  }
+
   async pendingDaysByType(workspaceId: string, userId: string, year: number): Promise<Map<string, number>> {
     const rows = await this.repository
       .createQueryBuilder('request')

@@ -19,7 +19,7 @@ Legend: ✅ built · 🟡 partial · ⬜ not started. "Gap" lists what v2 adds o
 | B5 | Sidebar presets + templates gallery | 🟡 | Project templates (gallery, save as template, download) | Sidebar presets, layout / automation / doc templates, `.tflow` import / export |
 | C1 | Tracker: Kanban / Table / List / Calendar / Timeline | ✅ | List, Board, Table, Calendar, Timeline, Team planner, Time report, saved views, filters, grouping. v2 pass on List: soft status pills everywhere, mono `#ID` column, 42px hairline rows, mono column headers, group headers with dot + count; status menu with 1–9 keys; J / K / X / Enter / Esc keyboard; v2 bulk bar | Table and Calendar visual pass, swimlanes, WIP limits, points (no points field yet: estimates are in minutes), PR column |
 | C2 | Task detail (full page + peek) | ✅ | v2 layout in modal and side-panel modes: breadcrumb with copy-link `#ID`; header with type, status, time tracking and actions; 30px title; description; subtasks with progress; relations; Development card for linked PRs; Comments / History tabs; right panel with properties and People (assignees, reporter, watchers). Side panel puts properties under the title | Checklists, Create branch / Create PR (needs GitHub write access), attachments, custom fields in the panel, a separate full-page mode, ↑/↓ stepping in the peek |
-| C3 | Sprints (planning, health, velocity, complete) | 🟡 | Health strip (name, dates, day X / Y, stacked status bar with counts, straight-line forecast badge: Healthy / At risk / Off track); 3-step completion (summary → destination per unfinished task → review), applied in one transaction by the API (`rollover.moves`, only open tasks of that sprint can move, audited per destination); velocity shows committed vs done (committed is now recorded at completion); planning lanes, backlog, burndown, board | Per-person capacity lanes with leave, scope-change tracking, story points, post report / run "Sprint end" automation |
+| C3 | Sprints (planning, health, velocity, complete) | ✅ | Health strip with forecast; 3-step completion with a destination per unfinished task (one transaction, audited); velocity committed vs done; per-person capacity in each sprint lane (estimate hours vs 6 h × working days minus approved leave, amber at 100%, leave chip) using a new `teamAvailability` query that returns approved leave as dates only and needs sprint.manage | Story points, scope-change tracking, drag between people's lanes, post report / "Sprint end" automation |
 | C4 | Dashboards | 🟡 | Home overview and per-project dashboards with KPIs and charts | Multiple dashboard tabs with visibility (Private / Team / Workspace), built on the block grid (needs B1–B4) |
 | C5 | Docs | 🟡 | Tree with drag and drop, markdown + visual editor, slide presentation, export | Live cursors (Yjs), task embeds and `TF-` autocomplete, embedded live views |
 | C6 | Inbox | ✅ | Notification inbox with unread counts and live updates | Side-panel variant inside the workbench |
@@ -38,9 +38,9 @@ Current state in [docs/screenshots/v2](../screenshots/v2).
 
 ## Next up
 
-Following the handoff's build order (§10), with A1, A2, B1, C1 and C2 done, and B2 / B4 and C3 under way:
+Following the handoff's build order (§10), with A1, A2, B1, C1, C2 and C3 done, and B2 / B4 under way:
 
-1. **C3 rest**: per-person capacity lanes in sprint planning, with leave from HR.
+1. **C4 dashboards** against `#13b`: dashboard tabs with visibility (Private / Team / Workspace) on the block grid.
 2. **B2 / B4 next steps**: the project dashboard on the grid, then team defaults (B4).
 3. **B3 block config drawer**: per-block data source and view settings, kept separate.
 

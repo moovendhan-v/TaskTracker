@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CompleteSprintRequest, CreateSprintRequest, UpdateSprintRequest } from '@taskflow/shared-types';
+import type { CompleteSprintRequest, CreateSprintRequest, SprintResponse, UpdateSprintRequest } from '@taskflow/shared-types';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
 import { queryKeys } from '@/lib/query-keys';
@@ -15,6 +15,16 @@ export function useSprint(workspaceId: string, sprintId: string) {
 
 export function useSprintTasks(workspaceId: string, sprintId: string) {
   return useQuery({ queryKey: queryKeys.sprintTasks(workspaceId, sprintId), queryFn: () => sprintsApi.tasks({ workspaceId, sprintId }) });
+}
+
+/** Who is on leave during a sprint; only fetched for people who can plan sprints. */
+export function useSprintAvailability(workspaceId: string, sprint: Pick<SprintResponse, 'startDate' | 'endDate'>, enabled: boolean) {
+  return useQuery({
+    queryKey: ['workspaces', workspaceId, 'availability', sprint.startDate, sprint.endDate],
+    queryFn: () => sprintsApi.availability(workspaceId, sprint.startDate, sprint.endDate),
+    enabled,
+    staleTime: 5 * 60_000,
+  });
 }
 
 export function useBacklog(workspaceId: string, spaceId: string) {

@@ -15,6 +15,7 @@ import {
   type LeaveRequestResponse,
   type LeaveStatus,
   type LeaveTypeResponse,
+  type TeamAbsenceResponse,
   type UpdateLeaveTypeRequest,
 } from '@taskflow/shared-types';
 import { LeaveDecisionEnum, LeaveStatusEnum } from '../../../../../core/graphql/enums.js';
@@ -164,4 +165,11 @@ export class LeaveBalanceGql implements LeaveBalanceResponse {
   @Field(() => Int) usedDays: number;
   @Field(() => Int) pendingDays: number;
   @Field(() => Int, { nullable: true }) remainingDays: number | null;
+}
+
+@ObjectType('TeamAbsence', { description: 'Approved leave, dates only: no type, reason or notes' })
+export class TeamAbsenceGql implements TeamAbsenceResponse {
+  @Field(() => ID) userId: string;
+  @Field({ description: 'yyyy-mm-dd' }) startDate: string;
+  @Field({ description: 'yyyy-mm-dd' }) endDate: string;
 }
