@@ -509,6 +509,7 @@ src/modules/
 ├── forms/                                        ✅ public formSchemas query (rules only, no data)
 │
 ├── preferences/                                  ✅ personal settings, table layouts, saved views, tabs (own row only, RLS)
+├── layouts/                                      ✅ personal block-grid layouts per page (dashboard_layout, RLS: own rows in the workspace; optimistic versions)
 │
 ├── resources/                                    ✅ resourceSchema and resourceNames queries
 │   ├── application/resource-schema.service.ts    unknown and forbidden resources both answer NOT_FOUND
@@ -701,7 +702,8 @@ src/modules/
 ├── projects/        pages/{project,my-tasks}.page.tsx: one page per project with twelve views (lib/views.ts) and a shared toolbar
 │                    components/{project-tabs,saved-views-menu,task-table-view}.tsx, store/project-view.store.ts
 ├── resources/       components/{resource-table,filter-builder}.tsx: tables and filters built from `resourceSchema`; lib/filters.ts
-├── dashboard/       pages/home.page.tsx (workspace overview), lib/dashboard-input.ts
+├── dashboard/       pages/home.page.tsx (workspace overview on the block grid), lib/{dashboard-input,grid}.ts, hooks/use-layout.ts,
+│                    components/{block-grid,block-library,home-blocks}.tsx
 │                    components/{project-dashboard,dashboard-panels,projects-table,dashboard-filters,dashboard-task-list,space-status-chip}.tsx
 ├── time/            pages/{timesheets,daily-log}.page.tsx, components/{log-time-dialog,task-time-controls,timer-indicator,time-report}.tsx,
 │                    lib/time-format.ts

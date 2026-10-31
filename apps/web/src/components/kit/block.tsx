@@ -133,7 +133,8 @@ export function Block({
   maxBodyHeight,
 }: BlockProps) {
   const [maximised, setMaximised] = useState(false);
-  const hasMenu = actions.length > 0 || maximisable || Boolean(onOpenAsTab);
+  // While arranging, the grid puts its own controls (remove, resize) where the menu would be.
+  const hasMenu = !arranging && (actions.length > 0 || maximisable || Boolean(onOpenAsTab));
   const busy = state.kind === 'loading';
 
   return (
@@ -146,7 +147,7 @@ export function Block({
         className,
       )}
     >
-      <header className={cn('flex h-10 shrink-0 items-center gap-2 border-b pr-2 pl-3', arranging && 'bg-primary-soft')}>
+      <header className={cn('flex h-10 shrink-0 items-center gap-2 border-b pr-2 pl-3', arranging && 'bg-primary-soft pr-10')}>
         {arranging ? <GripVerticalIcon aria-hidden className="size-4 shrink-0 cursor-grab text-subtle-foreground" /> : null}
         {Icon ? <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" /> : null}
         <h2 className="min-w-0 truncate text-[13px] font-semibold">{title}</h2>

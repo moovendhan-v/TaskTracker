@@ -33,6 +33,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { RealtimeFeatureModule } from './modules/realtime/realtime.module.js';
 import { ResourcesModule } from './modules/resources/resources.module.js';
 import { FormsModule } from './modules/forms/forms.module.js';
+import { LayoutsModule } from './modules/layouts/layouts.module.js';
 import { PreferencesModule } from './modules/preferences/preferences.module.js';
 import { StatusesModule } from './modules/statuses/statuses.module.js';
 import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module.js';
@@ -83,6 +84,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     ResourcesModule,
     FormsModule,
     PreferencesModule,
+    LayoutsModule,
     StatusesModule,
     CustomFieldsModule,
     TimeTrackingModule,

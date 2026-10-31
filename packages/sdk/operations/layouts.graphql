@@ -1,0 +1,12 @@
+fragment LayoutFields on DashboardLayout {
+  pageKey
+  version
+  updatedAt
+  items { id type x y w h }
+}
+
+query MyLayout($workspaceId: ID!, $pageKey: String!) { myLayout(workspaceId: $workspaceId, pageKey: $pageKey) { ...LayoutFields } }
+
+mutation SaveLayout($workspaceId: ID!, $input: SaveLayoutInput!) { saveLayout(workspaceId: $workspaceId, input: $input) { ...LayoutFields } }
+
+mutation ResetLayout($workspaceId: ID!, $pageKey: String!) { resetLayout(workspaceId: $workspaceId, pageKey: $pageKey) }

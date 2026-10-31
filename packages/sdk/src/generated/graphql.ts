@@ -355,6 +355,15 @@ export type ImportTemplateInput = {
   name: string;
 };
 
+export type LayoutItemInput = {
+  h: number;
+  id: string;
+  type: string;
+  w: number;
+  x: number;
+  y: number;
+};
+
 export type LeaveDecision =
   | 'approved'
   | 'rejected';
@@ -490,6 +499,13 @@ export type SaveAutomationInput = {
   enabled?: boolean | null | undefined;
   name: string;
   trigger: AutomationTriggerInput;
+};
+
+export type SaveLayoutInput = {
+  /** The version you started from; null when you had none saved */
+  baseVersion?: number | null | undefined;
+  items: Array<LayoutItemInput>;
+  pageKey: string;
 };
 
 export type SavePolicyInput = {
@@ -1227,6 +1243,32 @@ export type DisconnectGithubMutationVariables = Exact<{
 
 
 export type DisconnectGithubMutation = { disconnectGithub: boolean };
+
+export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> };
+
+export type MyLayoutQueryVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+}>;
+
+
+export type MyLayoutQuery = { myLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } | null };
+
+export type SaveLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  input: SaveLayoutInput;
+}>;
+
+
+export type SaveLayoutMutation = { saveLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+
+export type ResetLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+}>;
+
+
+export type ResetLayoutMutation = { resetLayout: boolean };
 
 export type ListsQueryVariables = Exact<{
   workspaceId: string;
@@ -2569,6 +2611,21 @@ export const GithubConnectionFieldsFragmentDoc = new TypedDocumentString(`
   createdAt
 }
     `, {"fragmentName":"GithubConnectionFields"}) as unknown as TypedDocumentString<GithubConnectionFieldsFragment, unknown>;
+export const LayoutFieldsFragmentDoc = new TypedDocumentString(`
+    fragment LayoutFields on DashboardLayout {
+  pageKey
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}
+    `, {"fragmentName":"LayoutFields"}) as unknown as TypedDocumentString<LayoutFieldsFragment, unknown>;
 export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
     fragment TemplateFields on ProjectTemplate {
   id
@@ -3670,6 +3727,49 @@ export const DisconnectGithubDocument = new TypedDocumentString(`
   disconnectGithub(workspaceId: $workspaceId, connectionId: $connectionId)
 }
     `) as unknown as TypedDocumentString<DisconnectGithubMutation, DisconnectGithubMutationVariables>;
+export const MyLayoutDocument = new TypedDocumentString(`
+    query MyLayout($workspaceId: ID!, $pageKey: String!) {
+  myLayout(workspaceId: $workspaceId, pageKey: $pageKey) {
+    ...LayoutFields
+  }
+}
+    fragment LayoutFields on DashboardLayout {
+  pageKey
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<MyLayoutQuery, MyLayoutQueryVariables>;
+export const SaveLayoutDocument = new TypedDocumentString(`
+    mutation SaveLayout($workspaceId: ID!, $input: SaveLayoutInput!) {
+  saveLayout(workspaceId: $workspaceId, input: $input) {
+    ...LayoutFields
+  }
+}
+    fragment LayoutFields on DashboardLayout {
+  pageKey
+  version
+  updatedAt
+  items {
+    id
+    type
+    x
+    y
+    w
+    h
+  }
+}`) as unknown as TypedDocumentString<SaveLayoutMutation, SaveLayoutMutationVariables>;
+export const ResetLayoutDocument = new TypedDocumentString(`
+    mutation ResetLayout($workspaceId: ID!, $pageKey: String!) {
+  resetLayout(workspaceId: $workspaceId, pageKey: $pageKey)
+}
+    `) as unknown as TypedDocumentString<ResetLayoutMutation, ResetLayoutMutationVariables>;
 export const ListsDocument = new TypedDocumentString(`
     query Lists($workspaceId: ID!) {
   lists(workspaceId: $workspaceId) {

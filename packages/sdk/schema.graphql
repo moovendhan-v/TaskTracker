@@ -421,6 +421,16 @@ input DashboardInput {
   userIds: [ID!]
 }
 
+"""The signed-in user's arrangement of a page's blocks"""
+type DashboardLayout {
+  items: [LayoutItem!]!
+  pageKey: String!
+  updatedAt: String!
+
+  """Goes up by one on every save; send it back as baseVersion"""
+  version: Int!
+}
+
 type DashboardPerson {
   minutes: Int!
   name: String!
@@ -831,6 +841,24 @@ input ImportTemplateInput {
 """A JSON object (read-only)"""
 scalar JSONObject
 
+type LayoutItem {
+  h: Int!
+  id: String!
+  type: String!
+  w: Int!
+  x: Int!
+  y: Int!
+}
+
+input LayoutItemInput {
+  h: Int!
+  id: String!
+  type: String!
+  w: Int!
+  x: Int!
+  y: Int!
+}
+
 type LeaveBalance {
   """null means unlimited"""
   allowanceDays: Int
@@ -1071,12 +1099,18 @@ type Mutation {
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
   requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
 
+  """Back to the built-in layout for a page"""
+  resetLayout(pageKey: String!, workspaceId: ID!): Boolean!
+
   """Back to the default settings"""
   resetPreferences: Preferences!
   resetTableLayout(key: String!): Preferences!
 
   """A new webhook secret; the old one stops working at once"""
   rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
+
+  """Saves your layout. Fails with CONFLICT if it changed since baseVersion"""
+  saveLayout(input: SaveLayoutInput!, workspaceId: ID!): DashboardLayout!
   saveSpaceAsTemplate(input: SaveAsTemplateInput!, spaceId: ID!, workspaceId: ID!): ProjectTemplate!
 
   """Saves how a table is arranged (columns, widths, paging)"""
@@ -1381,6 +1415,9 @@ type Query {
   The caller's effective permissions and readable fields in the workspace
   """
   myAccess(workspaceId: ID!): MyAccess!
+
+  """Your saved layout for a page; null means the built-in default"""
+  myLayout(pageKey: String!, workspaceId: ID!): DashboardLayout
   myLeaveBalances(
     workspaceId: ID!
 
@@ -1621,6 +1658,13 @@ input SaveAutomationInput {
   enabled: Boolean
   name: String!
   trigger: AutomationTriggerInput!
+}
+
+input SaveLayoutInput {
+  """The version you started from; null when you had none saved"""
+  baseVersion: Int
+  items: [LayoutItemInput!]!
+  pageKey: String!
 }
 
 input SavePolicyInput {
