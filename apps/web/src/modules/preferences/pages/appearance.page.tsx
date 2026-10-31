@@ -10,7 +10,7 @@ import { cn } from '@/lib/cn';
 import { getErrorMessage } from '@/lib/errors';
 import { AppearancePreview } from '../components/appearance-preview';
 import { ThemeCard } from '../components/theme-card';
-import { ACCENT_OPTIONS, DEFAULT_APPEARANCE, DENSITY_OPTIONS, FONT_OPTIONS, isDefaultAppearance, RADIUS_OPTIONS, THEME_OPTIONS } from '../lib/appearance-options';
+import { ACCENT_OPTIONS, DEFAULT_APPEARANCE, DENSITY_OPTIONS, FONT_OPTIONS, isDefaultAppearance, RADIUS_OPTIONS, SIDEBAR_OPTIONS, THEME_OPTIONS } from '../lib/appearance-options';
 
 function Setting({ id, label, hint, children }: { id: string; label: string; hint?: string; children: ReactNode }) {
   return (
@@ -28,7 +28,7 @@ function Setting({ id, label, hint, children }: { id: string; label: string; hin
 
 /** Settings → Appearance: theme, accent, radius, density and font. Saved to the account, applied at once. */
 export function AppearancePage() {
-  const { theme, accent, density, radius, font } = usePreferences();
+  const { theme, accent, density, radius, font, sidebarCollapsed } = usePreferences();
   const current: Appearance = { theme, accent, density, radius, font };
   const { update } = usePreferenceMutations();
 
@@ -84,12 +84,23 @@ export function AppearancePage() {
 
           <div className="grid gap-8 sm:grid-cols-2">
             <Setting id="appearance-radius" label="Corner radius">
-              <Segmented label="Corner radius" size="md" value={radius} options={RADIUS_OPTIONS} onChange={(value) => save({ radius: value })} />
+              <Segmented className="self-start" label="Corner radius" size="md" value={radius} options={RADIUS_OPTIONS} onChange={(value) => save({ radius: value })} />
             </Setting>
             <Setting id="appearance-density" label="Density">
-              <Segmented label="Density" size="md" value={density} options={DENSITY_OPTIONS} onChange={(value) => save({ density: value })} />
+              <Segmented className="self-start" label="Density" size="md" value={density} options={DENSITY_OPTIONS} onChange={(value) => save({ density: value })} />
             </Setting>
           </div>
+
+          <Setting id="appearance-sidebar" label="Sidebar" hint="The app rail always stays; this shows or hides the side panel next to it.">
+            <Segmented
+              className="self-start"
+              label="Sidebar"
+              size="md"
+              value={sidebarCollapsed ? 'rail' : 'panel'}
+              options={SIDEBAR_OPTIONS}
+              onChange={(value) => update.mutate({ sidebarCollapsed: value === 'rail' }, { onError: (error) => toast.error(getErrorMessage(error)) })}
+            />
+          </Setting>
 
           <Setting id="appearance-font" label="Font" hint="IDs, times and code always use Geist Mono.">
             <div role="radiogroup" aria-labelledby="appearance-font" className="grid gap-3 sm:grid-cols-3">

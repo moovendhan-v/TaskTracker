@@ -9,7 +9,7 @@ Legend: ✅ built · 🟡 partial · ⬜ not started. "Gap" lists what v2 adds o
 | # | Module | Status | What exists | Gap to v2 |
 |---|---|---|---|---|
 | A1 | Theme tokens + Appearance | ✅ | v2 zinc tokens, accents, `data-radius` / `data-density` / `data-font`, Geist + Geist Mono, Settings → Appearance with a live preview; all saved per user (`user_prefs` jsonb) | Sidebar mode, tab behaviour, reduced motion and code font prefs (they belong with A2) |
-| A2 | App shell: Rail + Workbench tabs | 🟡 | Tab strip under the top bar: every page opens in a tab that follows navigation; pin (icon only, keeps its page), close, close others, reorder by drag or menu, real names for projects / lists / docs / sprints; saved to the account and restored on any device; Alt+T / Alt+W / Alt+1–9 / Alt+⇧[ ] | 60px rail, split view, per-tab scroll restore, search and Arrange in the strip. Shortcuts use Alt because browsers reserve ⌘T / ⌘W |
+| A2 | App shell: Rail + Workbench tabs | ✅ | 60px app rail (logo, inbox with unread dot, Home / Tracker / Docs / Time / People / Workspace, panel toggle, Appearance, account with live-presence dot; `G` then H / I / T / D / M / P); side panel shown or hidden (Appearance → Sidebar); tab strip where every page opens in a tab that follows navigation, with pin, close, reorder by drag or menu, real names, saved to the account; Alt+T / W / 1–9 / ⇧[ ] | Split view, per-tab scroll restore, search and Arrange in the strip, rail sprint widget, a "Hidden" sidebar mode. Chat / Video / Automations join the rail when built. Tab shortcuts use Alt because browsers reserve ⌘T / ⌘W |
 | A3 | Org → Workspaces → Spaces | 🟡 | Workspace → Space → List, workspace switcher, platform admin console | An org layer above workspaces (billing, shared HR / IAM / audit), ARN-like resource names |
 | A4 | Auth, SSO, workspace restore | 🟡 | Better Auth email + password, password reset, Turnstile CAPTCHA, email verification | SSO, GitHub login, passkeys, the "Restoring your workspace…" screen |
 | B1 | Block frame + states | ⬜ | Dashboard panels and stat cards (fixed layout) | Generic block frame with loading / empty / error / no-access states and a per-block error boundary |
@@ -32,12 +32,15 @@ Legend: ✅ built · 🟡 partial · ⬜ not started. "Gap" lists what v2 adds o
 | E4 | HR | 🟡 | Directory, departments, leave types, time-off requests, approvals, timesheets, daily log | Clock-in / out with breaks, attendance view, leave calendar month grid |
 | F1 | Mobile / tablet | ⬜ | Desktop-first; little responsive handling | Tablet slide-overs, phone stacked layout with bottom tab bar and quick-add sheet |
 
+## Screenshots
+
+Current state in [docs/screenshots/v2](../screenshots/v2).
+
 ## Next up
 
-Following the handoff's build order (§10), with A1 done:
+Following the handoff's build order (§10), with A1 and A2 done:
 
-1. **A2 rest**: the 60px rail replacing the wide sidebar (sidebar mode preference), then split view.
-2. **B1 block frame**: a shared frame with all the states, then move the existing dashboard panels into it. This sets up B2–B4 and C4.
-3. **C1 / C2 visual pass** against `TaskFlow v2 Features.dc.html` `#13a` and `#14a`.
+1. **B1 block frame**: a shared frame with all the states, then move the existing dashboard panels into it. This sets up B2–B4 and C4.
+2. **C1 / C2 visual pass** against `TaskFlow v2 Features.dc.html` `#13a` and `#14a`.
 
 Chat, calls and the virtual office (D1–D3) are new products, not gaps. Each needs its own plan (data model, realtime, RLS policies) before any code.

@@ -31,6 +31,11 @@ export const DENSITY_OPTIONS: readonly { value: Density; label: string }[] = [
   { value: 'comfortable', label: 'Comfortable' },
 ];
 
+export const SIDEBAR_OPTIONS: readonly { value: 'panel' | 'rail'; label: string }[] = [
+  { value: 'panel', label: 'Rail + panel' },
+  { value: 'rail', label: 'Rail only' },
+];
+
 /** `family` matches the faces loaded in main.tsx, so each option previews in its own font. */
 export const FONT_OPTIONS: readonly { value: Font; label: string; family: string }[] = [
   { value: 'geist', label: 'Geist', family: "'Geist Variable', sans-serif" },

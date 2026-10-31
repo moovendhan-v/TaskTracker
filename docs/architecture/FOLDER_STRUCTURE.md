@@ -572,10 +572,12 @@ src/app/                              composition root (like app.module.ts on th
 ├── routes.tsx                        the whole typed route tree; session guards; pages come from module index.ts files
 ├── query-client.ts                   retries (none on client error codes), stale times, UNAUTHENTICATED → sign-in
 └── layouts/
-    ├── workspace-layout.tsx          sidebar, top bar, workbench tabs and <Outlet/>; the open task (?task=) shows over any page
+    ├── workspace-layout.tsx          rail, side panel, top bar, workbench tabs and <Outlet/>; the open task (?task=) shows over any page
+    ├── app-rail.tsx                  60px app rail: apps, inbox, panel toggle, appearance, account; G-then-key shortcuts
+    ├── rail-areas.ts                 rail apps and which pages belong to each
     ├── workbench-tabs.tsx            tab strip: pin, reorder (drag or menu), close, Alt+T / W / 1–9 / ⇧[ ] shortcuts
     ├── workspace-sidebar.tsx         navigation, projects with live counts, workspace and people pages; resizable
-    ├── app-topbar.tsx                sidebar toggle, workspace switcher, search, timer, live status, inbox, new task
+    ├── app-topbar.tsx                workspace switcher, search, timer, live status, new task
     └── user-menu.tsx                 account menu, theme toggle, sign out (sidebar row or top-bar avatar)
 
 src/core/
