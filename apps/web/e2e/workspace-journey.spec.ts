@@ -143,7 +143,9 @@ test('drags a card to Done on the board, and it stays there after reload', async
 });
 
 test('plans, starts and completes a sprint', async () => {
-  await page.getByRole('navigation', { name: 'Project views' }).getByRole('link', { name: 'Sprints', exact: true }).click();
+  // Sprints lives in the "More views" menu next to the core views.
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('button', { name: 'More views and tools' }).click();
+  await page.getByRole('menuitem', { name: /^Sprints/ }).click();
   await expect(page).toHaveURL(/\/sprints/);
   await page.getByRole('button', { name: 'New sprint' }).click();
   await page.getByRole('dialog').getByLabel('Goal').fill('Ship the launch notes');
@@ -166,8 +168,14 @@ test('plans, starts and completes a sprint', async () => {
   await expect(page).toHaveURL(/\/sprints\/[0-9a-f-]+/);
   await expect(page.locator('article', { hasText: 'Write release notes' })).toBeVisible();
   await page.getByRole('link', { name: 'All sprints' }).click();
-  await activePanel.getByRole('button', { name: 'Complete sprint' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Complete sprint' }).click();
+  // Completing is three steps: summary, where unfinished work goes (backlog by default here), review.
+  await activePanel.getByRole('button', { name: 'Complete sprint…' }).click();
+  const complete = page.getByRole('dialog');
+  await complete.getByRole('button', { name: 'Next' }).click();
+  await expect(complete.getByRole('combobox', { name: 'Destination for Write release notes' })).toHaveValue('backlog');
+  await complete.getByRole('button', { name: 'Next' }).click();
+  await expect(complete.getByText('Backlog')).toBeVisible();
+  await complete.getByRole('button', { name: 'Complete sprint' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(page.getByText('Completed sprints')).toBeVisible();
   // The unfinished task went back to the backlog.
@@ -178,14 +186,16 @@ test('writes a doc with autosave and a preview that drops unsafe markup', async 
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Docs' }).click();
   await page.getByRole('button', { name: 'New page' }).first().click();
   await expect(page).toHaveURL(/\/docs\/[0-9a-f-]+/);
-  await page.getByLabel('Page title').fill('Team handbook');
+  await page.getByLabel('Document title').fill('Team handbook');
+  // The editor opens in Visual mode; the raw markdown is in Markdown mode.
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Markdown' }).click();
   await page.getByLabel('Page content (markdown)').fill(
     '# Welcome\n\nRead the **basics** first.\n\n- One\n- Two\n\n[click me](javascript:alert(1)) <img src=x onerror=alert(1)>',
   );
   await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 10_000 });
 
-  await page.getByRole('tab', { name: 'Preview' }).click();
-  const preview = page.getByRole('tabpanel');
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Preview' }).click();
+  const preview = page.getByRole('article', { name: 'Preview' });
   await expect(preview.getByRole('heading', { name: 'Welcome' })).toBeVisible();
   await expect(preview.getByText('click me')).toBeVisible();
   expect(await preview.locator('img').count()).toBe(0);
@@ -204,8 +214,8 @@ test('adds a sub-page that survives a reload', async () => {
   await page.getByRole('button', { name: 'Add inside Team handbook' }).click();
   await page.getByRole('menuitem', { name: 'New page' }).click();
   await expect(page).not.toHaveURL(parentUrl);
-  await expect(page.getByLabel('Page title')).toHaveValue('Untitled');
-  await page.getByLabel('Page title').fill('First week');
+  await expect(page.getByLabel('Document title')).toHaveValue('Untitled');
+  await page.getByLabel('Document title').fill('First week');
   await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 10_000 });
   await page.reload();
   await expect(page.getByRole('treeitem', { name: /First week/ })).toBeVisible();

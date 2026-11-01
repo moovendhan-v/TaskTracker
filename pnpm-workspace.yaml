@@ -6,3 +6,6 @@ packages:
 overrides:
   # @nestjs/graphql 14.0.3 pins 12.0.1 (GHSA-c4qx-w738-7hr3, patched in 12.0.2).
   '@graphql-tools/utils@12.0.1': 12.1.0
+  # @apollo/server and @nestjs/platform-express pull these in below the patched versions.
+  'body-parser@>=2.0.0 <2.4.0': 2.4.0
+  'multer@>=2.0.0 <2.5.0': 2.5.0

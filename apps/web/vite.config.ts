@@ -3,7 +3,9 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
-const devWebPort = process.env.DEV_WEB_PORT ? Number(process.env.DEV_WEB_PORT) : 5180;
+// Docker dev (scripts/dev.sh) publishes Vite on DEV_WEB_PORT, so the browser must open the
+// HMR socket there. Everywhere else (plain `pnpm dev`, CI, Playwright) Vite's own port is right.
+const devWebPort = process.env.DEV_WEB_PORT ? Number(process.env.DEV_WEB_PORT) : undefined;
 
 // The dev server proxies /api to the API, so the browser sees one origin, like nginx in production.
 export default defineConfig({
@@ -19,9 +21,7 @@ export default defineConfig({
       usePolling: true,
       interval: 100,
     },
-    hmr: {
-      clientPort: devWebPort,
-    },
+    hmr: devWebPort ? { clientPort: devWebPort } : true,
     proxy: {
       // ws: live updates (GraphQL subscriptions) use a WebSocket on /api/graphql.
       '/api': { target: process.env.API_PROXY_TARGET ?? 'http://localhost:3000', changeOrigin: false, ws: true },

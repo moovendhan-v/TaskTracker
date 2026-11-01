@@ -110,10 +110,13 @@ export function SlidePresentationModal({ open, onClose, documentTitle, content }
   if (!open) return null;
 
   const openMd2Slides = () => {
-    navigator.clipboard.writeText(content).then(() => {
-      toast.success('Slide content copied! Opening md2slides studio…');
-      window.open('https://md2slides.cybertechmind.com/app', '_blank', 'noopener,noreferrer');
-    });
+    navigator.clipboard.writeText(content).then(
+      () => {
+        toast.success('Slide content copied! Opening md2slides studio…');
+        window.open('https://md2slides.cybertechmind.com/app', '_blank', 'noopener,noreferrer');
+      },
+      () => toast.error("Couldn't copy the slides. Check the browser's clipboard permission."),
+    );
   };
 
   const progressPercent = ((currentSlideIndex + 1) / Math.max(1, slides.length)) * 100;

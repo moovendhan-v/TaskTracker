@@ -14,7 +14,6 @@ import {
   Heading3Icon,
   InfoIcon,
   LightbulbIcon,
-  MinusIcon,
   PlusIcon,
   PresentationIcon,
   SparklesIcon,
