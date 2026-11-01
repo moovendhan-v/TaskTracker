@@ -21,7 +21,7 @@ Legend: ✅ built · 🟡 partial · ⬜ not started. "Gap" lists what v2 adds o
 | C2 | Task detail (full page + peek) | ✅ | v2 layout in modal and side-panel modes: breadcrumb with copy-link `#ID`; header with type, status, time tracking and actions; 30px title; description; subtasks with progress; relations; Development card for linked PRs; Comments / History tabs; right panel with properties and People (assignees, reporter, watchers). Side panel puts properties under the title | Checklists, Create branch / Create PR (needs GitHub write access), attachments, custom fields in the panel, a separate full-page mode, ↑/↓ stepping in the peek |
 | C3 | Sprints (planning, health, velocity, complete) | ✅ | Health strip with forecast; 3-step completion with a destination per unfinished task (one transaction, audited); velocity committed vs done; per-person capacity in each sprint lane (estimate hours vs 6 h × working days minus approved leave, amber at 100%, leave chip) using a new `teamAvailability` query that returns approved leave as dates only and needs sprint.manage | Story points, scope-change tracking, drag between people's lanes, post report / "Sprint end" automation |
 | C4 | Dashboards (tabs, visibility) | 🟡 | Named dashboards as Home tabs next to Overview and My work: create, rename, duplicate, delete, share with the workspace or keep private; each has its own block layout on the grid (versions, conflict prompt, arrange for the owner only). New `dashboard` table with RLS per command (read: own + shared; write: own only), checked directly in SQL. Blocks load data with the viewer's own access | Team visibility (needs a teams model), date-range control per dashboard, KPI tiles with sparklines, dashboards on project pages |
-| C5 | Docs | 🟡 | Tree with drag and drop, markdown + visual editor, slide presentation, export | Live cursors (Yjs), task embeds and `TF-` autocomplete, embedded live views |
+| C5 | Docs (tree, editor, embeds, present) | 🟡 | Tree with drag and drop, visual + markdown editor, slide presentation, export. Task references: `#123` renders as a live chip, `:::task 123` as a card and `:::tasks <open\|mine\|overdue\|due-soon> limit=N` as a live list (all plain markdown, fetched with the reader's access); `#` autocomplete in the markdown editor and visual paragraphs; Task card / Live task list blocks in the visual editor | Live cursors (Yjs), arbitrary filters in embedded lists, task embeds in slides' speaker notes |
 | C6 | Inbox | ✅ | Notification inbox with unread counts and live updates | Side-panel variant inside the workbench |
 | D1 | Chat | ⬜ | | Channels, DMs, threads, create task from message |
 | D2 | Video calls, huddles | ⬜ | | Needs an SFU (LiveKit or similar); calls, lobby, PiP |
@@ -40,7 +40,7 @@ Current state in [docs/screenshots/v2](../screenshots/v2).
 
 Following the handoff's build order (§10), with A1, A2, B1, C1, C2 and C3 done, and B2 / B4 / C4 under way:
 
-1. **C5 docs** against `#16a`: task embeds and `TF-` autocomplete, embedded live task views.
+1. **C6 inbox** as a side panel in the workbench, then **D1 chat** (needs its own plan: data model, realtime, RLS).
 2. **B2 / B4 next steps**: the project dashboard on the grid, then team defaults (B4).
 3. **B3 block config drawer**: per-block data source and view settings, kept separate.
 

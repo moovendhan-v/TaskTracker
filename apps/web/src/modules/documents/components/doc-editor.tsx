@@ -44,6 +44,7 @@ import { formatLongDate } from '@/lib/dates';
 import { useDocumentMutations } from '../hooks/use-documents';
 import { DocVisualEditor } from './doc-visual-editor';
 import { MarkdownPreview } from './markdown-preview';
+import { TaskMentionTextarea } from './task-embeds';
 import { SlidePresentationModal } from './slide-presentation-modal';
 
 const AUTOSAVE_DELAY_MS = 800;
@@ -451,17 +452,17 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
           ) : mode === 'split' ? (
             /* Mode 2: Split Markdown & Preview (For developers) */
             <div className="grid min-h-[70vh] gap-4 md:grid-cols-2">
-              <textarea
+              <TaskMentionTextarea
                 ref={textareaRef}
                 value={content}
                 maxLength={DOC_CONTENT_MAX}
-                onChange={(event) => {
-                  setContent(event.target.value);
-                  scheduleSave({ content: event.target.value });
+                onValueChange={(next) => {
+                  setContent(next);
+                  scheduleSave({ content: next });
                 }}
                 aria-label="Page content (markdown)"
-                placeholder="Type raw markdown here..."
-                className="size-full resize-none rounded-xl border bg-card/60 p-5 font-mono text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="Type raw markdown here… (# to reference a task)"
+                className="size-full min-h-[70vh] resize-none rounded-xl border bg-card/60 p-5 font-mono text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
               <div className="rounded-xl border bg-card/30 p-6 overflow-y-auto">
                 <MarkdownPreview content={content} />
