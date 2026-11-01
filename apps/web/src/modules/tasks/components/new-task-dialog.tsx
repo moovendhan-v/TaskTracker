@@ -1,9 +1,8 @@
 import { Dialog as DialogPrimitive } from 'radix-ui';
-import { FlagIcon, Loader2Icon, TagIcon, UserRoundIcon, XIcon } from 'lucide-react';
+import { FlagIcon, Loader2Icon, TagIcon, XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { TASK_DESCRIPTION_MAX, TASK_PRIORITIES, TASK_TITLE_MAX, TASK_TYPES, type TaskPriority, type TaskType } from '@taskflow/shared-types';
-import { UserAvatar } from '@/components/common/user-avatar';
 import { notify } from '@/components/kit/notify';
 import { OptionPicker } from '@/components/kit/option-picker';
 import { DateRangeField } from '@/components/kit/range-calendar';
@@ -12,7 +11,6 @@ import { useServerForm } from '@/core/forms/use-server-form';
 import { cn } from '@/lib/cn';
 import { dayToIso, type Day } from '@/lib/days';
 import { useLists } from '@/modules/lists';
-import { useMembers } from '@/modules/members';
 import { useSpaces } from '@/modules/spaces';
 import { useStatuses } from '../hooks/use-tasks';
 import { useTaskMutations } from '../hooks/use-task-mutations';
@@ -55,7 +53,6 @@ const chip = 'flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs tex
 export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initialList, spaceId: initialSpace, parent, onCreated }: NewTaskDialogProps) {
   const { data: lists = [] } = useLists(workspaceId);
   const { data: spaces = [] } = useSpaces(workspaceId);
-  const { data: members = [] } = useMembers(workspaceId);
   const listSpace = lists.find((item) => item.id === initialList)?.spaceId;
   const [chosenSpace, setSpaceId] = useState<string | null>(initialSpace ?? null);
   const spaceId = chosenSpace ?? listSpace ?? spaces[0]?.id ?? null;
@@ -75,7 +72,6 @@ export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initial
   const { errors } = form.formState;
   const set = <K extends keyof Values>(key: K, value: Values[K]) => form.setValue(key, value as never, { shouldDirty: true });
   const status = statuses.find((item) => item.id === values.statusId) ?? statuses.find((item) => item.category === 'unstarted') ?? statuses[0];
-  const assignee = members.find((member) => member.userId === values.assigneeId);
   const firstError = Object.values(errors)[0]?.message;
 
   const submit = (another: boolean) =>

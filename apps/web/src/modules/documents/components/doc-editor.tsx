@@ -1,7 +1,6 @@
 import {
   ActivityIcon,
   ArrowLeftIcon,
-  BoldIcon,
   CheckIcon,
   ClockIcon,
   CodeIcon,
@@ -13,10 +12,7 @@ import {
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
-  ItalicIcon,
   LayoutTemplateIcon,
-  ListIcon,
-  ListOrderedIcon,
   ListTodoIcon,
   LoaderCircleIcon,
   Maximize2Icon,
@@ -24,13 +20,10 @@ import {
   MinusIcon,
   PanelLeftCloseIcon,
   PanelLeftIcon,
-  PencilLineIcon,
   PlusIcon,
   PresentationIcon,
   PrinterIcon,
   QuoteIcon,
-  Share2Icon,
-  SparklesIcon,
   TableIcon,
   WorkflowIcon,
 } from 'lucide-react';
@@ -40,7 +33,6 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -49,7 +41,6 @@ import {
 import { toast } from '@/components/ui/sonner';
 import { cn } from '@/lib/cn';
 import { formatLongDate } from '@/lib/dates';
-import { useMemberName } from '@/modules/members';
 import { useDocumentMutations } from '../hooks/use-documents';
 import { DocVisualEditor } from './doc-visual-editor';
 import { MarkdownPreview } from './markdown-preview';
@@ -70,7 +61,6 @@ type EditorMode = 'visual' | 'split' | 'preview';
 
 export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onToggleTree }: DocEditorProps) {
   const { mutate } = useDocumentMutations(workspaceId).update;
-  const memberName = useMemberName(workspaceId);
   const [title, setTitle] = useState(document.title);
   const [content, setContent] = useState(document.content);
   const [saveState, setSaveState] = useState<SaveState>('saved');
@@ -306,9 +296,11 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
               </DropdownMenu>
 
               {/* View Mode Toggle: Visual (ClickUp) vs Markdown */}
-              <div className="flex items-center rounded-md border bg-muted/30 p-0.5">
+              <div role="group" aria-label="Editor mode" className="flex items-center rounded-md border bg-muted/30 p-0.5">
                 <button
                   type="button"
+                  aria-label="Visual"
+                  aria-pressed={mode === 'visual'}
                   onClick={() => setMode('visual')}
                   className={cn(
                     'flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium transition-colors',
@@ -321,6 +313,8 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
                 </button>
                 <button
                   type="button"
+                  aria-label="Markdown"
+                  aria-pressed={mode === 'split'}
                   onClick={() => setMode('split')}
                   className={cn(
                     'flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium transition-colors',
@@ -333,6 +327,8 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
                 </button>
                 <button
                   type="button"
+                  aria-label="Preview"
+                  aria-pressed={mode === 'preview'}
                   onClick={() => setMode('preview')}
                   className={cn(
                     'flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium transition-colors',
@@ -473,7 +469,7 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
             </div>
           ) : (
             /* Mode 3: Clean Preview Only */
-            <article className="rounded-xl border bg-card/40 p-6 sm:p-8 shadow-sm">
+            <article aria-label="Preview" className="rounded-xl border bg-card/40 p-6 sm:p-8 shadow-sm">
               <MarkdownPreview content={content} />
             </article>
           )}
