@@ -363,6 +363,17 @@ test('opens an empty inbox', async () => {
   await expect(page.getByText('You’re all caught up')).toBeVisible();
 });
 
+test('docks the inbox as a side panel from the rail', async () => {
+  const bell = page.getByRole('navigation', { name: 'Apps' }).getByRole('button', { name: /^Inbox/ });
+  await bell.click();
+  const panel = page.getByRole('complementary', { name: 'Inbox' });
+  await expect(panel).toBeVisible();
+  await expect(bell).toHaveAttribute('aria-pressed', 'true');
+  await panel.getByRole('radio', { name: 'All' }).click();
+  await panel.getByRole('button', { name: 'Close inbox' }).click();
+  await expect(panel).toBeHidden();
+});
+
 test('signs out', async () => {
   await page.getByRole('button', { name: /Dana Reyes/ }).click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();

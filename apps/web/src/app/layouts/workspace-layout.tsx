@@ -1,9 +1,9 @@
-import { Outlet, useNavigate } from '@tanstack/react-router';
+import { Outlet } from '@tanstack/react-router';
 import { BellIcon } from 'lucide-react';
 import { VerifyEmailBanner } from '@/core/auth/verify-email-banner';
 import { useWorkspaceEvents } from '@/core/realtime/use-workspace-events';
 import { toast } from '@/components/ui/sonner';
-import { describeNotification, inboxApi, useUnreadCount } from '@/modules/inbox';
+import { describeNotification, InboxPanel, inboxApi, useInboxPanel, useUnreadCount } from '@/modules/inbox';
 import { TaskDetail, useOpenTask } from '@/modules/tasks';
 import { AppRail } from './app-rail';
 import { AppTopbar } from './app-topbar';
@@ -16,7 +16,6 @@ import { WorkspaceSidebar } from './workspace-sidebar';
  */
 export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: string; openTaskId: string | undefined }) {
   const { data: unread = 0 } = useUnreadCount(workspaceId);
-  const navigate = useNavigate();
   const openTask = useOpenTask();
 
   // Live updates for this workspace, and a toast when something new lands in your inbox.
@@ -25,7 +24,7 @@ export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: stri
     if (!latest) return;
     toast(describeNotification(latest), {
       icon: <BellIcon className="size-4" />,
-      action: { label: 'Open inbox', onClick: () => void navigate({ to: '/w/$workspaceId/inbox', params: { workspaceId } }) },
+      action: { label: 'Open inbox', onClick: () => useInboxPanel.getState().setOpen(true) },
     });
   };
   useWorkspaceEvents(workspaceId, () => void showLatestNotification());
@@ -40,6 +39,7 @@ export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: stri
         <VerifyEmailBanner />
         <Outlet />
       </main>
+      <InboxPanel workspaceId={workspaceId} onOpenTask={openTask} />
       <TaskDetail workspaceId={workspaceId} taskId={openTaskId} onClose={() => openTask(undefined)} onOpen={openTask} />
     </div>
   );
