@@ -19,6 +19,8 @@ import {
   SparklesIcon,
   TableIcon,
   Trash2Icon,
+  ListChecksIcon,
+  TicketIcon,
 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +33,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/cn';
+import { parseTaskEmbed, TASK_LIST_LABELS, TASK_LIST_LIMIT, TASK_LIST_PRESETS, taskEmbedToMarkdown, type TaskListPreset } from '../lib/task-embeds';
+import { TaskEmbedCard, TaskListEmbed, TaskMentionTextarea } from './task-embeds';
 
 export type BlockType =
   | 'h1'
@@ -44,6 +48,8 @@ export type BlockType =
   | 'cards'
   | 'stats'
   | 'timeline'
+  | 'task'
+  | 'tasks'
   | 'divider';
 
 export interface VisualBlock {
@@ -67,6 +73,10 @@ export interface VisualBlock {
     statItems?: { id: string; value: string; label: string; desc: string }[];
     // For timeline
     timelineItems?: { id: string; time: string; title: string; desc: string }[];
+    // For task embeds (:::task 12 / :::tasks overdue limit=5)
+    taskNumber?: number | null;
+    taskPreset?: TaskListPreset;
+    taskLimit?: number;
   };
 }
 
@@ -97,6 +107,20 @@ export function markdownToBlocks(md: string): VisualBlock[] {
     // Check for divider
     if (/^---\s*$/.test(line)) {
       blocks.push({ id: uid(), type: 'divider', content: '---' });
+      i++;
+      continue;
+    }
+
+    // Task references: :::task 12 / :::tasks overdue limit=5 (body is empty)
+    const embed = line.startsWith(':::task') ? parseTaskEmbed(line) : null;
+    if (embed) {
+      blocks.push(
+        embed.kind === 'task'
+          ? { id: uid(), type: 'task', content: '', meta: { taskNumber: embed.number } }
+          : { id: uid(), type: 'tasks', content: '', meta: { taskPreset: embed.preset, taskLimit: embed.limit } },
+      );
+      i++;
+      while (i < lines.length && !(lines[i] ?? '').startsWith(':::')) i++;
       i++;
       continue;
     }
@@ -351,6 +375,11 @@ export function blocksToMarkdown(blocks: VisualBlock[]): string {
           const statLines = items.map((it) => `- ${it.value} | ${it.label} | ${it.desc}`);
           return [`:::stats cols=${cols}`, ...statLines, ':::'].join('\n');
         }
+        case 'task':
+          // An unfinished card (no number yet) is left out rather than saved broken.
+          return b.meta?.taskNumber ? taskEmbedToMarkdown({ kind: 'task', number: b.meta.taskNumber }) : '';
+        case 'tasks':
+          return taskEmbedToMarkdown({ kind: 'tasks', preset: b.meta?.taskPreset ?? 'open', limit: b.meta?.taskLimit ?? TASK_LIST_LIMIT.default });
         case 'timeline': {
           const items = b.meta?.timelineItems || [];
           const timelineLines = items.map((it) => `- ${it.time} | ${it.title} | ${it.desc}`);
@@ -373,16 +402,18 @@ interface DocVisualEditorProps {
 export function DocVisualEditor({ initialMarkdown, onChange, canEdit }: DocVisualEditorProps) {
   const [blocks, setBlocks] = useState<VisualBlock[]>(() => markdownToBlocks(initialMarkdown));
   const isInternalChange = useRef(false);
+  // The latest blocks, so an update can tell the parent outside of React's render phase
+  // (calling onChange inside a setState updater updates DocEditor while this one renders).
+  const latest = useRef(blocks);
 
   const updateBlocks = useCallback(
     (updater: (prev: VisualBlock[]) => VisualBlock[]) => {
-      setBlocks((prev) => {
-        const next = updater(prev);
-        isInternalChange.current = true;
-        const md = blocksToMarkdown(next);
-        onChange(md);
-        return next;
-      });
+      const next = updater(latest.current);
+      if (next === latest.current) return;
+      latest.current = next;
+      isInternalChange.current = true;
+      setBlocks(next);
+      onChange(blocksToMarkdown(next));
     },
     [onChange]
   );
@@ -556,6 +587,16 @@ export function DocVisualEditor({ initialMarkdown, onChange, canEdit }: DocVisua
                       <CodeIcon className="size-3.5 mr-2 text-critical" />
                       <span>Code Block</span>
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[11px] font-semibold">Tasks</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => insertBlockAfter(idx, 'task')}>
+                      <TicketIcon className="size-3.5 mr-2" />
+                      <span>Task card</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => insertBlockAfter(idx, 'tasks')}>
+                      <ListChecksIcon className="size-3.5 mr-2" />
+                      <span>Live task list</span>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -628,6 +669,16 @@ export function DocVisualEditor({ initialMarkdown, onChange, canEdit }: DocVisua
                 <CodeIcon className="size-4 mr-2 text-critical" />
                 <span>Code Block</span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[11px] font-semibold">Tasks</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => insertBlockAfter(blocks.length - 1, 'task')}>
+                <TicketIcon className="size-4 mr-2" />
+                <span>Task card (:::task)</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => insertBlockAfter(blocks.length - 1, 'tasks')}>
+                <ListChecksIcon className="size-4 mr-2" />
+                <span>Live task list (:::tasks)</span>
+              </DropdownMenuItem>
 
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={insertFullSlidesTemplate}>
@@ -644,6 +695,10 @@ export function DocVisualEditor({ initialMarkdown, onChange, canEdit }: DocVisua
 
 function createDefaultBlock(type: BlockType): VisualBlock {
   switch (type) {
+    case 'task':
+      return { id: uid(), type: 'task', content: '', meta: { taskNumber: null } };
+    case 'tasks':
+      return { id: uid(), type: 'tasks', content: '', meta: { taskPreset: 'open', taskLimit: TASK_LIST_LIMIT.default } };
     case 'h1':
       return { id: uid(), type: 'h1', content: 'New Slide Header' };
     case 'h2':
@@ -778,15 +833,75 @@ function BlockRenderer({
 
     case 'paragraph':
       return (
-        <textarea
+        <TaskMentionTextarea
           value={block.content}
           disabled={!canEdit}
-          onChange={(e) => onChange({ content: e.target.value })}
-          placeholder="Write text here..."
+          onValueChange={(content) => onChange({ content })}
+          placeholder="Write text here… (# to reference a task)"
           rows={Math.max(1, block.content.split('\n').length)}
           className="w-full resize-none border-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
         />
       );
+
+    case 'task':
+      return (
+        <div className="grid gap-2">
+          {canEdit ? (
+            <label className="flex w-fit items-center gap-2 text-xs text-muted-foreground">
+              <TicketIcon className="size-3.5" aria-hidden /> Task number
+              <input
+                type="number"
+                min={1}
+                max={999999}
+                value={block.meta?.taskNumber ?? ''}
+                onChange={(e) => onChange({ meta: { ...block.meta, taskNumber: e.target.value ? Math.max(1, Math.round(Number(e.target.value))) : null } })}
+                placeholder="e.g. 12"
+                className="h-7 w-24 rounded-md border bg-card px-2 font-mono text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              />
+            </label>
+          ) : null}
+          {block.meta?.taskNumber ? <TaskEmbedCard number={block.meta.taskNumber} /> : <p className="text-sm text-muted-foreground">Enter a task number to show it as a card.</p>}
+        </div>
+      );
+
+    case 'tasks': {
+      const preset = block.meta?.taskPreset ?? 'open';
+      const limit = block.meta?.taskLimit ?? TASK_LIST_LIMIT.default;
+      return (
+        <div className="grid gap-2">
+          {canEdit ? (
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <label className="flex items-center gap-2">
+                <ListChecksIcon className="size-3.5" aria-hidden /> Show
+                <select
+                  value={preset}
+                  onChange={(e) => onChange({ meta: { ...block.meta, taskPreset: e.target.value as TaskListPreset } })}
+                  className="h-7 rounded-md border bg-card px-2 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  {TASK_LIST_PRESETS.map((value) => (
+                    <option key={value} value={value}>
+                      {TASK_LIST_LABELS[value]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2">
+                Up to
+                <input
+                  type="number"
+                  min={1}
+                  max={TASK_LIST_LIMIT.max}
+                  value={limit}
+                  onChange={(e) => onChange({ meta: { ...block.meta, taskLimit: Math.min(TASK_LIST_LIMIT.max, Math.max(1, Math.round(Number(e.target.value) || 1))) } })}
+                  className="h-7 w-16 rounded-md border bg-card px-2 font-mono text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                />
+              </label>
+            </div>
+          ) : null}
+          <TaskListEmbed preset={preset} limit={limit} />
+        </div>
+      );
+    }
 
     case 'divider':
       return (

@@ -2,6 +2,9 @@ import Markdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/cn';
+import { remarkTaskMentions, TASK_HREF_PREFIX } from '../lib/remark-task-mentions';
+import { parseTaskEmbed, type TaskEmbed } from '../lib/task-embeds';
+import { TaskChip, TaskEmbedCard, TaskListEmbed } from './task-embeds';
 
 interface MarkdownPreviewProps {
   content: string;
@@ -30,7 +33,8 @@ type Chunk =
   | { type: 'markdown'; content: string }
   | { type: 'cards'; cols: number; items: CardItem[] }
   | { type: 'stats'; cols: number; items: StatItem[] }
-  | { type: 'timeline'; items: TimelineItem[] };
+  | { type: 'timeline'; items: TimelineItem[] }
+  | { type: 'task-embed'; embed: TaskEmbed };
 
 /**
  * Parses md2slides custom container extensions (:::cards, :::stats, :::timeline)
@@ -52,6 +56,18 @@ function parseMd2SlidesContainers(text: string): Chunk[] {
     const line = lines[i];
     if (line === undefined) {
       i++;
+      continue;
+    }
+
+    // :::task 12 / :::tasks overdue limit=5 (live task references)
+    const embed = line.startsWith(':::task') ? parseTaskEmbed(line) : null;
+    if (embed) {
+      flushMd();
+      i++;
+      // The block's body is empty; skip anything up to its closing ':::'.
+      while (i < lines.length && !(lines[i] ?? '').startsWith(':::')) i++;
+      i++;
+      chunks.push({ type: 'task-embed', embed });
       continue;
     }
 
@@ -153,15 +169,23 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
           return (
             <Markdown
               key={idx}
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkGfm, remarkTaskMentions]}
               rehypePlugins={[rehypeSanitize]}
               components={{
-                a: ({ node: _node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer nofollow" />,
+                a: ({ node: _node, ...props }) => {
+                  const number = props.href?.startsWith(TASK_HREF_PREFIX) ? Number(props.href.slice(TASK_HREF_PREFIX.length)) : NaN;
+                  if (Number.isInteger(number) && number > 0) return <TaskChip number={number} />;
+                  return <a {...props} target="_blank" rel="noopener noreferrer nofollow" />;
+                },
               }}
             >
               {chunk.content}
             </Markdown>
           );
+        }
+
+        if (chunk.type === 'task-embed') {
+          return chunk.embed.kind === 'task' ? <TaskEmbedCard key={idx} number={chunk.embed.number} /> : <TaskListEmbed key={idx} preset={chunk.embed.preset} limit={chunk.embed.limit} />;
         }
 
         if (chunk.type === 'cards') {

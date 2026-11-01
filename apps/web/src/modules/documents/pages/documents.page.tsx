@@ -9,6 +9,7 @@ import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
+import { DocTasksProvider } from '../components/task-embeds';
 import { useCurrentUser } from '@/core/auth/use-current-user';
 import { useSpaces } from '@/modules/spaces';
 import { usePermissions } from '@/modules/workspaces';
@@ -50,6 +51,7 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
     });
 
   return (
+    <DocTasksProvider workspaceId={workspaceId}>
     <div className="flex min-h-0 flex-1">
       <aside
         className={cn(
@@ -187,5 +189,6 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
         )}
       </section>
     </div>
+    </DocTasksProvider>
   );
 }
