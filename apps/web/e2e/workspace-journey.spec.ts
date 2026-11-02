@@ -419,6 +419,25 @@ test('chats in a channel, replies in a thread and turns a message into a task', 
   const mention = page.getByRole('log', { name: 'Messages in #release-train' }).getByRole('article').filter({ hasText: 'Thanks' });
   await expect(mention).toContainText('Thanks @Dana Reyes');
   await expect(mention).not.toContainText('@{');
+
+  // Quick reactions toggle on and off.
+  await mention.hover();
+  await mention.getByRole('button', { name: 'Add reaction' }).click();
+  await page.getByRole('button', { name: 'React with 🎉' }).click();
+  const party = mention.getByRole('button', { name: '🎉 1, including you' });
+  await expect(party).toHaveAttribute('aria-pressed', 'true');
+  await party.click();
+  await expect(mention.getByRole('list', { name: 'Reactions' })).toHaveCount(0);
+
+  // Search finds messages by the start of their words and opens the hit.
+  await page.getByRole('button', { name: 'Search messages ( / )' }).click();
+  const search = page.getByRole('combobox', { name: 'Search messages' });
+  await search.fill('relea not');
+  const hit = page.getByRole('listbox', { name: 'Results' }).getByRole('option').first();
+  await expect(hit).toContainText('release notes');
+  await expect(hit.locator('mark').first()).toHaveText('release');
+  await search.press('Enter');
+  await expect(page).toHaveURL(/\/chat\/[0-9a-f-]{36}\?thread=/);
 });
 
 test('signs out', async () => {

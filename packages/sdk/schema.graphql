@@ -223,6 +223,7 @@ type ChatMessage {
 
   """The thread root, for replies"""
   parentId: ID
+  reactions: [ChatReaction!]!
   replyCount: Int!
 
   """The task a system line refers to"""
@@ -238,6 +239,23 @@ type ChatMessagePage {
 type ChatPerson {
   id: ID!
   name: String!
+}
+
+type ChatReaction {
+  count: Int!
+  emoji: String!
+
+  """You reacted with this one"""
+  mine: Boolean!
+
+  """Up to five names, for a tooltip"""
+  names: [String!]!
+}
+
+type ChatSearchHit {
+  channelKind: String!
+  channelName: String
+  message: ChatMessage!
 }
 
 type ColumnWidth {
@@ -1086,6 +1104,11 @@ type Mutation {
   cancelLeaveRequest(requestId: ID!, workspaceId: ID!): LeaveRequest!
 
   """
+  Tells the channel you are typing. A live signal only; nothing is stored
+  """
+  chatTyping(channelId: ID!, workspaceId: ID!): Boolean!
+
+  """
   Unfinished tasks move to another planned sprint in the space, or to the backlog when omitted
   """
   completeSprint(
@@ -1269,6 +1292,9 @@ type Mutation {
   """Starts a timer; a timer already running is stopped first"""
   startTimer(input: StartTimerInput!, workspaceId: ID!): TimeEntry!
   stopTimer(workspaceId: ID!): TimeEntry!
+
+  """Adds your reaction, or removes it if it is already there"""
+  toggleChatReaction(emoji: String!, messageId: ID!, workspaceId: ID!): ChatMessage!
   unrelateTasks(relationId: ID!, workspaceId: ID!): Boolean!
 
   """
@@ -1636,6 +1662,17 @@ type Query {
   runningTimer(workspaceId: ID!): TimeEntry
 
   """
+  Messages you can read that match every word (as a prefix), newest first
+  """
+  searchChatMessages(
+    """Only this channel"""
+    channelId: ID
+    first: Int
+    query: String!
+    workspaceId: ID!
+  ): [ChatSearchHit!]!
+
+  """
   Members matching filters, sort and paging; see resourceSchema(resource: "members")
   """
   searchMembers(query: ResourceQueryInput, workspaceId: ID!): MemberPage!
@@ -1727,6 +1764,7 @@ enum RealtimeEntityType {
   automation
   chat_channel
   chat_message
+  chat_typing
   comment
   custom_field
   department

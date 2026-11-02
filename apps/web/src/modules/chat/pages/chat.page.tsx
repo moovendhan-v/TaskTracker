@@ -19,7 +19,10 @@ import { BrowseChannelsDialog, CreateTaskDialog, NewChannelDialog, NewDirectMess
 import { Composer } from '../components/composer';
 import { MessageFeed } from '../components/message-feed';
 import { MessageItem } from '../components/message-item';
-import { useChatChannel, useChatChannels, useChatMessage, useChatMessages, useChatMutations, useChatThread } from '../hooks/use-chat';
+import { SearchDialog } from '../components/search-dialog';
+import { useChatChannel, useChatChannels, useChatMessage, useChatMessages, useChatMutations, useChatThread, useTypingIn } from '../hooks/use-chat';
+import { chatApi } from '../api/chat.api';
+import { useMemberName } from '@/modules/members';
 import { channelLabel } from '../lib/chat-display';
 
 interface ChatPageProps {
@@ -35,7 +38,20 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
   const allowed = can('chat.use');
   const { data: me } = useCurrentUser();
   const { data: channels } = useChatChannels(workspaceId, allowed);
-  const [dialog, setDialog] = useState<'channel' | 'dm' | 'browse' | null>(null);
+  const [dialog, setDialog] = useState<'channel' | 'dm' | 'browse' | 'search' | null>(null);
+
+  // "/" opens message search, unless you're typing somewhere.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+      event.preventDefault();
+      setDialog('search');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const open = (id: string, thread?: string) => void navigate({ to: '/w/$workspaceId/chat/$channelId', params: { workspaceId, channelId: id }, search: (previous: Record<string, unknown>) => ({ ...previous, thread }) });
   const openChannel = (channel: ChatChannelResponse) => {
@@ -56,7 +72,7 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
   return (
     <DocTasksProvider workspaceId={workspaceId}>
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <ChannelList channels={channels} activeId={channelId} onSelect={openChannel} onNewChannel={() => setDialog('channel')} onNewMessage={() => setDialog('dm')} onBrowse={() => setDialog('browse')} />
+        <ChannelList channels={channels} activeId={channelId} onSelect={openChannel} onNewChannel={() => setDialog('channel')} onNewMessage={() => setDialog('dm')} onBrowse={() => setDialog('browse')} onSearch={() => setDialog('search')} />
         {channelId && me ? (
           <Conversation key={channelId} workspaceId={workspaceId} channelId={channelId} threadId={threadId} me={me.id} onThread={(thread) => open(channelId, thread)} />
         ) : channels && channels.length === 0 ? (
@@ -85,6 +101,7 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
           <NewDirectMessageDialog workspaceId={workspaceId} me={me.id} open={dialog === 'dm'} onOpenChange={(value) => setDialog(value ? 'dm' : null)} onOpened={openChannel} />
         </>
       ) : null}
+      {dialog === 'search' ? <SearchDialog workspaceId={workspaceId} open onOpenChange={(value) => setDialog(value ? 'search' : null)} /> : null}
       <BrowseChannelsDialog workspaceId={workspaceId} open={dialog === 'browse'} onOpenChange={(value) => setDialog(value ? 'browse' : null)} onOpen={openChannel} />
     </DocTasksProvider>
   );
@@ -134,6 +151,7 @@ function Conversation({ workspaceId, channelId, threadId, me, onThread }: Conver
       ),
     onDelete: (message: ChatMessageResponse) => () => mutations.remove.mutateAsync(message.id).catch((error: unknown) => notify.error(error)),
     onCreateTask: (message: ChatMessageResponse) => () => setTaskFrom(message),
+    onReact: (message: ChatMessageResponse) => (emoji: string) => mutations.react.mutate({ messageId: message.id, emoji }, { onError: (error) => notify.error(error) }),
     onCopyLink: (message: ChatMessageResponse) => () => {
       const url = `${window.location.origin}/w/${workspaceId}/chat/${channelId}?thread=${message.parentId ?? message.id}`;
       void navigator.clipboard.writeText(url).then(() => notify.success('Link copied'));
@@ -191,6 +209,7 @@ function Conversation({ workspaceId, channelId, threadId, me, onThread }: Conver
                 onReply={() => onThread(message.id)}
                 onCreateTask={archived ? undefined : actions.onCreateTask(message)}
                 onCopyLink={actions.onCopyLink(message)}
+                onReact={archived ? undefined : actions.onReact(message)}
               />
             )}
           />
@@ -201,7 +220,17 @@ function Conversation({ workspaceId, channelId, threadId, me, onThread }: Conver
               <ArchiveIcon className="size-4" /> This channel is archived. You can read it, but not post.
             </p>
           ) : (
-            <Composer key={channelId} autoFocus placeholder={`Message ${label}`} onSend={(body) => send(body)} onEditLast={lastMine ? () => setEditing(lastMine.id) : undefined} />
+            <>
+              <TypingLine workspaceId={workspaceId} channelId={channelId} me={me} />
+              <Composer
+                key={channelId}
+                autoFocus
+                placeholder={`Message ${label}`}
+                onSend={(body) => send(body)}
+                onEditLast={lastMine ? () => setEditing(lastMine.id) : undefined}
+                onTyping={member ? () => void chatApi.typing(workspaceId, channelId).catch(() => undefined) : undefined}
+              />
+            </>
           )}
         </div>
       </section>
@@ -318,6 +347,7 @@ interface ThreadActions {
   onDelete: (message: ChatMessageResponse) => () => Promise<unknown>;
   onCreateTask: (message: ChatMessageResponse) => () => void;
   onCopyLink: (message: ChatMessageResponse) => () => void;
+  onReact: (message: ChatMessageResponse) => (emoji: string) => void;
 }
 
 function ThreadPane({ workspaceId, rootId, channelLabel: where, archived, onClose, onSend, actions }: {
@@ -343,6 +373,7 @@ function ThreadPane({ workspaceId, rootId, channelLabel: where, archived, onClos
       onDelete={actions.onDelete(message)}
       onCreateTask={archived ? undefined : actions.onCreateTask(message)}
       onCopyLink={actions.onCopyLink(message)}
+      onReact={archived ? undefined : actions.onReact(message)}
     />
   );
   return (
@@ -386,5 +417,19 @@ function ThreadPane({ workspaceId, rootId, channelLabel: where, archived, onClos
         </div>
       ) : null}
     </aside>
+  );
+}
+
+/** "Jordan is typing…" just above the composer. Keeps its height so the composer doesn't jump. */
+function TypingLine({ workspaceId, channelId, me }: { workspaceId: string; channelId: string; me: string }) {
+  const typing = useTypingIn(workspaceId, channelId, me);
+  const nameOf = useMemberName(workspaceId);
+  const names = typing.map((id) => nameOf(id) ?? 'Someone');
+  const text =
+    names.length === 0 ? '' : names.length === 1 ? `${names[0]} is typing…` : names.length === 2 ? `${names[0]} and ${names[1]} are typing…` : 'Several people are typing…';
+  return (
+    <p aria-live="polite" className="h-5 truncate px-1 text-xs text-muted-foreground">
+      {text}
+    </p>
   );
 }

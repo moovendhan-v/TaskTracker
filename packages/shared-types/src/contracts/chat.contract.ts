@@ -46,6 +46,16 @@ export interface ChatMessageResponse {
   editedAt: string | null;
   deleted: boolean;
   createdAt: string;
+  reactions: ChatReactionSummary[];
+}
+
+export interface ChatReactionSummary {
+  emoji: string;
+  count: number;
+  /** You reacted with this one. */
+  mine: boolean;
+  /** Up to five names, for the tooltip. */
+  names: string[];
 }
 
 export interface ChatMessagePage {
@@ -70,4 +80,12 @@ export interface SendChatMessageRequest {
   channelId: string;
   body: string;
   parentId?: string | null;
+}
+
+/** A message found by search, with where it lives. */
+export interface ChatSearchHit {
+  message: ChatMessageResponse;
+  channelKind: ChatChannelKind;
+  /** Null for direct messages. */
+  channelName: string | null;
 }

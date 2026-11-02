@@ -139,6 +139,21 @@ describe('chat row-level security', () => {
     expect(await as(member.id, ws.workspaceId, 'DELETE FROM chat_member WHERE channel_id = $1 AND user_id = $2 RETURNING user_id', [privateId, ws.owner.id])).toEqual([]);
   });
 
+  it('keeps reactions to people who can read the channel, and to your own', async () => {
+    const [message] = await post(ws.owner.id, privateId, 'react to me');
+    const react = (userId: string) =>
+      as(userId, ws.workspaceId, 'INSERT INTO chat_reaction (message_id, user_id, emoji, workspace_id, channel_id) VALUES ($1, $2, $3, $4, $5)', [message!.id, userId, '👍', ws.workspaceId, privateId]);
+    await react(member.id);
+    // Refused either way: the outsider can't even see the message (trigger) or post there (RLS).
+    await expect(react(outsider.id)).rejects.toThrow(/row-level security|live message in its channel/);
+    // Reacting as someone else, or putting a reaction in another channel, is refused.
+    await expect(as(member.id, ws.workspaceId, 'INSERT INTO chat_reaction (message_id, user_id, emoji, workspace_id, channel_id) VALUES ($1, $2, $3, $4, $5)', [message!.id, ws.owner.id, '🎉', ws.workspaceId, privateId])).rejects.toThrow(/row-level security/);
+    await expect(as(member.id, ws.workspaceId, 'INSERT INTO chat_reaction (message_id, user_id, emoji, workspace_id, channel_id) VALUES ($1, $2, $3, $4, $5)', [message!.id, member.id, '🎉', ws.workspaceId, publicId])).rejects.toThrow(/live message in its channel|row-level security/);
+    expect(await as(outsider.id, ws.workspaceId, 'SELECT emoji FROM chat_reaction')).toEqual([]);
+    expect(await as(ws.owner.id, ws.workspaceId, 'DELETE FROM chat_reaction WHERE user_id = $1 RETURNING emoji', [member.id])).toEqual([]);
+    expect(await as(member.id, ws.workspaceId, 'DELETE FROM chat_reaction WHERE user_id = $1 RETURNING emoji', [member.id])).toHaveLength(1);
+  });
+
   it('gives the platform scope every chat row', async () => {
     const rows = await withScope(db, { platform: true }, async (client) => (await client.query('SELECT id FROM chat_channel WHERE workspace_id = $1', [ws.workspaceId])).rows);
     expect(rows).toHaveLength(4);

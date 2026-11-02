@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { toPrefixQuery } from './search-query.js';
 import { CHAT_MESSAGE_MAX, cleanMessageBody, isValidChannelName, mentionedUserIds, mentionsToNames, normalizeChannelName, taskTitleFromMessage } from '@taskflow/shared-types';
 
 describe('chat rules', () => {
@@ -37,5 +38,13 @@ describe('chat rules', () => {
     expect(mentionedUserIds('hi @{u1} and @{u2}, again @{u1}; not @u3 or @{bad id}')).toEqual(['u1', 'u2']);
     expect(mentionedUserIds(Array.from({ length: 30 }, (_, i) => `@{u${i}}`).join(' '))).toHaveLength(20);
     expect(mentionsToNames('ping @{u1} and @{gone}', (id) => (id === 'u1' ? 'Sam' : null))).toBe('ping @Sam and @someone');
+  });
+
+  it('builds a safe prefix search from what people type', () => {
+    expect(toPrefixQuery('Deploy  FAIL!')).toBe('deploy:* & fail:*');
+    expect(toPrefixQuery("x' | !y & (z:*)")).toBe('x:* & y:* & z:*');
+    expect(toPrefixQuery('café 42')).toBe('café:* & 42:*');
+    expect(toPrefixQuery('   !!! ')).toBe('');
+    expect(toPrefixQuery('a b c d e f g h i j').split(' & ')).toHaveLength(8);
   });
 });

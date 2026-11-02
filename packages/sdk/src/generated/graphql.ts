@@ -473,6 +473,7 @@ export type RealtimeEntityType =
   | 'automation'
   | 'chat_channel'
   | 'chat_message'
+  | 'chat_typing'
   | 'comment'
   | 'custom_field'
   | 'department'
@@ -923,7 +924,7 @@ export type DeleteAutomationMutation = { deleteAutomation: boolean };
 
 export type ChatChannelFieldsFragment = { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> };
 
-export type ChatMessageFieldsFragment = { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string };
+export type ChatMessageFieldsFragment = { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> };
 
 export type ChatChannelsQueryVariables = Exact<{
   workspaceId: string;
@@ -965,7 +966,7 @@ export type ChatMessagesQueryVariables = Exact<{
 }>;
 
 
-export type ChatMessagesQuery = { chatMessages: { cursor: string | null, items: Array<{ id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string }> } };
+export type ChatMessagesQuery = { chatMessages: { cursor: string | null, items: Array<{ id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> }> } };
 
 export type ChatMessageQueryVariables = Exact<{
   workspaceId: string;
@@ -973,7 +974,7 @@ export type ChatMessageQueryVariables = Exact<{
 }>;
 
 
-export type ChatMessageQuery = { chatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string } };
+export type ChatMessageQuery = { chatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> } };
 
 export type ChatThreadQueryVariables = Exact<{
   workspaceId: string;
@@ -983,7 +984,7 @@ export type ChatThreadQueryVariables = Exact<{
 }>;
 
 
-export type ChatThreadQuery = { chatThread: { cursor: string | null, items: Array<{ id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string }> } };
+export type ChatThreadQuery = { chatThread: { cursor: string | null, items: Array<{ id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> }> } };
 
 export type CreateChatChannelMutationVariables = Exact<{
   workspaceId: string;
@@ -1077,7 +1078,7 @@ export type SendChatMessageMutationVariables = Exact<{
 }>;
 
 
-export type SendChatMessageMutation = { sendChatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string } };
+export type SendChatMessageMutation = { sendChatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> } };
 
 export type EditChatMessageMutationVariables = Exact<{
   workspaceId: string;
@@ -1086,7 +1087,7 @@ export type EditChatMessageMutationVariables = Exact<{
 }>;
 
 
-export type EditChatMessageMutation = { editChatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string } };
+export type EditChatMessageMutation = { editChatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> } };
 
 export type DeleteChatMessageMutationVariables = Exact<{
   workspaceId: string;
@@ -1102,7 +1103,34 @@ export type CreateTaskFromChatMessageMutationVariables = Exact<{
 }>;
 
 
-export type CreateTaskFromChatMessageMutation = { createTaskFromChatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string } };
+export type CreateTaskFromChatMessageMutation = { createTaskFromChatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> } };
+
+export type ToggleChatReactionMutationVariables = Exact<{
+  workspaceId: string;
+  messageId: string;
+  emoji: string;
+}>;
+
+
+export type ToggleChatReactionMutation = { toggleChatReaction: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> } };
+
+export type ChatTypingMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+}>;
+
+
+export type ChatTypingMutation = { chatTyping: boolean };
+
+export type SearchChatMessagesQueryVariables = Exact<{
+  workspaceId: string;
+  query: string;
+  channelId?: string | null | undefined;
+  first?: number | null | undefined;
+}>;
+
+
+export type SearchChatMessagesQuery = { searchChatMessages: Array<{ channelKind: string, channelName: string | null, message: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> } }> };
 
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
@@ -2455,6 +2483,12 @@ export const ChatMessageFieldsFragmentDoc = new TypedDocumentString(`
   editedAt
   deleted
   createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
 }
     `, {"fragmentName":"ChatMessageFields"}) as unknown as TypedDocumentString<ChatMessageFieldsFragment, unknown>;
 export const CurrentUserFieldsFragmentDoc = new TypedDocumentString(`
@@ -3518,6 +3552,12 @@ export const ChatMessagesDocument = new TypedDocumentString(`
   editedAt
   deleted
   createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
 }`) as unknown as TypedDocumentString<ChatMessagesQuery, ChatMessagesQueryVariables>;
 export const ChatMessageDocument = new TypedDocumentString(`
     query ChatMessage($workspaceId: ID!, $messageId: ID!) {
@@ -3539,6 +3579,12 @@ export const ChatMessageDocument = new TypedDocumentString(`
   editedAt
   deleted
   createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
 }`) as unknown as TypedDocumentString<ChatMessageQuery, ChatMessageQueryVariables>;
 export const ChatThreadDocument = new TypedDocumentString(`
     query ChatThread($workspaceId: ID!, $messageId: ID!, $after: String, $first: Int) {
@@ -3568,6 +3614,12 @@ export const ChatThreadDocument = new TypedDocumentString(`
   editedAt
   deleted
   createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
 }`) as unknown as TypedDocumentString<ChatThreadQuery, ChatThreadQueryVariables>;
 export const CreateChatChannelDocument = new TypedDocumentString(`
     mutation CreateChatChannel($workspaceId: ID!, $input: CreateChatChannelInput!) {
@@ -3750,6 +3802,12 @@ export const SendChatMessageDocument = new TypedDocumentString(`
   editedAt
   deleted
   createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
 }`) as unknown as TypedDocumentString<SendChatMessageMutation, SendChatMessageMutationVariables>;
 export const EditChatMessageDocument = new TypedDocumentString(`
     mutation EditChatMessage($workspaceId: ID!, $messageId: ID!, $body: String!) {
@@ -3771,6 +3829,12 @@ export const EditChatMessageDocument = new TypedDocumentString(`
   editedAt
   deleted
   createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
 }`) as unknown as TypedDocumentString<EditChatMessageMutation, EditChatMessageMutationVariables>;
 export const DeleteChatMessageDocument = new TypedDocumentString(`
     mutation DeleteChatMessage($workspaceId: ID!, $messageId: ID!) {
@@ -3797,7 +3861,85 @@ export const CreateTaskFromChatMessageDocument = new TypedDocumentString(`
   editedAt
   deleted
   createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
 }`) as unknown as TypedDocumentString<CreateTaskFromChatMessageMutation, CreateTaskFromChatMessageMutationVariables>;
+export const ToggleChatReactionDocument = new TypedDocumentString(`
+    mutation ToggleChatReaction($workspaceId: ID!, $messageId: ID!, $emoji: String!) {
+  toggleChatReaction(
+    workspaceId: $workspaceId
+    messageId: $messageId
+    emoji: $emoji
+  ) {
+    ...ChatMessageFields
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
+}`) as unknown as TypedDocumentString<ToggleChatReactionMutation, ToggleChatReactionMutationVariables>;
+export const ChatTypingDocument = new TypedDocumentString(`
+    mutation ChatTyping($workspaceId: ID!, $channelId: ID!) {
+  chatTyping(workspaceId: $workspaceId, channelId: $channelId)
+}
+    `) as unknown as TypedDocumentString<ChatTypingMutation, ChatTypingMutationVariables>;
+export const SearchChatMessagesDocument = new TypedDocumentString(`
+    query SearchChatMessages($workspaceId: ID!, $query: String!, $channelId: ID, $first: Int) {
+  searchChatMessages(
+    workspaceId: $workspaceId
+    query: $query
+    channelId: $channelId
+    first: $first
+  ) {
+    channelKind
+    channelName
+    message {
+      ...ChatMessageFields
+    }
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
+}`) as unknown as TypedDocumentString<SearchChatMessagesQuery, SearchChatMessagesQueryVariables>;
 export const CommentsDocument = new TypedDocumentString(`
     query Comments($workspaceId: ID!, $taskId: ID!) {
   comments(workspaceId: $workspaceId, taskId: $taskId) {

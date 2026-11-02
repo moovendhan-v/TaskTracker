@@ -17,6 +17,12 @@ import {
   type ChatMemberRole,
   type ChatMessagePage,
   type ChatMessageResponse,
+  type ChatReactionSummary,
+  type ChatSearchHit,
+  CHAT_SEARCH_MAX_LENGTH,
+  CHAT_SEARCH_PAGE_MAX,
+  CHAT_TYPING_EVERY_MS,
+  isChatReaction,
 } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { domainEvent, type ChangeKind, type DomainEventFacts } from '../../../core/events/domain-event.js';
@@ -27,6 +33,7 @@ import { MembersService } from '../../members/application/members.service.js';
 import { TasksService } from '../../tasks/application/tasks.service.js';
 import { ChatRepository, type ChatChannelRecord, type ChatMessageRecord, type MessagePosition } from '../domain/chat.repository.js';
 import { decodeCursor, encodeCursor } from '../domain/cursor.js';
+import { toPrefixQuery } from '../domain/search-query.js';
 
 const MEMBER_LIST_MAX = 500;
 
@@ -47,7 +54,7 @@ function toChannel(record: ChatChannelRecord, dmMembers: { id: string; name: str
   };
 }
 
-function toMessage(record: ChatMessageRecord): ChatMessageResponse {
+function toMessage(record: ChatMessageRecord, reactions: ChatReactionSummary[] = []): ChatMessageResponse {
   return {
     id: record.id,
     channelId: record.channelId,
@@ -62,13 +69,10 @@ function toMessage(record: ChatMessageRecord): ChatMessageResponse {
     editedAt: record.editedAt?.toISOString() ?? null,
     deleted: record.deletedAt !== null,
     createdAt: record.createdAt.toISOString(),
+    reactions: record.deletedAt ? [] : reactions,
   };
 }
 
-const page = (items: ChatMessageRecord[], limit: number): ChatMessagePage => ({
-  items: items.map(toMessage),
-  cursor: items.length === limit ? encodeCursor(items[items.length - 1]!.position) : null,
-});
 
 const clampPage = (first: number | null | undefined, max: number) => Math.min(Math.max(first ?? max, 1), max);
 
@@ -243,18 +247,19 @@ export class ChatService {
   async messages(access: WorkspaceAccess, actor: Actor, channelId: string, before: string | null | undefined, first: number | null | undefined): Promise<ChatMessagePage> {
     await this.readable(access, actor, channelId);
     const limit = clampPage(first, CHAT_PAGE_MAX);
-    return page(await this.chat.listChannelMessages(access.workspaceId, channelId, this.cursor(before), limit), limit);
+    return this.page(access, actor, await this.chat.listChannelMessages(access.workspaceId, channelId, this.cursor(before), limit), limit);
   }
 
-  async message(access: WorkspaceAccess, messageId: string): Promise<ChatMessageResponse> {
-    return toMessage(await this.findMessage(access, messageId));
+  async message(access: WorkspaceAccess, actor: Actor, messageId: string): Promise<ChatMessageResponse> {
+    const record = await this.findMessage(access, messageId);
+    return toMessage(record, (await this.chat.reactionsFor(access.workspaceId, [record.id], actor.userId)).get(record.id));
   }
 
-  async thread(access: WorkspaceAccess, rootId: string, after: string | null | undefined, first: number | null | undefined): Promise<ChatMessagePage> {
+  async thread(access: WorkspaceAccess, actor: Actor, rootId: string, after: string | null | undefined, first: number | null | undefined): Promise<ChatMessagePage> {
     const root = await this.findMessage(access, rootId);
     if (root.parentId) throw DomainError.invalid('Threads start at a top-level message');
     const limit = clampPage(first, CHAT_THREAD_PAGE_MAX);
-    return page(await this.chat.listThread(access.workspaceId, rootId, this.cursor(after), limit), limit);
+    return this.page(access, actor, await this.chat.listThread(access.workspaceId, rootId, this.cursor(after), limit), limit);
   }
 
   async send(actor: Actor, access: WorkspaceAccess, input: { channelId: string; body: string; parentId?: string | null }): Promise<ChatMessageResponse> {
@@ -268,7 +273,7 @@ export class ChatService {
     }
     const id = await this.chat.insertMessage({ workspaceId: access.workspaceId, channelId: channel.id, authorId: actor.userId, body, parentId, kind: 'user', taskId: null });
     await this.announce(actor, channel, 'chat_message', 'created', id, await this.mentionFacts(actor, access, channel, body));
-    return this.message(access, id);
+    return this.message(access, actor, id);
   }
 
   async edit(actor: Actor, access: WorkspaceAccess, messageId: string, body: string): Promise<ChatMessageResponse> {
@@ -279,7 +284,7 @@ export class ChatService {
     this.assertOpen(channel);
     if (!(await this.chat.editMessage(access.workspaceId, messageId, actor.userId, cleaned))) throw DomainError.notFound('Message');
     await this.announce(actor, channel, 'chat_message', 'updated', messageId);
-    return this.message(access, messageId);
+    return this.message(access, actor, messageId);
   }
 
   async remove(actor: Actor, access: WorkspaceAccess, messageId: string): Promise<boolean> {
@@ -312,7 +317,58 @@ export class ChatService {
       taskId: task.id,
     });
     await this.announce(actor, channel, 'chat_message', 'created', id);
-    return this.message(access, id);
+    return this.message(access, actor, id);
+  }
+
+  /**
+   * Full-text search over messages you can read (RLS decides), newest first. Each word
+   * is matched as a prefix; only letters and digits reach the query.
+   */
+  async search(access: WorkspaceAccess, actor: Actor, text: string, channelId: string | null | undefined, first: number | null | undefined): Promise<ChatSearchHit[]> {
+    if (text.length > CHAT_SEARCH_MAX_LENGTH) throw DomainError.invalid(`Search is at most ${CHAT_SEARCH_MAX_LENGTH} characters`);
+    const tsquery = toPrefixQuery(text);
+    if (!tsquery) return [];
+    if (channelId) await this.readable(access, actor, channelId);
+    const hits = await this.chat.searchMessages(access.workspaceId, tsquery, channelId ?? null, clampPage(first, CHAT_SEARCH_PAGE_MAX));
+    const reactions = await this.chat.reactionsFor(access.workspaceId, hits.map((hit) => hit.record.id), actor.userId);
+    return hits.map((hit) => ({ message: toMessage(hit.record, reactions.get(hit.record.id)), channelKind: hit.channelKind, channelName: hit.channelName }));
+  }
+
+  /** Adds or removes your reaction. Only members of an open channel react (posting in a public channel's reactions joins it). */
+  async react(actor: Actor, access: WorkspaceAccess, messageId: string, emoji: string): Promise<ChatMessageResponse> {
+    if (!isChatReaction(emoji)) throw DomainError.invalid('Pick one of the quick reactions');
+    const message = await this.findMessage(access, messageId);
+    if (message.deletedAt) throw DomainError.invalid('This message was deleted');
+    const channel = await this.postable(actor, access, message.channelId);
+    await this.chat.toggleReaction({ workspaceId: access.workspaceId, channelId: channel.id, messageId, userId: actor.userId, emoji });
+    await this.announce(actor, channel, 'chat_message', 'updated', messageId);
+    return this.message(access, actor, messageId);
+  }
+
+  /**
+   * "Someone is typing": a live signal only, never stored, sent to the people who can
+   * read the channel. Members of an open channel only; at most one per CHAT_TYPING_EVERY_MS per person.
+   */
+  async typing(actor: Actor, access: WorkspaceAccess, channelId: string): Promise<boolean> {
+    const channel = await this.readable(access, actor, channelId);
+    if (!channel.myRole || channel.archivedAt) return false;
+    const key = `${access.workspaceId}:${channelId}:${actor.userId}`;
+    const now = Date.now();
+    if (now - (this.lastTyping.get(key) ?? 0) < CHAT_TYPING_EVERY_MS - 500) return true;
+    this.lastTyping.set(key, now);
+    if (this.lastTyping.size > 10_000) this.lastTyping.clear();
+    await this.announce(actor, channel, 'chat_typing', 'updated', channelId);
+    return true;
+  }
+
+  private readonly lastTyping = new Map<string, number>();
+
+  private async page(access: WorkspaceAccess, actor: Actor, items: ChatMessageRecord[], limit: number): Promise<ChatMessagePage> {
+    const reactions = await this.chat.reactionsFor(access.workspaceId, items.map((item) => item.id), actor.userId);
+    return {
+      items: items.map((item) => toMessage(item, reactions.get(item.id))),
+      cursor: items.length === limit ? encodeCursor(items[items.length - 1]!.position) : null,
+    };
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
@@ -405,7 +461,7 @@ export class ChatService {
   }
 
   /** Public channels: everyone in the workspace. Private channels and DMs: each member, one by one. */
-  private async announce(actor: Actor, channel: ChatChannelRecord, entityType: 'chat_channel' | 'chat_message', change: ChangeKind, entityId: string, facts?: DomainEventFacts): Promise<void> {
+  private async announce(actor: Actor, channel: ChatChannelRecord, entityType: 'chat_channel' | 'chat_message' | 'chat_typing', change: ChangeKind, entityId: string, facts?: DomainEventFacts): Promise<void> {
     const base = { workspaceId: channel.workspaceId, entityId, actorId: actor.userId };
     if (channel.kind === 'public') {
       await this.events.publish(domainEvent(entityType, change, { ...base, facts }));

@@ -1,8 +1,9 @@
-import type { ChatMessageResponse } from '@taskflow/shared-types';
-import { CheckSquareIcon, LinkIcon, MessageSquareTextIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { CHAT_REACTIONS, type ChatMessageResponse, type ChatReactionSummary } from '@taskflow/shared-types';
+import { CheckSquareIcon, LinkIcon, MessageSquareTextIcon, PencilIcon, SmilePlusIcon, Trash2Icon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { UserAvatar } from '@/components/common/user-avatar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/cn';
 import { MarkdownPreview, useDocWorkspace } from '@/modules/documents';
@@ -23,6 +24,8 @@ interface MessageItemProps {
   onReply?: () => void;
   onCreateTask?: () => void;
   onCopyLink: () => void;
+  /** Adds or removes your reaction; absent when you can't react (e.g. archived). */
+  onReact?: (emoji: string) => void;
 }
 
 function Action({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
@@ -41,7 +44,7 @@ function Action({ label, onClick, children }: { label: string; onClick: () => vo
 }
 
 /** One message. Hover or focus shows its actions; the thread summary sits under roots with replies. */
-export function MessageItem({ message, head, mine, editing, onEditing, onSaveEdit, onDelete, onReply, onCreateTask, onCopyLink }: MessageItemProps) {
+export function MessageItem({ message, head, mine, editing, onEditing, onSaveEdit, onDelete, onReply, onCreateTask, onCopyLink, onReact }: MessageItemProps) {
   if (message.kind === 'system') {
     return (
       <div className="flex items-center gap-2 py-1 pl-[52px] text-[13px] text-muted-foreground">
@@ -87,6 +90,7 @@ export function MessageItem({ message, head, mine, editing, onEditing, onSaveEdi
             {message.editedAt ? <span className="text-[11px] text-subtle-foreground">(edited)</span> : null}
           </div>
         )}
+        {!message.deleted && message.reactions.length ? <Reactions reactions={message.reactions} onReact={onReact} /> : null}
         {message.replyCount > 0 && onReply ? (
           <button
             type="button"
@@ -105,6 +109,7 @@ export function MessageItem({ message, head, mine, editing, onEditing, onSaveEdi
           aria-label="Message actions"
           className="absolute -top-3 right-2 hidden items-center gap-0.5 rounded-lg border bg-card p-0.5 shadow-popover group-hover/message:flex group-focus-within/message:flex"
         >
+          {onReact ? <ReactionPicker onPick={onReact} /> : null}
           {onReply ? (
             <Action label="Reply in thread" onClick={onReply}>
               <MessageSquareTextIcon />
@@ -162,5 +167,68 @@ function EditBox({ initial, onCancel, onSave }: { initial: string; onCancel: () 
       <Composer placeholder="Edit message" onSend={onSave} autoFocus initialValue={seeded.text} initialPeople={seeded.people} />
       <p className="mt-1 text-[11px] text-subtle-foreground">Esc to cancel · ↵ to save</p>
     </div>
+  );
+}
+
+function Reactions({ reactions, onReact }: { reactions: ChatReactionSummary[]; onReact?: (emoji: string) => void }) {
+  return (
+    <ul aria-label="Reactions" className="mt-1 flex flex-wrap gap-1">
+      {reactions.map((reaction) => {
+        const who = reaction.names.join(', ') + (reaction.count > reaction.names.length ? ` and ${reaction.count - reaction.names.length} more` : '');
+        return (
+          <li key={reaction.emoji}>
+            <Tooltip label={`${who} reacted with ${reaction.emoji}`} side="top">
+              <button
+                type="button"
+                disabled={!onReact}
+                aria-pressed={reaction.mine}
+                aria-label={`${reaction.emoji} ${reaction.count}${reaction.mine ? ', including you' : ''}`}
+                onClick={() => onReact?.(reaction.emoji)}
+                className={cn(
+                  'flex h-6 items-center gap-1 rounded-full border px-2 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                  reaction.mine ? 'border-ring/60 bg-primary-soft text-foreground' : 'bg-card text-muted-foreground hover:border-border-strong',
+                )}
+              >
+                <span aria-hidden>{reaction.emoji}</span>
+                <span className="font-mono text-[11px]">{reaction.count}</span>
+              </button>
+            </Tooltip>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ReactionPicker({ onPick }: { onPick: (emoji: string) => void }) {
+  return (
+    <Popover>
+      <Tooltip label="Add reaction" side="top">
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label="Add reaction"
+            className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&_svg]:size-3.5"
+          >
+            <SmilePlusIcon />
+          </button>
+        </PopoverTrigger>
+      </Tooltip>
+      <PopoverContent align="end" className="w-auto p-1">
+        <div role="group" aria-label="Reactions to add" className="grid grid-cols-6 gap-0.5">
+          {CHAT_REACTIONS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              aria-label={`React with ${emoji}`}
+              onClick={() => onPick(emoji)}
+              className="grid size-8 place-items-center rounded-md text-lg hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

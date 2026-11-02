@@ -271,6 +271,68 @@ describe('chat', () => {
     expect((await guest.data<{ notifications: { items: { kind: string }[] } }>(NOTIFICATIONS, { w })).notifications.items.filter((n) => n.kind === 'chat_mention')).toEqual([]);
   });
 
+  it('toggles quick reactions, only for people who can post, and shows who reacted', async () => {
+    const REACT = 'mutation($w: ID!, $m: ID!, $e: String!) { toggleChatReaction(workspaceId: $w, messageId: $m, emoji: $e) { reactions { emoji count mine names } } }';
+    type Reactions = { toggleChatReaction: { reactions: { emoji: string; count: number; mine: boolean; names: string[] }[] } };
+    const room = await create(admin, { name: 'reactions', memberIds: [member.id] });
+    const message = await send(admin, room.id, 'Shipped!');
+    await member.data(REACT, { w, m: message.id, e: '🎉' });
+    const both = (await admin.data<Reactions>(REACT, { w, m: message.id, e: '🎉' })).toggleChatReaction.reactions;
+    expect(both).toEqual([{ emoji: '🎉', count: 2, mine: true, names: ['Chat member', 'Chat admin'] }]);
+    // Toggling again takes yours away; others stay.
+    expect((await admin.data<Reactions>(REACT, { w, m: message.id, e: '🎉' })).toggleChatReaction.reactions).toEqual([{ emoji: '🎉', count: 1, mine: false, names: ['Chat member'] }]);
+    // Only the quick reactions, never free text.
+    expect((await member.error(REACT, { w, m: message.id, e: '<img>' })).code).toBe('BAD_USER_INPUT');
+    // Messages list them too.
+    const listed = (await member.data<{ chatMessages: { items: { id: string; reactions: { emoji: string; mine: boolean }[] }[] } }>(
+      `query($w: ID!, $c: ID!) { chatMessages(workspaceId: $w, channelId: $c) { items { id reactions { emoji mine } } } }`,
+      { w, c: room.id },
+    )).chatMessages.items.find((item) => item.id === message.id)!;
+    expect(listed.reactions).toEqual([{ emoji: '🎉', mine: true }]);
+    // A private channel's messages can't be reacted to from outside.
+    const quiet = await create(admin, { name: 'reactions-private', kind: 'private' });
+    const hidden = await send(admin, quiet.id, 'secret');
+    expect((await teammate.error(REACT, { w, m: hidden.id, e: '👍' })).code).toBe('NOT_FOUND');
+  });
+
+  it('sends "typing" only to people who can read the channel, and stores nothing', async () => {
+    const TYPING = 'mutation($w: ID!, $c: ID!) { chatTyping(workspaceId: $w, channelId: $c) }';
+    const memberLive = await subscribeToWorkspace(member, w);
+    const teammateLive = await subscribeToWorkspace(teammate, w);
+    open.push(memberLive, teammateLive);
+    const quiet = await create(admin, { name: 'typing-private', kind: 'private', memberIds: [member.id] });
+    expect((await admin.data<{ chatTyping: boolean }>(TYPING, { w, c: quiet.id })).chatTyping).toBe(true);
+    await memberLive.waitFor((event) => event.type === 'chat_typing.updated' && event.entityId === quiet.id && event.actorId === admin.id);
+    expect(teammateLive.events.some((event) => event.entityId === quiet.id)).toBe(false);
+    // Outsiders can't signal into it.
+    expect((await teammate.error(TYPING, { w, c: quiet.id })).code).toBe('NOT_FOUND');
+  });
+
+  it('searches only messages you can read', async () => {
+    const SEARCH = 'query($w: ID!, $q: String!, $c: ID) { searchChatMessages(workspaceId: $w, query: $q, channelId: $c) { channelName channelKind message { id body } } }';
+    type Hits = { searchChatMessages: { channelName: string | null; message: { id: string; body: string } }[] };
+    const open = await create(teammate, { name: 'search-public' });
+    const secret = await create(teammate, { name: 'search-private', kind: 'private', memberIds: [member.id] });
+    await send(teammate, open.id, 'Zephyrine rollout starts Monday');
+    await send(teammate, secret.id, 'Zephyrine budget is confidential');
+    const gone = await send(teammate, open.id, 'Zephyrine typo');
+    await teammate.data(DELETE, { w, m: gone.id });
+
+    const memberHits = (await member.data<Hits>(SEARCH, { w, q: 'zephyr' })).searchChatMessages;
+    expect(memberHits.map((hit) => [hit.channelName, hit.message.body])).toEqual([
+      ['search-private', 'Zephyrine budget is confidential'],
+      ['search-public', 'Zephyrine rollout starts Monday'],
+    ]);
+    // The admin isn't in the private channel: only the public message comes back.
+    expect((await admin.data<Hits>(SEARCH, { w, q: 'Zephyrine' })).searchChatMessages.map((hit) => hit.channelName)).toEqual(['search-public']);
+    // Every word has to match; tsquery syntax is just text.
+    expect((await member.data<Hits>(SEARCH, { w, q: 'zephyrine budget' })).searchChatMessages).toHaveLength(1);
+    expect((await member.data<Hits>(SEARCH, { w, q: "zephyrine' | !budget" })).searchChatMessages).toHaveLength(1);
+    // Narrowed to a channel you can't read: not found.
+    expect((await admin.error(SEARCH, { w, q: 'zephyrine', c: secret.id })).code).toBe('NOT_FOUND');
+    expect((await guest.error(SEARCH, { w, q: 'zephyrine' })).code).toBe('FORBIDDEN');
+  });
+
   it('rate limits sending messages', async () => {
     const spam = await create(admin, { name: 'spam' });
     const results = [];

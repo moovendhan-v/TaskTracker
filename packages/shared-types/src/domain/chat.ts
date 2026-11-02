@@ -68,3 +68,18 @@ export function mentionedUserIds(body: string): string[] {
 export function mentionsToNames(body: string, nameOf: (userId: string) => string | null | undefined): string {
   return body.replace(CHAT_USER_MENTION, (_token, id: string) => `@${nameOf(id) ?? 'someone'}`);
 }
+
+/** The quick reactions people can add to a message (checked on the server). */
+export const CHAT_REACTIONS = ['👍', '❤️', '😂', '🎉', '👀', '🙏', '✅', '🔥', '🚀', '😮', '😢', '➕'] as const;
+export type ChatReaction = (typeof CHAT_REACTIONS)[number];
+
+export function isChatReaction(value: string): value is ChatReaction {
+  return (CHAT_REACTIONS as readonly string[]).includes(value);
+}
+
+/** How long a "typing" signal lasts, and how often the composer may send one, in ms. */
+export const CHAT_TYPING_TTL_MS = 6_000;
+export const CHAT_TYPING_EVERY_MS = 3_000;
+
+export const CHAT_SEARCH_MAX_LENGTH = 100;
+export const CHAT_SEARCH_PAGE_MAX = 30;

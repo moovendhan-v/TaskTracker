@@ -11,6 +11,8 @@ import {
   type ChatMessagePage,
   type ChatMessageResponse,
   type ChatPersonResponse,
+  type ChatReactionSummary,
+  type ChatSearchHit,
 } from '@taskflow/shared-types';
 import { ArrayMaxSize, IsArray, IsIn, IsString, IsUUID, MaxLength } from 'class-validator';
 import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
@@ -45,6 +47,14 @@ export class ChatMemberGql implements ChatMemberResponse {
   @Field() joinedAt: string;
 }
 
+@ObjectType('ChatReaction')
+export class ChatReactionGql implements ChatReactionSummary {
+  @Field() emoji: string;
+  @Field(() => Int) count: number;
+  @Field({ description: 'You reacted with this one' }) mine: boolean;
+  @Field(() => [String], { description: 'Up to five names, for a tooltip' }) names: string[];
+}
+
 @ObjectType('ChatMessage')
 export class ChatMessageGql implements ChatMessageResponse {
   @Field(() => ID) id: string;
@@ -60,6 +70,7 @@ export class ChatMessageGql implements ChatMessageResponse {
   @Field(() => String, { nullable: true }) editedAt: string | null;
   @Field() deleted: boolean;
   @Field() createdAt: string;
+  @Field(() => [ChatReactionGql]) reactions: ChatReactionGql[];
 }
 
 @ObjectType('ChatMessagePage')
@@ -94,4 +105,11 @@ export class CreateTaskFromMessageInput {
   @Field(() => ID) @IsUUID() messageId: string;
   @Field(() => ID) @IsUUID() listId: string;
   @Field({ nullable: true, description: 'Defaults to the first line of the message' }) @IsOmittable() @IsString() @MaxLength(200) title?: string;
+}
+
+@ObjectType('ChatSearchHit')
+export class ChatSearchHitGql implements ChatSearchHit {
+  @Field(() => ChatMessageGql) message: ChatMessageGql;
+  @Field(() => String) channelKind: ChatChannelKind;
+  @Field(() => String, { nullable: true }) channelName: string | null;
 }

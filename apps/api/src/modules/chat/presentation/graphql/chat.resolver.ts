@@ -3,7 +3,7 @@ import { Throttle } from '@nestjs/throttler';
 import { CHAT_ADD_MEMBERS_MAX, CHAT_DM_MAX, CHAT_MEMBER_ROLES, type ChatMemberRole } from '@taskflow/shared-types';
 import { CurrentAccess } from '../../../../core/access/current-access.decorator.js';
 import { RequirePermissions } from '../../../../core/access/require-permissions.decorator.js';
-import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
+import { OptionalUuidArg, UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { DomainError } from '../../../../core/domain/domain-error.js';
@@ -13,6 +13,7 @@ import {
   ChatMemberGql,
   ChatMessageGql,
   ChatMessagePageGql,
+  ChatSearchHitGql,
   CreateChatChannelInput,
   CreateTaskFromMessageInput,
   SendChatMessageInput,
@@ -84,8 +85,8 @@ export class ChatResolver {
 
   @Query(() => ChatMessageGql)
   @RequirePermissions('chat.use')
-  chatMessage(@WorkspaceIdArg() _w: string, @UuidArg('messageId') messageId: string, @CurrentAccess() access: WorkspaceAccess): Promise<ChatMessageGql> {
-    return this.service.message(access, messageId);
+  chatMessage(@WorkspaceIdArg() _w: string, @UuidArg('messageId') messageId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<ChatMessageGql> {
+    return this.service.message(access, actor, messageId);
   }
 
   @Query(() => ChatMessagePageGql, { description: 'Replies to a message, oldest first' })
@@ -95,9 +96,24 @@ export class ChatResolver {
     @UuidArg('messageId') messageId: string,
     @Args('after', { nullable: true, type: () => String }) after: string | null,
     @Args('first', { nullable: true, type: () => Int }) first: number | null,
+    @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<ChatMessagePageGql> {
-    return this.service.thread(access, messageId, after, first);
+    return this.service.thread(access, actor, messageId, after, first);
+  }
+
+  @Query(() => [ChatSearchHitGql], { description: 'Messages you can read that match every word (as a prefix), newest first' })
+  @RequirePermissions('chat.use')
+  @Throttle(PER_MINUTE(30))
+  searchChatMessages(
+    @WorkspaceIdArg() _w: string,
+    @Args('query', { type: () => String }) query: string,
+    @OptionalUuidArg('channelId', 'Only this channel') channelId: string | null,
+    @Args('first', { nullable: true, type: () => Int }) first: number | null,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<ChatSearchHitGql[]> {
+    return this.service.search(access, actor, query, channelId, first);
   }
 
   @Mutation(() => ChatChannelGql)
@@ -244,6 +260,26 @@ export class ChatResolver {
   @RequirePermissions('chat.use')
   deleteChatMessage(@WorkspaceIdArg() _w: string, @UuidArg('messageId') messageId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
     return this.service.remove(actor, access, messageId);
+  }
+
+  @Mutation(() => ChatMessageGql, { description: 'Adds your reaction, or removes it if it is already there' })
+  @RequirePermissions('chat.use')
+  @Throttle(PER_MINUTE(60))
+  toggleChatReaction(
+    @WorkspaceIdArg() _w: string,
+    @UuidArg('messageId') messageId: string,
+    @Args('emoji', { type: () => String }) emoji: string,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<ChatMessageGql> {
+    return this.service.react(actor, access, messageId, emoji.slice(0, 16));
+  }
+
+  @Mutation(() => Boolean, { description: 'Tells the channel you are typing. A live signal only; nothing is stored' })
+  @RequirePermissions('chat.use')
+  @Throttle(PER_MINUTE(40))
+  chatTyping(@WorkspaceIdArg() _w: string, @UuidArg('channelId') channelId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
+    return this.service.typing(actor, access, channelId);
   }
 
   @Mutation(() => ChatMessageGql, { description: 'Creates a task from a message (needs task.create on the list) and notes it in the thread' })
