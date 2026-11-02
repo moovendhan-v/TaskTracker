@@ -15,6 +15,7 @@ import type { Period } from '@/lib/periods';
 import { useMemberName } from '@/modules/members';
 import { NewTaskDialog, useOpenTask } from '@/modules/tasks';
 import { ArrangeableGrid } from '../components/arrangeable-grid';
+import type { BlockScope } from '../components/configured-block';
 import { DashboardFilters } from '../components/dashboard-filters';
 import { DashboardTabs, type HomeTab } from '../components/dashboard-tabs';
 import { KpiRow, KpiRowSkeleton } from '../components/dashboard-panels';
@@ -31,6 +32,7 @@ function greeting(hour: number): string {
 interface GridProps {
   data: DashboardResponse | undefined;
   state: BlockState;
+  scope: BlockScope;
 }
 
 /** Overview and My work: your own arrangement of Home. */
@@ -82,6 +84,8 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
   // One query feeds every block: they load together, and a failure shows once above them.
   const state = blockStateOf(dashboard, { what: 'the dashboard' });
   const nameOf = (userId: string) => memberName(userId) ?? 'a teammate';
+  // A block set to one project asks for the same period and people, narrowed to that project.
+  const scope: BlockScope = { workspaceId, inputFor: (spaceId) => dashboardInput(period, weekStart, { userIds, spaceId }) };
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
@@ -131,9 +135,9 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
             {data ? <KpiRow data={data} mode="home" /> : <KpiRowSkeleton tiles={6} />}
             {data ? <ProjectsTable workspaceId={workspaceId} projects={data.projects} /> : <Block title="Projects" icon={FolderKanbanIcon} state={state} />}
             {waiting ? null : active ? (
-              <NamedGrid workspaceId={workspaceId} dashboard={active} ownerName={nameOf(active.ownerId)} data={data} state={state} />
+              <NamedGrid workspaceId={workspaceId} dashboard={active} ownerName={nameOf(active.ownerId)} data={data} state={state} scope={scope} />
             ) : (
-              <PersonalGrid workspaceId={workspaceId} data={data} state={state} />
+              <PersonalGrid workspaceId={workspaceId} data={data} state={state} scope={scope} />
             )}
           </>
         ) : null}

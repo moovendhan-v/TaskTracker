@@ -59,6 +59,71 @@ export interface LayoutItem {
   y: number;
   w: number;
   h: number;
+  /** How this block is set up (B3); absent means the block's defaults. */
+  config?: BlockConfig | null;
+}
+
+/** Accent colours a block can wear, from the theme's palette. */
+export const BLOCK_ACCENTS = ['orange', 'blue', 'green', 'violet', 'pink', 'amber'] as const;
+export type BlockAccent = (typeof BLOCK_ACCENTS)[number];
+export const BLOCK_LIMITS = [5, 10, 20] as const;
+export const BLOCK_TITLE_MAX = 60;
+
+/**
+ * One block's settings. Data (where its numbers come from) is kept apart from
+ * view (how it looks): changing the view never changes what the block may read.
+ */
+export interface BlockConfig {
+  /** View: a title of your own. */
+  title?: string;
+  /** View: an accent colour. */
+  accent?: BlockAccent;
+  /** Data: one project instead of all of them (Home blocks). Read with the viewer's own access. */
+  spaceId?: string;
+  /** View: how many tasks a list shows. */
+  limit?: (typeof BLOCK_LIMITS)[number];
+  /** View: count closed work too (status breakdowns). */
+  includeClosed?: boolean;
+}
+
+export type BlockConfigKey = keyof BlockConfig;
+
+const VIEW_KEYS: readonly BlockConfigKey[] = ['title', 'accent'];
+const HOME_TASK_LISTS = ['overdue-tasks', 'due-soon-tasks', 'recent-tasks'];
+
+/** Which settings a block offers. Home blocks can also pick their data source. */
+export function blockConfigKeys(pageKey: LayoutPage, type: string): BlockConfigKey[] {
+  const keys: BlockConfigKey[] = [...VIEW_KEYS];
+  if (pageKey === 'home' && !['hours-by-project'].includes(type)) keys.push('spaceId');
+  if (HOME_TASK_LISTS.includes(type)) keys.push('limit');
+  if (type === 'status' || type === 'status-breakdown') keys.push('includeClosed');
+  return keys;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Problems with one block's settings; empty when they are fine. */
+export function validateBlockConfig(pageKey: LayoutPage, type: string, config: BlockConfig): string[] {
+  const problems: string[] = [];
+  const allowed = blockConfigKeys(pageKey, type);
+  for (const key of Object.keys(config) as BlockConfigKey[]) {
+    if (!allowed.includes(key)) problems.push(`${key} isn't a setting of this block`);
+  }
+  if (config.title !== undefined && (typeof config.title !== 'string' || config.title.trim().length === 0 || config.title.length > BLOCK_TITLE_MAX)) {
+    problems.push(`title must be 1 to ${BLOCK_TITLE_MAX} characters`);
+  }
+  if (config.accent !== undefined && !(BLOCK_ACCENTS as readonly string[]).includes(config.accent)) problems.push('unknown accent');
+  if (config.spaceId !== undefined && (typeof config.spaceId !== 'string' || !UUID.test(config.spaceId))) problems.push('spaceId must be a project id');
+  if (config.limit !== undefined && !(BLOCK_LIMITS as readonly number[]).includes(config.limit)) problems.push('limit must be 5, 10 or 20');
+  if (config.includeClosed !== undefined && typeof config.includeClosed !== 'boolean') problems.push('includeClosed must be true or false');
+  return problems;
+}
+
+/** Drops empty values, so "no setting" is stored as nothing. */
+export function cleanBlockConfig(config: BlockConfig | null | undefined): BlockConfig | undefined {
+  if (!config) return undefined;
+  const entries = Object.entries(config).filter(([, value]) => value !== undefined && value !== null && value !== '');
+  return entries.length ? (Object.fromEntries(entries) as BlockConfig) : undefined;
 }
 
 export interface DashboardLayout {
@@ -127,6 +192,10 @@ export function validateLayoutItems(pageKey: LayoutPage, items: readonly LayoutI
     }
     if (item.w < LAYOUT_LIMITS.minW || item.w > GRID_COLUMNS || item.h < LAYOUT_LIMITS.minH || item.h > LAYOUT_LIMITS.maxH) problems.push(`${at}: size out of range`);
     if (item.x < 0 || item.y < 0 || item.x + item.w > GRID_COLUMNS || item.y > LAYOUT_LIMITS.maxRow) problems.push(`${at}: outside the grid`);
+    if (item.config !== undefined && item.config !== null) {
+      if (typeof item.config !== 'object' || Array.isArray(item.config)) problems.push(`${at}: settings must be an object`);
+      else for (const problem of validateBlockConfig(pageKey, item.type, item.config)) problems.push(`${at}: ${problem}`);
+    }
   });
   if (problems.length === 0) {
     for (let i = 0; i < items.length; i++) {
@@ -158,4 +227,10 @@ export interface NamedDashboardResponse {
   version: number;
   items: LayoutItem[];
   updatedAt: string;
+}
+
+/** Just the stored fields of an item: position, size and any non-empty settings. */
+export function cleanLayoutItem({ id, type, x, y, w, h, config }: LayoutItem): LayoutItem {
+  const settings = cleanBlockConfig(config);
+  return settings ? { id, type, x, y, w, h, config: settings } : { id, type, x, y, w, h };
 }

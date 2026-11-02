@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { DASHBOARD_LIMITS, DEFAULT_LAYOUTS, validateLayoutItems, type NamedDashboardResponse, type DashboardVisibility, type LayoutItem } from '@taskflow/shared-types';
+import { cleanLayoutItem, DASHBOARD_LIMITS, DEFAULT_LAYOUTS, validateLayoutItems, type NamedDashboardResponse, type DashboardVisibility, type LayoutItem } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { DashboardRepository, type DashboardRecord } from '../domain/dashboard.repository.js';
 
-const clean = (items: readonly LayoutItem[]) => items.map(({ id, type, x, y, w, h }) => ({ id, type, x, y, w, h }));
+const clean = (items: readonly LayoutItem[]) => items.map(cleanLayoutItem);
 
 function toResponse(record: DashboardRecord, userId: string): NamedDashboardResponse {
   return {

@@ -1,6 +1,6 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsIn, IsInt, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsString, IsUUID, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import {
   DASHBOARD_LIMITS,
   DASHBOARD_VISIBILITIES,
@@ -11,9 +11,32 @@ import {
   type NamedDashboardResponse,
   type DashboardVisibility,
   type LayoutItem,
+  type BlockAccent,
+  type BlockConfig,
+  BLOCK_ACCENTS,
+  BLOCK_LIMITS,
+  BLOCK_TITLE_MAX,
   type LayoutPage,
 } from '@taskflow/shared-types';
 import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
+
+@ObjectType('BlockConfig', { description: 'One block\'s settings: data source (spaceId) kept apart from view (title, accent, limit, includeClosed)' })
+export class BlockConfigGql implements BlockConfig {
+  @Field({ nullable: true }) title?: string;
+  @Field(() => String, { nullable: true }) accent?: BlockAccent;
+  @Field(() => ID, { nullable: true, description: 'Data source: one project; read with the viewer\'s own access' }) spaceId?: string;
+  @Field(() => Int, { nullable: true }) limit?: (typeof BLOCK_LIMITS)[number];
+  @Field({ nullable: true }) includeClosed?: boolean;
+}
+
+@InputType('BlockConfigInput')
+export class BlockConfigInput implements BlockConfig {
+  @Field({ nullable: true }) @IsOmittable() @IsString() @MaxLength(BLOCK_TITLE_MAX) title?: string;
+  @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(BLOCK_ACCENTS) accent?: BlockAccent;
+  @Field(() => ID, { nullable: true }) @IsOmittable() @IsUUID() spaceId?: string;
+  @Field(() => Int, { nullable: true }) @IsOmittable() @IsIn(BLOCK_LIMITS) limit?: (typeof BLOCK_LIMITS)[number];
+  @Field({ nullable: true }) @IsOmittable() @IsBoolean() includeClosed?: boolean;
+}
 
 @ObjectType('LayoutItem')
 export class LayoutItemGql implements LayoutItem {
@@ -23,6 +46,7 @@ export class LayoutItemGql implements LayoutItem {
   @Field(() => Int) y: number;
   @Field(() => Int) w: number;
   @Field(() => Int) h: number;
+  @Field(() => BlockConfigGql, { nullable: true }) config?: BlockConfigGql | null;
 }
 
 @ObjectType('DashboardLayout', { description: "The signed-in user's arrangement of a page's blocks" })
@@ -41,6 +65,7 @@ export class LayoutItemInput implements LayoutItem {
   @Field(() => Int) @IsInt() @Min(0) @Max(LAYOUT_LIMITS.maxRow) y: number;
   @Field(() => Int) @IsInt() @Min(LAYOUT_LIMITS.minW) @Max(GRID_COLUMNS) w: number;
   @Field(() => Int) @IsInt() @Min(LAYOUT_LIMITS.minH) @Max(LAYOUT_LIMITS.maxH) h: number;
+  @Field(() => BlockConfigInput, { nullable: true }) @IsClearable() @ValidateNested() @Type(() => BlockConfigInput) config?: BlockConfigInput | null;
 }
 
 @InputType('SaveLayoutInput')

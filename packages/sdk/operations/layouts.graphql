@@ -2,7 +2,7 @@ fragment LayoutFields on DashboardLayout {
   pageKey
   version
   updatedAt
-  items { id type x y w h }
+  items { id type x y w h config { title accent spaceId limit includeClosed } }
 }
 
 query MyLayout($workspaceId: ID!, $pageKey: String!) { myLayout(workspaceId: $workspaceId, pageKey: $pageKey) { ...LayoutFields } }
@@ -19,7 +19,7 @@ fragment NamedDashboardFields on NamedDashboard {
   mine
   version
   updatedAt
-  items { id type x y w h }
+  items { id type x y w h config { title accent spaceId limit includeClosed } }
 }
 
 query Dashboards($workspaceId: ID!) { dashboards(workspaceId: $workspaceId) { ...NamedDashboardFields } }

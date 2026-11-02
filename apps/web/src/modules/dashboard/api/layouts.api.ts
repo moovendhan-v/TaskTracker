@@ -1,4 +1,4 @@
-import type { DashboardVisibility, LayoutItem, LayoutPage, NamedDashboardResponse } from '@taskflow/shared-types';
+import { cleanLayoutItem, type BlockConfig, type DashboardVisibility, type LayoutItem, type LayoutPage, type NamedDashboardResponse } from '@taskflow/shared-types';
 import {
   CreateDashboardDocument,
   DashboardsDocument,
@@ -11,15 +11,33 @@ import {
 } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
 
+/** Items as the API takes them: stored fields only, no empty settings. */
+const toInput = (item: LayoutItem) => cleanLayoutItem(item);
+
+/** Items as the API returns them (unset settings come back as null). */
+export function fromApiItems(items: readonly ApiItem[]): LayoutItem[] {
+  return items.map((item) => cleanLayoutItem({ ...item, config: item.config ? ({ ...item.config } as BlockConfig) : null }));
+}
+
+type ApiItem = Omit<LayoutItem, 'config'> & { config?: Record<string, unknown> | null };
+
+function withItems<T extends { items: readonly ApiItem[] }>(layout: T | null | undefined): (Omit<T, 'items'> & { items: LayoutItem[] }) | null {
+  return layout ? { ...layout, items: fromApiItems(layout.items) } : null;
+}
+
 export const layoutsApi = {
-  get: async (workspaceId: string, pageKey: LayoutPage) => (await graphql(MyLayoutDocument, { workspaceId, pageKey })).myLayout,
+  get: async (workspaceId: string, pageKey: LayoutPage) => withItems((await graphql(MyLayoutDocument, { workspaceId, pageKey })).myLayout),
   save: async (workspaceId: string, pageKey: LayoutPage, baseVersion: number | null, items: LayoutItem[]) =>
-    (await graphql(SaveLayoutDocument, { workspaceId, input: { pageKey, baseVersion, items: items.map(({ id, type, x, y, w, h }) => ({ id, type, x, y, w, h })) } })).saveLayout,
+    withItems((await graphql(SaveLayoutDocument, { workspaceId, input: { pageKey, baseVersion, items: items.map(toInput) } })).saveLayout)!,
   reset: async (workspaceId: string, pageKey: LayoutPage) => (await graphql(ResetLayoutDocument, { workspaceId, pageKey })).resetLayout,
 };
 
-const itemsOnly = (items: readonly LayoutItem[]) => items.map(({ id, type, x, y, w, h }) => ({ id, type, x, y, w, h }));
-const asDashboard = (fields: { visibility: string } & Omit<NamedDashboardResponse, 'visibility'>): NamedDashboardResponse => ({ ...fields, visibility: fields.visibility as DashboardVisibility });
+const itemsOnly = (items: readonly LayoutItem[]) => items.map(toInput);
+const asDashboard = (fields: { visibility: string; items: readonly ApiItem[] } & Omit<NamedDashboardResponse, 'visibility' | 'items'>): NamedDashboardResponse => ({
+  ...fields,
+  visibility: fields.visibility as DashboardVisibility,
+  items: fromApiItems(fields.items),
+});
 
 /** Named Home dashboards (tabs): yours plus the ones shared with the workspace. */
 export const dashboardsApi = {

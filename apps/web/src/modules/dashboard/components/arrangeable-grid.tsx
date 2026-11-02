@@ -1,14 +1,15 @@
-import type { DashboardResponse, LayoutItem } from '@taskflow/shared-types';
-import { LayoutDashboardIcon, PlusIcon, RotateCcwIcon, Trash2Icon, Undo2Icon } from 'lucide-react';
+import { cleanLayoutItem, type DashboardResponse, type LayoutItem } from '@taskflow/shared-types';
+import { LayoutDashboardIcon, PlusIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
-import { Block } from '@/components/kit/block';
 import type { BlockState } from '@/components/kit/block-state';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import type { ArrangeableLayout } from '../hooks/use-layout';
 import { addItem, removeItem } from '../lib/grid';
+import { BlockConfigDrawer } from './block-config-drawer';
 import { BlockGrid } from './block-grid';
+import { ConfiguredBlock, type BlockScope } from './configured-block';
 import { BlockLibrary } from './block-library';
 import { HOME_REGISTRY, type BlockRegistry } from './home-blocks';
 
@@ -26,13 +27,18 @@ interface ArrangeableGridProps {
   leading?: ReactNode;
   /** Which blocks this page offers (Home by default). */
   registry?: BlockRegistry;
+  /** Lets blocks pick their own project (Home); without it, blocks follow the page. */
+  scope?: BlockScope;
+  workspaceId?: string;
 }
 
 /**
  * Home blocks on the grid, with arrange mode for whoever may change the layout:
  * E arranges, A adds a block, ⌘/Ctrl+Z undoes, Esc finishes.
  */
-export function ArrangeableGrid({ layout, canArrange, data, state, leading, registry = HOME_REGISTRY }: ArrangeableGridProps) {
+export function ArrangeableGrid({ layout, canArrange, data, state, leading, registry = HOME_REGISTRY, scope, workspaceId }: ArrangeableGridProps) {
+  const [configuring, setConfiguring] = useState<string | null>(null);
+  const configuringItem = layout.items?.find((item) => item.id === configuring) ?? null;
   const blockOf = (item: LayoutItem) => registry.blocks[item.type];
   const [arrangingState, setArranging] = useState(false);
   const [library, setLibrary] = useState(false);
@@ -132,26 +138,32 @@ export function ArrangeableGrid({ layout, canArrange, data, state, leading, regi
             renderBlock={(item) => {
               const block = blockOf(item);
               if (!block) return null;
-              const chip = data && block.chip?.(data);
               return (
-                <Block
-                  title={block.title}
-                  icon={block.icon}
-                  aside={block.aside}
-                  chip={chip ? { label: chip } : undefined}
+                <ConfiguredBlock
+                  item={item}
+                  block={block}
+                  data={data}
                   state={state}
-                  skeleton={block.skeleton}
                   arranging={arranging}
-                  maximisable
-                  actions={canArrange ? [{ label: 'Remove', icon: Trash2Icon, destructive: true, onSelect: () => remove(item) }] : []}
-                  bodyClassName="overflow-y-auto"
-                >
-                  {data ? block.render(data) : null}
-                </Block>
+                  canArrange={canArrange}
+                  scope={scope}
+                  onConfigure={() => setConfiguring(item.id)}
+                  onRemove={() => remove(item)}
+                />
               );
             }}
           />
         )
+      ) : null}
+      {canArrange && configuringItem ? (
+        <BlockConfigDrawer
+          workspaceId={scope?.workspaceId ?? workspaceId}
+          pageKey={layout.pageKey}
+          item={configuringItem}
+          block={blockOf(configuringItem)}
+          onOpenChange={(open) => !open && setConfiguring(null)}
+          onChange={(config) => layout.items && layout.setItems(layout.items.map((item) => (item.id === configuringItem.id ? cleanLayoutItem({ ...item, config }) : item)))}
+        />
       ) : null}
       {canArrange ? <BlockLibrary registry={registry} open={library} onOpenChange={setLibrary} placed={new Set((layout.items ?? []).map((item) => item.type))} onAdd={add} /> : null}
     </div>

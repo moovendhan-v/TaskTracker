@@ -59,6 +59,14 @@ export type AutomationTriggerType =
   | 'task_priority_changed'
   | 'task_status_changed';
 
+export type BlockConfigInput = {
+  accent?: string | null | undefined;
+  includeClosed?: boolean | null | undefined;
+  limit?: number | null | undefined;
+  spaceId?: string | null | undefined;
+  title?: string | null | undefined;
+};
+
 export type ColumnWidthInput = {
   column: string;
   width: number;
@@ -381,6 +389,7 @@ export type ImportTemplateInput = {
 };
 
 export type LayoutItemInput = {
+  config?: BlockConfigInput | null | undefined;
   h: number;
   id: string;
   type: string;
@@ -1552,7 +1561,7 @@ export type DisconnectGithubMutationVariables = Exact<{
 
 export type DisconnectGithubMutation = { disconnectGithub: boolean };
 
-export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> };
+export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> };
 
 export type MyLayoutQueryVariables = Exact<{
   workspaceId: string;
@@ -1560,7 +1569,7 @@ export type MyLayoutQueryVariables = Exact<{
 }>;
 
 
-export type MyLayoutQuery = { myLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } | null };
+export type MyLayoutQuery = { myLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } | null };
 
 export type SaveLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1568,7 +1577,7 @@ export type SaveLayoutMutationVariables = Exact<{
 }>;
 
 
-export type SaveLayoutMutation = { saveLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+export type SaveLayoutMutation = { saveLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } };
 
 export type ResetLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1578,14 +1587,14 @@ export type ResetLayoutMutationVariables = Exact<{
 
 export type ResetLayoutMutation = { resetLayout: boolean };
 
-export type NamedDashboardFieldsFragment = { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> };
+export type NamedDashboardFieldsFragment = { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> };
 
 export type DashboardsQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type DashboardsQuery = { dashboards: Array<{ id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> }> };
+export type DashboardsQuery = { dashboards: Array<{ id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> }> };
 
 export type CreateDashboardMutationVariables = Exact<{
   workspaceId: string;
@@ -1593,7 +1602,7 @@ export type CreateDashboardMutationVariables = Exact<{
 }>;
 
 
-export type CreateDashboardMutation = { createDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+export type CreateDashboardMutation = { createDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } };
 
 export type UpdateDashboardMutationVariables = Exact<{
   workspaceId: string;
@@ -1602,7 +1611,7 @@ export type UpdateDashboardMutationVariables = Exact<{
 }>;
 
 
-export type UpdateDashboardMutation = { updateDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+export type UpdateDashboardMutation = { updateDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } };
 
 export type SaveDashboardLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1611,7 +1620,7 @@ export type SaveDashboardLayoutMutationVariables = Exact<{
 }>;
 
 
-export type SaveDashboardLayoutMutation = { saveDashboardLayout: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number }> } };
+export type SaveDashboardLayoutMutation = { saveDashboardLayout: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } };
 
 export type DeleteDashboardMutationVariables = Exact<{
   workspaceId: string;
@@ -3026,6 +3035,13 @@ export const LayoutFieldsFragmentDoc = new TypedDocumentString(`
     y
     w
     h
+    config {
+      title
+      accent
+      spaceId
+      limit
+      includeClosed
+    }
   }
 }
     `, {"fragmentName":"LayoutFields"}) as unknown as TypedDocumentString<LayoutFieldsFragment, unknown>;
@@ -3045,6 +3061,13 @@ export const NamedDashboardFieldsFragmentDoc = new TypedDocumentString(`
     y
     w
     h
+    config {
+      title
+      accent
+      spaceId
+      limit
+      includeClosed
+    }
   }
 }
     `, {"fragmentName":"NamedDashboardFields"}) as unknown as TypedDocumentString<NamedDashboardFieldsFragment, unknown>;
@@ -4763,6 +4786,13 @@ export const MyLayoutDocument = new TypedDocumentString(`
     y
     w
     h
+    config {
+      title
+      accent
+      spaceId
+      limit
+      includeClosed
+    }
   }
 }`) as unknown as TypedDocumentString<MyLayoutQuery, MyLayoutQueryVariables>;
 export const SaveLayoutDocument = new TypedDocumentString(`
@@ -4782,6 +4812,13 @@ export const SaveLayoutDocument = new TypedDocumentString(`
     y
     w
     h
+    config {
+      title
+      accent
+      spaceId
+      limit
+      includeClosed
+    }
   }
 }`) as unknown as TypedDocumentString<SaveLayoutMutation, SaveLayoutMutationVariables>;
 export const ResetLayoutDocument = new TypedDocumentString(`
@@ -4810,6 +4847,13 @@ export const DashboardsDocument = new TypedDocumentString(`
     y
     w
     h
+    config {
+      title
+      accent
+      spaceId
+      limit
+      includeClosed
+    }
   }
 }`) as unknown as TypedDocumentString<DashboardsQuery, DashboardsQueryVariables>;
 export const CreateDashboardDocument = new TypedDocumentString(`
@@ -4833,6 +4877,13 @@ export const CreateDashboardDocument = new TypedDocumentString(`
     y
     w
     h
+    config {
+      title
+      accent
+      spaceId
+      limit
+      includeClosed
+    }
   }
 }`) as unknown as TypedDocumentString<CreateDashboardMutation, CreateDashboardMutationVariables>;
 export const UpdateDashboardDocument = new TypedDocumentString(`
@@ -4860,6 +4911,13 @@ export const UpdateDashboardDocument = new TypedDocumentString(`
     y
     w
     h
+    config {
+      title
+      accent
+      spaceId
+      limit
+      includeClosed
+    }
   }
 }`) as unknown as TypedDocumentString<UpdateDashboardMutation, UpdateDashboardMutationVariables>;
 export const SaveDashboardLayoutDocument = new TypedDocumentString(`
@@ -4887,6 +4945,13 @@ export const SaveDashboardLayoutDocument = new TypedDocumentString(`
     y
     w
     h
+    config {
+      title
+      accent
+      spaceId
+      limit
+      includeClosed
+    }
   }
 }`) as unknown as TypedDocumentString<SaveDashboardLayoutMutation, SaveDashboardLayoutMutationVariables>;
 export const DeleteDashboardDocument = new TypedDocumentString(`

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { BLOCK_TYPES_BY_PAGE, DEFAULT_LAYOUTS, validateLayoutItems, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
+import { BLOCK_TYPES_BY_PAGE, cleanLayoutItem, DEFAULT_LAYOUTS, validateLayoutItems, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage, isConflict } from '@/lib/errors';
@@ -16,7 +16,7 @@ const HISTORY = 30;
  */
 function usable(pageKey: LayoutPage, items: readonly LayoutItem[] | undefined): LayoutItem[] {
   if (!items) return DEFAULT_LAYOUTS[pageKey];
-  const known = items.filter((item) => BLOCK_TYPES_BY_PAGE[pageKey].includes(item.type)).map(({ id, type, x, y, w, h }) => ({ id, type, x, y, w, h }));
+  const known = items.filter((item) => BLOCK_TYPES_BY_PAGE[pageKey].includes(item.type)).map(cleanLayoutItem);
   return validateLayoutItems(pageKey, known).length ? arrange(known) : known;
 }
 
@@ -194,6 +194,7 @@ function useArrangeableLayout(source: LayoutSource) {
   );
 
   return {
+    pageKey,
     items: items ?? (query.isError ? DEFAULT_LAYOUTS[pageKey] : null),
     setItems,
     undo,

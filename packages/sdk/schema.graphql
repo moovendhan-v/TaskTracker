@@ -170,6 +170,27 @@ enum AutomationTriggerType {
   task_status_changed
 }
 
+"""
+One block's settings: data source (spaceId) kept apart from view (title, accent, limit, includeClosed)
+"""
+type BlockConfig {
+  accent: String
+  includeClosed: Boolean
+  limit: Int
+
+  """Data source: one project; read with the viewer's own access"""
+  spaceId: ID
+  title: String
+}
+
+input BlockConfigInput {
+  accent: String
+  includeClosed: Boolean
+  limit: Int
+  spaceId: ID
+  title: String
+}
+
 type ChatAttachment {
   contentType: String!
   fileName: String!
@@ -986,6 +1007,7 @@ input ImportTemplateInput {
 scalar JSONObject
 
 type LayoutItem {
+  config: BlockConfig
   h: Int!
   id: String!
   type: String!
@@ -995,6 +1017,7 @@ type LayoutItem {
 }
 
 input LayoutItemInput {
+  config: BlockConfigInput
   h: Int!
   id: String!
   type: String!

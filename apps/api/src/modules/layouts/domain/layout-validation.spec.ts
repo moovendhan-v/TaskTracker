@@ -1,4 +1,4 @@
-import { DEFAULT_LAYOUTS, validateLayoutItems, type LayoutItem } from '@taskflow/shared-types';
+import { blockConfigKeys, cleanLayoutItem, DEFAULT_LAYOUTS, validateLayoutItems, type LayoutItem } from '@taskflow/shared-types';
 import { describe, expect, it } from 'vitest';
 
 const item = (patch: Partial<LayoutItem> = {}): LayoutItem => ({ id: 'a', type: 'status', x: 0, y: 0, w: 4, h: 4, ...patch });
@@ -24,5 +24,29 @@ describe('validateLayoutItems', () => {
   it('caps the number of blocks', () => {
     const many = Array.from({ length: 41 }, (_, i) => item({ id: `b${i}`, y: i * 4 }));
     expect(validateLayoutItems('home', many)).toContain('At most 40 blocks');
+  });
+});
+
+describe('block settings', () => {
+  const at = { x: 0, y: 0, w: 4, h: 5 };
+  it('offers each block only its own settings', () => {
+    expect(blockConfigKeys('home', 'overdue-tasks')).toEqual(['title', 'accent', 'spaceId', 'limit']);
+    expect(blockConfigKeys('home', 'status')).toEqual(['title', 'accent', 'spaceId', 'includeClosed']);
+    expect(blockConfigKeys('home', 'hours-by-project')).toEqual(['title', 'accent']);
+    expect(blockConfigKeys('project', 'kpis')).toEqual(['title', 'accent']);
+  });
+
+  it('checks values and refuses settings a block does not have', () => {
+    const ok = { id: 'status', type: 'status', ...at, config: { title: 'Mine', accent: 'blue' as const, includeClosed: true } };
+    expect(validateLayoutItems('home', [ok])).toEqual([]);
+    expect(validateLayoutItems('home', [{ ...ok, config: { limit: 5 } as never }])).toEqual(["Block 1: limit isn't a setting of this block"]);
+    expect(validateLayoutItems('home', [{ ...ok, config: { accent: 'neon' } as never }])).toEqual(['Block 1: unknown accent']);
+    expect(validateLayoutItems('home', [{ ...ok, config: { spaceId: "x' OR 1=1" } }])).toEqual(['Block 1: spaceId must be a project id']);
+    expect(validateLayoutItems('home', [{ ...ok, config: { title: '   ' } }])).toEqual(['Block 1: title must be 1 to 60 characters']);
+  });
+
+  it('stores nothing for empty settings', () => {
+    expect(cleanLayoutItem({ id: 'a', type: 'status', ...at, config: { title: '', accent: undefined } })).toEqual({ id: 'a', type: 'status', ...at });
+    expect(cleanLayoutItem({ id: 'a', type: 'status', ...at, config: { title: 'T', limit: null as never } })).toEqual({ id: 'a', type: 'status', ...at, config: { title: 'T' } });
   });
 });
