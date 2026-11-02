@@ -1,6 +1,7 @@
+import { tmpdir } from 'node:os';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 // Written by scripts/create-e2e-database.sh for local runs. Variables already set (as in CI) win.
 const LOCAL_E2E_ENV = resolve(import.meta.dirname, '../../../../.env.e2e');
@@ -37,5 +38,7 @@ export function apiEnv(): NodeJS.ProcessEnv {
     BETTER_AUTH_URL: WEB_URL,
     CORS_ORIGINS: WEB_URL,
     TRUST_PROXY: '0',
+    STORAGE_DRIVER: 'local',
+    STORAGE_LOCAL_DIR: join(tmpdir(), 'taskflow-web-e2e-uploads'),
   };
 }

@@ -47,6 +47,7 @@ export interface ChatMessageResponse {
   deleted: boolean;
   createdAt: string;
   reactions: ChatReactionSummary[];
+  attachments: ChatAttachmentResponse[];
 }
 
 export interface ChatReactionSummary {
@@ -88,4 +89,28 @@ export interface ChatSearchHit {
   channelKind: ChatChannelKind;
   /** Null for direct messages. */
   channelName: string | null;
+}
+
+export interface ChatAttachmentResponse {
+  id: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  /** Images show inline. */
+  isImage: boolean;
+  /** A short-lived signed link (minutes). Ask again for a fresh one. */
+  url: string;
+}
+
+export interface ChatUploadTicket {
+  attachmentId: string;
+  /** PUT the raw file here (same origin), with its Content-Length, within a few minutes. */
+  uploadUrl: string;
+  maxBytes: number;
+}
+
+/** The outcome of checking an upload: the file, or why it was refused (and deleted). */
+export interface ChatUploadResult {
+  attachment: ChatAttachmentResponse | null;
+  error: string | null;
 }

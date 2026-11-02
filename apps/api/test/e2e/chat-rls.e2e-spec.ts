@@ -154,6 +154,33 @@ describe('chat row-level security', () => {
     expect(await as(member.id, ws.workspaceId, 'DELETE FROM chat_reaction WHERE user_id = $1 RETURNING emoji', [member.id])).toHaveLength(1);
   });
 
+  it('keeps attachments to their uploader until sent, then to channel readers, and on your own messages only', async () => {
+    const file = (userId: string, channel: string, key: string) =>
+      as<{ id: string }>(userId, ws.workspaceId, 'INSERT INTO chat_attachment (workspace_id, channel_id, uploader_id, file_name, declared_size, storage_key) VALUES ($1, $2, $3, $4, 10, $5) RETURNING id', [
+        ws.workspaceId,
+        channel,
+        userId,
+        'a.png',
+        key,
+      ]);
+    const [pending] = await file(member.id, privateId, `w/${ws.workspaceId}/chat/rls-1`);
+    // Pending files are the uploader's alone; nobody uploads into a channel they can't post in, or as someone else.
+    expect(await as(ws.owner.id, ws.workspaceId, 'SELECT id FROM chat_attachment WHERE id = $1', [pending!.id])).toEqual([]);
+    await expect(file(outsider.id, privateId, `w/${ws.workspaceId}/chat/rls-2`)).rejects.toThrow(/row-level security/);
+    await expect(as(member.id, ws.workspaceId, 'INSERT INTO chat_attachment (workspace_id, channel_id, uploader_id, file_name, declared_size, storage_key) VALUES ($1, $2, $3, $4, 10, $5)', [ws.workspaceId, privateId, ws.owner.id, 'x.png', `w/${ws.workspaceId}/chat/rls-3`])).rejects.toThrow(/row-level security/);
+    await as(member.id, ws.workspaceId, "UPDATE chat_attachment SET status = 'ready', content_type = 'image/png', size = 10 WHERE id = $1", [pending!.id]);
+    // Only onto your own message in the same channel.
+    const [theirs] = await post(ws.owner.id, privateId, 'not yours');
+    await expect(as(member.id, ws.workspaceId, 'UPDATE chat_attachment SET message_id = $2 WHERE id = $1', [pending!.id, theirs!.id])).rejects.toThrow(/your own message/);
+    const [mine] = await post(member.id, privateId, 'here');
+    await as(member.id, ws.workspaceId, 'UPDATE chat_attachment SET message_id = $2 WHERE id = $1', [pending!.id, mine!.id]);
+    // Now channel readers see it; people outside the channel still don't. It can't move again.
+    expect(await as(ws.owner.id, ws.workspaceId, 'SELECT id FROM chat_attachment WHERE id = $1', [pending!.id])).toHaveLength(1);
+    expect(await as(outsider.id, ws.workspaceId, 'SELECT id FROM chat_attachment WHERE id = $1', [pending!.id])).toEqual([]);
+    await expect(as(member.id, ws.workspaceId, 'UPDATE chat_attachment SET message_id = $2 WHERE id = $1', [pending!.id, (await post(member.id, privateId, 'again'))[0]!.id])).rejects.toThrow(/one message/);
+    expect(await as(ws.owner.id, ws.workspaceId, 'DELETE FROM chat_attachment WHERE id = $1 RETURNING id', [pending!.id])).toEqual([]);
+  });
+
   it('gives the platform scope every chat row', async () => {
     const rows = await withScope(db, { platform: true }, async (client) => (await client.query('SELECT id FROM chat_channel WHERE workspace_id = $1', [ws.workspaceId])).rows);
     expect(rows).toHaveLength(4);

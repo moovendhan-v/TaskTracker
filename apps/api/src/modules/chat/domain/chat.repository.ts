@@ -47,6 +47,20 @@ export interface ChatMessageRecord {
   position: { at: string; id: string };
 }
 
+export interface ChatAttachmentRecord {
+  id: string;
+  channelId: string;
+  uploaderId: string;
+  messageId: string | null;
+  fileName: string;
+  contentType: string | null;
+  declaredSize: number;
+  size: number | null;
+  storageKey: string;
+  status: 'pending' | 'ready';
+  createdAt: Date;
+}
+
 export interface MessagePosition {
   at: string;
   id: string;
@@ -87,6 +101,17 @@ export abstract class ChatRepository {
 
   /** Messages matching a tsquery (already built from safe terms), newest first, in channels the caller can read. */
   abstract searchMessages(workspaceId: string, tsquery: string, channelId: string | null, limit: number): Promise<{ record: ChatMessageRecord; channelKind: ChatChannelKind; channelName: string | null }[]>;
+
+  abstract insertAttachment(input: { workspaceId: string; channelId: string; uploaderId: string; fileName: string; declaredSize: number; storageKey: string }): Promise<string>;
+  abstract findAttachment(workspaceId: string, id: string): Promise<ChatAttachmentRecord | null>;
+  abstract markAttachmentReady(workspaceId: string, id: string, contentType: string, size: number): Promise<boolean>;
+  abstract deleteAttachment(workspaceId: string, id: string): Promise<boolean>;
+  /** Puts ready, unattached files of this uploader in this channel on a message; returns how many. */
+  abstract attach(workspaceId: string, ids: string[], uploaderId: string, channelId: string, messageId: string): Promise<number>;
+  abstract attachmentsFor(workspaceId: string, messageIds: string[]): Promise<Map<string, ChatAttachmentRecord[]>>;
+  /** An uploader's files that never made it onto a message, older than `before`. */
+  abstract staleAttachments(workspaceId: string, uploaderId: string, before: Date): Promise<ChatAttachmentRecord[]>;
+  abstract countPending(workspaceId: string, uploaderId: string): Promise<number>;
 
   abstract insertMessage(input: { workspaceId: string; channelId: string; authorId: string; body: string; parentId: string | null; kind: 'user' | 'system'; taskId: string | null }): Promise<string>;
   abstract findMessage(workspaceId: string, messageId: string): Promise<ChatMessageRecord | null>;

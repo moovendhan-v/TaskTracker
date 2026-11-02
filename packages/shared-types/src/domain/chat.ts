@@ -83,3 +83,7 @@ export const CHAT_TYPING_EVERY_MS = 3_000;
 
 export const CHAT_SEARCH_MAX_LENGTH = 100;
 export const CHAT_SEARCH_PAGE_MAX = 30;
+
+/** Uploads: at most this many bytes each, this many per message, and pending ones expire after a day. */
+export const CHAT_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+export const CHAT_ATTACHMENTS_PER_MESSAGE = 5;

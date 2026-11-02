@@ -28,6 +28,7 @@ fragment ChatMessageFields on ChatMessage {
   deleted
   createdAt
   reactions { emoji count mine names }
+  attachments { id fileName contentType size isImage url }
 }
 
 query ChatChannels($workspaceId: ID!) { chatChannels(workspaceId: $workspaceId) { ...ChatChannelFields } }
@@ -107,3 +108,13 @@ query SearchChatMessages($workspaceId: ID!, $query: String!, $channelId: ID, $fi
     message { ...ChatMessageFields }
   }
 }
+
+mutation RequestChatUpload($workspaceId: ID!, $input: RequestChatUploadInput!) {
+  requestChatUpload(workspaceId: $workspaceId, input: $input) { attachmentId uploadUrl maxBytes }
+}
+
+mutation CompleteChatUpload($workspaceId: ID!, $attachmentId: ID!) {
+  completeChatUpload(workspaceId: $workspaceId, attachmentId: $attachmentId) { error attachment { id fileName contentType size isImage url } }
+}
+
+mutation DiscardChatUpload($workspaceId: ID!, $attachmentId: ID!) { discardChatUpload(workspaceId: $workspaceId, attachmentId: $attachmentId) }

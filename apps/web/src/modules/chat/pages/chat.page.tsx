@@ -157,8 +157,8 @@ function Conversation({ workspaceId, channelId, threadId, me, onThread }: Conver
       void navigator.clipboard.writeText(url).then(() => notify.success('Link copied'));
     },
   };
-  const send = (body: string, parentId?: string) =>
-    mutations.send.mutateAsync({ channelId, body, parentId }).catch((error: unknown) => {
+  const send = (body: string, parentId?: string, attachmentIds: string[] = []) =>
+    mutations.send.mutateAsync({ channelId, body, parentId, attachmentIds }).catch((error: unknown) => {
       notify.error(error);
       throw error;
     });
@@ -226,7 +226,8 @@ function Conversation({ workspaceId, channelId, threadId, me, onThread }: Conver
                 key={channelId}
                 autoFocus
                 placeholder={`Message ${label}`}
-                onSend={(body) => send(body)}
+                onSend={(body, attachmentIds) => send(body, undefined, attachmentIds)}
+                uploadChannelId={channelId}
                 onEditLast={lastMine ? () => setEditing(lastMine.id) : undefined}
                 onTyping={member ? () => void chatApi.typing(workspaceId, channelId).catch(() => undefined) : undefined}
               />
@@ -241,7 +242,8 @@ function Conversation({ workspaceId, channelId, threadId, me, onThread }: Conver
           channelLabel={label}
           archived={archived}
           onClose={() => onThread(undefined)}
-          onSend={(body) => send(body, threadId)}
+          onSend={(body, attachmentIds) => send(body, threadId, attachmentIds)}
+          uploadChannelId={channelId}
           actions={actions}
         />
       ) : null}
@@ -350,13 +352,14 @@ interface ThreadActions {
   onReact: (message: ChatMessageResponse) => (emoji: string) => void;
 }
 
-function ThreadPane({ workspaceId, rootId, channelLabel: where, archived, onClose, onSend, actions }: {
+function ThreadPane({ workspaceId, rootId, channelLabel: where, archived, onClose, onSend, uploadChannelId, actions }: {
   workspaceId: string;
   rootId: string;
   channelLabel: string;
   archived: boolean;
   onClose: () => void;
-  onSend: (body: string) => Promise<unknown>;
+  onSend: (body: string, attachmentIds: string[]) => Promise<unknown>;
+  uploadChannelId: string;
   actions: ThreadActions;
 }) {
   const root = useChatMessage(workspaceId, rootId);
@@ -413,7 +416,7 @@ function ThreadPane({ workspaceId, rootId, channelLabel: where, archived, onClos
       )}
       {!archived ? (
         <div className="px-3 pb-3">
-          <Composer key={rootId} autoFocus placeholder="Reply…" onSend={onSend} />
+          <Composer key={rootId} autoFocus placeholder="Reply…" onSend={onSend} uploadChannelId={uploadChannelId} />
         </div>
       ) : null}
     </aside>
