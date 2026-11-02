@@ -501,6 +501,7 @@ export type RealtimeEntityType =
   | 'sprint'
   | 'status'
   | 'task'
+  | 'task_attachment'
   | 'time_entry'
   | 'workspace';
 
@@ -517,6 +518,12 @@ export type RequestLeaveInput = {
   reason?: string | null | undefined;
   /** yyyy-mm-dd */
   startDate: string;
+};
+
+export type RequestTaskUploadInput = {
+  fileName: string;
+  size: number;
+  taskId: string;
 };
 
 export type ResourceQueryInput = {
@@ -879,6 +886,40 @@ export type DashboardQueryVariables = Exact<{
 
 
 export type DashboardQuery = { dashboard: { hoursOnlyMine: boolean, overdueAging: Array<number>, summary: { projects: number, openTasks: number, closedTasks: number, overdue: number, dueSoon: number, unassigned: number, minutesLogged: number, entries: number, minutesAllTime: number }, byStatus: Array<{ name: string, color: string, category: StatusCategory, count: number }>, byPriority: Array<{ priority: TaskPriority, open: number, overdue: number }>, dueForecast: Array<{ label: string, weekStart: string | null, count: number, kind: ForecastKind }>, createdVsClosed: Array<{ weekStart: string, created: number, closed: number }>, minutesPerDay: Array<{ day: string, minutes: number }>, minutesByPerson: Array<{ userId: string, name: string, minutes: number }>, minutesByProject: Array<{ spaceId: string | null, name: string, minutes: number }>, minutesByTask: Array<{ taskId: string, number: number, title: string, minutes: number }>, people: Array<{ userId: string | null, name: string, open: number, overdue: number, minutes: number }>, projects: Array<{ spaceId: string, name: string, status: SpaceStatus, open: number, closed: number, overdue: number, dueSoon: number, progress: number, minutes: number, assignees: number, updatedAt: string | null }>, phases: Array<{ id: string, number: number, title: string, assigneeName: string | null, dueDate: string | null, done: number, total: number, minutes: number, status: { name: string, color: string, category: StatusCategory } }>, overdueTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, dueSoonTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, recentlyUpdated: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }> } };
+
+export type TaskAttachmentFieldsFragment = { id: string, taskId: string, fileName: string, contentType: string, size: number, isImage: boolean, url: string, uploaderId: string | null, uploaderName: string | null, createdAt: string };
+
+export type TaskAttachmentsQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type TaskAttachmentsQuery = { taskAttachments: Array<{ id: string, taskId: string, fileName: string, contentType: string, size: number, isImage: boolean, url: string, uploaderId: string | null, uploaderName: string | null, createdAt: string }> };
+
+export type RequestTaskUploadMutationVariables = Exact<{
+  workspaceId: string;
+  input: RequestTaskUploadInput;
+}>;
+
+
+export type RequestTaskUploadMutation = { requestTaskUpload: { attachmentId: string, uploadUrl: string, maxBytes: number } };
+
+export type CompleteTaskUploadMutationVariables = Exact<{
+  workspaceId: string;
+  attachmentId: string;
+}>;
+
+
+export type CompleteTaskUploadMutation = { completeTaskUpload: { error: string | null, attachment: { id: string, taskId: string, fileName: string, contentType: string, size: number, isImage: boolean, url: string, uploaderId: string | null, uploaderName: string | null, createdAt: string } | null } };
+
+export type DeleteTaskAttachmentMutationVariables = Exact<{
+  workspaceId: string;
+  attachmentId: string;
+}>;
+
+
+export type DeleteTaskAttachmentMutation = { deleteTaskAttachment: boolean };
 
 export type WorkspaceAuditLogQueryVariables = Exact<{
   workspaceId: string;
@@ -2495,6 +2536,20 @@ export const DashboardTaskFieldsFragmentDoc = new TypedDocumentString(`
   updatedAt
 }
     `, {"fragmentName":"DashboardTaskFields"}) as unknown as TypedDocumentString<DashboardTaskFieldsFragment, unknown>;
+export const TaskAttachmentFieldsFragmentDoc = new TypedDocumentString(`
+    fragment TaskAttachmentFields on TaskAttachment {
+  id
+  taskId
+  fileName
+  contentType
+  size
+  isImage
+  url
+  uploaderId
+  uploaderName
+  createdAt
+}
+    `, {"fragmentName":"TaskAttachmentFields"}) as unknown as TypedDocumentString<TaskAttachmentFieldsFragment, unknown>;
 export const AutomationRuleFieldsFragmentDoc = new TypedDocumentString(`
     fragment AutomationRuleFields on AutomationRule {
   id
@@ -3351,6 +3406,59 @@ export const DashboardDocument = new TypedDocumentString(`
   dueDate
   updatedAt
 }`) as unknown as TypedDocumentString<DashboardQuery, DashboardQueryVariables>;
+export const TaskAttachmentsDocument = new TypedDocumentString(`
+    query TaskAttachments($workspaceId: ID!, $taskId: ID!) {
+  taskAttachments(workspaceId: $workspaceId, taskId: $taskId) {
+    ...TaskAttachmentFields
+  }
+}
+    fragment TaskAttachmentFields on TaskAttachment {
+  id
+  taskId
+  fileName
+  contentType
+  size
+  isImage
+  url
+  uploaderId
+  uploaderName
+  createdAt
+}`) as unknown as TypedDocumentString<TaskAttachmentsQuery, TaskAttachmentsQueryVariables>;
+export const RequestTaskUploadDocument = new TypedDocumentString(`
+    mutation RequestTaskUpload($workspaceId: ID!, $input: RequestTaskUploadInput!) {
+  requestTaskUpload(workspaceId: $workspaceId, input: $input) {
+    attachmentId
+    uploadUrl
+    maxBytes
+  }
+}
+    `) as unknown as TypedDocumentString<RequestTaskUploadMutation, RequestTaskUploadMutationVariables>;
+export const CompleteTaskUploadDocument = new TypedDocumentString(`
+    mutation CompleteTaskUpload($workspaceId: ID!, $attachmentId: ID!) {
+  completeTaskUpload(workspaceId: $workspaceId, attachmentId: $attachmentId) {
+    error
+    attachment {
+      ...TaskAttachmentFields
+    }
+  }
+}
+    fragment TaskAttachmentFields on TaskAttachment {
+  id
+  taskId
+  fileName
+  contentType
+  size
+  isImage
+  url
+  uploaderId
+  uploaderName
+  createdAt
+}`) as unknown as TypedDocumentString<CompleteTaskUploadMutation, CompleteTaskUploadMutationVariables>;
+export const DeleteTaskAttachmentDocument = new TypedDocumentString(`
+    mutation DeleteTaskAttachment($workspaceId: ID!, $attachmentId: ID!) {
+  deleteTaskAttachment(workspaceId: $workspaceId, attachmentId: $attachmentId)
+}
+    `) as unknown as TypedDocumentString<DeleteTaskAttachmentMutation, DeleteTaskAttachmentMutationVariables>;
 export const WorkspaceAuditLogDocument = new TypedDocumentString(`
     query WorkspaceAuditLog($workspaceId: ID!, $action: String, $actorId: ID, $page: Int, $pageSize: Int) {
   workspaceAuditLog(

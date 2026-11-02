@@ -92,3 +92,30 @@ export interface TaskActivityResponse {
   to: string | null;
   createdAt: string;
 }
+
+export interface TaskAttachmentResponse {
+  id: string;
+  taskId: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  isImage: boolean;
+  /** A short-lived signed link (minutes); read the list again for fresh ones. */
+  url: string;
+  uploaderId: string | null;
+  uploaderName: string | null;
+  createdAt: string;
+}
+
+export interface TaskUploadTicket {
+  attachmentId: string;
+  /** PUT the raw file here (same origin), with its Content-Length, within a few minutes. */
+  uploadUrl: string;
+  maxBytes: number;
+}
+
+/** The checked file, or why it was refused (it is deleted then). */
+export interface TaskUploadResult {
+  attachment: TaskAttachmentResponse | null;
+  error: string | null;
+}

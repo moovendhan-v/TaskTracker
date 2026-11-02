@@ -6,6 +6,7 @@ import { cn } from '@/lib/cn';
 import { TaskMentionTextarea, useDocWorkspace } from '@/modules/documents';
 import { useMembers } from '@/modules/members';
 import { notify } from '@/components/kit/notify';
+import { formatBytes, UPLOAD_ACCEPT } from '@/lib/upload';
 import { discardChatFile, uploadChatFile } from '../api/chat.api';
 import { namesToTokens, personAt, type Person } from '../lib/chat-mentions';
 
@@ -226,7 +227,7 @@ export function Composer({ placeholder, onSend, onEditLast, disabled, autoFocus,
               type="file"
               multiple
               hidden
-              accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.zip,.docx,.xlsx,.pptx,.txt,.csv,.md,.log,.json"
+              accept={UPLOAD_ACCEPT}
               onChange={(event) => {
                 if (event.target.files) addFiles(event.target.files);
                 event.target.value = '';
@@ -271,10 +272,4 @@ interface PendingFile {
   progress: number;
   controller: AbortController;
   attachment?: ChatAttachmentResponse;
-}
-
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

@@ -26,6 +26,7 @@ import { PreferencesResolver, SavedViewFieldsResolver } from './modules/preferen
 import { DashboardsResolver } from './modules/layouts/presentation/graphql/dashboards.resolver.js';
 import { LayoutsResolver } from './modules/layouts/presentation/graphql/layouts.resolver.js';
 import { ChatResolver } from './modules/chat/presentation/graphql/chat.resolver.js';
+import { TaskAttachmentsResolver } from './modules/attachments/presentation/graphql/task-attachments.resolver.js';
 import { ResourceSchemaResolver } from './modules/resources/presentation/graphql/resource-schema.resolver.js';
 import { PoliciesResolver } from './modules/roles/presentation/graphql/policies.resolver.js';
 import { RolesResolver } from './modules/roles/presentation/graphql/roles.resolver.js';
@@ -64,6 +65,7 @@ export const RESOLVERS = [
   LayoutsResolver,
   DashboardsResolver,
   ChatResolver,
+  TaskAttachmentsResolver,
   SavedViewFieldsResolver,
   StatusesResolver,
   CustomFieldsResolver,

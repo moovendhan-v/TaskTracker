@@ -1,0 +1,24 @@
+fragment TaskAttachmentFields on TaskAttachment {
+  id
+  taskId
+  fileName
+  contentType
+  size
+  isImage
+  url
+  uploaderId
+  uploaderName
+  createdAt
+}
+
+query TaskAttachments($workspaceId: ID!, $taskId: ID!) { taskAttachments(workspaceId: $workspaceId, taskId: $taskId) { ...TaskAttachmentFields } }
+
+mutation RequestTaskUpload($workspaceId: ID!, $input: RequestTaskUploadInput!) {
+  requestTaskUpload(workspaceId: $workspaceId, input: $input) { attachmentId uploadUrl maxBytes }
+}
+
+mutation CompleteTaskUpload($workspaceId: ID!, $attachmentId: ID!) {
+  completeTaskUpload(workspaceId: $workspaceId, attachmentId: $attachmentId) { error attachment { ...TaskAttachmentFields } }
+}
+
+mutation DeleteTaskAttachment($workspaceId: ID!, $attachmentId: ID!) { deleteTaskAttachment(workspaceId: $workspaceId, attachmentId: $attachmentId) }

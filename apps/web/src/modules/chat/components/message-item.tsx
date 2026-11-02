@@ -11,7 +11,8 @@ import { useMemberName } from '@/modules/members';
 import { timeAgo } from '@/lib/relative-time';
 import { timeOfDay } from '../lib/chat-display';
 import { tokensToNames } from '../lib/chat-mentions';
-import { Composer, formatBytes } from './composer';
+import { formatBytes } from '@/lib/upload';
+import { Composer } from './composer';
 
 interface MessageItemProps {
   message: ChatMessageResponse;
