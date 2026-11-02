@@ -1,10 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { CalendarClockIcon, ChartBarStackedIcon, ClockIcon, HistoryIcon, ListTreeIcon, TimerIcon, TriangleAlertIcon, UsersRoundIcon } from 'lucide-react';
-import { useState } from 'react';
-import type { SpaceResponse } from '@taskflow/shared-types';
+import { PROJECT_BLOCK_TYPES, type DashboardResponse, type ProjectBlockType, type SpaceResponse } from '@taskflow/shared-types';
+import { CalendarClockIcon, ChartBarStackedIcon, ClockIcon, GaugeIcon, HistoryIcon, InfoIcon, ListTreeIcon, TimerIcon, TriangleAlertIcon, UsersRoundIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { ErrorState } from '@/components/common/error-state';
 import { Meter } from '@/components/kit/charts';
-import { Block } from '@/components/kit/block';
 import { blockStateOf } from '@/components/kit/block-state';
 import { usePreferences } from '@/core/preferences/use-preferences';
 import { queryKeys } from '@/lib/query-keys';
@@ -13,13 +12,192 @@ import { useCustomFields } from '@/modules/spaces';
 import { useOpenTask } from '@/modules/tasks';
 import { formatMinutes } from '@/modules/time';
 import { useDashboard } from '../hooks/use-dashboard';
+import { useLayout } from '../hooks/use-layout';
 import { dashboardInput } from '../lib/dashboard-input';
+import { ArrangeableGrid } from './arrangeable-grid';
 import { DashboardFilters } from './dashboard-filters';
-import { HoursByTask, HoursPerDay, KpiRow, KpiRowSkeleton, StatusBreakdown, Workload } from './dashboard-panels';
+import { HoursByTask, HoursPerDay, KpiRow, StatusBreakdown, Workload } from './dashboard-panels';
 import { DashboardTaskList } from './dashboard-task-list';
+import type { BlockDefinition, BlockRegistry } from './home-blocks';
 import { SpaceStatusChip } from './space-status-chip';
 
-/** One project at a glance: health, attributes, counts, hours, phases, people and the lists that need attention. */
+interface Attribute {
+  id: string;
+  name: string;
+  required: boolean;
+  value: string;
+}
+
+interface ProjectContext {
+  space: SpaceResponse;
+  attributes: Attribute[];
+  openTask: (taskId: string) => void;
+  weekAhead: number;
+}
+
+/** The blocks a project's dashboard can hold. They close over the project, so the registry is built per project. */
+function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectContext): BlockRegistry {
+  const blocks: Record<ProjectBlockType, BlockDefinition> = {
+    'project-status': {
+      title: 'Project status',
+      description: 'Health, the note behind it, dates and project attributes',
+      icon: InfoIcon,
+      category: 'Project',
+      skeleton: 'rows',
+      size: { w: 12, h: 4 },
+      render: () => (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid content-start gap-2">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <SpaceStatusChip status={space.status} />
+              {space.startDate || space.dueDate ? (
+                <span className="font-normal text-muted-foreground">
+                  {space.startDate ? formatNumericDate(space.startDate) : '–'} → {space.dueDate ? formatNumericDate(space.dueDate) : '–'}
+                </span>
+              ) : null}
+            </p>
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground">{space.statusNote || 'No explanation yet.'}</p>
+          </div>
+          <div className="grid content-start gap-2 lg:border-l lg:pl-6">
+            {attributes.length === 0 ? <p className="text-sm text-muted-foreground">No attributes yet. Add project fields in the space settings.</p> : null}
+            <dl className="grid grid-cols-[11rem_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
+              {attributes.map((attribute) => (
+                <div key={attribute.id} className="contents">
+                  <dt className="truncate text-muted-foreground">
+                    {attribute.name}
+                    {attribute.required ? <span className="text-critical"> *</span> : null}
+                  </dt>
+                  <dd className="truncate">{attribute.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      ),
+    },
+    kpis: {
+      title: 'Key numbers',
+      description: 'Open, overdue, due soon, done and hours at a glance',
+      icon: GaugeIcon,
+      category: 'Project',
+      skeleton: 'rows',
+      size: { w: 12, h: 4 },
+      render: (data) => <KpiRow data={data} mode="project" />,
+    },
+    'status-breakdown': {
+      title: 'Status breakdown',
+      description: 'Every task in the project by status',
+      icon: ChartBarStackedIcon,
+      category: 'Insights',
+      skeleton: 'rows',
+      size: { w: 12, h: 3 },
+      render: (data) => <StatusBreakdown data={data} openOnly={false} />,
+    },
+    'hours-per-day': {
+      title: 'Hours per day',
+      description: 'Time logged on this project, day by day',
+      icon: ClockIcon,
+      category: 'Time',
+      skeleton: 'chart',
+      size: { w: 6, h: 6 },
+      render: (data) => <HoursPerDay data={data} height={200} />,
+    },
+    'hours-by-task': {
+      title: 'Where the time went',
+      description: 'The tasks with the most time logged',
+      icon: TimerIcon,
+      category: 'Time',
+      skeleton: 'rows',
+      size: { w: 6, h: 6 },
+      aside: 'top tasks',
+      render: (data) => <HoursByTask data={data} />,
+    },
+    phases: {
+      title: 'Phases',
+      description: 'Parent tasks with their subtasks: progress, time and status',
+      icon: ListTreeIcon,
+      category: 'Project',
+      skeleton: 'rows',
+      size: { w: 12, h: 7 },
+      aside: 'parent tasks and their subtasks',
+      render: (data) => <Phases data={data} openTask={openTask} />,
+    },
+    people: {
+      title: 'People',
+      description: 'Open work per person',
+      icon: UsersRoundIcon,
+      category: 'People',
+      skeleton: 'rows',
+      size: { w: 4, h: 7 },
+      render: (data) => <Workload data={data} />,
+    },
+    'overdue-tasks': {
+      title: 'Overdue',
+      description: 'Open tasks past their due date',
+      icon: TriangleAlertIcon,
+      category: 'Tasks',
+      skeleton: 'rows',
+      size: { w: 4, h: 7 },
+      chip: (data) => String(data.summary.overdue),
+      render: (data) => <DashboardTaskList tasks={data.overdueTasks} variant="number" empty="Nothing overdue." />,
+    },
+    'due-soon-tasks': {
+      title: 'Due in the next 7 days',
+      description: 'Open tasks due within a week',
+      icon: CalendarClockIcon,
+      category: 'Tasks',
+      skeleton: 'rows',
+      size: { w: 4, h: 7 },
+      chip: (data) => String(data.summary.dueSoon),
+      render: (data) => (
+        <DashboardTaskList tasks={data.dueSoonTasks.filter((task) => task.dueDate && new Date(task.dueDate).getTime() < weekAhead)} variant="number" empty="Nothing due this week." />
+      ),
+    },
+    'recent-tasks': {
+      title: 'Recently updated',
+      description: 'The latest changes in this project',
+      icon: HistoryIcon,
+      category: 'Tasks',
+      skeleton: 'rows',
+      size: { w: 12, h: 6 },
+      render: (data) => <DashboardTaskList tasks={data.recentlyUpdated} variant="number" date="updated" />,
+    },
+  };
+  return { order: PROJECT_BLOCK_TYPES, blocks };
+}
+
+function Phases({ data, openTask }: { data: DashboardResponse; openTask: (taskId: string) => void }) {
+  if (data.phases.length === 0) return <p className="py-4 text-center text-sm text-muted-foreground">No tasks with subtasks yet.</p>;
+  return (
+    <ul className="divide-y">
+      {data.phases.map((phase) => (
+        <li key={phase.id}>
+          <button type="button" onClick={() => openTask(phase.id)} className="grid w-full grid-cols-[minmax(0,1fr)_8rem_5rem_6rem_6rem] items-center gap-4 py-3 text-left hover:bg-muted/40">
+            <span className="min-w-0">
+              <span className="block truncate font-medium">{phase.title}</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                #{phase.number}
+                {phase.assigneeName ? ` · ${phase.assigneeName}` : ''}
+                {phase.dueDate ? ` · due ${formatNumericDate(phase.dueDate)}` : ''}
+              </span>
+            </span>
+            <Meter value={phase.total ? (phase.done / phase.total) * 100 : 0} label={`${phase.title} progress`} />
+            <span className="text-sm tabular-nums text-muted-foreground">
+              {phase.done}/{phase.total} done
+            </span>
+            <span className="text-right text-sm tabular-nums">{phase.minutes ? formatMinutes(phase.minutes) : '–'}</span>
+            <span className="text-right text-sm text-muted-foreground">{phase.status.name}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * One project at a glance, on the arrangeable block grid (E arranges, A adds a block).
+ * Your arrangement is yours, and the same for every project.
+ */
 export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; space: SpaceResponse }) {
   const { weekStart } = usePreferences();
   const queryClient = useQueryClient();
@@ -27,16 +205,20 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   const [period, setPeriod] = useState<Period>('this_month');
   const [weekAhead] = useState(() => Date.now() + 7 * 86_400_000);
   const dashboard = useDashboard(workspaceId, dashboardInput(period, weekStart, { spaceId: space.id }));
-  const data = dashboard.data;
   const state = blockStateOf(dashboard, { what: 'this project' });
+  const layout = useLayout(workspaceId, 'project');
   const { data: fields = [] } = useCustomFields(workspaceId, 'space');
-  const attributes = fields
-    .filter((field) => !field.spaceId || field.spaceId === space.id)
-    .map((field) => {
-      const value = space.customFields[field.id];
-      const labels = (Array.isArray(value) ? value : [value]).map((item) => field.options.find((option) => option.id === item)?.label ?? item);
-      return { id: field.id, name: field.name, required: field.required, value: value === null || value === undefined ? '–' : labels.join(', ') };
-    });
+
+  const registry = useMemo(() => {
+    const attributes = fields
+      .filter((field) => !field.spaceId || field.spaceId === space.id)
+      .map((field) => {
+        const value = space.customFields[field.id];
+        const labels = (Array.isArray(value) ? value : [value]).map((item) => field.options.find((option) => option.id === item)?.label ?? item);
+        return { id: field.id, name: field.name, required: field.required, value: value === null || value === undefined ? '–' : labels.join(', ') };
+      });
+    return projectRegistry({ space, attributes, openTask, weekAhead });
+  }, [fields, space, openTask, weekAhead]);
 
   return (
     <div className="grid gap-4">
@@ -49,89 +231,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
         onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
       />
       {dashboard.isError ? <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} /> : null}
-      {!dashboard.isError ? (
-        <>
-          <section className="grid gap-6 rounded-xl border bg-card p-5 lg:grid-cols-2">
-            <div className="grid content-start gap-2">
-              <h2 className="flex items-center gap-2 text-sm font-semibold">
-                Project status <SpaceStatusChip status={space.status} />
-              </h2>
-              <p className="text-sm whitespace-pre-wrap text-muted-foreground">{space.statusNote || 'No explanation yet.'}</p>
-              {space.startDate || space.dueDate ? (
-                <p className="text-sm">
-                  {space.startDate ? formatNumericDate(space.startDate) : '–'} → {space.dueDate ? formatNumericDate(space.dueDate) : '–'}
-                </p>
-              ) : null}
-            </div>
-            <div className="grid content-start gap-2 lg:border-l lg:pl-6">
-              <h2 className="text-sm font-semibold">Project attributes</h2>
-              {attributes.length === 0 ? <p className="text-sm text-muted-foreground">No attributes yet. Add project fields in the space settings.</p> : null}
-              <dl className="grid grid-cols-[11rem_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
-                {attributes.map((attribute) => (
-                  <div key={attribute.id} className="contents">
-                    <dt className="truncate text-muted-foreground">
-                      {attribute.name}
-                      {attribute.required ? <span className="text-critical"> *</span> : null}
-                    </dt>
-                    <dd className="truncate">{String(attribute.value)}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </section>
-          {data ? <KpiRow data={data} mode="project" /> : <KpiRowSkeleton tiles={6} />}
-          <Block title="Status breakdown" icon={ChartBarStackedIcon} state={state} maximisable>
-            {data ? <StatusBreakdown data={data} openOnly={false} /> : null}
-          </Block>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Block title="Hours per day" icon={ClockIcon} state={state} skeleton="chart" maximisable>
-              {data ? <HoursPerDay data={data} height={200} /> : null}
-            </Block>
-            <Block title="Where the time went" icon={TimerIcon} aside="top tasks" state={state} maxBodyHeight={320} maximisable>
-              {data ? <HoursByTask data={data} /> : null}
-            </Block>
-          </div>
-          <Block title="Phases" icon={ListTreeIcon} aside="parent tasks and their subtasks" state={state} maximisable>
-            {data?.phases.length === 0 ? <p className="py-4 text-center text-sm text-muted-foreground">No tasks with subtasks yet.</p> : null}
-            <ul className="divide-y">
-              {data?.phases.map((phase) => (
-                <li key={phase.id}>
-                  <button type="button" onClick={() => openTask(phase.id)} className="grid w-full grid-cols-[minmax(0,1fr)_8rem_5rem_6rem_6rem] items-center gap-4 py-3 text-left hover:bg-muted/40">
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">{phase.title}</span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        #{phase.number}
-                        {phase.assigneeName ? ` · ${phase.assigneeName}` : ''}
-                        {phase.dueDate ? ` · due ${formatNumericDate(phase.dueDate)}` : ''}
-                      </span>
-                    </span>
-                    <Meter value={phase.total ? (phase.done / phase.total) * 100 : 0} label={`${phase.title} progress`} />
-                    <span className="text-sm tabular-nums text-muted-foreground">
-                      {phase.done}/{phase.total} done
-                    </span>
-                    <span className="text-right text-sm tabular-nums">{phase.minutes ? formatMinutes(phase.minutes) : '–'}</span>
-                    <span className="text-right text-sm text-muted-foreground">{phase.status.name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </Block>
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Block title="People" icon={UsersRoundIcon} state={state} maximisable>
-              {data ? <Workload data={data} /> : null}
-            </Block>
-            <Block title="Overdue" icon={TriangleAlertIcon} chip={data ? { label: String(data.summary.overdue) } : undefined} state={state} maxBodyHeight={420} maximisable>
-              {data ? <DashboardTaskList tasks={data.overdueTasks} variant="number" empty="Nothing overdue." /> : null}
-            </Block>
-            <Block title="Due in the next 7 days" icon={CalendarClockIcon} chip={data ? { label: String(data.summary.dueSoon) } : undefined} state={state} maxBodyHeight={420} maximisable>
-              {data ? <DashboardTaskList tasks={data.dueSoonTasks.filter((task) => task.dueDate && new Date(task.dueDate).getTime() < weekAhead)} variant="number" empty="Nothing due this week." /> : null}
-            </Block>
-          </div>
-          <Block title="Recently updated" icon={HistoryIcon} state={state} maximisable>
-            {data ? <DashboardTaskList tasks={data.recentlyUpdated} variant="number" date="updated" /> : null}
-          </Block>
-        </>
-      ) : null}
+      {!dashboard.isError ? <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} /> : null}
     </div>
   );
 }

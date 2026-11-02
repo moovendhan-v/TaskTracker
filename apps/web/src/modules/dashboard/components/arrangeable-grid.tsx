@@ -1,4 +1,4 @@
-import type { DashboardResponse, HomeBlockType, LayoutItem } from '@taskflow/shared-types';
+import type { DashboardResponse, LayoutItem } from '@taskflow/shared-types';
 import { LayoutDashboardIcon, PlusIcon, RotateCcwIcon, Trash2Icon, Undo2Icon } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
@@ -10,7 +10,7 @@ import type { ArrangeableLayout } from '../hooks/use-layout';
 import { addItem, removeItem } from '../lib/grid';
 import { BlockGrid } from './block-grid';
 import { BlockLibrary } from './block-library';
-import { HOME_BLOCKS } from './home-blocks';
+import { HOME_REGISTRY, type BlockRegistry } from './home-blocks';
 
 function isEditable(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
@@ -24,13 +24,16 @@ interface ArrangeableGridProps {
   state: BlockState;
   /** Left side of the toolbar row, e.g. a note about who shared the dashboard. */
   leading?: ReactNode;
+  /** Which blocks this page offers (Home by default). */
+  registry?: BlockRegistry;
 }
 
 /**
  * Home blocks on the grid, with arrange mode for whoever may change the layout:
  * E arranges, A adds a block, ⌘/Ctrl+Z undoes, Esc finishes.
  */
-export function ArrangeableGrid({ layout, canArrange, data, state, leading }: ArrangeableGridProps) {
+export function ArrangeableGrid({ layout, canArrange, data, state, leading, registry = HOME_REGISTRY }: ArrangeableGridProps) {
+  const blockOf = (item: LayoutItem) => registry.blocks[item.type];
   const [arrangingState, setArranging] = useState(false);
   const [library, setLibrary] = useState(false);
   const arranging = canArrange && arrangingState;
@@ -38,11 +41,12 @@ export function ArrangeableGrid({ layout, canArrange, data, state, leading }: Ar
   const remove = (item: LayoutItem) => {
     if (!layout.items) return;
     layout.setItems(removeItem(layout.items, item.id));
-    toast(`Removed ${HOME_BLOCKS[item.type as HomeBlockType].title}`, { duration: 10_000, action: { label: 'Undo', onClick: () => layout.undo() } });
+    toast(`Removed ${blockOf(item)?.title ?? 'block'}`, { duration: 10_000, action: { label: 'Undo', onClick: () => layout.undo() } });
   };
-  const add = (type: HomeBlockType) => {
-    if (!layout.items) return;
-    layout.setItems(addItem(layout.items, { id: type, type, ...HOME_BLOCKS[type].size }));
+  const add = (type: string) => {
+    const block = registry.blocks[type];
+    if (!layout.items || !block) return;
+    layout.setItems(addItem(layout.items, { id: type, type, ...block.size }));
     setLibrary(false);
   };
 
@@ -124,9 +128,10 @@ export function ArrangeableGrid({ layout, canArrange, data, state, leading }: Ar
             arranging={arranging}
             onChange={(items) => layout.setItems(items)}
             onRemove={remove}
-            titleOf={(item) => HOME_BLOCKS[item.type as HomeBlockType].title}
+            titleOf={(item) => blockOf(item)?.title ?? 'Block'}
             renderBlock={(item) => {
-              const block = HOME_BLOCKS[item.type as HomeBlockType];
+              const block = blockOf(item);
+              if (!block) return null;
               const chip = data && block.chip?.(data);
               return (
                 <Block
@@ -148,7 +153,7 @@ export function ArrangeableGrid({ layout, canArrange, data, state, leading }: Ar
           />
         )
       ) : null}
-      {canArrange ? <BlockLibrary open={library} onOpenChange={setLibrary} placed={new Set((layout.items ?? []).map((item) => item.type))} onAdd={add} /> : null}
+      {canArrange ? <BlockLibrary registry={registry} open={library} onOpenChange={setLibrary} placed={new Set((layout.items ?? []).map((item) => item.type))} onAdd={add} /> : null}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { DashboardResponse, HomeBlockType } from '@taskflow/shared-types';
+import { HOME_BLOCK_TYPES, type DashboardResponse, type HomeBlockType } from '@taskflow/shared-types';
 import {
   CalendarClockIcon,
   CalendarRangeIcon,
@@ -18,9 +18,9 @@ import type { ReactNode } from 'react';
 import { CreatedVsClosed, DueForecast, HoursByPerson, HoursByProject, HoursPerDay, OverdueAging, PriorityPanel, StatusBreakdown, Workload } from './dashboard-panels';
 import { DashboardTaskList } from './dashboard-task-list';
 
-export type BlockCategory = 'Tasks' | 'Insights' | 'Time' | 'People';
+export type BlockCategory = 'Project' | 'Tasks' | 'Insights' | 'Time' | 'People';
 
-export interface HomeBlockDefinition {
+export interface BlockDefinition {
   title: string;
   description: string;
   icon: LucideIcon;
@@ -34,7 +34,7 @@ export interface HomeBlockDefinition {
 }
 
 /** Every block the Home page can hold (the order is the library's order). */
-export const HOME_BLOCKS: Record<HomeBlockType, HomeBlockDefinition> = {
+export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
   status: {
     title: 'Open work by status',
     description: 'Open tasks split by status',
@@ -148,3 +148,11 @@ export const HOME_BLOCKS: Record<HomeBlockType, HomeBlockDefinition> = {
     render: (data) => <DashboardTaskList tasks={data.recentlyUpdated} date="updated" columns={2} />,
   },
 };
+
+/** The blocks a page can hold, in library order. */
+export interface BlockRegistry {
+  order: readonly string[];
+  blocks: Readonly<Record<string, BlockDefinition>>;
+}
+
+export const HOME_REGISTRY: BlockRegistry = { order: HOME_BLOCK_TYPES, blocks: HOME_BLOCKS };
