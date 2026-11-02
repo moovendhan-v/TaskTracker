@@ -2,6 +2,16 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { TestUser } from './support/api-client.js';
 import { addMember, createWorkspace, type WorkspaceFixture } from './support/fixtures.js';
 
+
+/** Leave dates always in the future: November of next year, counted from its first Monday (day(5) is a Saturday). */
+const LEAVE_YEAR = new Date().getUTCFullYear() + 1;
+const firstMonday = (() => {
+  const date = new Date(Date.UTC(LEAVE_YEAR, 10, 1));
+  while (date.getUTCDay() !== 1) date.setUTCDate(date.getUTCDate() + 1);
+  return date;
+})();
+const day = (offset: number) => new Date(firstMonday.getTime() + offset * 86_400_000).toISOString().slice(0, 10);
+
 describe('documents', () => {
   let ws: WorkspaceFixture;
   let member: TestUser;
@@ -82,7 +92,7 @@ describe('HR', () => {
   const vars = (extra: Record<string, unknown> = {}) => ({ w: ws.workspaceId, ...extra });
   const requestLeave = 'mutation($w: ID!, $input: RequestLeaveInput!) { requestLeave(workspaceId: $w, input: $input) { id days status } }';
   const decide = 'mutation($w: ID!, $r: ID!, $d: LeaveDecision!) { decideLeaveRequest(workspaceId: $w, requestId: $r, input: { decision: $d }) { status } }';
-  const balances = 'query($w: ID!) { myLeaveBalances(workspaceId: $w, year: 2026) { leaveTypeId usedDays remainingDays } }';
+  const balances = `query($w: ID!) { myLeaveBalances(workspaceId: $w, year: ${LEAVE_YEAR}) { leaveTypeId usedDays remainingDays } }`;
 
   beforeAll(async () => {
     ws = await createWorkspace('HR owner');
@@ -119,13 +129,13 @@ describe('HR', () => {
     leaveTypeId = createLeaveType.id;
     const leave = (startDate: string, endDate: string) => vars({ input: { leaveTypeId, startDate, endDate, reason: 'Family' } });
 
-    const first = await member.data<{ requestLeave: { id: string; days: number } }>(requestLeave, leave('2026-11-02', '2026-11-03'));
+    const first = await member.data<{ requestLeave: { id: string; days: number } }>(requestLeave, leave(day(0), day(1)));
     expect(first.requestLeave.days).toBe(2);
     requests.push(first.requestLeave.id);
-    expect((await member.error(requestLeave, leave('2026-11-03', '2026-11-04'))).message).toMatch(/already have time off/);
-    expect((await member.error(requestLeave, leave('2026-11-07', '2026-11-08'))).message).toMatch(/no working days/);
-    requests.push((await member.data<{ requestLeave: { id: string } }>(requestLeave, leave('2026-11-09', '2026-11-10'))).requestLeave.id);
-    expect((await member.error(requestLeave, leave('2026-11-16', '2026-11-27'))).message).toMatch(/Not enough allowance/);
+    expect((await member.error(requestLeave, leave(day(1), day(2)))).message).toMatch(/already have time off/);
+    expect((await member.error(requestLeave, leave(day(5), day(6)))).message).toMatch(/no working days/);
+    requests.push((await member.data<{ requestLeave: { id: string } }>(requestLeave, leave(day(7), day(8)))).requestLeave.id);
+    expect((await member.error(requestLeave, leave(day(14), day(25)))).message).toMatch(/Not enough allowance/);
   });
 
   it('keeps approvals to approvers, and never lets two approvals overspend a balance', async () => {
@@ -153,7 +163,7 @@ describe('HR', () => {
   });
 
   it('does not let approvers decide on their own requests', async () => {
-    const own = await ws.owner.data<{ requestLeave: { id: string } }>(requestLeave, vars({ input: { leaveTypeId, startDate: '2026-12-01', endDate: '2026-12-01' } }));
+    const own = await ws.owner.data<{ requestLeave: { id: string } }>(requestLeave, vars({ input: { leaveTypeId, startDate: day(29), endDate: day(29) } }));
     expect((await ws.owner.error(decide, vars({ r: own.requestLeave.id, d: 'approved' }))).message).toMatch(/own/);
   });
 

@@ -456,6 +456,8 @@ export type PullRequestState =
 
 export type RealtimeEntityType =
   | 'automation'
+  | 'chat_channel'
+  | 'chat_message'
   | 'comment'
   | 'custom_field'
   | 'department'

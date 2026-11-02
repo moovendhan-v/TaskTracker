@@ -30,7 +30,7 @@ export const PERMISSIONS = [
   'time.manage',
   /** Read and post in chat, start direct messages and create channels. */
   'chat.use',
-  /** Rename, archive and remove people from any public channel. */
+  /** Rename and archive any public channel (audited). */
   'chat.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];

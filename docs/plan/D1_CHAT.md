@@ -97,12 +97,13 @@ Service-level rules on top of RLS (the frontend sends ids and text only; never r
 - DMs: the people must all be workspace members, there are 2–8 of them including you, nobody can be added later (start a new DM instead). The creator holds the owner role in the database only so setup works; the service never lets anyone add people to a DM.
 - Private channels: only owners add or remove people. The last owner can't leave without handing over ownership.
 - Archived channels reject posts, edits and joins.
+- Posting in a public channel you haven't joined joins it first.
 - Every lookup by id goes through RLS-scoped queries in the session's workspace (no IDOR: a message id from another channel or workspace simply isn't found).
 
 ## Permissions
 
 - New `chat.use`: read, post, start DMs, create channels. Granted by the `Contributor` (member), `WorkspaceAdmin` and `FullAccess` policies. Not by `ReadOnly` (guests), who can still be added to a specific private channel later; that comes later too.
-- New `chat.manage`: archive or rename any public channel, and remove people from it. `WorkspaceAdmin` and `FullAccess` only. These actions write an **audit log entry** (who, what, channel, when, IP).
+- New `chat.manage`: archive or rename any public channel. Removing people stays with the channel's owners. `WorkspaceAdmin` and `FullAccess` only. These actions write an **audit log entry** (who, what, channel, when, IP).
 - Create task from message also needs `task.create` on the chosen list, checked the normal way.
 
 ## API (GraphQL)

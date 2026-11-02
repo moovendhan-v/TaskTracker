@@ -48,7 +48,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     label: 'Chat',
     permissions: [
       { key: 'chat.use', label: 'Read and post in chat, start direct messages and create channels' },
-      { key: 'chat.manage', label: 'Rename, archive and remove people from any public channel' },
+      { key: 'chat.manage', label: 'Rename and archive any public channel' },
     ],
   },
   {
