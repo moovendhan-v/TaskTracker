@@ -1189,6 +1189,11 @@ type Mutation {
     sprintId: ID!
     workspaceId: ID!
   ): Sprint!
+
+  """
+  Checks an uploaded file (size, real type). Files that fail are deleted and the reason returned
+  """
+  completeTaskUpload(attachmentId: ID!, workspaceId: ID!): TaskUploadResult!
   connectGithub(input: ConnectGithubInput!, workspaceId: ID!): GithubSecret!
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
   createChatChannel(input: CreateChatChannelInput!, workspaceId: ID!): ChatChannel!
@@ -1257,6 +1262,11 @@ type Mutation {
 
   """Deletes the task and its subtasks"""
   deleteTask(taskId: ID!, workspaceId: ID!): Boolean!
+
+  """
+  Removes a file: its uploader, or someone who may delete tasks in that space
+  """
+  deleteTaskAttachment(attachmentId: ID!, workspaceId: ID!): Boolean!
   deleteTemplate(templateId: ID!, workspaceId: ID!): Boolean!
   deleteTimeEntry(entryId: ID!, workspaceId: ID!): Boolean!
   deleteView(viewId: ID!): Preferences!
@@ -1322,6 +1332,11 @@ type Mutation {
   """Starts a file upload: returns a short-lived URL to PUT the bytes to"""
   requestChatUpload(input: RequestChatUploadInput!, workspaceId: ID!): ChatUploadTicket!
   requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
+
+  """
+  Starts a file upload to a task: returns a short-lived URL to PUT the bytes to
+  """
+  requestTaskUpload(input: RequestTaskUploadInput!, workspaceId: ID!): TaskUploadTicket!
 
   """
   Drops your own layout for a page: you're back on the workspace default, or the built-in one
@@ -1785,6 +1800,7 @@ type Query {
 
   """What changed on a task, newest first"""
   taskActivity(taskId: ID!, workspaceId: ID!): [TaskActivity!]!
+  taskAttachments(taskId: ID!, workspaceId: ID!): [TaskAttachment!]!
 
   """A task by its short number, e.g. 978 for #978"""
   taskByNumber(number: Int!, workspaceId: ID!): Task!
@@ -1870,6 +1886,7 @@ enum RealtimeEntityType {
   sprint
   status
   task
+  task_attachment
   time_entry
   workspace
 }
@@ -1895,6 +1912,12 @@ input RequestLeaveInput {
 
   """yyyy-mm-dd"""
   startDate: String!
+}
+
+input RequestTaskUploadInput {
+  fileName: String!
+  size: Int!
+  taskId: ID!
 }
 
 type ResourceFieldSchema {
@@ -2222,6 +2245,21 @@ type TaskActivity {
   to: String
 }
 
+type TaskAttachment {
+  contentType: String!
+  createdAt: String!
+  fileName: String!
+  id: ID!
+  isImage: Boolean!
+  size: Int!
+  taskId: ID!
+  uploaderId: ID
+  uploaderName: String
+
+  """Short-lived signed link on this origin; list again for a fresh one"""
+  url: String!
+}
+
 type TaskList {
   color: String
   createdAt: String!
@@ -2301,6 +2339,22 @@ enum TaskType {
   milestone
   phase
   task
+}
+
+"""The checked file, or why it was refused (it is deleted then)"""
+type TaskUploadResult {
+  attachment: TaskAttachment
+  error: String
+}
+
+type TaskUploadTicket {
+  attachmentId: ID!
+  maxBytes: Int!
+
+  """
+  PUT the raw file here with its Content-Length, then call completeTaskUpload
+  """
+  uploadUrl: String!
 }
 
 """Approved leave, dates only: no type, reason or notes"""

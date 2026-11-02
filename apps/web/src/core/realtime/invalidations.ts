@@ -44,6 +44,8 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
     case 'chat_channel':
     case 'chat_message':
       return [queryKeys.chatRoot(workspaceId)];
+    case 'task_attachment':
+      return [[...queryKeys.tasksRoot(workspaceId), 'attachments']];
     case 'chat_typing':
       // A live signal only: the chat page listens for it, nothing to refetch.
       return [];

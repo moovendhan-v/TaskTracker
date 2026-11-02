@@ -123,6 +123,13 @@ test('edits a task and renders comments as text, never HTML', async () => {
   await expect(panel.getByLabel('New comment')).toHaveValue('');
   expect(await page.locator('ol script').count()).toBe(0);
 
+  // Attach an image: it's uploaded, checked, and shown on the task.
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await panel.getByLabel('Attach files to this task').setInputFiles({ name: 'release.png', mimeType: 'image/png', buffer: png });
+  const thumbnail = panel.getByRole('img', { name: 'release.png' });
+  await expect(thumbnail).toBeVisible();
+  await expect.poll(() => thumbnail.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(1);
+
   await page.keyboard.press('Escape');
   await expect(page).not.toHaveURL(/task=/);
 });

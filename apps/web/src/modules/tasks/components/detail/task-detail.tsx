@@ -30,6 +30,7 @@ import { UserAvatar } from '@/components/common/user-avatar';
 import { Modal } from '@/components/kit/modal';
 import { Section } from '@/components/kit/section';
 import { PullRequestsSection } from '@/modules/integrations';
+import { TaskAttachments } from './task-attachments';
 import { DateRangeField } from '@/components/kit/range-calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
@@ -369,6 +370,7 @@ function TaskMain({
       {properties}
       <Subtasks workspaceId={workspaceId} task={task} onOpen={onOpen} />
       <Relations workspaceId={workspaceId} task={task} onOpen={onOpen} />
+      <TaskAttachments workspaceId={workspaceId} task={task} />
       <PullRequestsSection workspaceId={workspaceId} taskId={task.id} />
       <ActivityTabs workspaceId={workspaceId} task={task} />
     </div>

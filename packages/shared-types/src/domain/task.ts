@@ -49,3 +49,7 @@ export type CustomFieldValues = Record<string, string | number | boolean | strin
 
 /** Sprint, backlog and subtask views return at most this many tasks; bigger sets go through paged search. */
 export const PLANNING_VIEW_LIMIT = 100;
+
+/** Files on a task: up to 10 MB each, at most this many per task. */
+export const TASK_ATTACHMENTS_MAX = 50;
+export const TASK_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
