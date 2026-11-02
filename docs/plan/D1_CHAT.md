@@ -22,6 +22,8 @@ Chat is a new product, not a gap, so this plan comes before any code (handoff §
 - `chat_reaction (message_id, user_id, emoji, workspace_id, channel_id)`: forced RLS. You read reactions in channels you can read, and add or remove only your own in an open channel you're in. A trigger keeps a reaction on a live message in its own channel. Emoji come from a fixed list of 12, checked on the server.
 - Typing: `chatTyping(channelId)` publishes a `chat_typing.updated` event with the same fan-out as messages (public: everyone; private and DMs: members only). Nothing is stored. The server sends at most one every 3 s per person, plus a rate limit; the client shows it for 6 s.
 
+**Search:** `chat_message.search` is a generated `tsvector` (`simple` configuration) with a GIN index. `searchChatMessages(query, channelId?)` reduces what you type to letters and digits and matches each word as a prefix (`deploy:* & fail:*`), so no tsquery syntax gets through. RLS decides which messages come back. It returns at most 30 hits and is limited to 30 searches a minute.
+
 **Later:**
 
 - Reactions, typing indicator, pinned messages, file uploads and search.

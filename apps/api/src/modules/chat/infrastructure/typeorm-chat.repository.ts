@@ -289,6 +289,24 @@ export class TypeOrmChatRepository extends ChatRepository {
     return true;
   }
 
+  async searchMessages(workspaceId: string, tsquery: string, channelId: string | null, limit: number): Promise<{ record: ChatMessageRecord; channelKind: ChatChannelKind; channelName: string | null }[]> {
+    const rows = await this.query<MessageRow & { channel_kind: ChatChannelKind; channel_name: string | null }>(
+      `SELECT found.*, c.kind AS channel_kind, c.name AS channel_name
+       FROM (
+         ${MESSAGE_SELECT}
+         WHERE m.workspace_id = $1 AND m.deleted_at IS NULL AND m.kind = 'user'
+           AND m.search @@ to_tsquery('simple', $2)
+           AND ($3::uuid IS NULL OR m.channel_id = $3)
+         ORDER BY m.created_at DESC, m.id DESC
+         LIMIT $4
+       ) found
+       JOIN chat_channel c ON c.id = found.channel_id
+       ORDER BY found.created_at DESC, found.id DESC`,
+      [workspaceId, tsquery, channelId, limit],
+    );
+    return rows.map((row) => ({ record: toMessage(row), channelKind: row.channel_kind, channelName: row.channel_name }));
+  }
+
   async insertMessage(input: { workspaceId: string; channelId: string; authorId: string; body: string; parentId: string | null; kind: 'user' | 'system'; taskId: string | null }): Promise<string> {
     const [row] = await this.query<{ id: string }>(
       `INSERT INTO chat_message (workspace_id, channel_id, author_id, body, parent_id, kind, task_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,

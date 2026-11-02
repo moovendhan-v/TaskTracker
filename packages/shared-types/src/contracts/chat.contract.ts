@@ -81,3 +81,11 @@ export interface SendChatMessageRequest {
   body: string;
   parentId?: string | null;
 }
+
+/** A message found by search, with where it lives. */
+export interface ChatSearchHit {
+  message: ChatMessageResponse;
+  channelKind: ChatChannelKind;
+  /** Null for direct messages. */
+  channelName: string | null;
+}

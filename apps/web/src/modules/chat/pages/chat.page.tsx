@@ -19,6 +19,7 @@ import { BrowseChannelsDialog, CreateTaskDialog, NewChannelDialog, NewDirectMess
 import { Composer } from '../components/composer';
 import { MessageFeed } from '../components/message-feed';
 import { MessageItem } from '../components/message-item';
+import { SearchDialog } from '../components/search-dialog';
 import { useChatChannel, useChatChannels, useChatMessage, useChatMessages, useChatMutations, useChatThread, useTypingIn } from '../hooks/use-chat';
 import { chatApi } from '../api/chat.api';
 import { useMemberName } from '@/modules/members';
@@ -37,7 +38,20 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
   const allowed = can('chat.use');
   const { data: me } = useCurrentUser();
   const { data: channels } = useChatChannels(workspaceId, allowed);
-  const [dialog, setDialog] = useState<'channel' | 'dm' | 'browse' | null>(null);
+  const [dialog, setDialog] = useState<'channel' | 'dm' | 'browse' | 'search' | null>(null);
+
+  // "/" opens message search, unless you're typing somewhere.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+      event.preventDefault();
+      setDialog('search');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const open = (id: string, thread?: string) => void navigate({ to: '/w/$workspaceId/chat/$channelId', params: { workspaceId, channelId: id }, search: (previous: Record<string, unknown>) => ({ ...previous, thread }) });
   const openChannel = (channel: ChatChannelResponse) => {
@@ -58,7 +72,7 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
   return (
     <DocTasksProvider workspaceId={workspaceId}>
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <ChannelList channels={channels} activeId={channelId} onSelect={openChannel} onNewChannel={() => setDialog('channel')} onNewMessage={() => setDialog('dm')} onBrowse={() => setDialog('browse')} />
+        <ChannelList channels={channels} activeId={channelId} onSelect={openChannel} onNewChannel={() => setDialog('channel')} onNewMessage={() => setDialog('dm')} onBrowse={() => setDialog('browse')} onSearch={() => setDialog('search')} />
         {channelId && me ? (
           <Conversation key={channelId} workspaceId={workspaceId} channelId={channelId} threadId={threadId} me={me.id} onThread={(thread) => open(channelId, thread)} />
         ) : channels && channels.length === 0 ? (
@@ -87,6 +101,7 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
           <NewDirectMessageDialog workspaceId={workspaceId} me={me.id} open={dialog === 'dm'} onOpenChange={(value) => setDialog(value ? 'dm' : null)} onOpened={openChannel} />
         </>
       ) : null}
+      {dialog === 'search' ? <SearchDialog workspaceId={workspaceId} open onOpenChange={(value) => setDialog(value ? 'search' : null)} /> : null}
       <BrowseChannelsDialog workspaceId={workspaceId} open={dialog === 'browse'} onOpenChange={(value) => setDialog(value ? 'browse' : null)} onOpen={openChannel} />
     </DocTasksProvider>
   );

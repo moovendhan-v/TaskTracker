@@ -80,3 +80,6 @@ export function isChatReaction(value: string): value is ChatReaction {
 /** How long a "typing" signal lasts, and how often the composer may send one, in ms. */
 export const CHAT_TYPING_TTL_MS = 6_000;
 export const CHAT_TYPING_EVERY_MS = 3_000;
+
+export const CHAT_SEARCH_MAX_LENGTH = 100;
+export const CHAT_SEARCH_PAGE_MAX = 30;

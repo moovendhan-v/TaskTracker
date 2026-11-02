@@ -99,3 +99,11 @@ mutation ToggleChatReaction($workspaceId: ID!, $messageId: ID!, $emoji: String!)
 }
 
 mutation ChatTyping($workspaceId: ID!, $channelId: ID!) { chatTyping(workspaceId: $workspaceId, channelId: $channelId) }
+
+query SearchChatMessages($workspaceId: ID!, $query: String!, $channelId: ID, $first: Int) {
+  searchChatMessages(workspaceId: $workspaceId, query: $query, channelId: $channelId, first: $first) {
+    channelKind
+    channelName
+    message { ...ChatMessageFields }
+  }
+}

@@ -1122,6 +1122,16 @@ export type ChatTypingMutationVariables = Exact<{
 
 export type ChatTypingMutation = { chatTyping: boolean };
 
+export type SearchChatMessagesQueryVariables = Exact<{
+  workspaceId: string;
+  query: string;
+  channelId?: string | null | undefined;
+  first?: number | null | undefined;
+}>;
+
+
+export type SearchChatMessagesQuery = { searchChatMessages: Array<{ channelKind: string, channelName: string | null, message: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }> } }> };
+
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
   taskId: string;
@@ -3894,6 +3904,42 @@ export const ChatTypingDocument = new TypedDocumentString(`
   chatTyping(workspaceId: $workspaceId, channelId: $channelId)
 }
     `) as unknown as TypedDocumentString<ChatTypingMutation, ChatTypingMutationVariables>;
+export const SearchChatMessagesDocument = new TypedDocumentString(`
+    query SearchChatMessages($workspaceId: ID!, $query: String!, $channelId: ID, $first: Int) {
+  searchChatMessages(
+    workspaceId: $workspaceId
+    query: $query
+    channelId: $channelId
+    first: $first
+  ) {
+    channelKind
+    channelName
+    message {
+      ...ChatMessageFields
+    }
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
+}`) as unknown as TypedDocumentString<SearchChatMessagesQuery, SearchChatMessagesQueryVariables>;
 export const CommentsDocument = new TypedDocumentString(`
     query Comments($workspaceId: ID!, $taskId: ID!) {
   comments(workspaceId: $workspaceId, taskId: $taskId) {

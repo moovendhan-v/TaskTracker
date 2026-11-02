@@ -308,6 +308,31 @@ describe('chat', () => {
     expect((await teammate.error(TYPING, { w, c: quiet.id })).code).toBe('NOT_FOUND');
   });
 
+  it('searches only messages you can read', async () => {
+    const SEARCH = 'query($w: ID!, $q: String!, $c: ID) { searchChatMessages(workspaceId: $w, query: $q, channelId: $c) { channelName channelKind message { id body } } }';
+    type Hits = { searchChatMessages: { channelName: string | null; message: { id: string; body: string } }[] };
+    const open = await create(teammate, { name: 'search-public' });
+    const secret = await create(teammate, { name: 'search-private', kind: 'private', memberIds: [member.id] });
+    await send(teammate, open.id, 'Zephyrine rollout starts Monday');
+    await send(teammate, secret.id, 'Zephyrine budget is confidential');
+    const gone = await send(teammate, open.id, 'Zephyrine typo');
+    await teammate.data(DELETE, { w, m: gone.id });
+
+    const memberHits = (await member.data<Hits>(SEARCH, { w, q: 'zephyr' })).searchChatMessages;
+    expect(memberHits.map((hit) => [hit.channelName, hit.message.body])).toEqual([
+      ['search-private', 'Zephyrine budget is confidential'],
+      ['search-public', 'Zephyrine rollout starts Monday'],
+    ]);
+    // The admin isn't in the private channel: only the public message comes back.
+    expect((await admin.data<Hits>(SEARCH, { w, q: 'Zephyrine' })).searchChatMessages.map((hit) => hit.channelName)).toEqual(['search-public']);
+    // Every word has to match; tsquery syntax is just text.
+    expect((await member.data<Hits>(SEARCH, { w, q: 'zephyrine budget' })).searchChatMessages).toHaveLength(1);
+    expect((await member.data<Hits>(SEARCH, { w, q: "zephyrine' | !budget" })).searchChatMessages).toHaveLength(1);
+    // Narrowed to a channel you can't read: not found.
+    expect((await admin.error(SEARCH, { w, q: 'zephyrine', c: secret.id })).code).toBe('NOT_FOUND');
+    expect((await guest.error(SEARCH, { w, q: 'zephyrine' })).code).toBe('FORBIDDEN');
+  });
+
   it('rate limits sending messages', async () => {
     const spam = await create(admin, { name: 'spam' });
     const results = [];

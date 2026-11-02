@@ -1,4 +1,4 @@
-import type { ChatChannelKind, ChatChannelResponse, ChatMemberRole, ChatMessagePage, ChatMessageResponse } from '@taskflow/shared-types';
+import type { ChatChannelKind, ChatSearchHit, ChatChannelResponse, ChatMemberRole, ChatMessagePage, ChatMessageResponse } from '@taskflow/shared-types';
 import {
   AddChatChannelMembersDocument,
   ArchiveChatChannelDocument,
@@ -23,6 +23,7 @@ import {
   UpdateChatChannelDocument,
   ToggleChatReactionDocument,
   ChatTypingDocument,
+  SearchChatMessagesDocument,
 } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
 
@@ -58,6 +59,12 @@ export const chatApi = {
   remove: async (workspaceId: string, messageId: string) => (await graphql(DeleteChatMessageDocument, { workspaceId, messageId })).deleteChatMessage,
   react: async (workspaceId: string, messageId: string, emoji: string) => message((await graphql(ToggleChatReactionDocument, { workspaceId, messageId, emoji })).toggleChatReaction),
   typing: async (workspaceId: string, channelId: string) => (await graphql(ChatTypingDocument, { workspaceId, channelId })).chatTyping,
+  search: async (workspaceId: string, query: string, channelId: string | null): Promise<ChatSearchHit[]> =>
+    (await graphql(SearchChatMessagesDocument, { workspaceId, query, channelId, first: 30 })).searchChatMessages.map((hit) => ({
+      message: message(hit.message),
+      channelKind: hit.channelKind as ChatChannelKind,
+      channelName: hit.channelName ?? null,
+    })),
   createTask: async (workspaceId: string, input: { messageId: string; listId: string; title?: string }) =>
     message((await graphql(CreateTaskFromChatMessageDocument, { workspaceId, input })).createTaskFromChatMessage),
 };

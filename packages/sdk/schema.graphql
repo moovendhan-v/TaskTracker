@@ -252,6 +252,12 @@ type ChatReaction {
   names: [String!]!
 }
 
+type ChatSearchHit {
+  channelKind: String!
+  channelName: String
+  message: ChatMessage!
+}
+
 type ColumnWidth {
   column: String!
   width: Int!
@@ -1654,6 +1660,17 @@ type Query {
 
   """The caller's running timer"""
   runningTimer(workspaceId: ID!): TimeEntry
+
+  """
+  Messages you can read that match every word (as a prefix), newest first
+  """
+  searchChatMessages(
+    """Only this channel"""
+    channelId: ID
+    first: Int
+    query: String!
+    workspaceId: ID!
+  ): [ChatSearchHit!]!
 
   """
   Members matching filters, sort and paging; see resourceSchema(resource: "members")

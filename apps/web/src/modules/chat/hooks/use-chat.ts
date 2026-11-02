@@ -8,6 +8,7 @@ import { chatApi } from '../api/chat.api';
 
 export const chatKeys = {
   channels: (workspaceId: string) => [...queryKeys.chatRoot(workspaceId), 'channels'] as const,
+  search: (workspaceId: string, query: string) => [...queryKeys.chatRoot(workspaceId), 'search', query] as const,
   browse: (workspaceId: string, search: string) => [...queryKeys.chatRoot(workspaceId), 'browse', search] as const,
   channel: (workspaceId: string, channelId: string) => [...queryKeys.chatRoot(workspaceId), 'channel', channelId] as const,
   members: (workspaceId: string, channelId: string) => [...queryKeys.chatRoot(workspaceId), 'members', channelId] as const,
@@ -141,4 +142,16 @@ export function useTypingIn(workspaceId: string, channelId: string, me: string):
     return () => clearInterval(timer);
   }, [active]);
   return Object.keys(typing);
+}
+
+/** Message search; waits until there is something to search for. */
+export function useChatSearch(workspaceId: string, query: string) {
+  const trimmed = query.trim();
+  return useQuery({
+    queryKey: chatKeys.search(workspaceId, trimmed),
+    queryFn: () => chatApi.search(workspaceId, trimmed, null),
+    enabled: trimmed.length >= 2,
+    staleTime: 10_000,
+    placeholderData: (previous) => previous,
+  });
 }

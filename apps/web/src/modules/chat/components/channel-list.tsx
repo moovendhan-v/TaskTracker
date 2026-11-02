@@ -1,5 +1,5 @@
 import type { ChatChannelResponse } from '@taskflow/shared-types';
-import { BellOffIcon, CompassIcon, HashIcon, LockIcon, PlusIcon, SquarePenIcon } from 'lucide-react';
+import { BellOffIcon, CompassIcon, HashIcon, LockIcon, PlusIcon, SearchIcon, SquarePenIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,7 @@ interface ChannelListProps {
   onNewChannel: () => void;
   onNewMessage: () => void;
   onBrowse: () => void;
+  onSearch: () => void;
 }
 
 function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
@@ -79,13 +80,16 @@ function Section({ title, action, children }: { title: string; action?: ReactNod
 }
 
 /** Channels and direct messages, with unread counts (v2 #2a). */
-export function ChannelList({ channels, activeId, onSelect, onNewChannel, onNewMessage, onBrowse }: ChannelListProps) {
+export function ChannelList({ channels, activeId, onSelect, onNewChannel, onNewMessage, onBrowse, onSearch }: ChannelListProps) {
   const rooms = (channels ?? []).filter((channel) => channel.kind !== 'dm');
   const dms = (channels ?? []).filter((channel) => channel.kind === 'dm').sort((a, b) => (b.lastMessageAt ?? b.createdAt).localeCompare(a.lastMessageAt ?? a.createdAt));
   return (
     <nav aria-label="Conversations" className="flex h-full w-[248px] shrink-0 flex-col border-r bg-rail max-md:hidden">
       <header className="flex h-12 shrink-0 items-center gap-1 border-b px-3">
         <h2 className="flex-1 text-sm font-semibold">Chat</h2>
+        <IconButton label="Search messages ( / )" onClick={onSearch}>
+          <SearchIcon />
+        </IconButton>
         <IconButton label="Browse channels" onClick={onBrowse}>
           <CompassIcon />
         </IconButton>

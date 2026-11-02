@@ -18,6 +18,9 @@ import {
   type ChatMessagePage,
   type ChatMessageResponse,
   type ChatReactionSummary,
+  type ChatSearchHit,
+  CHAT_SEARCH_MAX_LENGTH,
+  CHAT_SEARCH_PAGE_MAX,
   CHAT_TYPING_EVERY_MS,
   isChatReaction,
 } from '@taskflow/shared-types';
@@ -30,6 +33,7 @@ import { MembersService } from '../../members/application/members.service.js';
 import { TasksService } from '../../tasks/application/tasks.service.js';
 import { ChatRepository, type ChatChannelRecord, type ChatMessageRecord, type MessagePosition } from '../domain/chat.repository.js';
 import { decodeCursor, encodeCursor } from '../domain/cursor.js';
+import { toPrefixQuery } from '../domain/search-query.js';
 
 const MEMBER_LIST_MAX = 500;
 
@@ -314,6 +318,20 @@ export class ChatService {
     });
     await this.announce(actor, channel, 'chat_message', 'created', id);
     return this.message(access, actor, id);
+  }
+
+  /**
+   * Full-text search over messages you can read (RLS decides), newest first. Each word
+   * is matched as a prefix; only letters and digits reach the query.
+   */
+  async search(access: WorkspaceAccess, actor: Actor, text: string, channelId: string | null | undefined, first: number | null | undefined): Promise<ChatSearchHit[]> {
+    if (text.length > CHAT_SEARCH_MAX_LENGTH) throw DomainError.invalid(`Search is at most ${CHAT_SEARCH_MAX_LENGTH} characters`);
+    const tsquery = toPrefixQuery(text);
+    if (!tsquery) return [];
+    if (channelId) await this.readable(access, actor, channelId);
+    const hits = await this.chat.searchMessages(access.workspaceId, tsquery, channelId ?? null, clampPage(first, CHAT_SEARCH_PAGE_MAX));
+    const reactions = await this.chat.reactionsFor(access.workspaceId, hits.map((hit) => hit.record.id), actor.userId);
+    return hits.map((hit) => ({ message: toMessage(hit.record, reactions.get(hit.record.id)), channelKind: hit.channelKind, channelName: hit.channelName }));
   }
 
   /** Adds or removes your reaction. Only members of an open channel react (posting in a public channel's reactions joins it). */

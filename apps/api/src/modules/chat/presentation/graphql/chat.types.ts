@@ -12,6 +12,7 @@ import {
   type ChatMessageResponse,
   type ChatPersonResponse,
   type ChatReactionSummary,
+  type ChatSearchHit,
 } from '@taskflow/shared-types';
 import { ArrayMaxSize, IsArray, IsIn, IsString, IsUUID, MaxLength } from 'class-validator';
 import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
@@ -104,4 +105,11 @@ export class CreateTaskFromMessageInput {
   @Field(() => ID) @IsUUID() messageId: string;
   @Field(() => ID) @IsUUID() listId: string;
   @Field({ nullable: true, description: 'Defaults to the first line of the message' }) @IsOmittable() @IsString() @MaxLength(200) title?: string;
+}
+
+@ObjectType('ChatSearchHit')
+export class ChatSearchHitGql implements ChatSearchHit {
+  @Field(() => ChatMessageGql) message: ChatMessageGql;
+  @Field(() => String) channelKind: ChatChannelKind;
+  @Field(() => String, { nullable: true }) channelName: string | null;
 }
