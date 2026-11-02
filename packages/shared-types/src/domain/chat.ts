@@ -46,6 +46,6 @@ export function cleanMessageBody(body: string): string | null {
 /** The title a task created from a message starts with: its first non-empty line, shortened. */
 export function taskTitleFromMessage(body: string, max = 200): string {
   const line = body.split('\n').map((part) => part.trim()).find(Boolean) ?? '';
-  const plain = line.replace(/^[#>*\-\s]+/, '').replace(/[*_`]/g, '').trim();
+  const plain = line.replace(/^[#>*\-\s]+/, '').replace(/[*_`]/g, '').replace(/[:;,\s]+$/, '').trim();
   return plain.length > max ? `${plain.slice(0, max - 1).trimEnd()}…` : plain;
 }

@@ -374,6 +374,44 @@ test('docks the inbox as a side panel from the rail', async () => {
   await expect(panel).toBeHidden();
 });
 
+test('chats in a channel, replies in a thread and turns a message into a task', async () => {
+  await page.getByRole('navigation', { name: 'Apps' }).getByRole('link', { name: /^Chat/ }).click();
+  await expect(page.getByText('Start a conversation')).toBeVisible();
+  await page.getByRole('button', { name: 'New channel' }).first().click();
+  const create = page.getByRole('dialog', { name: 'New channel' });
+  await create.getByLabel('Name').fill('Release Train');
+  await expect(create.getByText('Will be created as #release-train')).toBeVisible();
+  await create.getByRole('button', { name: 'Create' }).click();
+  await expect(page).toHaveURL(/\/chat\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole('heading', { name: 'Welcome to #release-train' })).toBeVisible();
+
+  const composer = page.getByRole('combobox', { name: 'Message #release-train' });
+  await composer.fill('Ship the **release notes** <img src=x onerror=alert(1)>');
+  await composer.press('Enter');
+  const message = page.getByRole('log', { name: 'Messages in #release-train' }).getByRole('article').filter({ hasText: 'Ship the release notes' });
+  await expect(message.locator('strong')).toHaveText('release notes');
+  await expect(message.locator('img')).toHaveCount(0);
+
+  await message.hover();
+  await message.getByRole('button', { name: 'Reply in thread' }).click();
+  const thread = page.getByRole('complementary', { name: 'Thread' });
+  await thread.getByRole('combobox', { name: 'Reply…' }).fill('On it');
+  await thread.getByRole('combobox', { name: 'Reply…' }).press('Enter');
+  await expect(thread.getByRole('log', { name: 'Replies' }).getByText('On it')).toBeVisible();
+  await expect(thread.getByRole('combobox', { name: 'Reply…' })).toHaveValue('');
+  await expect(message.getByRole('button', { name: /1 reply/ })).toBeVisible();
+
+  await message.hover();
+  await message.getByRole('button', { name: 'Create task' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create task from message' });
+  await dialog.getByRole('button', { name: 'Create task' }).click();
+  await expect(page).toHaveURL(/[?&]task=[0-9a-f-]{36}/);
+  await page.keyboard.press('Escape');
+  await expect(thread.getByText(/created/)).toBeVisible();
+  await thread.getByRole('button', { name: 'Close thread' }).click();
+  await expect(thread).toBeHidden();
+});
+
 test('signs out', async () => {
   await page.getByRole('button', { name: /Dana Reyes/ }).click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();

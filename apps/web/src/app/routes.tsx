@@ -11,6 +11,7 @@ import { AdminAuditLogPage, AdminLayout, AdminUsersPage, AdminWorkspacesPage } f
 import { WorkspaceAuditLogPage } from '@/modules/audit-log';
 import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/modules/auth';
 import { DocumentsPage } from '@/modules/documents';
+import { ChatPage } from '@/modules/chat';
 import { HomePage } from '@/modules/dashboard';
 import { ApprovalsPage, DepartmentsPage, DirectoryPage, LeaveTypesPage, TimeOffPage } from '@/modules/hr';
 import { listsApi } from '@/modules/lists';
@@ -247,6 +248,32 @@ const documentRoute = createRoute({
   },
 });
 
+const chatSearch = (search: Record<string, unknown>): { thread?: string } => ({
+  thread: typeof search.thread === 'string' && UUID.test(search.thread) ? search.thread : undefined,
+});
+
+const chatRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/chat',
+  component: function ChatRoute() {
+    return <ChatPage workspaceId={workspaceRoute.useParams().workspaceId} channelId={undefined} threadId={undefined} />;
+  },
+});
+
+const chatChannelRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/chat/$channelId',
+  validateSearch: chatSearch,
+  beforeLoad: ({ params }) => {
+    if (!UUID.test(params.channelId)) throw redirect({ to: '/w/$workspaceId/chat', params: { workspaceId: params.workspaceId } });
+  },
+  component: function ChatChannelRoute() {
+    const { workspaceId, channelId } = chatChannelRoute.useParams();
+    const { thread } = chatChannelRoute.useSearch();
+    return <ChatPage workspaceId={workspaceId} channelId={channelId} threadId={thread} />;
+  },
+});
+
 /** A simple page under /w/$workspaceId that only needs the workspace id. */
 function workspacePage<TPath extends string>(path: TPath, Page: (props: { workspaceId: string }) => React.ReactNode) {
   return createRoute({
@@ -316,6 +343,8 @@ const routeTree = rootRoute.addChildren([
       sprintBoardRoute,
       documentsRoute,
       documentRoute,
+      chatRoute,
+      chatChannelRoute,
       directoryRoute,
       departmentsRoute,
       timeOffRoute,

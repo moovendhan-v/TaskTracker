@@ -227,7 +227,8 @@ describe('chat', () => {
     expect(line.body).toMatch(/^created #\d+$/);
     const { task } = await member.data<{ task: { title: string; description: string } }>('query($w: ID!, $t: ID!) { task(workspaceId: $w, taskId: $t) { title description } }', { w, t: line.taskId });
     expect(task.title).toBe('Fix login crash on SSO redirect');
-    expect(task.description).toContain('> Steps: …');
+    expect(task.description).toContain('Steps: …');
+    expect(task.description).toContain('— Chat member in #bugs');
     // System lines can't be edited, and a list in another workspace is not found.
     expect((await member.error(EDIT, { w, m: line.id, b: 'x' })).code).toBe('BAD_USER_INPUT');
     const other = await createWorkspace('Chat other');

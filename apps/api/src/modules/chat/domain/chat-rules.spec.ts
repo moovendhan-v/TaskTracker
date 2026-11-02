@@ -29,6 +29,7 @@ describe('chat rules', () => {
   it('takes a task title from the first line of a message', () => {
     expect(taskTitleFromMessage('\n  **Fix** the `login` crash\nmore detail')).toBe('Fix the login crash');
     expect(taskTitleFromMessage('> quoted idea')).toBe('quoted idea');
+    expect(taskTitleFromMessage('Export still drops fields:\n- step')).toBe('Export still drops fields');
     expect(taskTitleFromMessage('y'.repeat(300))).toHaveLength(200);
   });
 });

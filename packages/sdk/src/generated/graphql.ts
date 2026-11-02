@@ -79,6 +79,13 @@ export type ConnectGithubInput = {
   taskPrefix?: string | null | undefined;
 };
 
+export type CreateChatChannelInput = {
+  kind?: string;
+  memberIds?: Array<string> | null | undefined;
+  name: string;
+  topic?: string | null | undefined;
+};
+
 export type CreateCustomFieldInput = {
   entity?: CustomFieldEntity | null | undefined;
   name: string;
@@ -154,6 +161,13 @@ export type CreateSprintInput = {
   name: string;
   /** yyyy-mm-dd */
   startDate: string;
+};
+
+export type CreateTaskFromMessageInput = {
+  listId: string;
+  messageId: string;
+  /** Defaults to the first line of the message */
+  title?: string | null | undefined;
 };
 
 export type CreateTaskInput = {
@@ -546,6 +560,13 @@ export type SaveViewInput = {
   where?: string | null | undefined;
 };
 
+export type SendChatMessageInput = {
+  body: string;
+  channelId: string;
+  /** Reply in the thread of this message */
+  parentId?: string | null | undefined;
+};
+
 export type SetTabsInput = {
   tabs: Array<WorkspaceTabInput>;
 };
@@ -646,6 +667,11 @@ export type TimeEntryQueryInput = {
 export type UpdateAdminUserInput = {
   platformRole?: PlatformRole | null | undefined;
   suspended?: boolean | null | undefined;
+};
+
+export type UpdateChatChannelInput = {
+  name?: string | null | undefined;
+  topic?: string | null | undefined;
 };
 
 export type UpdateCustomFieldInput = {
@@ -893,6 +919,189 @@ export type DeleteAutomationMutationVariables = Exact<{
 
 
 export type DeleteAutomationMutation = { deleteAutomation: boolean };
+
+export type ChatChannelFieldsFragment = { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> };
+
+export type ChatMessageFieldsFragment = { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string };
+
+export type ChatChannelsQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ChatChannelsQuery = { chatChannels: Array<{ id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> }> };
+
+export type BrowseChatChannelsQueryVariables = Exact<{
+  workspaceId: string;
+  search?: string | null | undefined;
+  first?: number | null | undefined;
+}>;
+
+
+export type BrowseChatChannelsQuery = { browseChatChannels: Array<{ id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> }> };
+
+export type ChatChannelQueryVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+}>;
+
+
+export type ChatChannelQuery = { chatChannel: { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> } };
+
+export type ChatChannelMembersQueryVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+}>;
+
+
+export type ChatChannelMembersQuery = { chatChannelMembers: Array<{ userId: string, name: string, role: string, joinedAt: string }> };
+
+export type ChatMessagesQueryVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+  before?: string | null | undefined;
+  first?: number | null | undefined;
+}>;
+
+
+export type ChatMessagesQuery = { chatMessages: { cursor: string | null, items: Array<{ id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string }> } };
+
+export type ChatMessageQueryVariables = Exact<{
+  workspaceId: string;
+  messageId: string;
+}>;
+
+
+export type ChatMessageQuery = { chatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string } };
+
+export type ChatThreadQueryVariables = Exact<{
+  workspaceId: string;
+  messageId: string;
+  after?: string | null | undefined;
+  first?: number | null | undefined;
+}>;
+
+
+export type ChatThreadQuery = { chatThread: { cursor: string | null, items: Array<{ id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string }> } };
+
+export type CreateChatChannelMutationVariables = Exact<{
+  workspaceId: string;
+  input: CreateChatChannelInput;
+}>;
+
+
+export type CreateChatChannelMutation = { createChatChannel: { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> } };
+
+export type OpenDirectMessageMutationVariables = Exact<{
+  workspaceId: string;
+  userIds: Array<string> | string;
+}>;
+
+
+export type OpenDirectMessageMutation = { openDirectMessage: { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> } };
+
+export type UpdateChatChannelMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+  input: UpdateChatChannelInput;
+}>;
+
+
+export type UpdateChatChannelMutation = { updateChatChannel: { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> } };
+
+export type ArchiveChatChannelMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+  archived?: boolean | null | undefined;
+}>;
+
+
+export type ArchiveChatChannelMutation = { archiveChatChannel: { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> } };
+
+export type JoinChatChannelMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+}>;
+
+
+export type JoinChatChannelMutation = { joinChatChannel: { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> } };
+
+export type LeaveChatChannelMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+}>;
+
+
+export type LeaveChatChannelMutation = { leaveChatChannel: boolean };
+
+export type AddChatChannelMembersMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+  userIds: Array<string> | string;
+}>;
+
+
+export type AddChatChannelMembersMutation = { addChatChannelMembers: Array<{ userId: string, name: string, role: string, joinedAt: string }> };
+
+export type RemoveChatChannelMemberMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+  userId: string;
+}>;
+
+
+export type RemoveChatChannelMemberMutation = { removeChatChannelMember: boolean };
+
+export type MarkChatChannelReadMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+  at: string;
+}>;
+
+
+export type MarkChatChannelReadMutation = { markChatChannelRead: boolean };
+
+export type MuteChatChannelMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+  muted: boolean;
+}>;
+
+
+export type MuteChatChannelMutation = { muteChatChannel: boolean };
+
+export type SendChatMessageMutationVariables = Exact<{
+  workspaceId: string;
+  input: SendChatMessageInput;
+}>;
+
+
+export type SendChatMessageMutation = { sendChatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string } };
+
+export type EditChatMessageMutationVariables = Exact<{
+  workspaceId: string;
+  messageId: string;
+  body: string;
+}>;
+
+
+export type EditChatMessageMutation = { editChatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string } };
+
+export type DeleteChatMessageMutationVariables = Exact<{
+  workspaceId: string;
+  messageId: string;
+}>;
+
+
+export type DeleteChatMessageMutation = { deleteChatMessage: boolean };
+
+export type CreateTaskFromChatMessageMutationVariables = Exact<{
+  workspaceId: string;
+  input: CreateTaskFromMessageInput;
+}>;
+
+
+export type CreateTaskFromChatMessageMutation = { createTaskFromChatMessage: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string } };
 
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
@@ -2211,6 +2420,42 @@ export const AutomationRuleFieldsFragmentDoc = new TypedDocumentString(`
   createdAt
 }
     `, {"fragmentName":"AutomationRuleFields"}) as unknown as TypedDocumentString<AutomationRuleFieldsFragment, unknown>;
+export const ChatChannelFieldsFragmentDoc = new TypedDocumentString(`
+    fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers {
+    id
+    name
+  }
+}
+    `, {"fragmentName":"ChatChannelFields"}) as unknown as TypedDocumentString<ChatChannelFieldsFragment, unknown>;
+export const ChatMessageFieldsFragmentDoc = new TypedDocumentString(`
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+}
+    `, {"fragmentName":"ChatMessageFields"}) as unknown as TypedDocumentString<ChatMessageFieldsFragment, unknown>;
 export const CurrentUserFieldsFragmentDoc = new TypedDocumentString(`
     fragment CurrentUserFields on CurrentUser {
   id
@@ -3165,6 +3410,393 @@ export const DeleteAutomationDocument = new TypedDocumentString(`
   deleteAutomation(workspaceId: $workspaceId, ruleId: $ruleId)
 }
     `) as unknown as TypedDocumentString<DeleteAutomationMutation, DeleteAutomationMutationVariables>;
+export const ChatChannelsDocument = new TypedDocumentString(`
+    query ChatChannels($workspaceId: ID!) {
+  chatChannels(workspaceId: $workspaceId) {
+    ...ChatChannelFields
+  }
+}
+    fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers {
+    id
+    name
+  }
+}`) as unknown as TypedDocumentString<ChatChannelsQuery, ChatChannelsQueryVariables>;
+export const BrowseChatChannelsDocument = new TypedDocumentString(`
+    query BrowseChatChannels($workspaceId: ID!, $search: String, $first: Int) {
+  browseChatChannels(workspaceId: $workspaceId, search: $search, first: $first) {
+    ...ChatChannelFields
+  }
+}
+    fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers {
+    id
+    name
+  }
+}`) as unknown as TypedDocumentString<BrowseChatChannelsQuery, BrowseChatChannelsQueryVariables>;
+export const ChatChannelDocument = new TypedDocumentString(`
+    query ChatChannel($workspaceId: ID!, $channelId: ID!) {
+  chatChannel(workspaceId: $workspaceId, channelId: $channelId) {
+    ...ChatChannelFields
+  }
+}
+    fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers {
+    id
+    name
+  }
+}`) as unknown as TypedDocumentString<ChatChannelQuery, ChatChannelQueryVariables>;
+export const ChatChannelMembersDocument = new TypedDocumentString(`
+    query ChatChannelMembers($workspaceId: ID!, $channelId: ID!) {
+  chatChannelMembers(workspaceId: $workspaceId, channelId: $channelId) {
+    userId
+    name
+    role
+    joinedAt
+  }
+}
+    `) as unknown as TypedDocumentString<ChatChannelMembersQuery, ChatChannelMembersQueryVariables>;
+export const ChatMessagesDocument = new TypedDocumentString(`
+    query ChatMessages($workspaceId: ID!, $channelId: ID!, $before: String, $first: Int) {
+  chatMessages(
+    workspaceId: $workspaceId
+    channelId: $channelId
+    before: $before
+    first: $first
+  ) {
+    items {
+      ...ChatMessageFields
+    }
+    cursor
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+}`) as unknown as TypedDocumentString<ChatMessagesQuery, ChatMessagesQueryVariables>;
+export const ChatMessageDocument = new TypedDocumentString(`
+    query ChatMessage($workspaceId: ID!, $messageId: ID!) {
+  chatMessage(workspaceId: $workspaceId, messageId: $messageId) {
+    ...ChatMessageFields
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+}`) as unknown as TypedDocumentString<ChatMessageQuery, ChatMessageQueryVariables>;
+export const ChatThreadDocument = new TypedDocumentString(`
+    query ChatThread($workspaceId: ID!, $messageId: ID!, $after: String, $first: Int) {
+  chatThread(
+    workspaceId: $workspaceId
+    messageId: $messageId
+    after: $after
+    first: $first
+  ) {
+    items {
+      ...ChatMessageFields
+    }
+    cursor
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+}`) as unknown as TypedDocumentString<ChatThreadQuery, ChatThreadQueryVariables>;
+export const CreateChatChannelDocument = new TypedDocumentString(`
+    mutation CreateChatChannel($workspaceId: ID!, $input: CreateChatChannelInput!) {
+  createChatChannel(workspaceId: $workspaceId, input: $input) {
+    ...ChatChannelFields
+  }
+}
+    fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers {
+    id
+    name
+  }
+}`) as unknown as TypedDocumentString<CreateChatChannelMutation, CreateChatChannelMutationVariables>;
+export const OpenDirectMessageDocument = new TypedDocumentString(`
+    mutation OpenDirectMessage($workspaceId: ID!, $userIds: [ID!]!) {
+  openDirectMessage(workspaceId: $workspaceId, userIds: $userIds) {
+    ...ChatChannelFields
+  }
+}
+    fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers {
+    id
+    name
+  }
+}`) as unknown as TypedDocumentString<OpenDirectMessageMutation, OpenDirectMessageMutationVariables>;
+export const UpdateChatChannelDocument = new TypedDocumentString(`
+    mutation UpdateChatChannel($workspaceId: ID!, $channelId: ID!, $input: UpdateChatChannelInput!) {
+  updateChatChannel(
+    workspaceId: $workspaceId
+    channelId: $channelId
+    input: $input
+  ) {
+    ...ChatChannelFields
+  }
+}
+    fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers {
+    id
+    name
+  }
+}`) as unknown as TypedDocumentString<UpdateChatChannelMutation, UpdateChatChannelMutationVariables>;
+export const ArchiveChatChannelDocument = new TypedDocumentString(`
+    mutation ArchiveChatChannel($workspaceId: ID!, $channelId: ID!, $archived: Boolean) {
+  archiveChatChannel(
+    workspaceId: $workspaceId
+    channelId: $channelId
+    archived: $archived
+  ) {
+    ...ChatChannelFields
+  }
+}
+    fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers {
+    id
+    name
+  }
+}`) as unknown as TypedDocumentString<ArchiveChatChannelMutation, ArchiveChatChannelMutationVariables>;
+export const JoinChatChannelDocument = new TypedDocumentString(`
+    mutation JoinChatChannel($workspaceId: ID!, $channelId: ID!) {
+  joinChatChannel(workspaceId: $workspaceId, channelId: $channelId) {
+    ...ChatChannelFields
+  }
+}
+    fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers {
+    id
+    name
+  }
+}`) as unknown as TypedDocumentString<JoinChatChannelMutation, JoinChatChannelMutationVariables>;
+export const LeaveChatChannelDocument = new TypedDocumentString(`
+    mutation LeaveChatChannel($workspaceId: ID!, $channelId: ID!) {
+  leaveChatChannel(workspaceId: $workspaceId, channelId: $channelId)
+}
+    `) as unknown as TypedDocumentString<LeaveChatChannelMutation, LeaveChatChannelMutationVariables>;
+export const AddChatChannelMembersDocument = new TypedDocumentString(`
+    mutation AddChatChannelMembers($workspaceId: ID!, $channelId: ID!, $userIds: [ID!]!) {
+  addChatChannelMembers(
+    workspaceId: $workspaceId
+    channelId: $channelId
+    userIds: $userIds
+  ) {
+    userId
+    name
+    role
+    joinedAt
+  }
+}
+    `) as unknown as TypedDocumentString<AddChatChannelMembersMutation, AddChatChannelMembersMutationVariables>;
+export const RemoveChatChannelMemberDocument = new TypedDocumentString(`
+    mutation RemoveChatChannelMember($workspaceId: ID!, $channelId: ID!, $userId: ID!) {
+  removeChatChannelMember(
+    workspaceId: $workspaceId
+    channelId: $channelId
+    userId: $userId
+  )
+}
+    `) as unknown as TypedDocumentString<RemoveChatChannelMemberMutation, RemoveChatChannelMemberMutationVariables>;
+export const MarkChatChannelReadDocument = new TypedDocumentString(`
+    mutation MarkChatChannelRead($workspaceId: ID!, $channelId: ID!, $at: String!) {
+  markChatChannelRead(workspaceId: $workspaceId, channelId: $channelId, at: $at)
+}
+    `) as unknown as TypedDocumentString<MarkChatChannelReadMutation, MarkChatChannelReadMutationVariables>;
+export const MuteChatChannelDocument = new TypedDocumentString(`
+    mutation MuteChatChannel($workspaceId: ID!, $channelId: ID!, $muted: Boolean!) {
+  muteChatChannel(workspaceId: $workspaceId, channelId: $channelId, muted: $muted)
+}
+    `) as unknown as TypedDocumentString<MuteChatChannelMutation, MuteChatChannelMutationVariables>;
+export const SendChatMessageDocument = new TypedDocumentString(`
+    mutation SendChatMessage($workspaceId: ID!, $input: SendChatMessageInput!) {
+  sendChatMessage(workspaceId: $workspaceId, input: $input) {
+    ...ChatMessageFields
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+}`) as unknown as TypedDocumentString<SendChatMessageMutation, SendChatMessageMutationVariables>;
+export const EditChatMessageDocument = new TypedDocumentString(`
+    mutation EditChatMessage($workspaceId: ID!, $messageId: ID!, $body: String!) {
+  editChatMessage(workspaceId: $workspaceId, messageId: $messageId, body: $body) {
+    ...ChatMessageFields
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+}`) as unknown as TypedDocumentString<EditChatMessageMutation, EditChatMessageMutationVariables>;
+export const DeleteChatMessageDocument = new TypedDocumentString(`
+    mutation DeleteChatMessage($workspaceId: ID!, $messageId: ID!) {
+  deleteChatMessage(workspaceId: $workspaceId, messageId: $messageId)
+}
+    `) as unknown as TypedDocumentString<DeleteChatMessageMutation, DeleteChatMessageMutationVariables>;
+export const CreateTaskFromChatMessageDocument = new TypedDocumentString(`
+    mutation CreateTaskFromChatMessage($workspaceId: ID!, $input: CreateTaskFromMessageInput!) {
+  createTaskFromChatMessage(workspaceId: $workspaceId, input: $input) {
+    ...ChatMessageFields
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+}`) as unknown as TypedDocumentString<CreateTaskFromChatMessageMutation, CreateTaskFromChatMessageMutationVariables>;
 export const CommentsDocument = new TypedDocumentString(`
     query Comments($workspaceId: ID!, $taskId: ID!) {
   comments(workspaceId: $workspaceId, taskId: $taskId) {

@@ -8,6 +8,7 @@ import {
   HomeIcon,
   InboxIcon,
   ListIcon,
+  MessagesSquareIcon,
   PaletteIcon,
   PalmtreeIcon,
   RocketIcon,
@@ -26,13 +27,14 @@ import {
 export interface TabDescription {
   label: string;
   icon: LucideIcon;
-  entity?: { kind: 'list' | 'document' | 'sprint'; id: string } | { kind: 'space'; id: string; view: string };
+  entity?: { kind: 'list' | 'document' | 'sprint' | 'channel'; id: string } | { kind: 'space'; id: string; view: string };
 }
 
 const PAGES: Record<string, Omit<TabDescription, 'entity'>> = {
   '': { label: 'Home', icon: HomeIcon },
   '/inbox': { label: 'Inbox', icon: InboxIcon },
   '/docs': { label: 'Docs', icon: FileTextIcon },
+  '/chat': { label: 'Chat', icon: MessagesSquareIcon },
   '/my-tasks': { label: 'My tasks', icon: CheckSquareIcon },
   '/daily-log': { label: 'Daily log', icon: CalendarCheckIcon },
   '/timesheets': { label: 'Timesheets', icon: TimerIcon },
@@ -51,6 +53,7 @@ const PAGES: Record<string, Omit<TabDescription, 'entity'>> = {
 const DYNAMIC: { pattern: RegExp; describe: (match: RegExpExecArray) => TabDescription }[] = [
   { pattern: /^\/l\/([^/]+)$/, describe: (m) => ({ label: 'List', icon: ListIcon, entity: { kind: 'list', id: m[1]! } }) },
   { pattern: /^\/p\/([^/]+)(?:\/([a-z]+))?$/, describe: (m) => ({ label: 'Project', icon: FolderKanbanIcon, entity: { kind: 'space', id: m[1]!, view: m[2] ?? '' } }) },
+  { pattern: /^\/chat\/([^/]+)$/, describe: (m) => ({ label: 'Chat', icon: MessagesSquareIcon, entity: { kind: 'channel', id: m[1]! } }) },
   { pattern: /^\/docs\/([^/]+)$/, describe: (m) => ({ label: 'Doc', icon: FileTextIcon, entity: { kind: 'document', id: m[1]! } }) },
   { pattern: /^\/sprints\/([^/]+)$/, describe: (m) => ({ label: 'Sprint', icon: RocketIcon, entity: { kind: 'sprint', id: m[1]! } }) },
   { pattern: /^\/s\/([^/]+)\/sprints$/, describe: (m) => ({ label: 'Sprints', icon: RocketIcon, entity: { kind: 'space', id: m[1]!, view: 'sprints' } }) },

@@ -1,0 +1,94 @@
+fragment ChatChannelFields on ChatChannel {
+  id
+  kind
+  name
+  topic
+  archived
+  myRole
+  muted
+  memberCount
+  unreadCount
+  lastMessageAt
+  createdAt
+  dmMembers { id name }
+}
+
+fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+}
+
+query ChatChannels($workspaceId: ID!) { chatChannels(workspaceId: $workspaceId) { ...ChatChannelFields } }
+
+query BrowseChatChannels($workspaceId: ID!, $search: String, $first: Int) {
+  browseChatChannels(workspaceId: $workspaceId, search: $search, first: $first) { ...ChatChannelFields }
+}
+
+query ChatChannel($workspaceId: ID!, $channelId: ID!) { chatChannel(workspaceId: $workspaceId, channelId: $channelId) { ...ChatChannelFields } }
+
+query ChatChannelMembers($workspaceId: ID!, $channelId: ID!) {
+  chatChannelMembers(workspaceId: $workspaceId, channelId: $channelId) { userId name role joinedAt }
+}
+
+query ChatMessages($workspaceId: ID!, $channelId: ID!, $before: String, $first: Int) {
+  chatMessages(workspaceId: $workspaceId, channelId: $channelId, before: $before, first: $first) { items { ...ChatMessageFields } cursor }
+}
+
+query ChatMessage($workspaceId: ID!, $messageId: ID!) { chatMessage(workspaceId: $workspaceId, messageId: $messageId) { ...ChatMessageFields } }
+
+query ChatThread($workspaceId: ID!, $messageId: ID!, $after: String, $first: Int) {
+  chatThread(workspaceId: $workspaceId, messageId: $messageId, after: $after, first: $first) { items { ...ChatMessageFields } cursor }
+}
+
+mutation CreateChatChannel($workspaceId: ID!, $input: CreateChatChannelInput!) {
+  createChatChannel(workspaceId: $workspaceId, input: $input) { ...ChatChannelFields }
+}
+
+mutation OpenDirectMessage($workspaceId: ID!, $userIds: [ID!]!) { openDirectMessage(workspaceId: $workspaceId, userIds: $userIds) { ...ChatChannelFields } }
+
+mutation UpdateChatChannel($workspaceId: ID!, $channelId: ID!, $input: UpdateChatChannelInput!) {
+  updateChatChannel(workspaceId: $workspaceId, channelId: $channelId, input: $input) { ...ChatChannelFields }
+}
+
+mutation ArchiveChatChannel($workspaceId: ID!, $channelId: ID!, $archived: Boolean) {
+  archiveChatChannel(workspaceId: $workspaceId, channelId: $channelId, archived: $archived) { ...ChatChannelFields }
+}
+
+mutation JoinChatChannel($workspaceId: ID!, $channelId: ID!) { joinChatChannel(workspaceId: $workspaceId, channelId: $channelId) { ...ChatChannelFields } }
+
+mutation LeaveChatChannel($workspaceId: ID!, $channelId: ID!) { leaveChatChannel(workspaceId: $workspaceId, channelId: $channelId) }
+
+mutation AddChatChannelMembers($workspaceId: ID!, $channelId: ID!, $userIds: [ID!]!) {
+  addChatChannelMembers(workspaceId: $workspaceId, channelId: $channelId, userIds: $userIds) { userId name role joinedAt }
+}
+
+mutation RemoveChatChannelMember($workspaceId: ID!, $channelId: ID!, $userId: ID!) {
+  removeChatChannelMember(workspaceId: $workspaceId, channelId: $channelId, userId: $userId)
+}
+
+mutation MarkChatChannelRead($workspaceId: ID!, $channelId: ID!, $at: String!) { markChatChannelRead(workspaceId: $workspaceId, channelId: $channelId, at: $at) }
+
+mutation MuteChatChannel($workspaceId: ID!, $channelId: ID!, $muted: Boolean!) { muteChatChannel(workspaceId: $workspaceId, channelId: $channelId, muted: $muted) }
+
+mutation SendChatMessage($workspaceId: ID!, $input: SendChatMessageInput!) { sendChatMessage(workspaceId: $workspaceId, input: $input) { ...ChatMessageFields } }
+
+mutation EditChatMessage($workspaceId: ID!, $messageId: ID!, $body: String!) {
+  editChatMessage(workspaceId: $workspaceId, messageId: $messageId, body: $body) { ...ChatMessageFields }
+}
+
+mutation DeleteChatMessage($workspaceId: ID!, $messageId: ID!) { deleteChatMessage(workspaceId: $workspaceId, messageId: $messageId) }
+
+mutation CreateTaskFromChatMessage($workspaceId: ID!, $input: CreateTaskFromMessageInput!) {
+  createTaskFromChatMessage(workspaceId: $workspaceId, input: $input) { ...ChatMessageFields }
+}

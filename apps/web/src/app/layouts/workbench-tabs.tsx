@@ -9,6 +9,7 @@ import { activeTab, closeOthers, closeTab, cycleTarget, followNavigation, homePa
 import { useWorkbenchSync } from '@/core/workbench/use-workbench-sync';
 import { useWorkbenchStore } from '@/core/workbench/workbench.store';
 import { cn } from '@/lib/cn';
+import { channelLabel, useChatChannel } from '@/modules/chat';
 import { useDocument } from '@/modules/documents';
 import { useList } from '@/modules/lists';
 import { VIEW_META, isProjectView } from '@/modules/projects';
@@ -32,6 +33,10 @@ function SpaceTitle({ workspaceId, tab, spaceId, view }: { workspaceId: string; 
 }
 function ListTitle({ workspaceId, tab, listId }: { workspaceId: string; tab: WorkspaceTab; listId: string }) {
   return <Rename tab={tab} title={useList(workspaceId, listId).data?.name} />;
+}
+function ChannelTitle({ workspaceId, tab, channelId }: { workspaceId: string; tab: WorkspaceTab; channelId: string }) {
+  const { data } = useChatChannel(workspaceId, channelId);
+  return <Rename tab={tab} title={data ? channelLabel(data) : undefined} />;
 }
 function DocumentTitle({ workspaceId, tab, documentId }: { workspaceId: string; tab: WorkspaceTab; documentId: string }) {
   return <Rename tab={tab} title={useDocument(workspaceId, documentId).data?.title} />;
@@ -58,6 +63,8 @@ function TitleResolver({ workspaceId, tab }: { workspaceId: string; tab: Workspa
       return <ListTitle workspaceId={workspaceId} tab={tab} listId={entity.id} />;
     case 'document':
       return <DocumentTitle workspaceId={workspaceId} tab={tab} documentId={entity.id} />;
+    case 'channel':
+      return <ChannelTitle workspaceId={workspaceId} tab={tab} channelId={entity.id} />;
     case 'sprint':
       return <SprintTitle workspaceId={workspaceId} tab={tab} sprintId={entity.id} />;
     default:

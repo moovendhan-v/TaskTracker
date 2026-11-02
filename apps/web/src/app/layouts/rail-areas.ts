@@ -1,6 +1,6 @@
-import { CheckCircle2Icon, ClockIcon, FileTextIcon, HomeIcon, SettingsIcon, UsersRoundIcon, type LucideIcon } from 'lucide-react';
+import { CheckCircle2Icon, ClockIcon, FileTextIcon, HomeIcon, MessagesSquareIcon, SettingsIcon, UsersRoundIcon, type LucideIcon } from 'lucide-react';
 
-export type RailArea = 'home' | 'tracker' | 'docs' | 'time' | 'people' | 'workspace';
+export type RailArea = 'home' | 'tracker' | 'chat' | 'docs' | 'time' | 'people' | 'workspace';
 
 export interface RailItem {
   area: RailArea;
@@ -12,10 +12,11 @@ export interface RailItem {
   goKey?: string;
 }
 
-/** The apps on the rail (design: TF2 Rail). Chat, video and automations join when they exist. */
+/** The apps on the rail (design: TF2 Rail). Video and automations join when they exist. */
 export const RAIL_ITEMS: readonly RailItem[] = [
   { area: 'home', label: 'Home', icon: HomeIcon, path: '', goKey: 'h' },
   { area: 'tracker', label: 'Tracker', icon: CheckCircle2Icon, path: '/my-tasks', goKey: 't' },
+  { area: 'chat', label: 'Chat', icon: MessagesSquareIcon, path: '/chat', goKey: 'c' },
   { area: 'docs', label: 'Docs', icon: FileTextIcon, path: '/docs', goKey: 'd' },
   { area: 'time', label: 'Time', icon: ClockIcon, path: '/timesheets', goKey: 'm' },
   { area: 'people', label: 'People', icon: UsersRoundIcon, path: '/people', goKey: 'p' },
@@ -24,6 +25,7 @@ export const RAIL_ITEMS: readonly RailItem[] = [
 
 const AREAS: [RegExp, RailArea][] = [
   [/^\/(my-tasks|p|l|sprints|s|t)(\/|$)/, 'tracker'],
+  [/^\/chat(\/|$)/, 'chat'],
   [/^\/docs(\/|$)/, 'docs'],
   [/^\/(timesheets|daily-log)(\/|$)/, 'time'],
   [/^\/people(\/|$)/, 'people'],

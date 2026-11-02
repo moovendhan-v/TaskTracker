@@ -4,7 +4,9 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { usePreferenceMutations, usePreferences } from '@/core/preferences/use-preferences';
 import { cn } from '@/lib/cn';
+import { useChatUnread } from '@/modules/chat';
 import { useInboxPanel } from '@/modules/inbox';
+import { usePermissions } from '@/modules/workspaces';
 import { goToPath, RAIL_ITEMS, railAreaOf } from './rail-areas';
 import { UserMenu } from './user-menu';
 
@@ -70,6 +72,8 @@ export function AppRail({ workspaceId, unread }: { workspaceId: string; unread: 
   const base = `/w/${workspaceId}`;
   const goPending = useRef(0);
   const inboxOpen = useInboxPanel((state) => state.open);
+  const canChat = usePermissions(workspaceId).can('chat.use');
+  const chatUnread = useChatUnread(workspaceId, canChat);
   const toggleInbox = useInboxPanel((state) => state.toggle);
 
   const go = (path: string) => router.history.push(path);
@@ -126,9 +130,17 @@ export function AppRail({ workspaceId, unread }: { workspaceId: string; unread: 
 
       <span aria-hidden className="my-1 h-px w-7 bg-border" />
 
-      {RAIL_ITEMS.map((item) => (
-        <RailLink go={go} key={item.area} to={base + item.path} label={item.label} keys={item.goKey ? `G ${item.goKey.toUpperCase()}` : undefined} active={area === item.area}>
+      {RAIL_ITEMS.filter((item) => item.area !== 'chat' || canChat).map((item) => (
+        <RailLink
+          go={go}
+          key={item.area}
+          to={base + item.path}
+          label={item.area === 'chat' && chatUnread ? `Chat, ${chatUnread} unread` : item.label}
+          keys={item.goKey ? `G ${item.goKey.toUpperCase()}` : undefined}
+          active={area === item.area}
+        >
           <item.icon />
+          {item.area === 'chat' && chatUnread ? <span aria-hidden className="absolute top-[9px] right-[10px] size-[7px] rounded-full border-2 border-rail bg-ring box-content" /> : null}
         </RailLink>
       ))}
 

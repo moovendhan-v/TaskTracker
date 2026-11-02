@@ -293,11 +293,10 @@ export class ChatService {
     const channel = await this.postable(actor, access, message.channelId);
     const title = (input.title?.trim() || taskTitleFromMessage(message.body)).slice(0, 200);
     if (!title) throw DomainError.invalid('The task needs a title');
-    const quoted = message.body.split('\n').map((line) => `> ${line}`).join('\n');
     const where = channel.kind === 'dm' ? 'a direct message' : `#${channel.name}`;
     const task = await this.tasks.create(actor, access, input.listId, {
       title,
-      description: `${quoted}\n\n— ${message.authorName ?? 'Someone'} in ${where}`.slice(0, 4_500),
+      description: `${message.body}\n\n— ${message.authorName ?? 'Someone'} in ${where}`.slice(0, 4_500),
     });
     const id = await this.chat.insertMessage({
       workspaceId: access.workspaceId,
