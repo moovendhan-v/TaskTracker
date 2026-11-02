@@ -60,4 +60,20 @@ describe('dashboard layouts', () => {
     expect((await outsider.error(GET, { w, p: 'home' })).code).toMatch(/FORBIDDEN|NOT_FOUND/);
     expect((await outsider.error(SAVE, { w, input: { pageKey: 'home', baseVersion: null, items } })).code).toMatch(/FORBIDDEN|NOT_FOUND/);
   });
+
+  it('keeps the project dashboard layout separate, with its own blocks', async () => {
+    const ws = await createWorkspace('Project layout');
+    const w = ws.workspaceId;
+    const projectItems = [
+      { id: 'phases', type: 'phases', x: 0, y: 0, w: 12, h: 7 },
+      { id: 'kpis', type: 'kpis', x: 0, y: 7, w: 12, h: 3 },
+    ];
+    const saved = (await ws.owner.data<{ saveLayout: { version: number } }>(SAVE, { w, input: { pageKey: 'project', baseVersion: null, items: projectItems } })).saveLayout;
+    expect(saved.version).toBe(1);
+    expect((await ws.owner.data<{ myLayout: { items: { type: string }[] } }>(GET, { w, p: 'project' })).myLayout.items.map((item) => item.type)).toEqual(['phases', 'kpis']);
+    // Home has its own layout, and the two pages don't share block types.
+    expect((await ws.owner.data<{ myLayout: unknown }>(GET, { w, p: 'home' })).myLayout).toBeNull();
+    expect((await ws.owner.error(SAVE, { w, input: { pageKey: 'project', baseVersion: 1, items: [{ id: 'status', type: 'status', x: 0, y: 0, w: 4, h: 5 }] } })).message).toMatch(/unknown block type/);
+    expect((await ws.owner.error(SAVE, { w, input: { pageKey: 'home', baseVersion: null, items: projectItems } })).message).toMatch(/unknown block type/);
+  });
 });

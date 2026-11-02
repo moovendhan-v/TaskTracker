@@ -4,7 +4,7 @@ Design refs: Platform `#6a` (arrange mode), Features `#11c` (layout menu, sync c
 
 ## Scope of this step
 
-- **Home dashboard only** (`pageKey = 'home'`). The project dashboard and other pages follow once the grid has settled.
+- **Home dashboard** (`pageKey = 'home'`), and since then the **project dashboard** (`pageKey = 'project'`, its own 10 block types, one arrangement per person used for every project). The grid and library take a block registry, so a page brings its own blocks.
 - The KPI row and the projects table stay fixed above the grid. The 11 chart and list blocks live on the grid.
 - Per-user layouts. Team and workspace defaults, locks, version history and sharing (rest of B4) come later.
 

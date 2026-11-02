@@ -15,7 +15,7 @@ export const LAYOUT_LIMITS = {
 } as const;
 
 /** Pages that can be arranged, and the blocks each one can hold. */
-export const LAYOUT_PAGES = ['home'] as const;
+export const LAYOUT_PAGES = ['home', 'project'] as const;
 export type LayoutPage = (typeof LAYOUT_PAGES)[number];
 
 export const HOME_BLOCK_TYPES = [
@@ -34,7 +34,22 @@ export const HOME_BLOCK_TYPES = [
 ] as const;
 export type HomeBlockType = (typeof HOME_BLOCK_TYPES)[number];
 
-export const BLOCK_TYPES_BY_PAGE: Record<LayoutPage, readonly string[]> = { home: HOME_BLOCK_TYPES };
+/** A project's dashboard tab. One arrangement per person, used for every project. */
+export const PROJECT_BLOCK_TYPES = [
+  'project-status',
+  'kpis',
+  'status-breakdown',
+  'hours-per-day',
+  'hours-by-task',
+  'phases',
+  'people',
+  'overdue-tasks',
+  'due-soon-tasks',
+  'recent-tasks',
+] as const;
+export type ProjectBlockType = (typeof PROJECT_BLOCK_TYPES)[number];
+
+export const BLOCK_TYPES_BY_PAGE: Record<LayoutPage, readonly string[]> = { home: HOME_BLOCK_TYPES, project: PROJECT_BLOCK_TYPES };
 
 export interface LayoutItem {
   /** Stable id of this placed block, unique within the layout. */
@@ -68,6 +83,18 @@ export const DEFAULT_LAYOUTS: Record<LayoutPage, LayoutItem[]> = {
     { id: 'due-soon-tasks', type: 'due-soon-tasks', x: 4, y: 16, w: 4, h: 7 },
     { id: 'workload', type: 'workload', x: 8, y: 16, w: 4, h: 7 },
     { id: 'recent-tasks', type: 'recent-tasks', x: 0, y: 23, w: 12, h: 6 },
+  ],
+  project: [
+    { id: 'project-status', type: 'project-status', x: 0, y: 0, w: 12, h: 4 },
+    { id: 'kpis', type: 'kpis', x: 0, y: 4, w: 12, h: 4 },
+    { id: 'status-breakdown', type: 'status-breakdown', x: 0, y: 8, w: 12, h: 3 },
+    { id: 'hours-per-day', type: 'hours-per-day', x: 0, y: 11, w: 6, h: 6 },
+    { id: 'hours-by-task', type: 'hours-by-task', x: 6, y: 11, w: 6, h: 6 },
+    { id: 'phases', type: 'phases', x: 0, y: 17, w: 12, h: 7 },
+    { id: 'people', type: 'people', x: 0, y: 24, w: 4, h: 7 },
+    { id: 'overdue-tasks', type: 'overdue-tasks', x: 4, y: 24, w: 4, h: 7 },
+    { id: 'due-soon-tasks', type: 'due-soon-tasks', x: 8, y: 24, w: 4, h: 7 },
+    { id: 'recent-tasks', type: 'recent-tasks', x: 0, y: 31, w: 12, h: 6 },
   ],
 };
 

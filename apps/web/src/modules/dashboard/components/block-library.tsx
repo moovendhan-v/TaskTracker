@@ -1,27 +1,27 @@
-import { HOME_BLOCK_TYPES, type HomeBlockType } from '@taskflow/shared-types';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/cn';
-import { HOME_BLOCKS, type BlockCategory } from './home-blocks';
+import type { BlockCategory, BlockRegistry } from './home-blocks';
 
-const CATEGORIES: BlockCategory[] = ['Tasks', 'Insights', 'Time', 'People'];
+const CATEGORIES: BlockCategory[] = ['Project', 'Tasks', 'Insights', 'Time', 'People'];
 
 interface BlockLibraryProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Blocks already on the page; each can be placed once. */
   placed: ReadonlySet<string>;
-  onAdd: (type: HomeBlockType) => void;
+  onAdd: (type: string) => void;
+  registry: BlockRegistry;
 }
 
 /** The block library drawer (design: Platform #6a): search, category chips, and a card per block. */
-export function BlockLibrary({ open, onOpenChange, placed, onAdd }: BlockLibraryProps) {
+export function BlockLibrary({ open, onOpenChange, placed, onAdd, registry }: BlockLibraryProps) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<BlockCategory | 'All'>('All');
   const term = search.trim().toLowerCase();
-  const types = HOME_BLOCK_TYPES.filter((type) => {
-    const block = HOME_BLOCKS[type];
+  const types = registry.order.filter((type) => {
+    const block = registry.blocks[type]!;
     return (category === 'All' || block.category === category) && (!term || `${block.title} ${block.description}`.toLowerCase().includes(term));
   });
 
@@ -43,7 +43,7 @@ export function BlockLibrary({ open, onOpenChange, placed, onAdd }: BlockLibrary
           />
         </div>
         <div role="radiogroup" aria-label="Category" className="flex flex-wrap gap-1.5">
-          {(['All', ...CATEGORIES] as const).map((value) => (
+          {(['All', ...CATEGORIES.filter((value) => registry.order.some((type) => registry.blocks[type]?.category === value))] as const).map((value) => (
             <button
               key={value}
               type="button"
@@ -62,7 +62,7 @@ export function BlockLibrary({ open, onOpenChange, placed, onAdd }: BlockLibrary
         <ul className="-mr-2 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] content-start gap-2 overflow-y-auto pr-2">
           {types.length === 0 ? <li className="py-8 text-center text-sm text-muted-foreground">No blocks match.</li> : null}
           {types.map((type) => {
-            const block = HOME_BLOCKS[type];
+            const block = registry.blocks[type]!;
             const onPage = placed.has(type);
             return (
               <li key={type} className="flex items-center gap-3 rounded-lg border bg-card p-3">
