@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { ChatChannelKind, ChatMemberRole } from '@taskflow/shared-types';
+import type { ChatChannelKind, ChatMemberRole, ChatReactionSummary } from '@taskflow/shared-types';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import {
   ChatRepository,
@@ -255,6 +255,38 @@ export class TypeOrmChatRepository extends ChatRepository {
     if (userIds.length === 0) return [];
     const rows = await this.query<{ user_id: string }>(`SELECT user_id FROM workspace_member WHERE workspace_id = $1 AND user_id = ANY($2::text[])`, [workspaceId, userIds]);
     return rows.map((row) => row.user_id);
+  }
+
+  async reactionsFor(workspaceId: string, messageIds: string[], userId: string): Promise<Map<string, ChatReactionSummary[]>> {
+    const byMessage = new Map<string, ChatReactionSummary[]>();
+    if (messageIds.length === 0) return byMessage;
+    const rows = await this.query<{ message_id: string; emoji: string; count: string; mine: boolean; names: string[] }>(
+      `SELECT r.message_id, r.emoji, count(*) AS count, bool_or(r.user_id = $3) AS mine,
+              (array_agg(u.name ORDER BY r.created_at))[1:5] AS names
+       FROM chat_reaction r JOIN "user" u ON u.id = r.user_id
+       WHERE r.workspace_id = $1 AND r.message_id = ANY($2::uuid[])
+       GROUP BY r.message_id, r.emoji
+       ORDER BY min(r.created_at)`,
+      [workspaceId, messageIds, userId],
+    );
+    for (const row of rows) {
+      const summary = { emoji: row.emoji, count: Number(row.count), mine: row.mine, names: row.names };
+      byMessage.set(row.message_id, [...(byMessage.get(row.message_id) ?? []), summary]);
+    }
+    return byMessage;
+  }
+
+  async toggleReaction(input: { workspaceId: string; channelId: string; messageId: string; userId: string; emoji: string }): Promise<boolean> {
+    const removed = await this.query(
+      `DELETE FROM chat_reaction WHERE workspace_id = $1 AND message_id = $2 AND user_id = $3 AND emoji = $4 RETURNING emoji`,
+      [input.workspaceId, input.messageId, input.userId, input.emoji],
+    );
+    if (removed.length > 0) return false;
+    await this.query(
+      `INSERT INTO chat_reaction (message_id, user_id, emoji, workspace_id, channel_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
+      [input.messageId, input.userId, input.emoji, input.workspaceId, input.channelId],
+    );
+    return true;
   }
 
   async insertMessage(input: { workspaceId: string; channelId: string; authorId: string; body: string; parentId: string | null; kind: 'user' | 'system'; taskId: string | null }): Promise<string> {

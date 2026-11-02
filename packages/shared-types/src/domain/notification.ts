@@ -26,5 +26,7 @@ export const REALTIME_ENTITY_TYPES = [
   'integration',
   'chat_channel',
   'chat_message',
+  /** Someone is typing in a channel: a live signal only, never stored. */
+  'chat_typing',
 ] as const;
 export type RealtimeEntityType = (typeof REALTIME_ENTITY_TYPES)[number];

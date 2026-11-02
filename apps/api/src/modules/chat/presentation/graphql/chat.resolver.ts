@@ -84,8 +84,8 @@ export class ChatResolver {
 
   @Query(() => ChatMessageGql)
   @RequirePermissions('chat.use')
-  chatMessage(@WorkspaceIdArg() _w: string, @UuidArg('messageId') messageId: string, @CurrentAccess() access: WorkspaceAccess): Promise<ChatMessageGql> {
-    return this.service.message(access, messageId);
+  chatMessage(@WorkspaceIdArg() _w: string, @UuidArg('messageId') messageId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<ChatMessageGql> {
+    return this.service.message(access, actor, messageId);
   }
 
   @Query(() => ChatMessagePageGql, { description: 'Replies to a message, oldest first' })
@@ -95,9 +95,10 @@ export class ChatResolver {
     @UuidArg('messageId') messageId: string,
     @Args('after', { nullable: true, type: () => String }) after: string | null,
     @Args('first', { nullable: true, type: () => Int }) first: number | null,
+    @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<ChatMessagePageGql> {
-    return this.service.thread(access, messageId, after, first);
+    return this.service.thread(access, actor, messageId, after, first);
   }
 
   @Mutation(() => ChatChannelGql)
@@ -244,6 +245,26 @@ export class ChatResolver {
   @RequirePermissions('chat.use')
   deleteChatMessage(@WorkspaceIdArg() _w: string, @UuidArg('messageId') messageId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
     return this.service.remove(actor, access, messageId);
+  }
+
+  @Mutation(() => ChatMessageGql, { description: 'Adds your reaction, or removes it if it is already there' })
+  @RequirePermissions('chat.use')
+  @Throttle(PER_MINUTE(60))
+  toggleChatReaction(
+    @WorkspaceIdArg() _w: string,
+    @UuidArg('messageId') messageId: string,
+    @Args('emoji', { type: () => String }) emoji: string,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<ChatMessageGql> {
+    return this.service.react(actor, access, messageId, emoji.slice(0, 16));
+  }
+
+  @Mutation(() => Boolean, { description: 'Tells the channel you are typing. A live signal only; nothing is stored' })
+  @RequirePermissions('chat.use')
+  @Throttle(PER_MINUTE(40))
+  chatTyping(@WorkspaceIdArg() _w: string, @UuidArg('channelId') channelId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
+    return this.service.typing(actor, access, channelId);
   }
 
   @Mutation(() => ChatMessageGql, { description: 'Creates a task from a message (needs task.create on the list) and notes it in the thread' })

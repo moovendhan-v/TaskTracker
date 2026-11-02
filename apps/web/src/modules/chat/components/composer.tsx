@@ -1,4 +1,4 @@
-import { CHAT_MESSAGE_MAX } from '@taskflow/shared-types';
+import { CHAT_MESSAGE_MAX, CHAT_TYPING_EVERY_MS } from '@taskflow/shared-types';
 import { ArrowUpIcon } from 'lucide-react';
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { UserAvatar } from '@/components/common/user-avatar';
@@ -18,10 +18,13 @@ interface ComposerProps {
   /** Starts with this text and these mentioned people, e.g. when editing a message. */
   initialValue?: string;
   initialPeople?: Person[];
+  /** Called while you type (at most every few seconds), to tell others. */
+  onTyping?: () => void;
 }
 
 /** Enter sends, Shift+Enter adds a line, `#` suggests tasks and `@` suggests people. */
-export function Composer({ placeholder, onSend, onEditLast, disabled, autoFocus, initialValue = '', initialPeople = [] }: ComposerProps) {
+export function Composer({ placeholder, onSend, onEditLast, disabled, autoFocus, initialValue = '', initialPeople = [], onTyping }: ComposerProps) {
+  const lastTyping = useRef(0);
   const workspaceId = useDocWorkspace();
   const { data: members = [] } = useMembers(workspaceId ?? '');
   const field = useRef<HTMLTextAreaElement | null>(null);
@@ -38,6 +41,10 @@ export function Composer({ placeholder, onSend, onEditLast, disabled, autoFocus,
 
   const change = (value: string) => {
     setDraft(value);
+    if (onTyping && value.trim() && Date.now() - lastTyping.current > CHAT_TYPING_EVERY_MS) {
+      lastTyping.current = Date.now();
+      onTyping();
+    }
     setMention(personAt(value, field.current?.selectionStart ?? value.length));
     setIndex(0);
   };

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { WorkspaceEventsDocument } from '@taskflow/sdk';
 import { realtime } from '@/core/api/realtime-client';
 import { keysToRefresh } from './invalidations';
+import { liveEvents } from './live-events';
 
 /**
  * Keeps a workspace's views fresh while it is open: every change someone makes
@@ -23,6 +24,7 @@ export function useWorkspaceEvents(workspaceId: string, onNotification: () => vo
         // Our own changes are refreshed too: the same person may have the workspace open in another tab.
         for (const queryKey of keysToRefresh(workspaceId, event.entityType)) void queryClient.invalidateQueries({ queryKey });
         if (event.type === 'notification.created') notify.current();
+        liveEvents.emit(workspaceId, event);
       },
     });
   }, [workspaceId, queryClient]);

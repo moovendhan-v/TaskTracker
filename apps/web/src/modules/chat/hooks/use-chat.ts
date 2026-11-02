@@ -1,4 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { CHAT_TYPING_TTL_MS } from '@taskflow/shared-types';
+import { liveEvents } from '@/core/realtime/live-events';
 import type { ChatMessagePage, ChatMessageResponse } from '@taskflow/shared-types';
 import { queryKeys } from '@/lib/query-keys';
 import { chatApi } from '../api/chat.api';
@@ -96,6 +99,46 @@ export function useChatMutations(workspaceId: string) {
       mutationFn: ({ channelId, at }: { channelId: string; at: string }) => chatApi.markRead(workspaceId, channelId, at),
       onSuccess: () => queryClient.invalidateQueries({ queryKey: chatKeys.channels(workspaceId) }),
     }),
+    react: useMutation({ mutationFn: ({ messageId, emoji }: { messageId: string; emoji: string }) => chatApi.react(workspaceId, messageId, emoji), ...settle }),
     createTask: useMutation({ mutationFn: (input: { messageId: string; listId: string; title?: string }) => chatApi.createTask(workspaceId, input), onSuccess: placeSent, ...settle }),
   };
+}
+
+/** Who else is typing in a channel right now (user ids), from live "typing" signals. */
+export function useTypingIn(workspaceId: string, channelId: string, me: string): string[] {
+  const [typing, setTyping] = useState<Record<string, number>>({});
+  useEffect(
+    () =>
+      liveEvents.listen((eventWorkspace, event) => {
+        if (eventWorkspace !== workspaceId || event.type !== 'chat_typing.updated' || event.entityId !== channelId || event.actorId === me) return;
+        setTyping((current) => ({ ...current, [event.actorId]: Date.now() + CHAT_TYPING_TTL_MS }));
+      }),
+    [workspaceId, channelId, me],
+  );
+  // A new message from someone means they stopped typing.
+  useEffect(
+    () =>
+      liveEvents.listen((eventWorkspace, event) => {
+        if (eventWorkspace !== workspaceId || event.type !== 'chat_message.created') return;
+        setTyping((current) => {
+          if (!(event.actorId in current)) return current;
+          const { [event.actorId]: _gone, ...rest } = current;
+          return rest;
+        });
+      }),
+    [workspaceId],
+  );
+  const active = Object.keys(typing).length > 0;
+  useEffect(() => {
+    if (!active) return;
+    const timer = setInterval(() => {
+      setTyping((current) => {
+        const now = Date.now();
+        const live = Object.fromEntries(Object.entries(current).filter(([, until]) => until > now));
+        return Object.keys(live).length === Object.keys(current).length ? current : live;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [active]);
+  return Object.keys(typing);
 }

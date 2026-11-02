@@ -1,4 +1,4 @@
-import type { ChatChannelKind, ChatMemberRole } from '@taskflow/shared-types';
+import type { ChatChannelKind, ChatMemberRole, ChatReactionSummary } from '@taskflow/shared-types';
 
 export interface ChatChannelRecord {
   id: string;
@@ -79,6 +79,11 @@ export abstract class ChatRepository {
   abstract memberNames(workspaceId: string, userIds: string[]): Promise<Map<string, string>>;
   /** Which of these users belong to the workspace. */
   abstract workspaceMembers(workspaceId: string, userIds: string[]): Promise<string[]>;
+
+  /** Reactions per message, grouped by emoji, in the order they were first used. */
+  abstract reactionsFor(workspaceId: string, messageIds: string[], userId: string): Promise<Map<string, ChatReactionSummary[]>>;
+  /** Adds your reaction, or removes it if you already reacted with that emoji. Returns whether it is on now. */
+  abstract toggleReaction(input: { workspaceId: string; channelId: string; messageId: string; userId: string; emoji: string }): Promise<boolean>;
 
   abstract insertMessage(input: { workspaceId: string; channelId: string; authorId: string; body: string; parentId: string | null; kind: 'user' | 'system'; taskId: string | null }): Promise<string>;
   abstract findMessage(workspaceId: string, messageId: string): Promise<ChatMessageRecord | null>;

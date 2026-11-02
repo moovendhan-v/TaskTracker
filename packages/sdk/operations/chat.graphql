@@ -27,6 +27,7 @@ fragment ChatMessageFields on ChatMessage {
   editedAt
   deleted
   createdAt
+  reactions { emoji count mine names }
 }
 
 query ChatChannels($workspaceId: ID!) { chatChannels(workspaceId: $workspaceId) { ...ChatChannelFields } }
@@ -92,3 +93,9 @@ mutation DeleteChatMessage($workspaceId: ID!, $messageId: ID!) { deleteChatMessa
 mutation CreateTaskFromChatMessage($workspaceId: ID!, $input: CreateTaskFromMessageInput!) {
   createTaskFromChatMessage(workspaceId: $workspaceId, input: $input) { ...ChatMessageFields }
 }
+
+mutation ToggleChatReaction($workspaceId: ID!, $messageId: ID!, $emoji: String!) {
+  toggleChatReaction(workspaceId: $workspaceId, messageId: $messageId, emoji: $emoji) { ...ChatMessageFields }
+}
+
+mutation ChatTyping($workspaceId: ID!, $channelId: ID!) { chatTyping(workspaceId: $workspaceId, channelId: $channelId) }

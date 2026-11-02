@@ -20,6 +20,7 @@ import { GithubIntegration1729720000000 } from './1729720000000-github-integrati
 import { Dashboards1729760000000 } from './1729760000000-dashboards.js';
 import { Chat1729770000000 } from './1729770000000-chat.js';
 import { ChatMentions1729780000000 } from './1729780000000-chat-mentions.js';
+import { ChatReactions1729790000000 } from './1729790000000-chat-reactions.js';
 import { SprintCommittedTasks1729750000000 } from './1729750000000-sprint-committed-tasks.js';
 import { DashboardLayouts1729740000000 } from './1729740000000-dashboard-layouts.js';
 import { MultipleAssignees1729730000000 } from './1729730000000-multiple-assignees.js';
@@ -51,4 +52,5 @@ export const MIGRATIONS = [
   Dashboards1729760000000,
   Chat1729770000000,
   ChatMentions1729780000000,
+  ChatReactions1729790000000,
 ];

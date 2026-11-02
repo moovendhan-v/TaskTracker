@@ -21,6 +21,8 @@ import {
   RemoveChatChannelMemberDocument,
   SendChatMessageDocument,
   UpdateChatChannelDocument,
+  ToggleChatReactionDocument,
+  ChatTypingDocument,
 } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
 
@@ -54,6 +56,8 @@ export const chatApi = {
   send: async (workspaceId: string, input: { channelId: string; body: string; parentId?: string | null }) => message((await graphql(SendChatMessageDocument, { workspaceId, input })).sendChatMessage),
   edit: async (workspaceId: string, messageId: string, body: string) => message((await graphql(EditChatMessageDocument, { workspaceId, messageId, body })).editChatMessage),
   remove: async (workspaceId: string, messageId: string) => (await graphql(DeleteChatMessageDocument, { workspaceId, messageId })).deleteChatMessage,
+  react: async (workspaceId: string, messageId: string, emoji: string) => message((await graphql(ToggleChatReactionDocument, { workspaceId, messageId, emoji })).toggleChatReaction),
+  typing: async (workspaceId: string, channelId: string) => (await graphql(ChatTypingDocument, { workspaceId, channelId })).chatTyping,
   createTask: async (workspaceId: string, input: { messageId: string; listId: string; title?: string }) =>
     message((await graphql(CreateTaskFromChatMessageDocument, { workspaceId, input })).createTaskFromChatMessage),
 };
