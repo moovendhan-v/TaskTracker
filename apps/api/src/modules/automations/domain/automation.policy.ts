@@ -16,6 +16,7 @@ import {
   type TaskType,
 } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
+import { FLOW_LIMITS, flowActions, flowSteps, validateFlowShape, type AutomationFlow, type FlowStep } from '@taskflow/shared-types';
 
 /** The task an automation looks at, after the change that triggered it. */
 export interface TaskFacts {
@@ -51,6 +52,9 @@ const ACTION_PERMISSIONS: Record<AutomationAction['type'], Permission[]> = {
   assign: ['task.update', 'task.assign'],
   unassign: ['task.update', 'task.assign'],
   notify: [],
+  comment: ['task.update'],
+  set_due_date: ['task.update'],
+  add_watcher: ['task.update'],
 };
 
 export const AutomationPolicy = {
@@ -76,7 +80,7 @@ export const AutomationPolicy = {
   normalizeActions(actions: readonly AutomationAction[]): AutomationAction[] {
     if (actions.length === 0) throw DomainError.invalid('Add at least one action');
     if (actions.length > AUTOMATION_LIMITS.actionsMax) throw DomainError.invalid(`Use at most ${AUTOMATION_LIMITS.actionsMax} actions`);
-    return actions.map((action, index) => {
+    return actions.map((action, index): AutomationAction => {
       const where = `Action ${index + 1}`;
       if (!AUTOMATION_ACTIONS.includes(action.type)) throw DomainError.invalid(`${where}: unknown action`);
       switch (action.type) {
@@ -100,8 +104,53 @@ export const AutomationPolicy = {
           if (message.length > AUTOMATION_LIMITS.messageMax) throw DomainError.invalid(`${where}: the message is too long`);
           return { type: action.type, audiences, userIds, message };
         }
+        case 'comment': {
+          const message = (action.message ?? '').trim();
+          if (!message) throw DomainError.invalid(`${where}: write the comment`);
+          if (message.length > AUTOMATION_LIMITS.messageMax) throw DomainError.invalid(`${where}: the comment is too long`);
+          return { type: action.type, message };
+        }
+        case 'set_due_date':
+          if (action.days !== null && action.days !== undefined && !(Number.isInteger(action.days) && action.days >= 0 && action.days <= FLOW_LIMITS.daysMax)) {
+            throw DomainError.invalid(`${where}: days must be 0 to ${FLOW_LIMITS.daysMax}, or empty to clear`);
+          }
+          return { type: action.type, days: action.days ?? null };
+        case 'add_watcher':
+          if (!action.userId || typeof action.userId !== 'string' || action.userId.length > 64) throw DomainError.invalid(`${where}: pick a person`);
+          return { type: action.type, userId: action.userId };
+        default:
+          throw DomainError.invalid(`${where}: unknown action`);
       }
     });
+  },
+
+  /** A flow checked and cleaned: its shape (shared rules), then every action like a flat rule's. */
+  normalizeFlow(flow: AutomationFlow): AutomationFlow {
+    if (JSON.stringify(flow ?? null).length > FLOW_LIMITS.jsonMax) throw DomainError.invalid('This flow is too large');
+    const problems = validateFlowShape(flow);
+    if (problems.length) throw DomainError.invalid(`Invalid flow: ${problems.slice(0, 5).join('; ')}`);
+    const clean = (steps: readonly FlowStep[]): FlowStep[] =>
+      steps.map((step) => {
+        if (step.kind === 'action') return { id: step.id, kind: 'action', action: AutomationPolicy.normalizeActions([step.action])[0]! };
+        if (step.kind === 'if') return { id: step.id, kind: 'if', condition: step.condition, yes: clean(step.yes), no: clean(step.no) };
+        return { id: step.id, kind: 'stop' };
+      });
+    const normalized = { steps: clean(flow.steps) };
+    if (flowActions(normalized).length === 0) throw DomainError.invalid('Add at least one action');
+    return normalized;
+  },
+
+  /** Ids a flow's conditions mention. */
+  flowConditionIds(flow: AutomationFlow): ReferencedIds {
+    const ids: ReferencedIds = { statusIds: [], listIds: [], userIds: [] };
+    for (const step of flowSteps(flow.steps)) {
+      if (step.kind !== 'if') continue;
+      const condition = step.condition;
+      if (condition.field === 'status') ids.statusIds.push(...(condition.statusIds ?? []));
+      if (condition.field === 'list') ids.listIds.push(...condition.listIds);
+      if (condition.field === 'assignee') ids.userIds.push(...(condition.userIds ?? []));
+    }
+    return ids;
   },
 
   referencedIds(trigger: AutomationTrigger, conditions: AutomationConditions, actions: readonly AutomationAction[]): ReferencedIds {

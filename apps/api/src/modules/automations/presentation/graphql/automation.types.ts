@@ -1,6 +1,6 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import {
   AUTOMATION_ACTIONS,
   AUTOMATION_LIMITS,
@@ -22,6 +22,10 @@ import {
   type StatusCategory,
   type TaskPriority,
   type TaskType,
+  FLOW_LIMITS,
+  type AutomationFlow,
+  type FlowTraceEntry,
+  type FlowTraceOutcome,
 } from '@taskflow/shared-types';
 import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
 import {
@@ -61,6 +65,7 @@ export class AutomationActionGql implements AutomationAction {
   @Field(() => [NotifyAudienceEnum], { nullable: true }) audiences?: NotifyAudience[] | null;
   @Field(() => [String], { nullable: true }) userIds?: string[] | null;
   @Field(() => String, { nullable: true }) message?: string | null;
+  @Field(() => Int, { nullable: true, description: 'set_due_date: days from the day it runs; null clears' }) days?: number | null;
 }
 
 @ObjectType('AutomationRule')
@@ -72,10 +77,19 @@ export class AutomationRuleGql implements AutomationRuleResponse {
   @Field(() => AutomationTriggerGql) trigger: AutomationTriggerGql;
   @Field(() => AutomationConditionsGql) conditions: AutomationConditionsGql;
   @Field(() => [AutomationActionGql]) actions: AutomationActionGql[];
+  /** Exposed as flowJson (see the resolver): a recursive tree reads better as JSON. */
+  flow: AutomationFlow | null;
   @Field(() => String, { nullable: true, description: 'Who the rule runs as' }) createdById: string | null;
   @Field(() => Int) runCount: number;
   @Field(() => String, { nullable: true }) lastRunAt: string | null;
   @Field() createdAt: string;
+}
+
+@ObjectType('AutomationRunStep')
+export class AutomationRunStepGql implements FlowTraceEntry {
+  @Field() stepId: string;
+  @Field(() => String, { description: 'ran, took-yes, took-no, stopped or failed' }) outcome: FlowTraceOutcome;
+  @Field() detail: string;
 }
 
 @ObjectType('AutomationRun')
@@ -85,6 +99,7 @@ export class AutomationRunGql implements AutomationRunResponse {
   @Field(() => ID, { nullable: true }) taskId: string | null;
   @Field(() => AutomationRunStatusEnum) status: AutomationRunStatus;
   @Field() message: string;
+  @Field(() => [AutomationRunStepGql], { description: 'The steps this run reached, in order' }) trace: AutomationRunStepGql[];
   @Field() createdAt: string;
 }
 
@@ -112,6 +127,7 @@ export class AutomationActionInput implements AutomationAction {
   @Field(() => [NotifyAudienceEnum], { nullable: true }) @IsOptional() @IsArray() @ArrayMaxSize(NOTIFY_AUDIENCES.length) @IsIn(NOTIFY_AUDIENCES, { each: true }) audiences?: NotifyAudience[] | null;
   @Field(() => [String], { nullable: true }) @IsOptional() @IsArray() @ArrayMaxSize(IDS) @IsString({ each: true }) @MaxLength(64, { each: true }) userIds?: string[] | null;
   @Field(() => String, { nullable: true }) @IsOptional() @IsString() @MaxLength(AUTOMATION_LIMITS.messageMax) message?: string | null;
+  @Field(() => Int, { nullable: true }) @IsOptional() @IsInt() @Min(0) @Max(FLOW_LIMITS.daysMax) days?: number | null;
 }
 
 @FormSchema('automation.save')
@@ -127,4 +143,10 @@ export class SaveAutomationInput implements SaveAutomationRequest {
   @ValidateNested({ each: true })
   @Type(() => AutomationActionInput)
   actions: AutomationActionInput[];
+
+  @Field(() => String, { nullable: true, description: 'A flow (JSON): when set it decides what runs, and conditions / actions are ignored' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(FLOW_LIMITS.jsonMax)
+  flowJson?: string | null;
 }

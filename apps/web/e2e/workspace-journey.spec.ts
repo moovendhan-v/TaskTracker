@@ -403,6 +403,34 @@ test('goes back through layout versions and publishes the workspace default', as
   await page.getByRole('button', { name: /^Done/ }).click();
 });
 
+test('builds an automation flow with an if / else branch and gets it back', async () => {
+  await page.getByRole('navigation', { name: 'Main' }).getByText('Ops', { exact: true }).click();
+  await page.goto(page.url().replace(/\/p\/([^/?]+).*/, '/p/$1/automations'));
+  await page.getByRole('button', { name: 'New automation' }).click();
+  const builder = page.getByRole('dialog', { name: 'New automation' });
+  await builder.getByLabel('Automation name').fill('Urgent triage');
+
+  // Put an if / else in front of the starter step, then add a comment to its Yes branch.
+  await builder.getByRole('button', { name: 'Add a step here' }).first().click();
+  await page.getByRole('menuitem', { name: 'If / else' }).click();
+  const yes = builder.getByRole('region', { name: /^Yes branch of/ });
+  await yes.getByRole('button', { name: 'Add a step here' }).first().click();
+  await page.getByRole('menuitem', { name: 'Action' }).click();
+  await builder.getByLabel('Action type').click();
+  await page.getByRole('option', { name: 'Add a comment' }).click();
+  await builder.getByLabel('Comment text').fill('Triage {{task}} today');
+  await expect(yes.getByRole('treeitem').filter({ hasText: 'Triage' })).toBeVisible();
+  await expect(page.getByText(/When a task is created, then if priority is Urgent/)).toBeVisible();
+  await builder.getByRole('button', { name: 'Create automation' }).click();
+  await expect(builder).toBeHidden();
+
+  // It comes back as the same flow.
+  await page.getByRole('button', { name: 'Edit' }).first().click();
+  const editor = page.getByRole('dialog', { name: 'Edit automation' });
+  await expect(editor.getByRole('region', { name: /^Yes branch of/ }).getByRole('treeitem')).toContainText('Triage');
+  await editor.getByRole('button', { name: 'Cancel' }).click();
+});
+
 test('opens an empty inbox', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
   await expect(page).toHaveURL(/\/inbox$/);

@@ -1,6 +1,19 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
-import { canInSpace, fillAutomationMessage, type AutomationTriggerType, type TaskResponse } from '@taskflow/shared-types';
+import {
+  addDays,
+  canInSpace,
+  evaluateCondition,
+  fillAutomationMessage,
+  flowActions,
+  flowFromRule,
+  type AutomationAction,
+  type AutomationTriggerType,
+  type FlowStep,
+  type FlowTaskFacts,
+  type FlowTraceEntry,
+  type TaskResponse,
+} from '@taskflow/shared-types';
 import { AccessService } from '../../../core/access/access.service.js';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
@@ -8,6 +21,7 @@ import type { DomainEvent } from '../../../core/events/domain-event.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { Clock } from '../../../core/time/clock.port.js';
+import { CommentsService } from '../../comments/application/comments.service.js';
 import { MembersService } from '../../members/application/members.service.js';
 import { NotificationsService } from '../../notifications/application/notifications.service.js';
 import { TasksService } from '../../tasks/application/tasks.service.js';
@@ -24,6 +38,7 @@ export interface RunContext {
 }
 
 const SUBJECT_MAX = 300;
+const TRACE_MAX = 60;
 const EXCERPT_MAX = 140;
 
 /**
@@ -52,6 +67,7 @@ export class AutomationEngine implements OnModuleInit {
     private readonly accessService: AccessService,
     private readonly transactional: TransactionalManager,
     private readonly clock: Clock,
+    private readonly commentsService: CommentsService,
   ) {}
 
   onModuleInit(): void {
@@ -88,49 +104,102 @@ export class AutomationEngine implements OnModuleInit {
   }
 
   private async execute(rule: AutomationRule, task: TaskResponse, context: RunContext): Promise<void> {
+    const flow = rule.flow ?? flowFromRule(rule.conditions, rule.actions);
+    const trace: FlowTraceEntry[] = [];
     const record = (status: 'succeeded' | 'failed' | 'skipped', message: string) =>
-      this.automations.recordRun({ workspaceId: rule.workspaceId, ruleId: rule.id, taskId: task.id, status, message: message.slice(0, 300) });
+      this.automations.recordRun({ workspaceId: rule.workspaceId, ruleId: rule.id, taskId: task.id, status, message: message.slice(0, 300), trace: trace.slice(0, TRACE_MAX) });
 
     const access = rule.createdById ? await this.accessService.resolveMember(rule.createdById, rule.workspaceId) : null;
     if (!rule.createdById || !access) return record('skipped', 'The person this automation runs as is no longer in the workspace');
-    const missing = ['task.view' as const, ...AutomationPolicy.requiredPermissions(rule.actions)].filter((permission) => !canInSpace(access, rule.spaceId, permission));
+    const missing = ['task.view' as const, ...AutomationPolicy.requiredPermissions(flowActions(flow))].filter((permission) => !canInSpace(access, rule.spaceId, permission));
     if (missing.length) return record('skipped', `The person this automation runs as no longer has ${missing.join(', ')} here`);
 
     const actor: Actor = { userId: rule.createdById, platformRole: 'USER', ip: null };
     try {
       await this.transactional.savepoint(() =>
         this.transactional.runInScope({ kind: 'workspace', workspaceId: rule.workspaceId, userId: actor.userId, spaceRules: access.spaceRules }, () =>
-          AutomationEngine.running.run(true, () => this.applyActions(rule, actor, access, task.id, context)),
+          AutomationEngine.running.run(true, () => this.runSteps(flow.steps, rule, actor, access, task.id, context, trace)),
         ),
       );
       await record('succeeded', '');
     } catch (error) {
-      // Domain errors explain themselves; anything else stays in the server log.
-      await record('failed', error instanceof DomainError ? error.message : 'Something went wrong');
+      // Domain errors explain themselves; anything else stays in the server log. The savepoint undid every step.
+      const message = error instanceof DomainError ? error.message : 'Something went wrong';
+      const failed = trace[trace.length - 1];
+      if (failed && failed.outcome === 'ran') trace[trace.length - 1] = { ...failed, outcome: 'failed', detail: message.slice(0, 200) };
+      await record('failed', `${message} Nothing was changed.`);
       if (!(error instanceof DomainError)) this.logger.error(`Automation ${rule.id} failed`, error instanceof Error ? error.stack : undefined);
     }
     await this.automations.markRun(rule.workspaceId, rule.id, this.clock.now());
   }
 
-  private async applyActions(rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext): Promise<void> {
-    for (const action of rule.actions) {
-      switch (action.type) {
-        case 'set_status':
-          await this.tasksService.update(actor, access, taskId, { statusId: action.statusId as string });
-          break;
-        case 'set_priority':
-          await this.tasksService.update(actor, access, taskId, { priority: action.priority ?? 'none' });
-          break;
-        case 'assign':
-          await this.tasksService.update(actor, access, taskId, { assigneeId: action.userId as string });
-          break;
-        case 'unassign':
-          await this.tasksService.update(actor, access, taskId, { assigneeId: null });
-          break;
-        case 'notify':
-          await this.notify(rule, taskId, action, context);
-          break;
+  /**
+   * Walks the flow in order. If-steps look at the task as it is at that moment, so an
+   * earlier step's change counts. Returns false when a stop step ended the run.
+   */
+  private async runSteps(steps: readonly FlowStep[], rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext, trace: FlowTraceEntry[]): Promise<boolean> {
+    for (const step of steps) {
+      if (step.kind === 'stop') {
+        trace.push({ stepId: step.id, outcome: 'stopped', detail: '' });
+        return false;
       }
+      if (step.kind === 'if') {
+        const holds = evaluateCondition(step.condition, await this.factsOf(rule.workspaceId, taskId), this.clock.now().toISOString().slice(0, 10));
+        trace.push({ stepId: step.id, outcome: holds ? 'took-yes' : 'took-no', detail: '' });
+        if (!(await this.runSteps(holds ? step.yes : step.no, rule, actor, access, taskId, context, trace))) return false;
+        continue;
+      }
+      // Marked as ran first: if the action throws, execute() turns this entry into the failure.
+      trace.push({ stepId: step.id, outcome: 'ran', detail: '' });
+      await this.applyAction(step.action, rule, actor, access, taskId, context);
+    }
+    return true;
+  }
+
+  private async factsOf(workspaceId: string, taskId: string): Promise<FlowTaskFacts> {
+    const task = await this.tasksService.get(workspaceId, taskId);
+    return {
+      listId: task.listId,
+      statusId: task.statusId,
+      statusCategory: task.status.category,
+      priority: task.priority,
+      type: task.type,
+      title: task.title,
+      assigneeIds: task.assigneeIds?.length ? task.assigneeIds : task.assigneeId ? [task.assigneeId] : [],
+      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : null,
+    };
+  }
+
+  private async applyAction(action: AutomationAction, rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext): Promise<void> {
+    switch (action.type) {
+      case 'set_status':
+        await this.tasksService.update(actor, access, taskId, { statusId: action.statusId as string });
+        return;
+      case 'set_priority':
+        await this.tasksService.update(actor, access, taskId, { priority: action.priority ?? 'none' });
+        return;
+      case 'assign':
+        await this.tasksService.update(actor, access, taskId, { assigneeId: action.userId as string });
+        return;
+      case 'unassign':
+        await this.tasksService.update(actor, access, taskId, { assigneeId: null });
+        return;
+      case 'notify':
+        await this.notify(rule, taskId, action, context);
+        return;
+      case 'comment': {
+        const task = await this.tasksService.get(rule.workspaceId, taskId);
+        const body = fillAutomationMessage(action.message ?? '', { task: `#${task.number} ${task.title}`, status: task.status.name, actor: 'Automation', pr: context.pr });
+        await this.commentsService.create(actor, rule.workspaceId, taskId, { body });
+        return;
+      }
+      case 'set_due_date':
+        await this.tasksService.update(actor, access, taskId, { dueDate: action.days === null || action.days === undefined ? null : addDays(this.clock.now().toISOString().slice(0, 10), action.days) });
+        return;
+      case 'add_watcher':
+        if (!(await this.membersService.isMember(rule.workspaceId, action.userId as string))) throw DomainError.invalid('That person is no longer in the workspace');
+        await this.tasksService.addWatcher(actor, rule.workspaceId, taskId, action.userId as string);
+        return;
     }
   }
 

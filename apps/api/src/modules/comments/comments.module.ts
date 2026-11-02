@@ -8,5 +8,6 @@ import { TypeOrmCommentRepository } from './infrastructure/typeorm-comment.repos
 @Module({
   imports: [TasksModule],
   providers: [CommentsService, CommentsResolver, { provide: CommentRepository, useClass: TypeOrmCommentRepository }],
+  exports: [CommentsService],
 })
 export class CommentsModule {}

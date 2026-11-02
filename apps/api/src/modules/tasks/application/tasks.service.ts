@@ -256,6 +256,15 @@ export class TasksService {
     return this.watchers.list(workspaceId, taskId);
   }
 
+  /** Makes someone watch a task (automations). Needs task.update in the task's space. */
+  async addWatcher(actor: Actor, workspaceId: string, taskId: string, userId: string): Promise<string[]> {
+    const task = await this.getInWorkspace(workspaceId, taskId);
+    await this.assertInSpace(workspaceId, task, 'task.update');
+    await this.watchers.add(workspaceId, taskId, [userId]);
+    await this.publish('updated', actor, task, {});
+    return this.watchers.list(workspaceId, taskId);
+  }
+
   /** Follow or stop following a task. Anyone who can see it may watch it. */
   async setWatching(actor: Actor, workspaceId: string, taskId: string, watching: boolean): Promise<string[]> {
     const task = await this.getInWorkspace(workspaceId, taskId);

@@ -1,6 +1,6 @@
 import { CheckCircle2Icon, CircleSlashIcon, HistoryIcon, PencilIcon, PlusIcon, TrashIcon, XCircleIcon, ZapIcon } from 'lucide-react';
 import { useState } from 'react';
-import type { AutomationRuleResponse } from '@taskflow/shared-types';
+import type { AutomationRuleResponse, FlowTraceOutcome } from '@taskflow/shared-types';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { EmptyState } from '@/components/common/empty-state';
 import { Modal } from '@/components/kit/modal';
@@ -12,7 +12,7 @@ import { useStatuses } from '@/modules/tasks';
 import { usePermissions } from '@/modules/workspaces';
 import { toSaveRequest } from '../api/automations.api';
 import { useAutomationMutations, useAutomationRuns, useAutomations } from '../hooks/use-automations';
-import { describeRule } from '../lib/describe-rule';
+import { describeFlow, describeRule } from '../lib/describe-rule';
 import { AutomationBuilder } from './automation-builder';
 
 interface AutomationsPanelProps {
@@ -33,6 +33,8 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
   const nameOf = useMemberName(workspaceId);
   const [editing, setEditing] = useState<AutomationRuleResponse | 'new' | null>(null);
   const [history, setHistory] = useState<AutomationRuleResponse | null>(null);
+  // Run history → "Show on flow": the builder opens read-mostly with that run's path lit.
+  const [showPath, setShowPath] = useState<{ rule: AutomationRuleResponse; path: Map<string, FlowTraceOutcome> } | null>(null);
 
   const names = {
     status: (id: string) => statuses.find((status) => status.id === id)?.name ?? 'a deleted status',
@@ -40,6 +42,7 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
     person: (id: string) => members.find((member) => member.userId === id)?.name ?? 'a former member',
   };
   const rules = automations.data ?? [];
+  const summary = (rule: AutomationRuleResponse) => (rule.flow ? describeFlow(rule.trigger, rule.flow, names) : describeRule(rule, names));
 
   return (
     <div className="mx-auto grid max-w-4xl gap-4 pb-10">
@@ -73,7 +76,7 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{rule.name}</p>
-                {describeRule(rule, names) !== rule.name ? <p className="text-sm text-muted-foreground">{describeRule(rule, names)}</p> : null}
+                {summary(rule) !== rule.name ? <p className="text-sm text-muted-foreground">{summary(rule)}</p> : null}
                 <p className="mt-1 text-xs text-muted-foreground">
                   Runs as {nameOf(rule.createdById) ?? 'nobody (it will skip)'} · {rule.runCount} {rule.runCount === 1 ? 'run' : 'runs'}
                   {rule.lastRunAt ? ` · last ${formatLongDate(rule.lastRunAt)}` : ''}
@@ -128,7 +131,28 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
           onSave={(body) => (editing === 'new' ? mutations.create.mutateAsync(toSaveRequest(body)) : mutations.update.mutateAsync({ ruleId: editing.id, body: toSaveRequest(body) }))}
         />
       ) : null}
-      {history ? <RunHistory workspaceId={workspaceId} rule={history} onClose={() => setHistory(null)} onOpenTask={onOpenTask} /> : null}
+      {history ? (
+        <RunHistory
+          workspaceId={workspaceId}
+          rule={history}
+          onClose={() => setHistory(null)}
+          onOpenTask={onOpenTask}
+          onShowPath={(path) => {
+            setShowPath({ rule: history, path });
+            setHistory(null);
+          }}
+        />
+      ) : null}
+      {showPath ? (
+        <AutomationBuilder
+          workspaceId={workspaceId}
+          spaceId={spaceId}
+          rule={showPath.rule}
+          path={showPath.path}
+          onClose={() => setShowPath(null)}
+          onSave={(body) => mutations.update.mutateAsync({ ruleId: showPath.rule.id, body: toSaveRequest(body) })}
+        />
+      ) : null}
     </div>
   );
 }
@@ -139,7 +163,7 @@ const RUN_ICON = {
   skipped: <CircleSlashIcon className="size-4 text-muted-foreground" aria-label="Skipped" />,
 };
 
-function RunHistory({ workspaceId, rule, onClose, onOpenTask }: { workspaceId: string; rule: AutomationRuleResponse; onClose: () => void; onOpenTask: (taskId: string) => void }) {
+function RunHistory({ workspaceId, rule, onClose, onOpenTask, onShowPath }: { workspaceId: string; rule: AutomationRuleResponse; onClose: () => void; onOpenTask: (taskId: string) => void; onShowPath: (path: Map<string, FlowTraceOutcome>) => void }) {
   const runs = useAutomationRuns(workspaceId, rule.id);
   return (
     <Modal open onOpenChange={(open) => !open && onClose()} title={`${rule.name}: recent runs`} size="md">
@@ -152,6 +176,14 @@ function RunHistory({ workspaceId, rule, onClose, onOpenTask }: { workspaceId: s
               <div className="min-w-0 flex-1">
                 <p className="capitalize">{run.status}</p>
                 {run.message ? <p className="text-xs text-muted-foreground">{run.message}</p> : null}
+                {run.trace.length ? (
+                  <p className="mt-0.5 font-mono text-[11px] text-subtle-foreground">
+                    {run.trace.map((entry) => `${entry.stepId} ${entry.outcome}`).join(' → ')}{' '}
+                    <button type="button" className="ml-1 font-sans text-xs text-ring hover:underline" onClick={() => onShowPath(new Map(run.trace.map((entry) => [entry.stepId, entry.outcome as FlowTraceOutcome])))}>
+                      Show on flow
+                    </button>
+                  </p>
+                ) : null}
               </div>
               {run.taskId ? (
                 <Button variant="link" size="sm" className="h-auto p-0" onClick={() => onOpenTask(run.taskId as string)}>

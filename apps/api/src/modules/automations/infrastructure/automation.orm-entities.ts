@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import type { AutomationAction, AutomationConditions, AutomationRunStatus, AutomationTrigger } from '@taskflow/shared-types';
+import type { AutomationAction, AutomationConditions, AutomationFlow, AutomationRunStatus, AutomationTrigger, FlowTraceEntry } from '@taskflow/shared-types';
 import { TenantOrmEntity } from '../../../core/database/base.orm-entity.js';
 import type { AutomationRule, AutomationRun } from '../domain/automation-rule.js';
 
@@ -25,6 +25,9 @@ export class AutomationRuleOrmEntity extends TenantOrmEntity implements Automati
 
   @Column({ type: 'jsonb' })
   actions: AutomationAction[];
+
+  @Column({ type: 'jsonb', nullable: true })
+  flow: AutomationFlow | null;
 
   @Column({ type: 'text', nullable: true })
   createdById: string | null;
@@ -55,6 +58,9 @@ export class AutomationRunOrmEntity implements AutomationRun {
 
   @Column({ type: 'varchar', length: 300, default: '' })
   message: string;
+
+  @Column({ type: 'jsonb', default: () => `'[]'::jsonb` })
+  trace: FlowTraceEntry[];
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

@@ -26,7 +26,7 @@ Legend: ✅ built · 🟡 partial · ⬜ not started. "Gap" lists what v2 adds o
 | D1 | Chat | 🟡 | Phase 1 per [D1_CHAT.md](D1_CHAT.md): public and private channels, DMs (2–8 people), one-level threads, edit / delete own messages, unread counts and read markers, mute, owners add / remove / promote, archive (owners, or `chat.manage` with an audit entry), `#123` task chips and cards in messages, create task from a message (links back with a "created #N" line). New `chat_*` tables with forced RLS proven in SQL; private channel and DM events go to members only; 30 messages a minute. Rail **Chat** (`G C`) with unread dot, side-panel link with count, tabs named after the channel | Rename / topic UI, image thumbnails / virus scanning, bridging task comments and threads, huddles (D2), retention |
 | D2 | Video calls, huddles | ⬜ | | Needs an SFU (LiveKit or similar); calls, lobby, PiP |
 | D3 | Virtual office | ⬜ | | Isometric floor + flat grid, presence states |
-| E1 | Automations | 🟡 | Rule builder: 9 triggers (task + GitHub PR), 5 actions, runs as the rule's owner | Flow canvas, conditions / branches / waits, run history and traces, bigger node catalogue |
+| E1 | Automations | 🟡 | Rule builder: 9 triggers (task + GitHub PR), runs as the rule's owner. **Flows** ([E1_FLOWS.md](E1_FLOWS.md), phase 1): steps as a tree with if / else branches (7 condition kinds: status, priority, type, list, assignee, due date, title contains) and stop, 8 actions (adds comment, set due date, add watcher), checked by shared rules (30 steps, 5 levels) with ids checked against the space. Vertical canvas with Yes / No columns, + to insert, a step settings panel and undo. Each run records its path (trace); run history shows it, and "Show on flow" lights it up on the canvas. Older rules open and run as flows | Waits, schedules, due-soon / overdue triggers (phase 2); webhooks, chat posts, templates, test runs (phase 3); move-to-list action (needs list moves in the API) |
 | E2 | GitHub sync | 🟡 | GitHub App connections, verified webhooks, PR ⇄ task linking by key, status on PR open / merge | Field mapping table with direction, conflict cards, live sync log, PR inbox for unlinked PRs |
 | E3 | IAM | 🟡 | Built-in and custom roles, allow / deny policy statements scoped to spaces, audit log | Policy simulator, explained denials with "Request access", time / MFA conditions |
 | E4 | HR | 🟡 | Directory, departments, leave types, time-off requests, approvals, timesheets, daily log | Clock-in / out with breaks, attendance view, leave calendar month grid |
@@ -40,7 +40,7 @@ Current state in [docs/screenshots/v2](../screenshots/v2).
 
 Following the handoff's build order (§10), with A1, A2, B1, C1, C2, C3 and C6 done, and D1 phase 1 in, and B2 / B4 / C4 under way:
 
-1. **B3 depth** (per-block filters and fields) or **E1 automation flow canvas**.
+1. **E1 phase 2** (waits, schedules, due-soon / overdue triggers: needs a job table and worker), or **B3 depth** (per-block filters and fields).
 2. **B2 / B4 next steps**: the project dashboard on the grid, then team defaults (B4).
 3. **B3 block config drawer**: per-block data source and view settings, kept separate.
 

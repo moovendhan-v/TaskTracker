@@ -1,3 +1,4 @@
+import { CommentsModule } from '../comments/comments.module.js';
 import { Module } from '@nestjs/common';
 import { ListsModule } from '../lists/lists.module.js';
 import { MembersModule } from '../members/members.module.js';
@@ -12,7 +13,7 @@ import { TypeOrmAutomationRepository } from './infrastructure/typeorm-automation
 import { AutomationsResolver } from './presentation/graphql/automations.resolver.js';
 
 @Module({
-  imports: [SpacesModule, StatusesModule, ListsModule, MembersModule, TasksModule, NotificationsModule],
+  imports: [SpacesModule, StatusesModule, ListsModule, MembersModule, TasksModule, NotificationsModule, CommentsModule],
   providers: [AutomationsService, AutomationEngine, AutomationsResolver, { provide: AutomationRepository, useClass: TypeOrmAutomationRepository }],
   exports: [AutomationEngine],
 })
