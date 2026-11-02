@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { usePreferenceMutations, usePreferences } from '@/core/preferences/use-preferences';
 import { cn } from '@/lib/cn';
+import { useInboxPanel } from '@/modules/inbox';
 import { goToPath, RAIL_ITEMS, railAreaOf } from './rail-areas';
 import { UserMenu } from './user-menu';
 
@@ -68,6 +69,8 @@ export function AppRail({ workspaceId, unread }: { workspaceId: string; unread: 
   const { update } = usePreferenceMutations();
   const base = `/w/${workspaceId}`;
   const goPending = useRef(0);
+  const inboxOpen = useInboxPanel((state) => state.open);
+  const toggleInbox = useInboxPanel((state) => state.toggle);
 
   const go = (path: string) => router.history.push(path);
 
@@ -108,10 +111,18 @@ export function AppRail({ workspaceId, unread }: { workspaceId: string; unread: 
         </a>
       </Tooltip>
 
-      <RailLink go={go} to={`${base}/inbox`} label={unread ? `Inbox, ${unread} unread` : 'Inbox'} keys="G I" active={pathname.startsWith(`${base}/inbox`)}>
-        <BellIcon />
-        {unread ? <span aria-hidden className="absolute top-[9px] right-[10px] size-[7px] rounded-full border-2 border-rail bg-ring box-content" /> : null}
-      </RailLink>
+      <Tooltip label={<Hint label={unread ? `Inbox, ${unread} unread` : 'Inbox'} keys="G I opens the full inbox" />} side="right">
+        <button
+          type="button"
+          onClick={toggleInbox}
+          aria-label={unread ? `Inbox, ${unread} unread` : 'Inbox'}
+          aria-pressed={inboxOpen}
+          className={cn(ITEM, (inboxOpen || pathname.startsWith(`${base}/inbox`)) && 'bg-selected text-foreground shadow-[inset_0_0_0_1px_var(--border-strong)]')}
+        >
+          <BellIcon />
+          {unread ? <span aria-hidden className="absolute top-[9px] right-[10px] size-[7px] rounded-full border-2 border-rail bg-ring box-content" /> : null}
+        </button>
+      </Tooltip>
 
       <span aria-hidden className="my-1 h-px w-7 bg-border" />
 
