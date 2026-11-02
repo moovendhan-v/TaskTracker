@@ -53,3 +53,9 @@ Each placed item may carry `config`, validated by `validateBlockConfig` in `@tas
 | `includeClosed` | view | status breakdowns |
 
 A block with its own `spaceId` loads its own dashboard query for the same period and people, through the normal permission-checked API. Sharing a dashboard never shares data: every viewer sees each block with their own access. Empty settings are stored as nothing. Settings are part of the layout, so they save with its version, sync and undo like any move.
+
+## Workspace defaults and version history (B4)
+
+- `layout_default (workspace_id, page_key, items)` holds one arrangement per workspace and page. Everyone in the workspace can read it (tenant RLS). Changing it needs `layout.manage` and writes an audit entry (`layout.default.set` / `.clear`).
+- What a person sees: their own layout, then the workspace default, then the built-in one. Reset drops their own layout, so they're back on the workspace default.
+- `dashboard_layout_version` keeps a person's last 20 saves per page. RLS limits it to their own rows. Restoring applies the old items as a normal save, so it's version-checked, synced and undoable.

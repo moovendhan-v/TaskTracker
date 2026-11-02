@@ -103,4 +103,52 @@ describe('dashboard layouts', () => {
     // A project dashboard follows its page's project: no data source setting there.
     expect((await ws.owner.error(SAVE, { w, input: { pageKey: 'project', baseVersion: null, items: [{ id: 'kpis', type: 'kpis', x: 0, y: 0, w: 12, h: 4, config: { spaceId: ws.spaceId } }] } })).message).toMatch(/spaceId isn't a setting/);
   });
+
+  it('keeps your recent saves to go back to, and only yours', async () => {
+    const ws = await createWorkspace('Layout history');
+    const w = ws.workspaceId;
+    const member = await TestUser.signUp('Layout history member');
+    await addMember(ws, member, 'Member');
+    const VERSIONS = 'query($w: ID!, $p: String!) { myLayoutVersions(workspaceId: $w, pageKey: $p) { version items { id } } }';
+    const one = (id: string) => [{ id, type: id, x: 0, y: 0, w: 4, h: 5 }];
+    await ws.owner.data(SAVE, { w, input: { pageKey: 'home', baseVersion: null, items: one('status') } });
+    await ws.owner.data(SAVE, { w, input: { pageKey: 'home', baseVersion: 1, items: one('priority') } });
+    const versions = (await ws.owner.data<{ myLayoutVersions: { version: number; items: { id: string }[] }[] }>(VERSIONS, { w, p: 'home' })).myLayoutVersions;
+    expect(versions.map((v) => [v.version, v.items[0]!.id])).toEqual([
+      [2, 'priority'],
+      [1, 'status'],
+    ]);
+    expect((await member.data<{ myLayoutVersions: unknown[] }>(VERSIONS, { w, p: 'home' })).myLayoutVersions).toEqual([]);
+    // Only the newest 20 are kept.
+    for (let version = 2; version < 25; version++) await ws.owner.data(SAVE, { w, input: { pageKey: 'home', baseVersion: version, items: one(version % 2 ? 'status' : 'priority') } });
+    expect((await ws.owner.data<{ myLayoutVersions: unknown[] }>(VERSIONS, { w, p: 'home' })).myLayoutVersions).toHaveLength(20);
+  });
+
+  it('lets layout managers set the workspace default, audited, and nobody else', async () => {
+    const ws = await createWorkspace('Layout default');
+    const w = ws.workspaceId;
+    const member = await TestUser.signUp('Layout default member');
+    const admin = await TestUser.signUp('Layout default admin');
+    await addMember(ws, member, 'Member');
+    await addMember(ws, admin, 'Admin');
+    const DEFAULT = 'query($w: ID!, $p: String!) { workspaceLayout(workspaceId: $w, pageKey: $p) { items { id } updatedByName } }';
+    const SET = 'mutation($w: ID!, $input: SetWorkspaceLayoutInput!) { setWorkspaceLayout(workspaceId: $w, input: $input) { items { id } } }';
+    const CLEAR = 'mutation($w: ID!, $p: String!) { clearWorkspaceLayout(workspaceId: $w, pageKey: $p) }';
+    const items = [{ id: 'workload', type: 'workload', x: 0, y: 0, w: 6, h: 7 }];
+    expect((await member.data<{ workspaceLayout: unknown }>(DEFAULT, { w, p: 'home' })).workspaceLayout).toBeNull();
+    expect((await member.error(SET, { w, input: { pageKey: 'home', items } })).code).toBe('FORBIDDEN');
+    await admin.data(SET, { w, input: { pageKey: 'home', items } });
+    expect((await member.data<{ workspaceLayout: { items: { id: string }[]; updatedByName: string } }>(DEFAULT, { w, p: 'home' })).workspaceLayout).toEqual({
+      items: [{ id: 'workload' }],
+      updatedByName: 'Layout default admin',
+    });
+    expect((await admin.error(SET, { w, input: { pageKey: 'home', items: [{ ...items[0]!, type: 'phases' }] } })).message).toMatch(/unknown block type/);
+    // Another workspace never sees it.
+    const other = await createWorkspace('Layout default other');
+    expect((await other.owner.data<{ workspaceLayout: unknown }>(DEFAULT, { w: other.workspaceId, p: 'home' })).workspaceLayout).toBeNull();
+    expect((await member.error(CLEAR, { w, p: 'home' })).code).toBe('FORBIDDEN');
+    expect((await admin.data<{ clearWorkspaceLayout: boolean }>(CLEAR, { w, p: 'home' })).clearWorkspaceLayout).toBe(true);
+    const audit = (await ws.owner.data<{ workspaceAuditLog: { items: { action: string }[] } }>('query($w: ID!) { workspaceAuditLog(workspaceId: $w) { items { action } } }', { w })).workspaceAuditLog.items.map((entry) => entry.action);
+    expect(audit).toEqual(expect.arrayContaining(['layout.default.set', 'layout.default.clear']));
+  });
 });

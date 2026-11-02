@@ -231,7 +231,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
         onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
       />
       {dashboard.isError ? <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} /> : null}
-      {!dashboard.isError ? <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} workspaceId={workspaceId} /> : null}
+      {!dashboard.isError ? <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} workspaceId={workspaceId} personal /> : null}
     </div>
   );
 }

@@ -234,3 +234,20 @@ export function cleanLayoutItem({ id, type, x, y, w, h, config }: LayoutItem): L
   const settings = cleanBlockConfig(config);
   return settings ? { id, type, x, y, w, h, config: settings } : { id, type, x, y, w, h };
 }
+
+/** How many past saves of a page a person can go back to. */
+export const LAYOUT_VERSIONS_KEPT = 20;
+
+/** The arrangement a workspace starts everyone on, set by someone with layout.manage. */
+export interface WorkspaceLayout {
+  pageKey: LayoutPage;
+  items: LayoutItem[];
+  updatedAt: string;
+  updatedByName: string | null;
+}
+
+export interface LayoutVersion {
+  version: number;
+  savedAt: string;
+  items: LayoutItem[];
+}

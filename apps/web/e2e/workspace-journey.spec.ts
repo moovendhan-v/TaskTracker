@@ -377,6 +377,25 @@ test('configures a Home block: its own title, colour and closed work, kept after
   await expect(page.getByRole('heading', { name: 'Team status' })).toBeVisible();
 });
 
+test('goes back through layout versions and publishes the workspace default', async () => {
+  await page.getByRole('button', { name: /Arrange/ }).click();
+  // Move a block from the keyboard, which saves a second version.
+  const first = page.getByRole('group', { name: /block, column/ }).first();
+  await first.focus();
+  await page.keyboard.press('Alt+ArrowDown');
+  await page.waitForTimeout(1_500);
+  await page.getByRole('button', { name: 'Layout' }).click();
+  await page.getByRole('menuitem', { name: 'Version history…' }).click();
+  const history = page.getByRole('dialog', { name: 'Version history' });
+  await expect(history.getByRole('listitem').first()).toContainText('current');
+  await history.getByRole('button', { name: 'Restore' }).last().click();
+  await expect(page.getByText(/Restored version/)).toBeVisible();
+  await page.getByRole('button', { name: 'Layout' }).click();
+  await page.getByRole('menuitem', { name: 'Make this the workspace default' }).click();
+  await expect(page.getByText('This is now the workspace default')).toBeVisible();
+  await page.getByRole('button', { name: /^Done/ }).click();
+});
+
 test('opens an empty inbox', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
   await expect(page).toHaveURL(/\/inbox$/);

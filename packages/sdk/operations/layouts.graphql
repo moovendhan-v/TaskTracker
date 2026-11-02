@@ -35,3 +35,17 @@ mutation SaveDashboardLayout($workspaceId: ID!, $dashboardId: ID!, $input: SaveD
 }
 
 mutation DeleteDashboard($workspaceId: ID!, $dashboardId: ID!) { deleteDashboard(workspaceId: $workspaceId, dashboardId: $dashboardId) }
+
+query MyLayoutVersions($workspaceId: ID!, $pageKey: String!) {
+  myLayoutVersions(workspaceId: $workspaceId, pageKey: $pageKey) { version savedAt items { id type x y w h config { title accent spaceId limit includeClosed } } }
+}
+
+query WorkspaceLayout($workspaceId: ID!, $pageKey: String!) {
+  workspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey) { pageKey updatedAt updatedByName items { id type x y w h config { title accent spaceId limit includeClosed } } }
+}
+
+mutation SetWorkspaceLayout($workspaceId: ID!, $input: SetWorkspaceLayoutInput!) {
+  setWorkspaceLayout(workspaceId: $workspaceId, input: $input) { pageKey updatedAt updatedByName items { id } }
+}
+
+mutation ClearWorkspaceLayout($workspaceId: ID!, $pageKey: String!) { clearWorkspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey) }

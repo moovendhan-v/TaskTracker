@@ -7,7 +7,7 @@ import { WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { LayoutsService } from '../../application/layouts.service.js';
-import { DashboardLayoutGql, SaveLayoutInput } from './layout.types.js';
+import { DashboardLayoutGql, LayoutVersionGql, SaveLayoutInput, SetWorkspaceLayoutInput, WorkspaceLayoutGql } from './layout.types.js';
 
 function page(value: string): LayoutPage {
   if (!isLayoutPage(value)) throw DomainError.invalid('Unknown page');
@@ -41,7 +41,7 @@ export class LayoutsResolver {
     return this.layouts.save(access.workspaceId, actor.userId, input.pageKey, input.baseVersion ?? null, input.items);
   }
 
-  @Mutation(() => Boolean, { description: 'Back to the built-in layout for a page' })
+  @Mutation(() => Boolean, { description: "Drops your own layout for a page: you're back on the workspace default, or the built-in one" })
   @RequirePermissions('task.view')
   resetLayout(
     @WorkspaceIdArg() _workspaceId: string,
@@ -50,5 +50,34 @@ export class LayoutsResolver {
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<boolean> {
     return this.layouts.reset(access.workspaceId, actor.userId, page(pageKey));
+  }
+
+  @Query(() => [LayoutVersionGql], { description: 'Your recent saves of a page, newest first' })
+  @RequirePermissions('task.view')
+  myLayoutVersions(@WorkspaceIdArg() _workspaceId: string, @Args('pageKey') pageKey: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<LayoutVersionGql[]> {
+    return this.layouts.versions(access.workspaceId, actor.userId, page(pageKey));
+  }
+
+  @Query(() => WorkspaceLayoutGql, { nullable: true, description: "The workspace's default for a page; null means the built-in layout" })
+  @RequirePermissions('task.view')
+  workspaceLayout(@WorkspaceIdArg() _workspaceId: string, @Args('pageKey') pageKey: string, @CurrentAccess() access: WorkspaceAccess): Promise<WorkspaceLayoutGql | null> {
+    return this.layouts.workspaceDefault(access.workspaceId, page(pageKey));
+  }
+
+  @Mutation(() => WorkspaceLayoutGql, { description: 'Makes a layout the workspace default for a page (audited)' })
+  @RequirePermissions('layout.manage')
+  setWorkspaceLayout(
+    @WorkspaceIdArg() _workspaceId: string,
+    @Args('input') input: SetWorkspaceLayoutInput,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<WorkspaceLayoutGql> {
+    return this.layouts.setWorkspaceDefault(actor, access.workspaceId, input.pageKey, input.items);
+  }
+
+  @Mutation(() => Boolean, { description: 'Back to the built-in default for everyone who has not arranged the page (audited)' })
+  @RequirePermissions('layout.manage')
+  clearWorkspaceLayout(@WorkspaceIdArg() _workspaceId: string, @Args('pageKey') pageKey: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
+    return this.layouts.clearWorkspaceDefault(actor, access.workspaceId, page(pageKey));
   }
 }

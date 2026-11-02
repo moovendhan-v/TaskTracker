@@ -11,6 +11,8 @@ import {
   type NamedDashboardResponse,
   type DashboardVisibility,
   type LayoutItem,
+  type LayoutVersion,
+  type WorkspaceLayout,
   type BlockAccent,
   type BlockConfig,
   BLOCK_ACCENTS,
@@ -121,6 +123,33 @@ export class UpdateDashboardInput {
 @InputType('SaveDashboardLayoutInput')
 export class SaveDashboardLayoutInput {
   @Field(() => Int) @IsInt() @Min(1) baseVersion: number;
+
+  @Field(() => [LayoutItemInput])
+  @IsArray()
+  @ArrayMaxSize(LAYOUT_LIMITS.items)
+  @ValidateNested({ each: true })
+  @Type(() => LayoutItemInput)
+  items: LayoutItemInput[];
+}
+
+@ObjectType('WorkspaceLayout', { description: 'The arrangement everyone in the workspace starts on for a page' })
+export class WorkspaceLayoutGql implements WorkspaceLayout {
+  @Field(() => String) pageKey: LayoutPage;
+  @Field(() => [LayoutItemGql]) items: LayoutItemGql[];
+  @Field() updatedAt: string;
+  @Field(() => String, { nullable: true }) updatedByName: string | null;
+}
+
+@ObjectType('LayoutVersion', { description: 'One of your recent saves of a page' })
+export class LayoutVersionGql implements LayoutVersion {
+  @Field(() => Int) version: number;
+  @Field() savedAt: string;
+  @Field(() => [LayoutItemGql]) items: LayoutItemGql[];
+}
+
+@InputType('SetWorkspaceLayoutInput')
+export class SetWorkspaceLayoutInput {
+  @Field(() => String) @IsIn(LAYOUT_PAGES) pageKey: LayoutPage;
 
   @Field(() => [LayoutItemInput])
   @IsArray()

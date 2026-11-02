@@ -37,7 +37,7 @@ interface GridProps {
 
 /** Overview and My work: your own arrangement of Home. */
 function PersonalGrid({ workspaceId, ...props }: GridProps & { workspaceId: string }) {
-  return <ArrangeableGrid layout={useLayout(workspaceId, 'home')} canArrange {...props} />;
+  return <ArrangeableGrid layout={useLayout(workspaceId, 'home')} canArrange personal workspaceId={workspaceId} {...props} />;
 }
 
 /** A named dashboard: its owner arranges it, everyone else sees it with their own data. */

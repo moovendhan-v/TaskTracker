@@ -590,6 +590,11 @@ export type SetTabsInput = {
   tabs: Array<WorkspaceTabInput>;
 };
 
+export type SetWorkspaceLayoutInput = {
+  items: Array<LayoutItemInput>;
+  pageKey: string;
+};
+
 export type SortDirection =
   | 'asc'
   | 'desc';
@@ -1629,6 +1634,38 @@ export type DeleteDashboardMutationVariables = Exact<{
 
 
 export type DeleteDashboardMutation = { deleteDashboard: boolean };
+
+export type MyLayoutVersionsQueryVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+}>;
+
+
+export type MyLayoutVersionsQuery = { myLayoutVersions: Array<{ version: number, savedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> }> };
+
+export type WorkspaceLayoutQueryVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+}>;
+
+
+export type WorkspaceLayoutQuery = { workspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } | null };
+
+export type SetWorkspaceLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  input: SetWorkspaceLayoutInput;
+}>;
+
+
+export type SetWorkspaceLayoutMutation = { setWorkspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, items: Array<{ id: string }> } };
+
+export type ClearWorkspaceLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+}>;
+
+
+export type ClearWorkspaceLayoutMutation = { clearWorkspaceLayout: boolean };
 
 export type ListsQueryVariables = Exact<{
   workspaceId: string;
@@ -4959,6 +4996,70 @@ export const DeleteDashboardDocument = new TypedDocumentString(`
   deleteDashboard(workspaceId: $workspaceId, dashboardId: $dashboardId)
 }
     `) as unknown as TypedDocumentString<DeleteDashboardMutation, DeleteDashboardMutationVariables>;
+export const MyLayoutVersionsDocument = new TypedDocumentString(`
+    query MyLayoutVersions($workspaceId: ID!, $pageKey: String!) {
+  myLayoutVersions(workspaceId: $workspaceId, pageKey: $pageKey) {
+    version
+    savedAt
+    items {
+      id
+      type
+      x
+      y
+      w
+      h
+      config {
+        title
+        accent
+        spaceId
+        limit
+        includeClosed
+      }
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<MyLayoutVersionsQuery, MyLayoutVersionsQueryVariables>;
+export const WorkspaceLayoutDocument = new TypedDocumentString(`
+    query WorkspaceLayout($workspaceId: ID!, $pageKey: String!) {
+  workspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey) {
+    pageKey
+    updatedAt
+    updatedByName
+    items {
+      id
+      type
+      x
+      y
+      w
+      h
+      config {
+        title
+        accent
+        spaceId
+        limit
+        includeClosed
+      }
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<WorkspaceLayoutQuery, WorkspaceLayoutQueryVariables>;
+export const SetWorkspaceLayoutDocument = new TypedDocumentString(`
+    mutation SetWorkspaceLayout($workspaceId: ID!, $input: SetWorkspaceLayoutInput!) {
+  setWorkspaceLayout(workspaceId: $workspaceId, input: $input) {
+    pageKey
+    updatedAt
+    updatedByName
+    items {
+      id
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<SetWorkspaceLayoutMutation, SetWorkspaceLayoutMutationVariables>;
+export const ClearWorkspaceLayoutDocument = new TypedDocumentString(`
+    mutation ClearWorkspaceLayout($workspaceId: ID!, $pageKey: String!) {
+  clearWorkspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey)
+}
+    `) as unknown as TypedDocumentString<ClearWorkspaceLayoutMutation, ClearWorkspaceLayoutMutationVariables>;
 export const ListsDocument = new TypedDocumentString(`
     query Lists($workspaceId: ID!) {
   lists(workspaceId: $workspaceId) {

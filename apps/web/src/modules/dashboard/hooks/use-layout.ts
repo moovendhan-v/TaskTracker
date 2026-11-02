@@ -23,6 +23,8 @@ function usable(pageKey: LayoutPage, items: readonly LayoutItem[] | undefined): 
 interface SavedLayout {
   version: number | null;
   items: LayoutItem[];
+  /** Not yours: the workspace default, shown until you arrange the page yourself. */
+  fromWorkspace?: boolean;
 }
 
 /** Where a layout lives: the personal per-page layout, or one named dashboard. */
@@ -41,7 +43,11 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
   return useArrangeableLayout({
     key: queryKeys.layout(workspaceId, pageKey),
     pageKey,
-    fetch: () => layoutsApi.get(workspaceId, pageKey),
+    // Yours, else the workspace default, else (null) the built-in layout.
+    fetch: async () => {
+      const [mine, workspace] = await Promise.all([layoutsApi.get(workspaceId, pageKey), layoutsApi.workspaceDefault(workspaceId, pageKey)]);
+      return mine ?? (workspace ? { version: null, items: workspace.items, fromWorkspace: true } : null);
+    },
     save: (baseVersion, items) => layoutsApi.save(workspaceId, pageKey, baseVersion, items),
     reset: async () => {
       await layoutsApi.reset(workspaceId, pageKey);
@@ -174,8 +180,8 @@ function useArrangeableLayout(source: LayoutSource) {
       version.current = await sourceRef.current.reset();
       history.current = [];
       setUndoable(0);
-      void queryClient.invalidateQueries({ queryKey: key });
-      latest.current = DEFAULT_LAYOUTS[pageKey];
+      const fallback = await queryClient.fetchQuery({ queryKey: key, queryFn: () => sourceRef.current.fetch(), staleTime: 0 });
+      latest.current = usable(pageKey, fallback?.items);
       setItemsState(latest.current);
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -201,7 +207,9 @@ function useArrangeableLayout(source: LayoutSource) {
     canUndo: undoable > 0,
     reset,
     saving,
-    isCustom: Boolean(query.data),
+    isCustom: Boolean(query.data) && !query.data?.fromWorkspace,
+    /** Where the shown arrangement comes from. */
+    origin: (query.data?.fromWorkspace ? 'workspace' : query.data ? 'mine' : 'builtin') as 'mine' | 'workspace' | 'builtin',
   };
 }
 

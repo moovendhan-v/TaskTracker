@@ -1026,6 +1026,13 @@ input LayoutItemInput {
   y: Int!
 }
 
+"""One of your recent saves of a page"""
+type LayoutVersion {
+  items: [LayoutItem!]!
+  savedAt: String!
+  version: Int!
+}
+
 type LeaveBalance {
   """null means unlimited"""
   allowanceDays: Int
@@ -1160,6 +1167,11 @@ type Mutation {
   Tells the channel you are typing. A live signal only; nothing is stored
   """
   chatTyping(channelId: ID!, workspaceId: ID!): Boolean!
+
+  """
+  Back to the built-in default for everyone who has not arranged the page (audited)
+  """
+  clearWorkspaceLayout(pageKey: String!, workspaceId: ID!): Boolean!
 
   """
   Checks an uploaded file (size, real type). Files that fail are deleted and the reason returned
@@ -1311,7 +1323,9 @@ type Mutation {
   requestChatUpload(input: RequestChatUploadInput!, workspaceId: ID!): ChatUploadTicket!
   requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
 
-  """Back to the built-in layout for a page"""
+  """
+  Drops your own layout for a page: you're back on the workspace default, or the built-in one
+  """
   resetLayout(pageKey: String!, workspaceId: ID!): Boolean!
 
   """Back to the default settings"""
@@ -1351,6 +1365,9 @@ type Mutation {
 
   """Replaces the open tabs of the multi-tab workspace"""
   setTabs(input: SetTabsInput!): Preferences!
+
+  """Makes a layout the workspace default for a page (audited)"""
+  setWorkspaceLayout(input: SetWorkspaceLayoutInput!, workspaceId: ID!): WorkspaceLayout!
   startSprint(sprintId: ID!, workspaceId: ID!): Sprint!
 
   """Starts a timer; a timer already running is stopped first"""
@@ -1681,6 +1698,9 @@ type Query {
 
   """Your saved layout for a page; null means the built-in default"""
   myLayout(pageKey: String!, workspaceId: ID!): DashboardLayout
+
+  """Your recent saves of a page, newest first"""
+  myLayoutVersions(pageKey: String!, workspaceId: ID!): [LayoutVersion!]!
   myLeaveBalances(
     workspaceId: ID!
 
@@ -1809,6 +1829,9 @@ type Query {
     pageSize: Int
     workspaceId: ID!
   ): AuditLogPage!
+
+  """The workspace's default for a page; null means the built-in layout"""
+  workspaceLayout(pageKey: String!, workspaceId: ID!): WorkspaceLayout
 
   """Every status in the workspace, for views across spaces"""
   workspaceStatuses(workspaceId: ID!): [TaskStatus!]!
@@ -2018,6 +2041,11 @@ input SendChatMessageInput {
 
 input SetTabsInput {
   tabs: [WorkspaceTabInput!]!
+}
+
+input SetWorkspaceLayoutInput {
+  items: [LayoutItemInput!]!
+  pageKey: String!
 }
 
 enum SortDirection {
@@ -2507,6 +2535,14 @@ type WorkspaceEvent {
 
   """e.g. task.updated"""
   type: String!
+}
+
+"""The arrangement everyone in the workspace starts on for a page"""
+type WorkspaceLayout {
+  items: [LayoutItem!]!
+  pageKey: String!
+  updatedAt: String!
+  updatedByName: String
 }
 
 type WorkspaceTab {
