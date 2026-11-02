@@ -32,6 +32,8 @@ export const PERMISSIONS = [
   'chat.use',
   /** Rename and archive any public channel (audited). */
   'chat.manage',
+  /** Set the workspace's default dashboard layouts. */
+  'layout.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 

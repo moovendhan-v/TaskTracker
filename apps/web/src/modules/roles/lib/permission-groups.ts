@@ -45,6 +45,10 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
+    label: 'Dashboards',
+    permissions: [{ key: 'layout.manage', label: 'Set the workspace’s default dashboard layouts' }],
+  },
+  {
     label: 'Chat',
     permissions: [
       { key: 'chat.use', label: 'Read and post in chat, start direct messages and create channels' },

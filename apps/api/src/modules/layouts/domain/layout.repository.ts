@@ -1,4 +1,4 @@
-import type { DashboardLayout, LayoutItem, LayoutPage } from '@taskflow/shared-types';
+import type { DashboardLayout, LayoutItem, LayoutPage, LayoutVersion, WorkspaceLayout } from '@taskflow/shared-types';
 
 export interface LayoutKey {
   workspaceId: string;
@@ -15,4 +15,12 @@ export abstract class LayoutRepository {
    */
   abstract saveIfVersion(key: LayoutKey, baseVersion: number | null, items: LayoutItem[]): Promise<DashboardLayout | null>;
   abstract remove(key: LayoutKey): Promise<void>;
+
+  /** Keeps a copy of a save, and only the newest `keep` copies of that page. */
+  abstract addVersion(key: LayoutKey, version: number, items: LayoutItem[], keep: number): Promise<void>;
+  abstract listVersions(key: LayoutKey, limit: number): Promise<LayoutVersion[]>;
+
+  abstract findDefault(workspaceId: string, pageKey: LayoutPage): Promise<WorkspaceLayout | null>;
+  abstract saveDefault(workspaceId: string, pageKey: LayoutPage, items: LayoutItem[], userId: string): Promise<WorkspaceLayout>;
+  abstract removeDefault(workspaceId: string, pageKey: LayoutPage): Promise<boolean>;
 }

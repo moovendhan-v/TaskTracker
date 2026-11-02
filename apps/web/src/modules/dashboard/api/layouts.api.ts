@@ -8,6 +8,10 @@ import {
   SaveDashboardLayoutDocument,
   SaveLayoutDocument,
   UpdateDashboardDocument,
+  MyLayoutVersionsDocument,
+  WorkspaceLayoutDocument,
+  SetWorkspaceLayoutDocument,
+  ClearWorkspaceLayoutDocument,
 } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
 
@@ -30,6 +34,12 @@ export const layoutsApi = {
   save: async (workspaceId: string, pageKey: LayoutPage, baseVersion: number | null, items: LayoutItem[]) =>
     withItems((await graphql(SaveLayoutDocument, { workspaceId, input: { pageKey, baseVersion, items: items.map(toInput) } })).saveLayout)!,
   reset: async (workspaceId: string, pageKey: LayoutPage) => (await graphql(ResetLayoutDocument, { workspaceId, pageKey })).resetLayout,
+  versions: async (workspaceId: string, pageKey: LayoutPage) =>
+    (await graphql(MyLayoutVersionsDocument, { workspaceId, pageKey })).myLayoutVersions.map((version) => ({ ...version, items: fromApiItems(version.items) })),
+  workspaceDefault: async (workspaceId: string, pageKey: LayoutPage) => withItems((await graphql(WorkspaceLayoutDocument, { workspaceId, pageKey })).workspaceLayout),
+  setWorkspaceDefault: async (workspaceId: string, pageKey: LayoutPage, items: LayoutItem[]) =>
+    (await graphql(SetWorkspaceLayoutDocument, { workspaceId, input: { pageKey, items: items.map(toInput) } })).setWorkspaceLayout,
+  clearWorkspaceDefault: async (workspaceId: string, pageKey: LayoutPage) => (await graphql(ClearWorkspaceLayoutDocument, { workspaceId, pageKey })).clearWorkspaceLayout,
 };
 
 const itemsOnly = (items: readonly LayoutItem[]) => items.map(toInput);
