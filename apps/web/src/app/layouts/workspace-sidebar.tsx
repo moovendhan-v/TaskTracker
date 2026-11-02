@@ -7,6 +7,7 @@ import {
   FileTextIcon,
   HomeIcon,
   InboxIcon,
+  MessagesSquareIcon,
   PalmtreeIcon,
   ScrollTextIcon,
   SearchIcon,
@@ -24,6 +25,7 @@ import { SidebarSection } from '@/components/layout/sidebar-section';
 import { usePreferenceMutations, usePreferences } from '@/core/preferences/use-preferences';
 import { useDashboard, dashboardInput } from '@/modules/dashboard';
 import { SpaceTree, type SpaceStats } from '@/modules/spaces';
+import { useChatUnread } from '@/modules/chat';
 import { usePermissions } from '@/modules/workspaces';
 
 const TITLES: [RegExp, string][] = [
@@ -32,6 +34,7 @@ const TITLES: [RegExp, string][] = [
   [/\/daily-log/, 'Daily log'],
   [/\/timesheets/, 'Timesheets'],
   [/\/inbox/, 'Inbox'],
+  [/\/chat/, 'Chat'],
   [/\/docs/, 'Docs'],
   [/\/people/, 'People'],
   [/\/settings|\/members|\/roles|\/audit-log/, 'Workspace'],
@@ -41,6 +44,7 @@ const TITLES: [RegExp, string][] = [
 export function WorkspaceSidebar({ workspaceId, unread }: { workspaceId: string; unread: number }) {
   const params = { workspaceId };
   const { can } = usePermissions(workspaceId);
+  const chatUnread = useChatUnread(workspaceId, can('chat.use'));
   const preferences = usePreferences();
   const { update } = usePreferenceMutations();
   const [filter, setFilter] = useState('');
@@ -95,6 +99,11 @@ export function WorkspaceSidebar({ workspaceId, unread }: { workspaceId: string;
           <SidebarLink to="/w/$workspaceId/inbox" params={params} icon={<InboxIcon />} badge={unread ? (unread > 99 ? '99+' : String(unread)) : undefined}>
             Inbox
           </SidebarLink>
+          {can('chat.use') ? (
+            <SidebarLink to="/w/$workspaceId/chat" params={params} icon={<MessagesSquareIcon />} badge={chatUnread ? (chatUnread > 99 ? '99+' : String(chatUnread)) : undefined}>
+              Chat
+            </SidebarLink>
+          ) : null}
           <SidebarLink to="/w/$workspaceId/docs" params={params} icon={<FileTextIcon />}>
             Docs
           </SidebarLink>

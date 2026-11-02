@@ -40,3 +40,5 @@ export * from './contracts/automation.contract.js';
 export * from './domain/github.js';
 export * from './contracts/github.contract.js';
 export * from './domain/layout.js';
+export * from './domain/chat.js';
+export * from './contracts/chat.contract.js';

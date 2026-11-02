@@ -34,6 +34,7 @@ export const queryKeys = {
   documentTree: (workspaceId: string, search = '') => ['workspaces', workspaceId, 'documents', 'tree', search] as const,
   document: (workspaceId: string, documentId: string) => ['workspaces', workspaceId, 'documents', 'detail', documentId] as const,
   timeRoot: (workspaceId: string) => ['workspaces', workspaceId, 'time'] as const,
+  chatRoot: (workspaceId: string) => ['workspaces', workspaceId, 'chat'] as const,
   timeEntries: (workspaceId: string, query: object) => ['workspaces', workspaceId, 'time', 'entries', query] as const,
   runningTimer: (workspaceId: string) => ['workspaces', workspaceId, 'time', 'running'] as const,
   taskTime: (workspaceId: string, taskId: string) => ['workspaces', workspaceId, 'time', 'task', taskId] as const,

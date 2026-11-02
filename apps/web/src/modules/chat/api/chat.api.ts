@@ -1,0 +1,59 @@
+import type { ChatChannelKind, ChatChannelResponse, ChatMemberRole, ChatMessagePage, ChatMessageResponse } from '@taskflow/shared-types';
+import {
+  AddChatChannelMembersDocument,
+  ArchiveChatChannelDocument,
+  BrowseChatChannelsDocument,
+  ChatChannelDocument,
+  ChatChannelMembersDocument,
+  ChatChannelsDocument,
+  ChatMessageDocument,
+  ChatMessagesDocument,
+  ChatThreadDocument,
+  CreateChatChannelDocument,
+  CreateTaskFromChatMessageDocument,
+  DeleteChatMessageDocument,
+  EditChatMessageDocument,
+  JoinChatChannelDocument,
+  LeaveChatChannelDocument,
+  MarkChatChannelReadDocument,
+  MuteChatChannelDocument,
+  OpenDirectMessageDocument,
+  RemoveChatChannelMemberDocument,
+  SendChatMessageDocument,
+  UpdateChatChannelDocument,
+} from '@taskflow/sdk';
+import { graphql } from '@/core/api/graphql-client';
+
+type RawChannel = Omit<ChatChannelResponse, 'kind' | 'myRole'> & { kind: string; myRole?: string | null };
+type RawMessage = Omit<ChatMessageResponse, 'kind'> & { kind: string };
+
+const channel = (raw: RawChannel): ChatChannelResponse => ({ ...raw, kind: raw.kind as ChatChannelKind, myRole: (raw.myRole ?? null) as ChatMemberRole | null });
+const message = (raw: RawMessage): ChatMessageResponse => ({ ...raw, kind: raw.kind === 'system' ? 'system' : 'user' });
+const page = (raw: { items: RawMessage[]; cursor?: string | null }): ChatMessagePage => ({ items: raw.items.map(message), cursor: raw.cursor ?? null });
+
+export const chatApi = {
+  channels: async (workspaceId: string) => (await graphql(ChatChannelsDocument, { workspaceId })).chatChannels.map(channel),
+  browse: async (workspaceId: string, search: string | null) => (await graphql(BrowseChatChannelsDocument, { workspaceId, search, first: 50 })).browseChatChannels.map(channel),
+  channel: async (workspaceId: string, channelId: string) => channel((await graphql(ChatChannelDocument, { workspaceId, channelId })).chatChannel),
+  members: async (workspaceId: string, channelId: string) => (await graphql(ChatChannelMembersDocument, { workspaceId, channelId })).chatChannelMembers,
+  messages: async (workspaceId: string, channelId: string, before: string | null) => page((await graphql(ChatMessagesDocument, { workspaceId, channelId, before, first: 50 })).chatMessages),
+  message: async (workspaceId: string, messageId: string) => message((await graphql(ChatMessageDocument, { workspaceId, messageId })).chatMessage),
+  thread: async (workspaceId: string, messageId: string) => page((await graphql(ChatThreadDocument, { workspaceId, messageId, first: 100 })).chatThread),
+  createChannel: async (workspaceId: string, input: { name: string; topic?: string; kind: 'public' | 'private'; memberIds?: string[] }) =>
+    channel((await graphql(CreateChatChannelDocument, { workspaceId, input })).createChatChannel),
+  openDm: async (workspaceId: string, userIds: string[]) => channel((await graphql(OpenDirectMessageDocument, { workspaceId, userIds })).openDirectMessage),
+  updateChannel: async (workspaceId: string, channelId: string, input: { name?: string; topic?: string }) =>
+    channel((await graphql(UpdateChatChannelDocument, { workspaceId, channelId, input })).updateChatChannel),
+  archive: async (workspaceId: string, channelId: string, archived: boolean) => channel((await graphql(ArchiveChatChannelDocument, { workspaceId, channelId, archived })).archiveChatChannel),
+  join: async (workspaceId: string, channelId: string) => channel((await graphql(JoinChatChannelDocument, { workspaceId, channelId })).joinChatChannel),
+  leave: async (workspaceId: string, channelId: string) => (await graphql(LeaveChatChannelDocument, { workspaceId, channelId })).leaveChatChannel,
+  addMembers: async (workspaceId: string, channelId: string, userIds: string[]) => (await graphql(AddChatChannelMembersDocument, { workspaceId, channelId, userIds })).addChatChannelMembers,
+  removeMember: async (workspaceId: string, channelId: string, userId: string) => (await graphql(RemoveChatChannelMemberDocument, { workspaceId, channelId, userId })).removeChatChannelMember,
+  markRead: async (workspaceId: string, channelId: string, at: string) => (await graphql(MarkChatChannelReadDocument, { workspaceId, channelId, at })).markChatChannelRead,
+  mute: async (workspaceId: string, channelId: string, muted: boolean) => (await graphql(MuteChatChannelDocument, { workspaceId, channelId, muted })).muteChatChannel,
+  send: async (workspaceId: string, input: { channelId: string; body: string; parentId?: string | null }) => message((await graphql(SendChatMessageDocument, { workspaceId, input })).sendChatMessage),
+  edit: async (workspaceId: string, messageId: string, body: string) => message((await graphql(EditChatMessageDocument, { workspaceId, messageId, body })).editChatMessage),
+  remove: async (workspaceId: string, messageId: string) => (await graphql(DeleteChatMessageDocument, { workspaceId, messageId })).deleteChatMessage,
+  createTask: async (workspaceId: string, input: { messageId: string; listId: string; title?: string }) =>
+    message((await graphql(CreateTaskFromChatMessageDocument, { workspaceId, input })).createTaskFromChatMessage),
+};

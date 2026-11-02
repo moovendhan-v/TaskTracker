@@ -22,6 +22,11 @@ export function isForbidden(error: unknown): boolean {
   return error instanceof GraphQLRequestError && error.code === 'FORBIDDEN';
 }
 
+/** It doesn't exist, or you can't see it. */
+export function isNotFound(error: unknown): boolean {
+  return error instanceof GraphQLRequestError && error.code === 'NOT_FOUND';
+}
+
 /** Someone changed the thing since you loaded it (optimistic concurrency). */
 export function isConflict(error: unknown): boolean {
   return error instanceof GraphQLRequestError && error.code === 'CONFLICT';
