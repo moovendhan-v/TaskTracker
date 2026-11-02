@@ -242,6 +242,15 @@ export class TypeOrmChatRepository extends ChatRepository {
     return rows.length > 0;
   }
 
+  async memberNames(workspaceId: string, userIds: string[]): Promise<Map<string, string>> {
+    if (userIds.length === 0) return new Map();
+    const rows = await this.query<{ id: string; name: string }>(
+      `SELECT u.id, u.name FROM workspace_member wm JOIN "user" u ON u.id = wm.user_id WHERE wm.workspace_id = $1 AND wm.user_id = ANY($2::text[])`,
+      [workspaceId, userIds],
+    );
+    return new Map(rows.map((row) => [row.id, row.name]));
+  }
+
   async workspaceMembers(workspaceId: string, userIds: string[]): Promise<string[]> {
     if (userIds.length === 0) return [];
     const rows = await this.query<{ user_id: string }>(`SELECT user_id FROM workspace_member WHERE workspace_id = $1 AND user_id = ANY($2::text[])`, [workspaceId, userIds]);

@@ -49,6 +49,8 @@ export const NotificationRules = {
         return facts.status === 'approved' || facts.status === 'rejected'
           ? to([facts.userId], { kind: 'leave_decided', excerpt: facts.status })
           : [];
+      case 'chat_message.created':
+        return to(facts.mentionIds ?? [], { kind: 'chat_mention' });
       case 'member.created':
         return to([facts.userId], { kind: 'member_added', subject: truncate(facts.roleName ?? '', SUBJECT_MAX) });
       default:

@@ -23,6 +23,13 @@ describe('NotificationRules', () => {
     expect(notification).toMatchObject({ taskId: 't1', excerpt: 'Looks good' });
   });
 
+  it('tells the people a chat message mentions, never the author', () => {
+    const message = event('chat_message', 'created', { mentionIds: ['sam', 'avery', 'sam'], title: '#platform', excerpt: '@Sam can you look?' });
+    expect(recipients(message)).toEqual(['sam:chat_mention']);
+    expect(NotificationRules.notificationsFor(message, { approverIds: [] })[0]).toMatchObject({ subject: '#platform', excerpt: '@Sam can you look?', entityType: 'chat_message' });
+    expect(recipients(event('chat_message', 'created', {}))).toEqual([]);
+  });
+
   it('asks approvers about pending leave, and tells the requester the decision', () => {
     const pending = event('leave_request', 'created', { status: 'pending', title: 'Annual leave' }, 'sam');
     expect(NotificationRules.needsApprovers(pending)).toBe(true);

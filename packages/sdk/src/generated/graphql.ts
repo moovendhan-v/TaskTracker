@@ -431,6 +431,7 @@ export type MoveTaskListInput = {
 
 export type NotificationKind =
   | 'automation'
+  | 'chat_mention'
   | 'leave_decided'
   | 'leave_requested'
   | 'member_added'

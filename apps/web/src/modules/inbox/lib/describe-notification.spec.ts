@@ -10,6 +10,7 @@ describe('describeNotification', () => {
       'Jordan Patel declined your time off: Annual leave · 2026-11-13',
     );
     expect(describeNotification({ ...base, kind: 'member_added', subject: 'Member' })).toBe('Jordan Patel added you to this workspace as Member');
+    expect(describeNotification({ ...base, kind: 'chat_mention', subject: '#platform' })).toBe('Jordan Patel mentioned you in #platform');
   });
 
   it('copes with a deleted actor', () => {

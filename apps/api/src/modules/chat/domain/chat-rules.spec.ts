@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHAT_MESSAGE_MAX, cleanMessageBody, isValidChannelName, normalizeChannelName, taskTitleFromMessage } from '@taskflow/shared-types';
+import { CHAT_MESSAGE_MAX, cleanMessageBody, isValidChannelName, mentionedUserIds, mentionsToNames, normalizeChannelName, taskTitleFromMessage } from '@taskflow/shared-types';
 
 describe('chat rules', () => {
   it('normalises channel names', () => {
@@ -31,5 +31,11 @@ describe('chat rules', () => {
     expect(taskTitleFromMessage('> quoted idea')).toBe('quoted idea');
     expect(taskTitleFromMessage('Export still drops fields:\n- step')).toBe('Export still drops fields');
     expect(taskTitleFromMessage('y'.repeat(300))).toHaveLength(200);
+  });
+
+  it('finds mentions and shows them as names', () => {
+    expect(mentionedUserIds('hi @{u1} and @{u2}, again @{u1}; not @u3 or @{bad id}')).toEqual(['u1', 'u2']);
+    expect(mentionedUserIds(Array.from({ length: 30 }, (_, i) => `@{u${i}}`).join(' '))).toHaveLength(20);
+    expect(mentionsToNames('ping @{u1} and @{gone}', (id) => (id === 'u1' ? 'Sam' : null))).toBe('ping @Sam and @someone');
   });
 });

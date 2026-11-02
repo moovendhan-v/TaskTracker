@@ -5,9 +5,11 @@ import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/cn';
-import { MarkdownPreview } from '@/modules/documents';
+import { MarkdownPreview, useDocWorkspace } from '@/modules/documents';
+import { useMemberName } from '@/modules/members';
 import { timeAgo } from '@/lib/relative-time';
 import { timeOfDay } from '../lib/chat-display';
+import { tokensToNames } from '../lib/chat-mentions';
 import { Composer } from './composer';
 
 interface MessageItemProps {
@@ -145,6 +147,9 @@ export function MessageItem({ message, head, mine, editing, onEditing, onSaveEdi
 }
 
 function EditBox({ initial, onCancel, onSave }: { initial: string; onCancel: () => void; onSave: (body: string) => Promise<unknown> }) {
+  const workspaceId = useDocWorkspace();
+  const nameOf = useMemberName(workspaceId ?? '');
+  const seeded = tokensToNames(initial, nameOf);
   return (
     <div
       onKeyDown={(event) => {
@@ -154,7 +159,7 @@ function EditBox({ initial, onCancel, onSave }: { initial: string; onCancel: () 
         }
       }}
     >
-      <Composer placeholder="Edit message" onSend={onSave} autoFocus initialValue={initial} />
+      <Composer placeholder="Edit message" onSend={onSave} autoFocus initialValue={seeded.text} initialPeople={seeded.people} />
       <p className="mt-1 text-[11px] text-subtle-foreground">Esc to cancel · ↵ to save</p>
     </div>
   );

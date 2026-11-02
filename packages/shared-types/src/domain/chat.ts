@@ -49,3 +49,22 @@ export function taskTitleFromMessage(body: string, max = 200): string {
   const plain = line.replace(/^[#>*\-\s]+/, '').replace(/[*_`]/g, '').replace(/[:;,\s]+$/, '').trim();
   return plain.length > max ? `${plain.slice(0, max - 1).trimEnd()}…` : plain;
 }
+
+/** How a mention is stored in a message body: `@{userId}`. Clients show it as `@Name`. */
+export const CHAT_USER_MENTION = /@\{([A-Za-z0-9_-]{1,64})\}/g;
+export const CHAT_MENTIONS_MAX = 20;
+
+export function mentionToken(userId: string): string {
+  return `@{${userId}}`;
+}
+
+/** The people a message mentions, in order, without repeats (at most CHAT_MENTIONS_MAX). */
+export function mentionedUserIds(body: string): string[] {
+  const ids = [...body.matchAll(CHAT_USER_MENTION)].map((match) => match[1]!);
+  return [...new Set(ids)].slice(0, CHAT_MENTIONS_MAX);
+}
+
+/** Replaces mention tokens with `@Name` (or `@someone` when the name is unknown), e.g. for previews. */
+export function mentionsToNames(body: string, nameOf: (userId: string) => string | null | undefined): string {
+  return body.replace(CHAT_USER_MENTION, (_token, id: string) => `@${nameOf(id) ?? 'someone'}`);
+}

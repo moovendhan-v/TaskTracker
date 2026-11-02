@@ -251,6 +251,26 @@ describe('chat', () => {
     expect(teammateLive.events.some((event) => event.entityId === hidden.id || event.entityId === secret.id)).toBe(false);
   });
 
+  it('notifies mentioned people who can read the channel, and nobody else', async () => {
+    const NOTIFICATIONS = 'query($w: ID!) { notifications(workspaceId: $w, unreadOnly: true) { items { kind subject excerpt entityId actorName } } }';
+    const mentionsOf = async (user: TestUser) =>
+      (await user.data<{ notifications: { items: { kind: string; subject: string; excerpt: string; entityId: string }[] } }>(NOTIFICATIONS, { w })).notifications.items.filter((n) => n.kind === 'chat_mention');
+    const room = await create(teammate, { name: 'mentions', kind: 'private', memberIds: [member.id] });
+    const message = await send(teammate, room.id, `@{${member.id}} and @{${admin.id}} and @{${guest.id}} and me @{${teammate.id}}: **ship it**`);
+    // Only the member is in the private channel; the admin isn't, and nobody notifies themselves.
+    const [mention] = await mentionsOf(member);
+    expect(mention).toMatchObject({ subject: '#mentions', entityId: message.id });
+    expect(mention!.excerpt).toBe('@Chat member and @Chat admin and @Chat guest and me @Chat teammate: ship it');
+    expect(await mentionsOf(admin)).toEqual([]);
+    expect(await mentionsOf(teammate)).toEqual([]);
+
+    // In a public channel anyone with chat access can be mentioned, but not guests (no chat.use).
+    const lobby = await create(teammate, { name: 'mentions-public' });
+    await send(teammate, lobby.id, `@{${admin.id}} @{${guest.id}} look`);
+    expect(await mentionsOf(admin)).toHaveLength(1);
+    expect((await guest.data<{ notifications: { items: { kind: string }[] } }>(NOTIFICATIONS, { w })).notifications.items.filter((n) => n.kind === 'chat_mention')).toEqual([]);
+  });
+
   it('rate limits sending messages', async () => {
     const spam = await create(admin, { name: 'spam' });
     const results = [];

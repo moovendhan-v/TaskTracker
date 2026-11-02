@@ -42,6 +42,8 @@ export interface DomainEventFacts {
   changes?: readonly { field: string; from: string | null; to: string | null }[];
   /** The status category after the change, e.g. 'done'. */
   statusCategory?: string;
+  /** People a chat message mentions who may read it (checked by the chat service). */
+  mentionIds?: readonly string[];
   number?: number;
   listId?: string;
   spaceId?: string;
