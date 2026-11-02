@@ -1,3 +1,4 @@
+import type { AutomationFlow, FlowTraceEntry } from '../domain/automation-flow.js';
 import type { AutomationAction, AutomationConditions, AutomationRunStatus, AutomationTrigger } from '../domain/automation.js';
 
 export interface AutomationRuleResponse {
@@ -8,6 +9,8 @@ export interface AutomationRuleResponse {
   trigger: AutomationTrigger;
   conditions: AutomationConditions;
   actions: AutomationAction[];
+  /** The steps as a tree; null for a rule saved before flows (its conditions and actions apply). */
+  flow: AutomationFlow | null;
   createdById: string | null;
   runCount: number;
   lastRunAt: string | null;
@@ -20,6 +23,8 @@ export interface SaveAutomationRequest {
   trigger: AutomationTrigger;
   conditions?: AutomationConditions;
   actions: AutomationAction[];
+  /** When set, the flow decides what runs; conditions and actions are ignored. */
+  flow?: AutomationFlow | null;
 }
 
 export interface AutomationRunResponse {
@@ -28,5 +33,7 @@ export interface AutomationRunResponse {
   taskId: string | null;
   status: AutomationRunStatus;
   message: string;
+  /** The steps this run reached, in order. */
+  trace: FlowTraceEntry[];
   createdAt: string;
 }

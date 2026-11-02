@@ -1,4 +1,6 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import type { AutomationFlow, SaveAutomationRequest } from '@taskflow/shared-types';
+import { DomainError } from '../../../../core/domain/domain-error.js';
 import { CurrentAccess } from '../../../../core/access/current-access.decorator.js';
 import { RequirePermissions } from '../../../../core/access/require-permissions.decorator.js';
 import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
@@ -32,7 +34,7 @@ export class AutomationsResolver {
     @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<AutomationRuleGql> {
-    return this.automationsService.create(actor, access, spaceId, input);
+    return this.automationsService.create(actor, access, spaceId, withFlow(input));
   }
 
   @Mutation(() => AutomationRuleGql, { description: 'Saving takes the rule over: it then runs as you' })
@@ -44,7 +46,7 @@ export class AutomationsResolver {
     @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<AutomationRuleGql> {
-    return this.automationsService.update(actor, access, ruleId, input);
+    return this.automationsService.update(actor, access, ruleId, withFlow(input));
   }
 
   @Mutation(() => AutomationRuleGql)
@@ -64,5 +66,21 @@ export class AutomationsResolver {
   async deleteAutomation(@WorkspaceIdArg() _workspaceId: string, @UuidArg('ruleId') ruleId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
     await this.automationsService.remove(actor, access, ruleId);
     return true;
+  }
+
+  @ResolveField(() => String, { nullable: true, description: 'The rule\'s steps as a tree (JSON); null for a rule saved before flows' })
+  flowJson(@Parent() rule: AutomationRuleGql): string | null {
+    return rule.flow ? JSON.stringify(rule.flow) : null;
+  }
+}
+
+/** The flow arrives as JSON text; it is parsed here and fully checked by the service. */
+function withFlow(input: SaveAutomationInput): SaveAutomationRequest {
+  const { flowJson, ...rest } = input;
+  if (!flowJson) return { ...rest, flow: null };
+  try {
+    return { ...rest, flow: JSON.parse(flowJson) as AutomationFlow };
+  } catch {
+    throw DomainError.invalid('The flow is not valid JSON');
   }
 }

@@ -75,6 +75,9 @@ type AuditLogPage {
 
 type AutomationAction {
   audiences: [NotifyAudience!]
+
+  """set_due_date: days from the day it runs; null clears"""
+  days: Int
   message: String
   priority: TaskPriority
   statusId: ID
@@ -85,6 +88,7 @@ type AutomationAction {
 
 input AutomationActionInput {
   audiences: [NotifyAudience!]
+  days: Int
   message: String
   priority: TaskPriority
   statusId: ID
@@ -94,8 +98,11 @@ input AutomationActionInput {
 }
 
 enum AutomationActionType {
+  add_watcher
   assign
+  comment
   notify
+  set_due_date
   set_priority
   set_status
   unassign
@@ -121,6 +128,9 @@ type AutomationRule {
   """Who the rule runs as"""
   createdById: String
   enabled: Boolean!
+
+  """The rule's steps as a tree (JSON); null for a rule saved before flows"""
+  flowJson: String
   id: ID!
   lastRunAt: String
   name: String!
@@ -136,12 +146,23 @@ type AutomationRun {
   ruleId: ID!
   status: AutomationRunStatus!
   taskId: ID
+
+  """The steps this run reached, in order"""
+  trace: [AutomationRunStep!]!
 }
 
 enum AutomationRunStatus {
   failed
   skipped
   succeeded
+}
+
+type AutomationRunStep {
+  detail: String!
+
+  """ran, took-yes, took-no, stopped or failed"""
+  outcome: String!
+  stepId: String!
 }
 
 type AutomationTrigger {
@@ -1997,6 +2018,11 @@ input SaveAutomationInput {
   actions: [AutomationActionInput!]!
   conditions: AutomationConditionsInput
   enabled: Boolean
+
+  """
+  A flow (JSON): when set it decides what runs, and conditions / actions are ignored
+  """
+  flowJson: String
   name: String!
   trigger: AutomationTriggerInput!
 }

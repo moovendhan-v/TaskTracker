@@ -1,4 +1,4 @@
-import type { AutomationAction, AutomationConditions, AutomationRunStatus, AutomationTrigger } from '@taskflow/shared-types';
+import type { AutomationAction, AutomationConditions, AutomationFlow, AutomationRunStatus, AutomationTrigger, FlowTraceEntry } from '@taskflow/shared-types';
 
 export interface AutomationRule {
   id: string;
@@ -10,6 +10,8 @@ export interface AutomationRule {
   trigger: AutomationTrigger;
   conditions: AutomationConditions;
   actions: AutomationAction[];
+  /** The steps as a tree; null for rules saved before flows (conditions and actions apply). */
+  flow: AutomationFlow | null;
   /** The person the rule acts as. Null once they are gone, which stops the rule. */
   createdById: string | null;
   runCount: number;
@@ -18,7 +20,7 @@ export interface AutomationRule {
   updatedAt: Date;
 }
 
-export type NewAutomationRule = Pick<AutomationRule, 'workspaceId' | 'spaceId' | 'name' | 'enabled' | 'triggerType' | 'trigger' | 'conditions' | 'actions' | 'createdById'>;
+export type NewAutomationRule = Pick<AutomationRule, 'workspaceId' | 'spaceId' | 'name' | 'enabled' | 'triggerType' | 'trigger' | 'conditions' | 'actions' | 'flow' | 'createdById'>;
 
 export interface AutomationRun {
   id: string;
@@ -27,6 +29,7 @@ export interface AutomationRun {
   taskId: string | null;
   status: AutomationRunStatus;
   message: string;
+  trace: FlowTraceEntry[];
   createdAt: Date;
 }
 

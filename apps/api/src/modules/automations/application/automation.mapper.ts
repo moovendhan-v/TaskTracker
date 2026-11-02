@@ -11,6 +11,7 @@ export const AutomationMapper = {
       trigger: rule.trigger,
       conditions: rule.conditions ?? {},
       actions: rule.actions,
+      flow: rule.flow ?? null,
       createdById: rule.createdById,
       runCount: rule.runCount,
       lastRunAt: rule.lastRunAt?.toISOString() ?? null,
@@ -19,6 +20,6 @@ export const AutomationMapper = {
   },
 
   toRunResponse(run: AutomationRun): AutomationRunResponse {
-    return { id: run.id, ruleId: run.ruleId, taskId: run.taskId, status: run.status, message: run.message, createdAt: run.createdAt.toISOString() };
+    return { id: run.id, ruleId: run.ruleId, taskId: run.taskId, status: run.status, message: run.message, trace: run.trace ?? [], createdAt: run.createdAt.toISOString() };
   },
 };

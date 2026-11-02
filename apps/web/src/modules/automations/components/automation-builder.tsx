@@ -1,32 +1,34 @@
-import { ArrowDownIcon, PlusIcon, TrashIcon, ZapIcon } from 'lucide-react';
+import { GitBranchIcon, Undo2Icon, ZapIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import {
-  AUTOMATION_ACTIONS,
   AUTOMATION_LIMITS,
   AUTOMATION_TRIGGERS,
-  NOTIFY_AUDIENCES,
   STATUS_CATEGORIES,
   TASK_PRIORITIES,
-  TASK_TYPES,
+  flowActions,
+  flowFromRule,
   type AutomationAction,
-  type AutomationConditions,
+  type AutomationFlow,
   type AutomationRuleResponse,
   type AutomationTrigger,
   type AutomationTriggerType,
+  type FlowStep,
+  type FlowTraceOutcome,
   type SaveAutomationRequest,
 } from '@taskflow/shared-types';
 import { Modal } from '@/components/kit/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/sonner';
-import { cn } from '@/lib/cn';
 import { getErrorMessage } from '@/lib/errors';
 import { useLists } from '@/modules/lists';
 import { useMembers } from '@/modules/members';
 import { useStatuses } from '@/modules/tasks';
-import { ACTION_LABELS, AUDIENCE_LABELS, CATEGORY_LABELS, describeRule, PRIORITY_LABELS, TRIGGER_LABELS } from '../lib/describe-rule';
+import { CATEGORY_LABELS, describeAction, describeCondition, describeFlow, PRIORITY_LABELS, TRIGGER_LABELS } from '../lib/describe-rule';
+import { findStep, insertStep, newStepId, removeStep, replaceStep, type FlowSlot } from '../lib/flow-edit';
+import { ActionFields, Chips, ConditionFields, Field, type Choices } from './fields';
+import { FlowCanvas } from './flow-canvas';
 
 interface AutomationBuilderProps {
   workspaceId: string;
@@ -34,33 +36,70 @@ interface AutomationBuilderProps {
   rule: AutomationRuleResponse | null;
   onClose: () => void;
   onSave: (body: SaveAutomationRequest) => Promise<unknown>;
+  /** Show this run's path on the flow (from run history). */
+  path?: ReadonlyMap<string, FlowTraceOutcome>;
 }
 
-/** Build a rule in two halves, "when" on the left and "then" on the right, with the whole rule read back as a sentence. */
-export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave }: AutomationBuilderProps) {
+const STARTER: AutomationFlow = { steps: [{ id: 'action-1', kind: 'action', action: { type: 'notify', audiences: ['assignee'], message: '{{task}} moved to {{status}}' } }] };
+
+/**
+ * Build an automation as a flow: "When" on the left, the steps in the middle (if / else
+ * branches, actions, stop), and the selected step's settings on the right. Older rules
+ * open as the same flow. Undo (⌘Z) steps back through edits.
+ */
+export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave, path }: AutomationBuilderProps) {
   const { data: statuses = [] } = useStatuses(workspaceId, spaceId);
   const { data: lists = [] } = useLists(workspaceId);
   const { data: members = [] } = useMembers(workspaceId);
-  const spaceLists = lists.filter((list) => list.spaceId === spaceId);
+  const choices: Choices = { statuses, lists: lists.filter((list) => list.spaceId === spaceId), members };
 
   const [name, setName] = useState(rule?.name ?? '');
   const [trigger, setTrigger] = useState<AutomationTrigger>(rule?.trigger ?? { type: 'task_created' });
-  const [conditions, setConditions] = useState<AutomationConditions>(rule?.conditions ?? {});
-  const [actions, setActions] = useState<AutomationAction[]>(rule?.actions ?? [{ type: 'notify', audiences: ['assignee'], message: '{{task}} moved to {{status}}' }]);
+  const [flow, setFlowState] = useState<AutomationFlow>(() => rule?.flow ?? (rule ? flowFromRule(rule.conditions, rule.actions) : STARTER));
+  const [history, setHistory] = useState<AutomationFlow[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(flow.steps[0]?.id ?? null);
   const [saving, setSaving] = useState(false);
 
   const names = {
     status: (id: string) => statuses.find((status) => status.id === id)?.name ?? 'a status',
-    list: (id: string) => spaceLists.find((list) => list.id === id)?.name ?? 'a list',
+    list: (id: string) => choices.lists.find((list) => list.id === id)?.name ?? 'a list',
     person: (id: string) => members.find((member) => member.userId === id)?.name ?? 'someone',
   };
-  const sentence = describeRule({ trigger, conditions, actions }, names);
-  const setAction = (index: number, next: AutomationAction) => setActions((current) => current.map((action, at) => (at === index ? next : action)));
+  const describe = (step: FlowStep) => (step.kind === 'action' ? sentenceCase(describeAction(step.action, names)) : step.kind === 'if' ? sentenceCase(describeCondition(step.condition, names)) : 'Stop here');
+  const sentence = describeFlow(trigger, flow, names);
+  const selected = findStep(flow.steps, selectedId);
+
+  const setFlow = (next: AutomationFlow) => {
+    setHistory((current) => [...current.slice(-29), flow]);
+    setFlowState(next);
+  };
+  const undo = () => {
+    const previous = history[history.length - 1];
+    if (!previous) return;
+    setHistory(history.slice(0, -1));
+    setFlowState(previous);
+  };
+  const insert = (slot: FlowSlot, kind: FlowStep['kind']) => {
+    const id = newStepId(flow.steps, kind);
+    const step: FlowStep =
+      kind === 'action'
+        ? { id, kind, action: { type: 'set_priority', priority: 'high' } }
+        : kind === 'if'
+          ? { id, kind, condition: { field: 'priority', priorities: ['urgent'] }, yes: [], no: [] }
+          : { id, kind };
+    setFlow({ steps: insertStep(flow.steps, slot, step) });
+    setSelectedId(id);
+  };
+  const remove = (id: string) => {
+    setFlow({ steps: removeStep(flow.steps, id) });
+    if (selectedId === id) setSelectedId(null);
+  };
+  const update = (step: FlowStep) => setFlow({ steps: replaceStep(flow.steps, step) });
 
   const save = async () => {
     setSaving(true);
     try {
-      await onSave({ name: name.trim() || sentence.slice(0, AUTOMATION_LIMITS.nameMax), enabled: rule?.enabled ?? true, trigger, conditions, actions });
+      await onSave({ name: name.trim() || sentence.slice(0, AUTOMATION_LIMITS.nameMax), enabled: rule?.enabled ?? true, trigger, conditions: {}, actions: flowActions(flow), flow });
       onClose();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -84,16 +123,27 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave 
             <span className="mr-1.5 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">Reads as</span>
             {sentence}
           </p>
+          <Button variant="outline" size="sm" disabled={history.length === 0} onClick={undo}>
+            <Undo2Icon /> Undo
+          </Button>
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={saving || actions.length === 0} onClick={() => void save()}>
+          <Button disabled={saving || flowActions(flow).length === 0} onClick={() => void save()}>
             {rule ? 'Save automation' : 'Create automation'}
           </Button>
         </div>
       }
     >
-      <div className="grid gap-6 p-5 lg:grid-cols-2">
+      <div
+        className="grid gap-5 p-5 lg:grid-cols-[17rem_minmax(0,1fr)_19rem]"
+        onKeyDown={(event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)) {
+            event.preventDefault();
+            undo();
+          }
+        }}
+      >
         <section className="grid content-start gap-3" aria-label="When">
           <StepLabel step="1" title="When" hint="What starts it" />
           <Card>
@@ -130,124 +180,45 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave 
             ) : null}
             {trigger.type.startsWith('github_') ? <p className="text-xs text-muted-foreground">Needs a connected GitHub repository (workspace settings → Integrations). Pull requests link to tasks by number, like TF-42.</p> : null}
           </Card>
-
-          <StepLabel step="2" title="Only for" hint="Optional filters; every one you set must match" />
-          <Card>
-            <Field label="Sources: lists in this project (all when none picked)">
-              <Chips options={spaceLists.map((list) => ({ value: list.id, label: list.name }))} value={conditions.listIds ?? []} onChange={(listIds) => setConditions({ ...conditions, listIds })} />
-            </Field>
-            <Field label="Task types">
-              <Chips options={TASK_TYPES.map((type) => ({ value: type, label: type }))} value={conditions.types ?? []} onChange={(types) => setConditions({ ...conditions, types })} />
-            </Field>
-            <Field label="Priorities">
-              <Chips options={TASK_PRIORITIES.map((priority) => ({ value: priority, label: PRIORITY_LABELS[priority] }))} value={conditions.priorities ?? []} onChange={(priorities) => setConditions({ ...conditions, priorities })} />
-            </Field>
-          </Card>
         </section>
 
         <section className="grid content-start gap-3" aria-label="Then">
-          <StepLabel step="3" title="Then" hint="Done in order, as you; if one fails, none of them stick" />
-          {actions.map((action, index) => (
-            <div key={index} className="grid gap-3">
-              {index > 0 ? <ArrowDownIcon className="mx-auto size-4 text-muted-foreground" aria-hidden /> : null}
-              <Card>
-                <div className="flex items-center gap-2">
-                  <Select value={action.type} onValueChange={(type: AutomationAction['type']) => setAction(index, type === 'notify' ? { type, audiences: ['assignee'], message: '' } : { type })}>
-                    <SelectTrigger aria-label={`Action ${index + 1}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AUTOMATION_ACTIONS.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {ACTION_LABELS[type]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="ghost" size="icon-sm" aria-label={`Remove action ${index + 1}`} disabled={actions.length === 1} onClick={() => setActions(actions.filter((_, at) => at !== index))}>
-                    <TrashIcon />
-                  </Button>
-                </div>
-                {action.type === 'set_status' ? (
-                  <Select value={action.statusId ?? ''} onValueChange={(statusId) => setAction(index, { ...action, statusId })}>
-                    <SelectTrigger aria-label="Status to set">
-                      <SelectValue placeholder="Pick a status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statuses.map((status) => (
-                        <SelectItem key={status.id} value={status.id}>
-                          <span className="mr-2 inline-block size-2.5 rounded-full" style={{ backgroundColor: status.color }} />
-                          {status.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : null}
-                {action.type === 'set_priority' ? (
-                  <Select value={action.priority ?? ''} onValueChange={(priority: (typeof TASK_PRIORITIES)[number]) => setAction(index, { ...action, priority })}>
-                    <SelectTrigger aria-label="Priority to set">
-                      <SelectValue placeholder="Pick a priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TASK_PRIORITIES.map((priority) => (
-                        <SelectItem key={priority} value={priority}>
-                          {PRIORITY_LABELS[priority]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : null}
-                {action.type === 'assign' ? (
-                  <Select value={action.userId ?? ''} onValueChange={(userId) => setAction(index, { ...action, userId })}>
-                    <SelectTrigger aria-label="Person to assign">
-                      <SelectValue placeholder="Pick a person" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {members.map((member) => (
-                        <SelectItem key={member.userId} value={member.userId}>
-                          {member.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : null}
-                {action.type === 'notify' ? (
-                  <>
-                    <Field label="Who">
-                      <Chips options={NOTIFY_AUDIENCES.map((audience) => ({ value: audience, label: AUDIENCE_LABELS[audience] }))} value={action.audiences ?? []} onChange={(audiences) => setAction(index, { ...action, audiences })} />
-                    </Field>
-                    <Field label="And these people">
-                      <Chips options={members.map((member) => ({ value: member.userId, label: member.name }))} value={action.userIds ?? []} onChange={(userIds) => setAction(index, { ...action, userIds })} />
-                    </Field>
-                    <Field label="Message">
-                      <Textarea
-                        rows={2}
-                        value={action.message ?? ''}
-                        maxLength={AUTOMATION_LIMITS.messageMax}
-                        onChange={(event) => setAction(index, { ...action, message: event.target.value })}
-                        aria-label="Notification message"
-                        placeholder="{{task}} moved to {{status}}"
-                      />
-                      <span className="text-xs text-muted-foreground">Fills in {'{{task}}'}, {'{{status}}'}, {'{{actor}}'} and, for GitHub triggers, {'{{pr}}'}.</span>
-                    </Field>
-                  </>
-                ) : null}
-              </Card>
-            </div>
-          ))}
-          <Button variant="outline" size="sm" className="justify-self-center" disabled={actions.length >= AUTOMATION_LIMITS.actionsMax} onClick={() => setActions([...actions, { type: 'set_priority', priority: 'high' }])}>
-            <PlusIcon /> Add action
-          </Button>
+          <StepLabel step="2" title="Then" hint="Runs as you, top to bottom; if a step fails, nothing sticks" />
+          <div className="rounded-xl bg-muted/30 p-3">
+            <FlowCanvas steps={flow.steps} selectedId={selectedId} describe={describe} onSelect={setSelectedId} onInsert={insert} onRemove={remove} path={path} />
+          </div>
+        </section>
+
+        <section className="grid content-start gap-3" aria-label="Step settings">
+          <StepLabel step="3" title="Step" hint={selected ? 'Settings of the selected step' : 'Pick a step to change it'} />
+          <Card>
+            {!selected ? (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <GitBranchIcon className="size-4" /> Select a step, or use + to add one.
+              </p>
+            ) : selected.kind === 'action' ? (
+              <ActionFields action={selected.action} onChange={(action: AutomationAction) => update({ ...selected, action })} choices={choices} />
+            ) : selected.kind === 'if' ? (
+              <>
+                <ConditionFields condition={selected.condition} onChange={(condition) => update({ ...selected, condition })} choices={choices} />
+                <p className="text-xs text-muted-foreground">Checked against the task as it is at that moment, after any earlier steps.</p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">The flow ends here; later steps in this branch don’t run.</p>
+            )}
+          </Card>
         </section>
       </div>
     </Modal>
   );
 }
 
+const sentenceCase = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
 function StepLabel({ step, title, hint }: { step: string; title: string; hint: string }) {
   return (
     <div className="flex items-baseline gap-2">
-      <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">{step}</span>
+      <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">{step}</span>
       <h3 className="text-sm font-semibold">{title}</h3>
       <span className="text-xs text-muted-foreground">{hint}</span>
     </div>
@@ -255,38 +226,5 @@ function StepLabel({ step, title, hint }: { step: string; title: string; hint: s
 }
 
 function Card({ children }: { children: ReactNode }) {
-  return <div className="grid gap-3 rounded-xl border bg-card p-4 shadow-sm">{children}</div>;
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid gap-1.5">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
-    </div>
-  );
-}
-
-/** A set of toggle chips for picking several values. */
-function Chips<T extends string>({ options, value, onChange }: { options: { value: T; label: string; color?: string }[]; value: T[]; onChange: (value: T[]) => void }) {
-  if (options.length === 0) return <span className="text-xs text-muted-foreground">Nothing to pick yet.</span>;
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((option) => {
-        const on = value.includes(option.value);
-        return (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={on}
-            onClick={() => onChange(on ? value.filter((item) => item !== option.value) : [...value, option.value])}
-            className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs', on ? 'border-primary bg-primary/10 text-foreground' : 'text-muted-foreground hover:bg-muted')}
-          >
-            {option.color ? <span className="size-2 rounded-full" style={{ backgroundColor: option.color }} /> : null}
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
+  return <div className="grid gap-3 rounded-xl border bg-card p-4">{children}</div>;
 }

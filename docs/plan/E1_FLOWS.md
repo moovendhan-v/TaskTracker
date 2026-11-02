@@ -33,8 +33,8 @@ Trigger ── If priority is urgent ──┬── yes: Assign @Dana → Comme
   - the 5 we have (set status, set priority, assign, unassign, notify);
   - add a comment (plain text with the same `{{task}}` placeholders);
   - set due date (+N days from now, or clear it);
-  - add a watcher;
-  - move to another list in the same space.
+  - add a watcher.
+  - *Move to another list* waits until tasks can move between lists through the API, which they can't yet.
 
 ## Run traces
 

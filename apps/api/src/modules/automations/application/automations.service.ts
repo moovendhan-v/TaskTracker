@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AUTOMATION_LIMITS, canInSpace, type AutomationRuleResponse, type AutomationRunResponse, type SaveAutomationRequest } from '@taskflow/shared-types';
+import { AUTOMATION_LIMITS, flowActions, canInSpace, type AutomationRuleResponse, type AutomationRunResponse, type SaveAutomationRequest } from '@taskflow/shared-types';
 import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
@@ -92,15 +92,19 @@ export class AutomationsService {
     return AutomationMapper.toResponse(rule);
   }
 
-  private async validate(access: WorkspaceAccess, spaceId: string, request: SaveAutomationRequest): Promise<Pick<AutomationRule, 'triggerType' | 'trigger' | 'conditions' | 'actions'>> {
+  private async validate(access: WorkspaceAccess, spaceId: string, request: SaveAutomationRequest): Promise<Pick<AutomationRule, 'triggerType' | 'trigger' | 'conditions' | 'actions' | 'flow'>> {
     const trigger = AutomationPolicy.normalizeTrigger(request.trigger);
-    const conditions = AutomationPolicy.normalizeConditions(request.conditions);
-    const actions = AutomationPolicy.normalizeActions(request.actions);
+    // With a flow, the flow decides what runs; its actions are also kept flat for older readers.
+    const flow = request.flow ? AutomationPolicy.normalizeFlow(request.flow) : null;
+    const conditions = flow ? AutomationPolicy.normalizeConditions(undefined) : AutomationPolicy.normalizeConditions(request.conditions);
+    const actions = flow ? flowActions(flow) : AutomationPolicy.normalizeActions(request.actions);
 
     const missing = AutomationPolicy.requiredPermissions(actions).filter((permission) => !canInSpace(access, spaceId, permission));
     if (missing.length) throw DomainError.forbidden(`These actions need ${missing.join(', ')} in this space, which you don’t have`);
 
-    const ids = AutomationPolicy.referencedIds(trigger, conditions, actions);
+    const flat = AutomationPolicy.referencedIds(trigger, conditions, actions);
+    const inFlow = flow ? AutomationPolicy.flowConditionIds(flow) : { statusIds: [], listIds: [], userIds: [] };
+    const ids = { statusIds: [...flat.statusIds, ...inFlow.statusIds], listIds: [...flat.listIds, ...inFlow.listIds], userIds: [...flat.userIds, ...inFlow.userIds] };
     const statusIds = new Set((await this.statusesService.listForSpace(access.workspaceId, spaceId)).map((status) => status.id));
     if (ids.statusIds.some((id) => !statusIds.has(id))) throw DomainError.invalid('Use statuses of this space');
     const listIds = new Set((await this.listsService.listForWorkspace(access.workspaceId)).filter((list) => list.spaceId === spaceId).map((list) => list.id));
@@ -108,7 +112,7 @@ export class AutomationsService {
     for (const userId of new Set(ids.userIds)) {
       if (!(await this.membersService.isMember(access.workspaceId, userId))) throw DomainError.invalid('Only members of the workspace can be assigned or notified');
     }
-    return { triggerType: trigger.type, trigger, conditions, actions };
+    return { triggerType: trigger.type, trigger, conditions, actions, flow };
   }
 
   private async getInWorkspace(workspaceId: string, ruleId: string): Promise<AutomationRule> {

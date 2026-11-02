@@ -18,7 +18,7 @@ export const AUTOMATION_TRIGGERS = [
 ] as const;
 export type AutomationTriggerType = (typeof AUTOMATION_TRIGGERS)[number];
 
-export const AUTOMATION_ACTIONS = ['set_status', 'set_priority', 'assign', 'unassign', 'notify'] as const;
+export const AUTOMATION_ACTIONS = ['set_status', 'set_priority', 'assign', 'unassign', 'notify', 'comment', 'set_due_date', 'add_watcher'] as const;
 export type AutomationActionType = (typeof AUTOMATION_ACTIONS)[number];
 
 /** Who a notify action reaches, besides people named by id. */
@@ -51,8 +51,10 @@ export interface AutomationAction {
   /** notify */
   audiences?: NotifyAudience[] | null;
   userIds?: string[] | null;
-  /** notify: plain text; {{task}}, {{status}}, {{actor}} and {{pr}} are filled in. */
+  /** notify and comment: plain text; {{task}}, {{status}}, {{actor}} and {{pr}} are filled in. */
   message?: string | null;
+  /** set_due_date: days from the day it runs (0 = today); null clears the due date. */
+  days?: number | null;
 }
 
 export const AUTOMATION_LIMITS = {

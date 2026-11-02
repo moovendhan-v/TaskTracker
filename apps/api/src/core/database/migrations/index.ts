@@ -25,6 +25,7 @@ import { ChatSearch1729800000000 } from './1729800000000-chat-search.js';
 import { ChatAttachments1729810000000 } from './1729810000000-chat-attachments.js';
 import { LayoutDefaultsAndVersions1729820000000 } from './1729820000000-layout-defaults-and-versions.js';
 import { TaskAttachments1729830000000 } from './1729830000000-task-attachments.js';
+import { AutomationFlows1729840000000 } from './1729840000000-automation-flows.js';
 import { SprintCommittedTasks1729750000000 } from './1729750000000-sprint-committed-tasks.js';
 import { DashboardLayouts1729740000000 } from './1729740000000-dashboard-layouts.js';
 import { MultipleAssignees1729730000000 } from './1729730000000-multiple-assignees.js';
@@ -61,4 +62,5 @@ export const MIGRATIONS = [
   ChatAttachments1729810000000,
   LayoutDefaultsAndVersions1729820000000,
   TaskAttachments1729830000000,
+  AutomationFlows1729840000000,
 ];
