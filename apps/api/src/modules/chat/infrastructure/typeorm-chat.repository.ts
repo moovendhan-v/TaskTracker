@@ -3,6 +3,7 @@ import type { ChatChannelKind, ChatMemberRole, ChatReactionSummary } from '@task
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import {
   ChatRepository,
+  type ChatAttachmentRecord,
   type ChatChannelRecord,
   type ChatMemberRecord,
   type ChatMessageRecord,
@@ -100,6 +101,36 @@ const toMessage = (row: MessageRow): ChatMessageRecord => ({
   deletedAt: row.deleted_at ? new Date(row.deleted_at) : null,
   createdAt: new Date(row.created_at),
   position: { at: row.position_at, id: row.id },
+});
+
+interface AttachmentRow {
+  id: string;
+  channel_id: string;
+  uploader_id: string;
+  message_id: string | null;
+  file_name: string;
+  content_type: string | null;
+  declared_size: string;
+  size: string | null;
+  storage_key: string;
+  status: 'pending' | 'ready';
+  created_at: Date;
+}
+
+const ATTACHMENT_SELECT = `SELECT id, channel_id, uploader_id, message_id, file_name, content_type, declared_size, size, storage_key, status, created_at FROM chat_attachment`;
+
+const toAttachment = (row: AttachmentRow): ChatAttachmentRecord => ({
+  id: row.id,
+  channelId: row.channel_id,
+  uploaderId: row.uploader_id,
+  messageId: row.message_id,
+  fileName: row.file_name,
+  contentType: row.content_type,
+  declaredSize: Number(row.declared_size),
+  size: row.size === null ? null : Number(row.size),
+  storageKey: row.storage_key,
+  status: row.status,
+  createdAt: new Date(row.created_at),
 });
 
 /**
@@ -305,6 +336,64 @@ export class TypeOrmChatRepository extends ChatRepository {
       [workspaceId, tsquery, channelId, limit],
     );
     return rows.map((row) => ({ record: toMessage(row), channelKind: row.channel_kind, channelName: row.channel_name }));
+  }
+
+  async insertAttachment(input: { workspaceId: string; channelId: string; uploaderId: string; fileName: string; declaredSize: number; storageKey: string }): Promise<string> {
+    const [row] = await this.query<{ id: string }>(
+      `INSERT INTO chat_attachment (workspace_id, channel_id, uploader_id, file_name, declared_size, storage_key) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [input.workspaceId, input.channelId, input.uploaderId, input.fileName, input.declaredSize, input.storageKey],
+    );
+    return row!.id;
+  }
+
+  async findAttachment(workspaceId: string, id: string): Promise<ChatAttachmentRecord | null> {
+    const [row] = await this.query<AttachmentRow>(`${ATTACHMENT_SELECT} WHERE workspace_id = $1 AND id = $2`, [workspaceId, id]);
+    return row ? toAttachment(row) : null;
+  }
+
+  async markAttachmentReady(workspaceId: string, id: string, contentType: string, size: number): Promise<boolean> {
+    const rows = await this.query(
+      `UPDATE chat_attachment SET status = 'ready', content_type = $3, size = $4 WHERE workspace_id = $1 AND id = $2 AND status = 'pending' RETURNING id`,
+      [workspaceId, id, contentType, size],
+    );
+    return rows.length > 0;
+  }
+
+  async deleteAttachment(workspaceId: string, id: string): Promise<boolean> {
+    const rows = await this.query(`DELETE FROM chat_attachment WHERE workspace_id = $1 AND id = $2 RETURNING id`, [workspaceId, id]);
+    return rows.length > 0;
+  }
+
+  async attach(workspaceId: string, ids: string[], uploaderId: string, channelId: string, messageId: string): Promise<number> {
+    if (ids.length === 0) return 0;
+    const rows = await this.query(
+      `UPDATE chat_attachment SET message_id = $5
+       WHERE workspace_id = $1 AND id = ANY($2::uuid[]) AND uploader_id = $3 AND channel_id = $4 AND status = 'ready' AND message_id IS NULL
+       RETURNING id`,
+      [workspaceId, ids, uploaderId, channelId, messageId],
+    );
+    return rows.length;
+  }
+
+  async attachmentsFor(workspaceId: string, messageIds: string[]): Promise<Map<string, ChatAttachmentRecord[]>> {
+    const byMessage = new Map<string, ChatAttachmentRecord[]>();
+    if (messageIds.length === 0) return byMessage;
+    const rows = await this.query<AttachmentRow>(`${ATTACHMENT_SELECT} WHERE workspace_id = $1 AND message_id = ANY($2::uuid[]) ORDER BY created_at, id`, [workspaceId, messageIds]);
+    for (const row of rows) byMessage.set(row.message_id!, [...(byMessage.get(row.message_id!) ?? []), toAttachment(row)]);
+    return byMessage;
+  }
+
+  async staleAttachments(workspaceId: string, uploaderId: string, before: Date): Promise<ChatAttachmentRecord[]> {
+    const rows = await this.query<AttachmentRow>(
+      `${ATTACHMENT_SELECT} WHERE workspace_id = $1 AND uploader_id = $2 AND message_id IS NULL AND created_at < $3 LIMIT 50`,
+      [workspaceId, uploaderId, before.toISOString()],
+    );
+    return rows.map(toAttachment);
+  }
+
+  async countPending(workspaceId: string, uploaderId: string): Promise<number> {
+    const [row] = await this.query<{ count: string }>(`SELECT count(*) FROM chat_attachment WHERE workspace_id = $1 AND uploader_id = $2 AND message_id IS NULL`, [workspaceId, uploaderId]);
+    return Number(row?.count ?? 0);
   }
 
   async insertMessage(input: { workspaceId: string; channelId: string; authorId: string; body: string; parentId: string | null; kind: 'user' | 'system'; taskId: string | null }): Promise<string> {

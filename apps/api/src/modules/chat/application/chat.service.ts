@@ -19,6 +19,11 @@ import {
   type ChatMessageResponse,
   type ChatReactionSummary,
   type ChatSearchHit,
+  type ChatAttachmentResponse,
+  type ChatUploadTicket,
+  type ChatUploadResult,
+  CHAT_ATTACHMENTS_PER_MESSAGE,
+  CHAT_UPLOAD_MAX_BYTES,
   CHAT_SEARCH_MAX_LENGTH,
   CHAT_SEARCH_PAGE_MAX,
   CHAT_TYPING_EVERY_MS,
@@ -31,7 +36,11 @@ import { DomainError } from '../../../core/domain/domain-error.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { MembersService } from '../../members/application/members.service.js';
 import { TasksService } from '../../tasks/application/tasks.service.js';
-import { ChatRepository, type ChatChannelRecord, type ChatMessageRecord, type MessagePosition } from '../domain/chat.repository.js';
+import { randomUUID } from 'node:crypto';
+import { FileStorage } from '../../../core/storage/file-storage.port.js';
+import { cleanFileName, detectFileType, isAllowedExtension, SNIFF_BYTES } from '../../../core/storage/file-types.js';
+import { StorageTokens } from '../../../core/storage/storage-tokens.js';
+import { ChatRepository, type ChatAttachmentRecord, type ChatChannelRecord, type ChatMessageRecord, type MessagePosition } from '../domain/chat.repository.js';
 import { decodeCursor, encodeCursor } from '../domain/cursor.js';
 import { toPrefixQuery } from '../domain/search-query.js';
 
@@ -54,7 +63,7 @@ function toChannel(record: ChatChannelRecord, dmMembers: { id: string; name: str
   };
 }
 
-function toMessage(record: ChatMessageRecord, reactions: ChatReactionSummary[] = []): ChatMessageResponse {
+function toMessage(record: ChatMessageRecord, reactions: ChatReactionSummary[] = [], attachments: ChatAttachmentResponse[] = []): ChatMessageResponse {
   return {
     id: record.id,
     channelId: record.channelId,
@@ -70,9 +79,16 @@ function toMessage(record: ChatMessageRecord, reactions: ChatReactionSummary[] =
     deleted: record.deletedAt !== null,
     createdAt: record.createdAt.toISOString(),
     reactions: record.deletedAt ? [] : reactions,
+    attachments: record.deletedAt ? [] : attachments,
   };
 }
 
+
+/** Signed links: uploads must start within minutes; download links are re-issued on every read. */
+const UPLOAD_TTL_MS = 10 * 60_000;
+const DOWNLOAD_TTL_MS = 10 * 60_000;
+const STALE_UPLOAD_MS = 24 * 60 * 60_000;
+const PENDING_UPLOADS_MAX = 20;
 
 const clampPage = (first: number | null | undefined, max: number) => Math.min(Math.max(first ?? max, 1), max);
 
@@ -93,6 +109,8 @@ export class ChatService {
     private readonly auditLogger: AuditLogger,
     private readonly tasks: TasksService,
     private readonly workspaceMembers: MembersService,
+    private readonly storage: FileStorage,
+    private readonly storageTokens: StorageTokens,
   ) {}
 
   // ── Channels ────────────────────────────────────────────────────────────
@@ -251,8 +269,8 @@ export class ChatService {
   }
 
   async message(access: WorkspaceAccess, actor: Actor, messageId: string): Promise<ChatMessageResponse> {
-    const record = await this.findMessage(access, messageId);
-    return toMessage(record, (await this.chat.reactionsFor(access.workspaceId, [record.id], actor.userId)).get(record.id));
+    const [message] = await this.decorate(access, actor, [await this.findMessage(access, messageId)]);
+    return message!;
   }
 
   async thread(access: WorkspaceAccess, actor: Actor, rootId: string, after: string | null | undefined, first: number | null | undefined): Promise<ChatMessagePage> {
@@ -262,8 +280,11 @@ export class ChatService {
     return this.page(access, actor, await this.chat.listThread(access.workspaceId, rootId, this.cursor(after), limit), limit);
   }
 
-  async send(actor: Actor, access: WorkspaceAccess, input: { channelId: string; body: string; parentId?: string | null }): Promise<ChatMessageResponse> {
-    const body = this.cleanBody(input.body);
+  async send(actor: Actor, access: WorkspaceAccess, input: { channelId: string; body: string; parentId?: string | null; attachmentIds?: string[] | null }): Promise<ChatMessageResponse> {
+    const files = [...new Set(input.attachmentIds ?? [])];
+    if (files.length > CHAT_ATTACHMENTS_PER_MESSAGE) throw DomainError.invalid(`At most ${CHAT_ATTACHMENTS_PER_MESSAGE} files per message`);
+    // Text is optional when files come with it.
+    const body = files.length && !input.body.trim() ? '' : this.cleanBody(input.body);
     const channel = await this.postable(actor, access, input.channelId);
     let parentId: string | null = null;
     if (input.parentId) {
@@ -272,6 +293,9 @@ export class ChatService {
       parentId = parent.parentId ?? parent.id; // replying to a reply goes to its thread
     }
     const id = await this.chat.insertMessage({ workspaceId: access.workspaceId, channelId: channel.id, authorId: actor.userId, body, parentId, kind: 'user', taskId: null });
+    if (files.length && (await this.chat.attach(access.workspaceId, files, actor.userId, channel.id, id)) !== files.length) {
+      throw DomainError.invalid("Some files aren't ready, or belong to another channel. Upload them again.");
+    }
     await this.announce(actor, channel, 'chat_message', 'created', id, await this.mentionFacts(actor, access, channel, body));
     return this.message(access, actor, id);
   }
@@ -291,6 +315,8 @@ export class ChatService {
     const message = await this.ownMessage(actor, access, messageId);
     const channel = await this.readable(access, actor, message.channelId);
     if (!(await this.chat.deleteMessage(access.workspaceId, messageId, actor.userId))) return false;
+    // A deleted message takes its files with it.
+    for (const file of (await this.chat.attachmentsFor(access.workspaceId, [messageId])).get(messageId) ?? []) await this.removeFile(access, file);
     await this.announce(actor, channel, 'chat_message', 'deleted', messageId);
     return true;
   }
@@ -321,6 +347,63 @@ export class ChatService {
   }
 
   /**
+   * Step 1 of an upload: checks you can post here and that the file is an allowed
+   * kind and size, records it as pending, and returns a short-lived same-origin URL
+   * to PUT the bytes to. Your own files that never made it onto a message are
+   * cleared after a day.
+   */
+  async requestUpload(actor: Actor, access: WorkspaceAccess, input: { channelId: string; fileName: string; size: number }): Promise<ChatUploadTicket> {
+    const channel = await this.postable(actor, access, input.channelId);
+    const fileName = cleanFileName(input.fileName);
+    if (!isAllowedExtension(fileName)) throw DomainError.invalid('Images, PDFs, Office files, zip and text files only');
+    if (!Number.isInteger(input.size) || input.size <= 0 || input.size > CHAT_UPLOAD_MAX_BYTES) throw DomainError.invalid('Files can be up to 10 MB');
+    for (const stale of await this.chat.staleAttachments(access.workspaceId, actor.userId, new Date(Date.now() - STALE_UPLOAD_MS))) await this.removeFile(access, stale);
+    if ((await this.chat.countPending(access.workspaceId, actor.userId)) >= PENDING_UPLOADS_MAX) throw DomainError.invalid('Send or remove the files you already added first');
+    const storageKey = `w/${access.workspaceId}/chat/${randomUUID()}`;
+    const attachmentId = await this.chat.insertAttachment({ workspaceId: access.workspaceId, channelId: channel.id, uploaderId: actor.userId, fileName, declaredSize: input.size, storageKey });
+    const token = this.storageTokens.sign({ op: 'put', key: storageKey, max: input.size, exp: Date.now() + UPLOAD_TTL_MS });
+    return { attachmentId, uploadUrl: `/api/storage/uploads/${token}`, maxBytes: input.size };
+  }
+
+  /**
+   * Step 2: checks what actually arrived (size, and real type from its first bytes).
+   * A file that fails is deleted and the reason returned, not thrown, so the deletion
+   * commits with this operation.
+   */
+  async completeUpload(actor: Actor, access: WorkspaceAccess, attachmentId: string): Promise<ChatUploadResult> {
+    const file = await this.ownPendingFile(actor, access, attachmentId);
+    if (file.status === 'ready') return { attachment: this.toAttachment(file), error: null };
+    const size = await this.storage.size(file.storageKey);
+    if (size === null) throw DomainError.invalid("The file hasn't been uploaded yet");
+    const detected = size > 0 && size <= file.declaredSize ? detectFileType(await this.storage.head(file.storageKey, SNIFF_BYTES), file.fileName) : null;
+    if (!detected) {
+      await this.removeFile(access, file);
+      return { attachment: null, error: "This file's contents don't match an allowed type" };
+    }
+    await this.chat.markAttachmentReady(access.workspaceId, file.id, detected.contentType, size);
+    return { attachment: this.toAttachment({ ...file, status: 'ready', contentType: detected.contentType, size }), error: null };
+  }
+
+  /** Removes a file you added but haven't sent. */
+  async discardUpload(actor: Actor, access: WorkspaceAccess, attachmentId: string): Promise<boolean> {
+    await this.removeFile(access, await this.ownPendingFile(actor, access, attachmentId));
+    return true;
+  }
+
+  private async ownPendingFile(actor: Actor, access: WorkspaceAccess, attachmentId: string): Promise<ChatAttachmentRecord> {
+    const file = await this.chat.findAttachment(access.workspaceId, attachmentId);
+    if (!file || file.uploaderId !== actor.userId) throw DomainError.notFound('File');
+    if (file.messageId) throw DomainError.invalid('This file is already on a message');
+    return file;
+  }
+
+  private async removeFile(access: WorkspaceAccess, file: ChatAttachmentRecord): Promise<void> {
+    await this.chat.deleteAttachment(access.workspaceId, file.id);
+    // The bytes go after the row; if this fails, the object is unreachable anyway (no row, no link).
+    await this.storage.delete(file.storageKey).catch(() => undefined);
+  }
+
+  /**
    * Full-text search over messages you can read (RLS decides), newest first. Each word
    * is matched as a prefix; only letters and digits reach the query.
    */
@@ -330,8 +413,8 @@ export class ChatService {
     if (!tsquery) return [];
     if (channelId) await this.readable(access, actor, channelId);
     const hits = await this.chat.searchMessages(access.workspaceId, tsquery, channelId ?? null, clampPage(first, CHAT_SEARCH_PAGE_MAX));
-    const reactions = await this.chat.reactionsFor(access.workspaceId, hits.map((hit) => hit.record.id), actor.userId);
-    return hits.map((hit) => ({ message: toMessage(hit.record, reactions.get(hit.record.id)), channelKind: hit.channelKind, channelName: hit.channelName }));
+    const messages = await this.decorate(access, actor, hits.map((hit) => hit.record));
+    return hits.map((hit, index) => ({ message: messages[index]!, channelKind: hit.channelKind, channelName: hit.channelName }));
   }
 
   /** Adds or removes your reaction. Only members of an open channel react (posting in a public channel's reactions joins it). */
@@ -363,10 +446,23 @@ export class ChatService {
 
   private readonly lastTyping = new Map<string, number>();
 
-  private async page(access: WorkspaceAccess, actor: Actor, items: ChatMessageRecord[], limit: number): Promise<ChatMessagePage> {
-    const reactions = await this.chat.reactionsFor(access.workspaceId, items.map((item) => item.id), actor.userId);
+/** Messages with their reactions and attachments (with fresh signed links). */
+  private async decorate(access: WorkspaceAccess, actor: Actor, records: ChatMessageRecord[]): Promise<ChatMessageResponse[]> {
+    const ids = records.map((record) => record.id);
+    const [reactions, attachments] = await Promise.all([this.chat.reactionsFor(access.workspaceId, ids, actor.userId), this.chat.attachmentsFor(access.workspaceId, ids)]);
+    return records.map((record) => toMessage(record, reactions.get(record.id), (attachments.get(record.id) ?? []).map((file) => this.toAttachment(file))));
+  }
+
+  private toAttachment(file: ChatAttachmentRecord): ChatAttachmentResponse {
+    const contentType = file.contentType ?? 'application/octet-stream';
+    const isImage = contentType.startsWith('image/');
+    const token = this.storageTokens.sign({ op: 'get', key: file.storageKey, type: contentType, name: file.fileName, inline: isImage, exp: Date.now() + DOWNLOAD_TTL_MS });
+    return { id: file.id, fileName: file.fileName, contentType, size: file.size ?? file.declaredSize, isImage, url: `/api/storage/files/${token}` };
+  }
+
+    private async page(access: WorkspaceAccess, actor: Actor, items: ChatMessageRecord[], limit: number): Promise<ChatMessagePage> {
     return {
-      items: items.map((item) => toMessage(item, reactions.get(item.id))),
+      items: await this.decorate(access, actor, items),
       cursor: items.length === limit ? encodeCursor(items[items.length - 1]!.position) : null,
     };
   }

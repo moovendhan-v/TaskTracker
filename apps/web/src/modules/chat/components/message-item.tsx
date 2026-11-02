@@ -1,5 +1,5 @@
-import { CHAT_REACTIONS, type ChatMessageResponse, type ChatReactionSummary } from '@taskflow/shared-types';
-import { CheckSquareIcon, LinkIcon, MessageSquareTextIcon, PencilIcon, SmilePlusIcon, Trash2Icon } from 'lucide-react';
+import { CHAT_REACTIONS, type ChatAttachmentResponse, type ChatMessageResponse, type ChatReactionSummary } from '@taskflow/shared-types';
+import { CheckSquareIcon, DownloadIcon, FileTextIcon, LinkIcon, MessageSquareTextIcon, PencilIcon, SmilePlusIcon, Trash2Icon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { UserAvatar } from '@/components/common/user-avatar';
@@ -11,7 +11,7 @@ import { useMemberName } from '@/modules/members';
 import { timeAgo } from '@/lib/relative-time';
 import { timeOfDay } from '../lib/chat-display';
 import { tokensToNames } from '../lib/chat-mentions';
-import { Composer } from './composer';
+import { Composer, formatBytes } from './composer';
 
 interface MessageItemProps {
   message: ChatMessageResponse;
@@ -86,10 +86,11 @@ export function MessageItem({ message, head, mine, editing, onEditing, onSaveEdi
           </div>
         ) : (
           <div className="text-sm leading-relaxed">
-            <MarkdownPreview content={message.body} className="gap-1.5 text-sm [&_li]:my-0 [&_ol]:my-0.5 [&_p]:m-0 [&_pre]:my-1 [&_ul]:my-0.5" />
+            {message.body ? <MarkdownPreview content={message.body} className="gap-1.5 text-sm [&_li]:my-0 [&_ol]:my-0.5 [&_p]:m-0 [&_pre]:my-1 [&_ul]:my-0.5" /> : null}
             {message.editedAt ? <span className="text-[11px] text-subtle-foreground">(edited)</span> : null}
           </div>
         )}
+        {!message.deleted && message.attachments.length ? <Attachments files={message.attachments} /> : null}
         {!message.deleted && message.reactions.length ? <Reactions reactions={message.reactions} onReact={onReact} /> : null}
         {message.replyCount > 0 && onReply ? (
           <button
@@ -230,5 +231,46 @@ function ReactionPicker({ onPick }: { onPick: (emoji: string) => void }) {
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Images as thumbnails (open full size in a new tab), other files as download cards. Links are short-lived and same-origin. */
+function Attachments({ files }: { files: ChatAttachmentResponse[] }) {
+  const images = files.filter((file) => file.isImage);
+  const others = files.filter((file) => !file.isImage);
+  return (
+    <div className="mt-1.5 grid gap-1.5">
+      {images.length ? (
+        <ul aria-label="Images" className="flex flex-wrap gap-1.5">
+          {images.map((file) => (
+            <li key={file.id}>
+              <a href={file.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg border bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+                <img src={file.url} alt={file.fileName} loading="lazy" className="max-h-60 max-w-80 object-contain" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {others.length ? (
+        <ul aria-label="Files" className="flex flex-wrap gap-1.5">
+          {others.map((file) => (
+            <li key={file.id}>
+              <a
+                href={file.url}
+                download={file.fileName}
+                className="flex h-12 max-w-72 items-center gap-2.5 rounded-lg border bg-card px-3 text-sm hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                <FileTextIcon aria-hidden className="size-5 shrink-0 text-ring" />
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">{file.fileName}</span>
+                  <span className="block font-mono text-[11px] text-subtle-foreground">{formatBytes(file.size)}</span>
+                </span>
+                <DownloadIcon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }

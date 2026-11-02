@@ -1,4 +1,4 @@
-import type { ChatChannelKind, ChatSearchHit, ChatChannelResponse, ChatMemberRole, ChatMessagePage, ChatMessageResponse } from '@taskflow/shared-types';
+import type { ChatAttachmentResponse, ChatChannelKind, ChatSearchHit, ChatChannelResponse, ChatMemberRole, ChatMessagePage, ChatMessageResponse } from '@taskflow/shared-types';
 import {
   AddChatChannelMembersDocument,
   ArchiveChatChannelDocument,
@@ -24,6 +24,9 @@ import {
   ToggleChatReactionDocument,
   ChatTypingDocument,
   SearchChatMessagesDocument,
+  RequestChatUploadDocument,
+  CompleteChatUploadDocument,
+  DiscardChatUploadDocument,
 } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
 
@@ -54,7 +57,7 @@ export const chatApi = {
   removeMember: async (workspaceId: string, channelId: string, userId: string) => (await graphql(RemoveChatChannelMemberDocument, { workspaceId, channelId, userId })).removeChatChannelMember,
   markRead: async (workspaceId: string, channelId: string, at: string) => (await graphql(MarkChatChannelReadDocument, { workspaceId, channelId, at })).markChatChannelRead,
   mute: async (workspaceId: string, channelId: string, muted: boolean) => (await graphql(MuteChatChannelDocument, { workspaceId, channelId, muted })).muteChatChannel,
-  send: async (workspaceId: string, input: { channelId: string; body: string; parentId?: string | null }) => message((await graphql(SendChatMessageDocument, { workspaceId, input })).sendChatMessage),
+  send: async (workspaceId: string, input: { channelId: string; body: string; parentId?: string | null; attachmentIds?: string[] }) => message((await graphql(SendChatMessageDocument, { workspaceId, input })).sendChatMessage),
   edit: async (workspaceId: string, messageId: string, body: string) => message((await graphql(EditChatMessageDocument, { workspaceId, messageId, body })).editChatMessage),
   remove: async (workspaceId: string, messageId: string) => (await graphql(DeleteChatMessageDocument, { workspaceId, messageId })).deleteChatMessage,
   react: async (workspaceId: string, messageId: string, emoji: string) => message((await graphql(ToggleChatReactionDocument, { workspaceId, messageId, emoji })).toggleChatReaction),
@@ -68,3 +71,34 @@ export const chatApi = {
   createTask: async (workspaceId: string, input: { messageId: string; listId: string; title?: string }) =>
     message((await graphql(CreateTaskFromChatMessageDocument, { workspaceId, input })).createTaskFromChatMessage),
 };
+
+/** PUTs the bytes to the signed same-origin URL, reporting progress (fetch can't report upload progress). */
+function putFile(url: string, file: File, onProgress: (fraction: number) => void, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open('PUT', url);
+    request.setRequestHeader('Content-Type', 'application/octet-stream');
+    request.upload.onprogress = (event) => event.lengthComputable && onProgress(event.loaded / event.total);
+    request.onload = () => (request.status >= 200 && request.status < 300 ? resolve() : reject(new Error(request.status === 413 ? 'File is too large' : "The upload didn't complete")));
+    request.onerror = () => reject(new Error("The upload didn't complete"));
+    request.onabort = () => reject(new DOMException('Cancelled', 'AbortError'));
+    signal?.addEventListener('abort', () => request.abort());
+    request.send(file);
+  });
+}
+
+/** Uploads one file for a channel: ask for a link, send the bytes, then let the server check them. */
+export async function uploadChatFile(workspaceId: string, channelId: string, file: File, onProgress: (fraction: number) => void, signal?: AbortSignal): Promise<ChatAttachmentResponse> {
+  const ticket = (await graphql(RequestChatUploadDocument, { workspaceId, input: { channelId, fileName: file.name, size: file.size } })).requestChatUpload;
+  try {
+    await putFile(ticket.uploadUrl, file, onProgress, signal);
+  } catch (error) {
+    void graphql(DiscardChatUploadDocument, { workspaceId, attachmentId: ticket.attachmentId }).catch(() => undefined);
+    throw error;
+  }
+  const result = (await graphql(CompleteChatUploadDocument, { workspaceId, attachmentId: ticket.attachmentId })).completeChatUpload;
+  if (!result.attachment) throw new Error(result.error ?? "This file can't be shared");
+  return result.attachment;
+}
+
+export const discardChatFile = (workspaceId: string, attachmentId: string) => graphql(DiscardChatUploadDocument, { workspaceId, attachmentId }).then((data) => data.discardChatUpload);

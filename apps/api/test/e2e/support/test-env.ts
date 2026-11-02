@@ -1,6 +1,7 @@
+import { tmpdir } from 'node:os';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 // Written by scripts/create-e2e-database.sh for local runs. Variables already set (as in CI) win.
 const LOCAL_E2E_ENV = resolve(import.meta.dirname, '../../../../../.env.e2e');
@@ -41,5 +42,16 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     TRUST_PROXY: '1',
     // Optional: run the suite against a real Redis (CI does) instead of the in-process cache.
     ...(process.env['E2E_REDIS_URL'] ? { REDIS_URL: process.env['E2E_REDIS_URL'] } : {}),
+    // Uploads: a throwaway directory, or an S3-compatible service (MinIO, moto) when E2E_S3_ENDPOINT is set.
+    ...(process.env['E2E_S3_ENDPOINT']
+      ? {
+          STORAGE_DRIVER: 's3',
+          S3_ENDPOINT: process.env['E2E_S3_ENDPOINT'],
+          S3_BUCKET: process.env['E2E_S3_BUCKET'] ?? 'taskflow-e2e',
+          S3_ACCESS_KEY_ID: process.env['E2E_S3_ACCESS_KEY_ID'] ?? 'test',
+          S3_SECRET_ACCESS_KEY: process.env['E2E_S3_SECRET_ACCESS_KEY'] ?? 'test',
+          S3_FORCE_PATH_STYLE: 'true',
+        }
+      : { STORAGE_DRIVER: 'local', STORAGE_LOCAL_DIR: join(tmpdir(), `taskflow-e2e-uploads-${port}`) }),
   };
 }

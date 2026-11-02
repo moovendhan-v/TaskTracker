@@ -16,7 +16,7 @@ describe('loadEnv', () => {
     expect(env.TURNSTILE_SECRET_KEY).toBeUndefined();
   });
 
-  const production = { ...base, NODE_ENV: 'production', SMTP_URL: 'smtps://user:pw@smtp.example.com:465', MAIL_FROM: 'TaskFlow <no-reply@example.com>', REDIS_URL: 'redis://:pw@redis:6379/0' };
+  const production = { ...base, NODE_ENV: 'production', SMTP_URL: 'smtps://user:pw@smtp.example.com:465', MAIL_FROM: 'TaskFlow <no-reply@example.com>', REDIS_URL: 'redis://:pw@redis:6379/0', STORAGE_DRIVER: 's3', S3_BUCKET: 'taskflow-uploads' };
 
   it('requires a CAPTCHA secret in production', () => {
     expect(() => loadEnv(production)).toThrow(/TURNSTILE_SECRET_KEY is required/);

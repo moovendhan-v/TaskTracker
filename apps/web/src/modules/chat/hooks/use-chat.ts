@@ -81,7 +81,7 @@ export function useChatMutations(workspaceId: string) {
 
   const settle = { onSettled: refresh };
   return {
-    send: useMutation({ mutationFn: (input: { channelId: string; body: string; parentId?: string | null }) => chatApi.send(workspaceId, input), onSuccess: placeSent, ...settle }),
+    send: useMutation({ mutationFn: (input: { channelId: string; body: string; parentId?: string | null; attachmentIds?: string[] }) => chatApi.send(workspaceId, input), onSuccess: placeSent, ...settle }),
     edit: useMutation({ mutationFn: ({ messageId, body }: { messageId: string; body: string }) => chatApi.edit(workspaceId, messageId, body), ...settle }),
     remove: useMutation({ mutationFn: (messageId: string) => chatApi.remove(workspaceId, messageId), ...settle }),
     createChannel: useMutation({ mutationFn: (input: Parameters<typeof chatApi.createChannel>[1]) => chatApi.createChannel(workspaceId, input), ...settle }),

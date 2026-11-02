@@ -438,6 +438,18 @@ test('chats in a channel, replies in a thread and turns a message into a task', 
   await expect(hit.locator('mark').first()).toHaveText('release');
   await search.press('Enter');
   await expect(page).toHaveURL(/\/chat\/[0-9a-f-]{36}\?thread=/);
+
+  // Attach an image: it uploads, gets checked, and shows in the message once sent.
+  await page.getByRole('button', { name: 'Close thread' }).click();
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64').subarray(8)]);
+  await page.locator('section[aria-label="#release-train"] input[type="file"]').setInputFiles({ name: 'diagram.png', mimeType: 'image/png', buffer: png });
+  const pending = page.getByRole('list', { name: 'Files to send' });
+  await expect(pending.getByText(/B$/)).toBeVisible();
+  await composer.press('Enter');
+  await expect(pending).toHaveCount(0);
+  const image = page.getByRole('log', { name: 'Messages in #release-train' }).getByRole('img', { name: 'diagram.png' });
+  await expect(image).toBeVisible();
+  await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(1);
 });
 
 test('signs out', async () => {

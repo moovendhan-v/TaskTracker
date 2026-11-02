@@ -24,6 +24,17 @@ Chat is a new product, not a gap, so this plan comes before any code (handoff §
 
 **Search:** `chat_message.search` is a generated `tsvector` (`simple` configuration) with a GIN index. `searchChatMessages(query, channelId?)` reduces what you type to letters and digits and matches each word as a prefix (`deploy:* & fail:*`), so no tsquery syntax gets through. RLS decides which messages come back. It returns at most 30 hits and is limited to 30 searches a minute.
 
+**File uploads** (images, PDF, Office, zip and text files; up to 10 MB each, 5 per message):
+- **Storage:** the `FileStorage` port in `apps/api/src/core/storage` has two adapters, picked by `STORAGE_DRIVER`. `s3` covers AWS S3, Cloudflare R2 and MinIO; the docker stacks run MinIO with a private bucket. `local` keeps files on disk, for single-instance development and tests. Production requires `s3`.
+- **Flow:** the bytes never touch GraphQL, and the bucket stays private.
+  1. `requestChatUpload` checks you can post, the file extension and the size, then records a pending `chat_attachment` row with a server-made key (`w/<workspace>/chat/<uuid>`).
+  2. The browser `PUT`s the file to a short-lived signed URL on the API's own origin. That's why the CSP stays `'self'` and the bucket needs no CORS.
+  3. `completeChatUpload` reads the first 4 KB back and checks the real type from its magic bytes against the extension. HTML, SVG and anything else are deleted, and the reason comes back as data, so the deletion commits.
+  4. `sendChatMessage(attachmentIds)` attaches only your own ready files from the same channel.
+- **Downloads:** signed same-origin links that last 10 minutes, issued only after an RLS-checked read of the message. They're served with the detected type, `nosniff`, `Content-Disposition` (inline for images only) and a sandboxing CSP.
+- **Cleanup:** deleting a message deletes its files. Files you never send are cleared after a day.
+- **`chat_attachment` RLS:** the uploader sees their own pending files; once a file is on a message, anyone who can read the channel sees it. Only the uploader updates or deletes it. A trigger keeps a file on one message, your own, in the same channel.
+
 **Later:**
 
 - Reactions, typing indicator, pinned messages, file uploads and search.

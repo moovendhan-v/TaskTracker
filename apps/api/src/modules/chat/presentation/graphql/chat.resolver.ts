@@ -14,6 +14,9 @@ import {
   ChatMessageGql,
   ChatMessagePageGql,
   ChatSearchHitGql,
+  ChatUploadTicketGql,
+  ChatUploadResultGql,
+  RequestChatUploadInput,
   CreateChatChannelInput,
   CreateTaskFromMessageInput,
   SendChatMessageInput,
@@ -260,6 +263,26 @@ export class ChatResolver {
   @RequirePermissions('chat.use')
   deleteChatMessage(@WorkspaceIdArg() _w: string, @UuidArg('messageId') messageId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
     return this.service.remove(actor, access, messageId);
+  }
+
+  @Mutation(() => ChatUploadTicketGql, { description: 'Starts a file upload: returns a short-lived URL to PUT the bytes to' })
+  @RequirePermissions('chat.use')
+  @Throttle(PER_MINUTE(20))
+  requestChatUpload(@WorkspaceIdArg() _w: string, @Args('input') input: RequestChatUploadInput, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<ChatUploadTicketGql> {
+    return this.service.requestUpload(actor, access, input);
+  }
+
+  @Mutation(() => ChatUploadResultGql, { description: 'Checks an uploaded file (size, real type). Files that fail are deleted and the reason returned' })
+  @RequirePermissions('chat.use')
+  @Throttle(PER_MINUTE(20))
+  completeChatUpload(@WorkspaceIdArg() _w: string, @UuidArg('attachmentId') attachmentId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<ChatUploadResultGql> {
+    return this.service.completeUpload(actor, access, attachmentId);
+  }
+
+  @Mutation(() => Boolean, { description: "Removes a file you added but haven't sent" })
+  @RequirePermissions('chat.use')
+  discardChatUpload(@WorkspaceIdArg() _w: string, @UuidArg('attachmentId') attachmentId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
+    return this.service.discardUpload(actor, access, attachmentId);
   }
 
   @Mutation(() => ChatMessageGql, { description: 'Adds your reaction, or removes it if it is already there' })

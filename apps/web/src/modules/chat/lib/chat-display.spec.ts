@@ -17,6 +17,7 @@ const message = (id: string, authorId: string, createdAt: string, kind: 'user' |
   deleted: false,
   createdAt,
   reactions: [],
+  attachments: [],
 });
 
 describe('chat display', () => {

@@ -170,6 +170,19 @@ enum AutomationTriggerType {
   task_status_changed
 }
 
+type ChatAttachment {
+  contentType: String!
+  fileName: String!
+  id: ID!
+  isImage: Boolean!
+  size: Int!
+
+  """
+  Short-lived signed link on this origin; read the message again for a fresh one
+  """
+  url: String!
+}
+
 """A channel or direct message you can read"""
 type ChatChannel {
   archived: Boolean!
@@ -204,6 +217,7 @@ type ChatMember {
 }
 
 type ChatMessage {
+  attachments: [ChatAttachment!]!
   authorId: ID
   authorName: String
 
@@ -256,6 +270,22 @@ type ChatSearchHit {
   channelKind: String!
   channelName: String
   message: ChatMessage!
+}
+
+"""The checked file, or why it was refused (it is deleted then)"""
+type ChatUploadResult {
+  attachment: ChatAttachment
+  error: String
+}
+
+type ChatUploadTicket {
+  attachmentId: ID!
+  maxBytes: Int!
+
+  """
+  PUT the raw file here with its Content-Length, then call completeChatUpload
+  """
+  uploadUrl: String!
 }
 
 type ColumnWidth {
@@ -1109,6 +1139,11 @@ type Mutation {
   chatTyping(channelId: ID!, workspaceId: ID!): Boolean!
 
   """
+  Checks an uploaded file (size, real type). Files that fail are deleted and the reason returned
+  """
+  completeChatUpload(attachmentId: ID!, workspaceId: ID!): ChatUploadResult!
+
+  """
   Unfinished tasks move to another planned sprint in the space, or to the backlog when omitted
   """
   completeSprint(
@@ -1197,6 +1232,9 @@ type Mutation {
     roleId: ID!
     workspaceId: ID!
   ): Role!
+
+  """Removes a file you added but haven't sent"""
+  discardChatUpload(attachmentId: ID!, workspaceId: ID!): Boolean!
   disconnectGithub(connectionId: ID!, workspaceId: ID!): Boolean!
   editChatMessage(body: String!, messageId: ID!, workspaceId: ID!): ChatMessage!
 
@@ -1245,6 +1283,9 @@ type Mutation {
   removeChatChannelMember(channelId: ID!, userId: ID!, workspaceId: ID!): Boolean!
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
+
+  """Starts a file upload: returns a short-lived URL to PUT the bytes to"""
+  requestChatUpload(input: RequestChatUploadInput!, workspaceId: ID!): ChatUploadTicket!
   requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
 
   """Back to the built-in layout for a page"""
@@ -1794,6 +1835,12 @@ type RelatedTask {
   title: String!
 }
 
+input RequestChatUploadInput {
+  channelId: ID!
+  fileName: String!
+  size: Int!
+}
+
 input RequestLeaveInput {
   """yyyy-mm-dd"""
   endDate: String!
@@ -1935,6 +1982,10 @@ type SavedView {
 }
 
 input SendChatMessageInput {
+  """
+  Files from completeChatUpload; the text may be empty when there are files
+  """
+  attachmentIds: [ID!]
   body: String!
   channelId: ID!
 

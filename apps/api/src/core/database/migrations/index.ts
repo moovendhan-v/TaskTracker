@@ -22,6 +22,7 @@ import { Chat1729770000000 } from './1729770000000-chat.js';
 import { ChatMentions1729780000000 } from './1729780000000-chat-mentions.js';
 import { ChatReactions1729790000000 } from './1729790000000-chat-reactions.js';
 import { ChatSearch1729800000000 } from './1729800000000-chat-search.js';
+import { ChatAttachments1729810000000 } from './1729810000000-chat-attachments.js';
 import { SprintCommittedTasks1729750000000 } from './1729750000000-sprint-committed-tasks.js';
 import { DashboardLayouts1729740000000 } from './1729740000000-dashboard-layouts.js';
 import { MultipleAssignees1729730000000 } from './1729730000000-multiple-assignees.js';
@@ -55,4 +56,5 @@ export const MIGRATIONS = [
   ChatMentions1729780000000,
   ChatReactions1729790000000,
   ChatSearch1729800000000,
+  ChatAttachments1729810000000,
 ];

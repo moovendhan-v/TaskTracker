@@ -13,8 +13,13 @@ import {
   type ChatPersonResponse,
   type ChatReactionSummary,
   type ChatSearchHit,
+  type ChatAttachmentResponse,
+  type ChatUploadTicket,
+  type ChatUploadResult,
+  CHAT_ATTACHMENTS_PER_MESSAGE,
+  CHAT_UPLOAD_MAX_BYTES,
 } from '@taskflow/shared-types';
-import { ArrayMaxSize, IsArray, IsIn, IsString, IsUUID, MaxLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsIn, IsInt, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
 
 @ObjectType('ChatPerson')
@@ -55,6 +60,36 @@ export class ChatReactionGql implements ChatReactionSummary {
   @Field(() => [String], { description: 'Up to five names, for a tooltip' }) names: string[];
 }
 
+@ObjectType('ChatAttachment')
+export class ChatAttachmentGql implements ChatAttachmentResponse {
+  @Field(() => ID) id: string;
+  @Field() fileName: string;
+  @Field() contentType: string;
+  @Field(() => Int) size: number;
+  @Field() isImage: boolean;
+  @Field({ description: 'Short-lived signed link on this origin; read the message again for a fresh one' }) url: string;
+}
+
+@ObjectType('ChatUploadTicket')
+export class ChatUploadTicketGql implements ChatUploadTicket {
+  @Field(() => ID) attachmentId: string;
+  @Field({ description: 'PUT the raw file here with its Content-Length, then call completeChatUpload' }) uploadUrl: string;
+  @Field(() => Int) maxBytes: number;
+}
+
+@ObjectType('ChatUploadResult', { description: 'The checked file, or why it was refused (it is deleted then)' })
+export class ChatUploadResultGql implements ChatUploadResult {
+  @Field(() => ChatAttachmentGql, { nullable: true }) attachment: ChatAttachmentGql | null;
+  @Field(() => String, { nullable: true }) error: string | null;
+}
+
+@InputType('RequestChatUploadInput')
+export class RequestChatUploadInput {
+  @Field(() => ID) @IsUUID() channelId: string;
+  @Field() @IsString() @IsNotBlank() @MaxLength(255) fileName: string;
+  @Field(() => Int) @IsInt() @Min(1) @Max(CHAT_UPLOAD_MAX_BYTES) size: number;
+}
+
 @ObjectType('ChatMessage')
 export class ChatMessageGql implements ChatMessageResponse {
   @Field(() => ID) id: string;
@@ -71,6 +106,7 @@ export class ChatMessageGql implements ChatMessageResponse {
   @Field() deleted: boolean;
   @Field() createdAt: string;
   @Field(() => [ChatReactionGql]) reactions: ChatReactionGql[];
+  @Field(() => [ChatAttachmentGql]) attachments: ChatAttachmentGql[];
 }
 
 @ObjectType('ChatMessagePage')
@@ -98,6 +134,12 @@ export class SendChatMessageInput {
   @Field(() => ID) @IsUUID() channelId: string;
   @Field() @IsString() @MaxLength(CHAT_MESSAGE_MAX + 200) body: string;
   @Field(() => ID, { nullable: true, description: 'Reply in the thread of this message' }) @IsClearable() @IsUUID() parentId?: string | null;
+  @Field(() => [ID], { nullable: true, description: 'Files from completeChatUpload; the text may be empty when there are files' })
+  @IsClearable()
+  @IsArray()
+  @ArrayMaxSize(CHAT_ATTACHMENTS_PER_MESSAGE)
+  @IsUUID('all', { each: true })
+  attachmentIds?: string[] | null;
 }
 
 @InputType('CreateTaskFromMessageInput')
