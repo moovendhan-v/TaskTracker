@@ -11,7 +11,7 @@ import { AdminAuditLogPage, AdminLayout, AdminUsersPage, AdminWorkspacesPage } f
 import { WorkspaceAuditLogPage } from '@/modules/audit-log';
 import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/modules/auth';
 import { DocumentsPage } from '@/modules/documents';
-import { ChatPage } from '@/modules/chat';
+import { ChatMessageRedirect, ChatPage } from '@/modules/chat';
 import { HomePage } from '@/modules/dashboard';
 import { ApprovalsPage, DepartmentsPage, DirectoryPage, LeaveTypesPage, TimeOffPage } from '@/modules/hr';
 import { listsApi } from '@/modules/lists';
@@ -274,6 +274,18 @@ const chatChannelRoute = createRoute({
   },
 });
 
+const chatMessageRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/chat/m/$messageId',
+  beforeLoad: ({ params }) => {
+    if (!UUID.test(params.messageId)) throw redirect({ to: '/w/$workspaceId/chat', params: { workspaceId: params.workspaceId } });
+  },
+  component: function ChatMessageRoute() {
+    const { workspaceId, messageId } = chatMessageRoute.useParams();
+    return <ChatMessageRedirect workspaceId={workspaceId} messageId={messageId} />;
+  },
+});
+
 /** A simple page under /w/$workspaceId that only needs the workspace id. */
 function workspacePage<TPath extends string>(path: TPath, Page: (props: { workspaceId: string }) => React.ReactNode) {
   return createRoute({
@@ -345,6 +357,7 @@ const routeTree = rootRoute.addChildren([
       documentRoute,
       chatRoute,
       chatChannelRoute,
+      chatMessageRoute,
       directoryRoute,
       departmentsRoute,
       timeOffRoute,

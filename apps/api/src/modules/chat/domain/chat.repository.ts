@@ -75,6 +75,8 @@ export abstract class ChatRepository {
   abstract setMemberRole(workspaceId: string, channelId: string, userId: string, role: ChatMemberRole): Promise<boolean>;
   abstract markRead(workspaceId: string, channelId: string, userId: string, at: Date): Promise<boolean>;
   abstract setMuted(workspaceId: string, channelId: string, userId: string, muted: boolean): Promise<boolean>;
+  /** Names of workspace members among `userIds`. */
+  abstract memberNames(workspaceId: string, userIds: string[]): Promise<Map<string, string>>;
   /** Which of these users belong to the workspace. */
   abstract workspaceMembers(workspaceId: string, userIds: string[]): Promise<string[]>;
 

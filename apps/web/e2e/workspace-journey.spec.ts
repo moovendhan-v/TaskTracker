@@ -410,6 +410,15 @@ test('chats in a channel, replies in a thread and turns a message into a task', 
   await expect(thread.getByText(/created/)).toBeVisible();
   await thread.getByRole('button', { name: 'Close thread' }).click();
   await expect(thread).toBeHidden();
+
+  // @ suggests people; the message shows the name, never the stored id.
+  await composer.fill('Thanks @Da');
+  await page.getByRole('listbox', { name: 'People' }).getByRole('option', { name: /Dana Reyes/ }).click();
+  await expect(composer).toHaveValue('Thanks @Dana Reyes ');
+  await composer.press('Enter');
+  const mention = page.getByRole('log', { name: 'Messages in #release-train' }).getByRole('article').filter({ hasText: 'Thanks' });
+  await expect(mention).toContainText('Thanks @Dana Reyes');
+  await expect(mention).not.toContainText('@{');
 });
 
 test('signs out', async () => {

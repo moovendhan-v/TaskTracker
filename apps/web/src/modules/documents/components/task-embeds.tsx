@@ -3,6 +3,7 @@ import { isClosedCategory, type TaskResponse } from '@taskflow/shared-types';
 import { CalendarIcon, ListChecksIcon } from 'lucide-react';
 import { createContext, useContext, useRef, useState, type ComponentProps, type KeyboardEvent, type ReactNode } from 'react';
 import { UserAvatar } from '@/components/common/user-avatar';
+import { useCurrentUser } from '@/core/auth/use-current-user';
 import { StatusPill } from '@/components/kit/status-pill';
 import { cn } from '@/lib/cn';
 import { formatNumericDate } from '@/lib/periods';
@@ -69,6 +70,19 @@ function ResolvedTaskChip({ workspaceId, number }: { workspaceId: string; number
       <span className="font-mono text-muted-foreground">#{number}</span>
       <span className={cn('truncate', done && 'text-muted-foreground line-through')}>{task.data.title}</span>
     </button>
+  );
+}
+
+/** `@{userId}` in chat: the person's name, highlighted when it's you. */
+export function UserMention({ userId }: { userId: string }) {
+  const workspaceId = useDocWorkspace();
+  const nameOf = useMemberName(workspaceId ?? '');
+  const { data: me } = useCurrentUser();
+  const mine = me?.id === userId;
+  return (
+    <span className={cn('rounded px-0.5 font-medium', mine ? 'bg-ring/15 text-ring' : 'bg-primary-soft text-foreground')}>
+      @{workspaceId ? (nameOf(userId) ?? 'someone') : 'someone'}
+    </span>
   );
 }
 
@@ -165,9 +179,11 @@ export function TaskMentionTextarea({
   value,
   onValueChange,
   onKeyDown,
+  onBlur,
   ref: forwardedRef,
+  suggestionsAbove = false,
   ...props
-}: Omit<ComponentProps<'textarea'>, 'value' | 'onChange'> & { value: string; onValueChange: (value: string) => void }) {
+}: Omit<ComponentProps<'textarea'>, 'value' | 'onChange'> & { value: string; onValueChange: (value: string) => void; suggestionsAbove?: boolean }) {
   const workspaceId = useDocWorkspace();
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const setRef = (element: HTMLTextAreaElement | null) => {
@@ -233,10 +249,13 @@ export function TaskMentionTextarea({
         }}
         onKeyDown={keys}
         onClick={(event) => track(event.currentTarget)}
-        onBlur={() => setTimeout(() => setMention(null), 150)}
+        onBlur={(event) => {
+          onBlur?.(event);
+          setTimeout(() => setMention(null), 150);
+        }}
       />
       {options.length ? (
-        <ul role="listbox" aria-label="Tasks" className="absolute top-full left-0 z-30 mt-1 w-80 overflow-hidden rounded-lg border bg-popover p-1 text-sm shadow-popover">
+        <ul role="listbox" aria-label="Tasks" className={cn('absolute left-0 z-30 w-80 overflow-hidden rounded-lg border bg-popover p-1 text-sm shadow-popover', suggestionsAbove ? 'bottom-full mb-1' : 'top-full mt-1')}>
           {options.map((task, position) => (
             <li
               key={task.id}

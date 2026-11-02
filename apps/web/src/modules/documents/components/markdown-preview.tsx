@@ -3,8 +3,9 @@ import rehypeSanitize from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/cn';
 import { remarkTaskMentions, TASK_HREF_PREFIX } from '../lib/remark-task-mentions';
+import { remarkUserMentions, USER_HREF_PREFIX } from '../lib/remark-user-mentions';
 import { parseTaskEmbed, type TaskEmbed } from '../lib/task-embeds';
-import { TaskChip, TaskEmbedCard, TaskListEmbed } from './task-embeds';
+import { TaskChip, TaskEmbedCard, TaskListEmbed, UserMention } from './task-embeds';
 
 interface MarkdownPreviewProps {
   content: string;
@@ -169,12 +170,13 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
           return (
             <Markdown
               key={idx}
-              remarkPlugins={[remarkGfm, remarkTaskMentions]}
+              remarkPlugins={[remarkGfm, remarkTaskMentions, remarkUserMentions]}
               rehypePlugins={[rehypeSanitize]}
               components={{
                 a: ({ node: _node, ...props }) => {
                   const number = props.href?.startsWith(TASK_HREF_PREFIX) ? Number(props.href.slice(TASK_HREF_PREFIX.length)) : NaN;
                   if (Number.isInteger(number) && number > 0) return <TaskChip number={number} />;
+                  if (props.href?.startsWith(USER_HREF_PREFIX)) return <UserMention userId={props.href.slice(USER_HREF_PREFIX.length)} />;
                   return <a {...props} target="_blank" rel="noopener noreferrer nofollow" />;
                 },
               }}

@@ -17,6 +17,8 @@ export function describeNotification(notification: Describable): string {
       return `${who} ${notification.excerpt === 'rejected' ? 'declined' : 'approved'} your time off: ${notification.subject}`;
     case 'member_added':
       return `${who} added you to this workspace${notification.subject ? ` as ${notification.subject}` : ''}`;
+    case 'chat_mention':
+      return `${who} mentioned you in ${notification.subject || 'chat'}`;
     case 'automation':
       // The automation's own message, already filled in; the excerpt names the automation.
       return notification.subject;

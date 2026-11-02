@@ -16,9 +16,10 @@ Chat is a new product, not a gap, so this plan comes before any code (handoff §
 - **Create task from message**: pre-fills the title from the message, links the task back to the message, and posts a small "created #123" line in the thread.
 - Rail item **Chat** (`G C`), a channel list in the side panel, the message pane, and a 340px thread pane.
 
-**Later (not in phase 1):**
+**Built since phase 1:** `@mentions`. Bodies store `@{userId}`; the composer shows `@Name`. A `chat_mention` notification goes only to mentioned people who can read the channel (members of a private channel or DM, or anyone with `chat.use` for a public one), never the author. Facts ride on one event, so private-channel fan-out doesn't notify twice.
 
-- `@mentions` with inbox notifications.
+**Later:**
+
 - Reactions, typing indicator, pinned messages, file uploads and search.
 - "Every task has a thread": task comments already do this job. Bridging the two comes later; we won't keep two copies of the same conversation.
 - Huddles and calls (D2, needs an SFU).

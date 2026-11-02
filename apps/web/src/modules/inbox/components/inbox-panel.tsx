@@ -37,6 +37,7 @@ export function InboxPanel({ workspaceId, onOpenTask }: InboxPanelProps) {
     if (notification.readAt === null) markRead.mutate([notification.id]);
     if (notification.taskId) onOpenTask(notification.taskId);
     else if (notification.kind === 'leave_requested') void navigate({ to: '/w/$workspaceId/people/approvals', params: { workspaceId } });
+    else if (notification.kind === 'chat_mention') void navigate({ to: '/w/$workspaceId/chat/m/$messageId', params: { workspaceId, messageId: notification.entityId } });
     else if (notification.kind === 'leave_decided') void navigate({ to: '/w/$workspaceId/people/time-off', params: { workspaceId } });
   };
   const close = (event: KeyboardEvent) => {
@@ -144,7 +145,7 @@ export function InboxPanel({ workspaceId, onOpenTask }: InboxPanelProps) {
                           )}
                           <span className="min-w-0 flex-1">
                             <span className={cn('block text-[13px] leading-snug', unread && 'font-medium')}>{describeNotification(notification)}</span>
-                            {notification.kind === 'task_commented' && notification.excerpt ? (
+                            {(notification.kind === 'task_commented' || notification.kind === 'chat_mention') && notification.excerpt ? (
                               <span className="mt-0.5 block truncate text-xs text-muted-foreground">“{notification.excerpt}”</span>
                             ) : null}
                             {notification.kind === 'automation' ? (

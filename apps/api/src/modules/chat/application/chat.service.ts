@@ -8,6 +8,8 @@ import {
   CHAT_THREAD_PAGE_MAX,
   CHAT_TOPIC_MAX,
   cleanMessageBody,
+  mentionedUserIds,
+  mentionsToNames,
   isValidChannelName,
   taskTitleFromMessage,
   type ChatChannelResponse,
@@ -17,10 +19,11 @@ import {
   type ChatMessageResponse,
 } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
-import { domainEvent, type ChangeKind } from '../../../core/events/domain-event.js';
+import { domainEvent, type ChangeKind, type DomainEventFacts } from '../../../core/events/domain-event.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
+import { MembersService } from '../../members/application/members.service.js';
 import { TasksService } from '../../tasks/application/tasks.service.js';
 import { ChatRepository, type ChatChannelRecord, type ChatMessageRecord, type MessagePosition } from '../domain/chat.repository.js';
 import { decodeCursor, encodeCursor } from '../domain/cursor.js';
@@ -85,6 +88,7 @@ export class ChatService {
     private readonly events: EventBus,
     private readonly auditLogger: AuditLogger,
     private readonly tasks: TasksService,
+    private readonly workspaceMembers: MembersService,
   ) {}
 
   // ── Channels ────────────────────────────────────────────────────────────
@@ -263,7 +267,7 @@ export class ChatService {
       parentId = parent.parentId ?? parent.id; // replying to a reply goes to its thread
     }
     const id = await this.chat.insertMessage({ workspaceId: access.workspaceId, channelId: channel.id, authorId: actor.userId, body, parentId, kind: 'user', taskId: null });
-    await this.announce(actor, channel, 'chat_message', 'created', id);
+    await this.announce(actor, channel, 'chat_message', 'created', id, await this.mentionFacts(actor, access, channel, body));
     return this.message(access, id);
   }
 
@@ -401,14 +405,36 @@ export class ChatService {
   }
 
   /** Public channels: everyone in the workspace. Private channels and DMs: each member, one by one. */
-  private async announce(actor: Actor, channel: ChatChannelRecord, entityType: 'chat_channel' | 'chat_message', change: ChangeKind, entityId: string): Promise<void> {
+  private async announce(actor: Actor, channel: ChatChannelRecord, entityType: 'chat_channel' | 'chat_message', change: ChangeKind, entityId: string, facts?: DomainEventFacts): Promise<void> {
     const base = { workspaceId: channel.workspaceId, entityId, actorId: actor.userId };
     if (channel.kind === 'public') {
-      await this.events.publish(domainEvent(entityType, change, base));
+      await this.events.publish(domainEvent(entityType, change, { ...base, facts }));
       return;
     }
+    // Facts (e.g. who to notify) ride on the first event only, so in-process handlers act once.
+    let first = true;
     for (const recipientId of await this.chat.memberIds(channel.workspaceId, channel.id)) {
-      await this.events.publish(domainEvent(entityType, change, { ...base, recipientId }));
+      await this.events.publish(domainEvent(entityType, change, { ...base, recipientId, facts: first ? facts : undefined }));
+      first = false;
     }
+  }
+
+  /**
+   * Who a message's @mentions notify: only people who can read the channel (its members,
+   * or anyone with chat.use for a public channel), never the author. The excerpt shows names, not ids.
+   */
+  private async mentionFacts(actor: Actor, access: WorkspaceAccess, channel: ChatChannelRecord, body: string): Promise<DomainEventFacts | undefined> {
+    const mentioned = mentionedUserIds(body).filter((id) => id !== actor.userId);
+    if (mentioned.length === 0) return undefined;
+    const withChat = new Set(await this.workspaceMembers.listUserIdsWithPermission(access.workspaceId, 'chat.use'));
+    const readers = channel.kind === 'public' ? withChat : new Set((await this.chat.memberIds(access.workspaceId, channel.id)).filter((id) => withChat.has(id)));
+    const mentionIds = mentioned.filter((id) => readers.has(id));
+    if (mentionIds.length === 0) return undefined;
+    const names = await this.chat.memberNames(access.workspaceId, mentionedUserIds(body));
+    return {
+      mentionIds,
+      title: channel.kind === 'dm' ? 'a direct message' : `#${channel.name}`,
+      excerpt: mentionsToNames(body, (id) => names.get(id)).replace(/[*_`>#]/g, ''),
+    };
   }
 }
