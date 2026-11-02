@@ -39,3 +39,17 @@ All three need `task.view` (same as the dashboard) and take the user only from t
 - **Library drawer**: `A` or "Add block". It lists the blocks not on the page, grouped by category, and adds one in the first free slot.
 - **Saving**: debounced 800 ms with `baseVersion`. On `CONFLICT` it shows the spec's toast, "Layout changed on another device", with **Keep this** (save again on top of the newer version) or **Use other** (load it).
 - **Reset**: back to the built-in default (deletes the saved layout).
+
+## Block settings (B3)
+
+Each placed item may carry `config`, validated by `validateBlockConfig` in `@taskflow/shared-types` (on the client and the server). Data settings are kept apart from view settings:
+
+| setting | kind | blocks |
+|---|---|---|
+| `spaceId` | data: one project instead of all | Home blocks, except "hours by project" |
+| `title` | view | all |
+| `accent` | view: one of the theme accents | all |
+| `limit` | view: 5, 10 or 20 tasks | Home task lists |
+| `includeClosed` | view | status breakdowns |
+
+A block with its own `spaceId` loads its own dashboard query for the same period and people, through the normal permission-checked API. Sharing a dashboard never shares data: every viewer sees each block with their own access. Empty settings are stored as nothing. Settings are part of the layout, so they save with its version, sync and undo like any move.

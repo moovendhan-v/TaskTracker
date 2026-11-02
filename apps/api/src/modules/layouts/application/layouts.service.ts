@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { validateLayoutItems, type DashboardLayout, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
+import { cleanLayoutItem, validateLayoutItems, type DashboardLayout, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { LayoutRepository } from '../domain/layout.repository.js';
 
@@ -13,10 +13,10 @@ export class LayoutsService {
   }
 
   async save(workspaceId: string, userId: string, pageKey: LayoutPage, baseVersion: number | null, items: LayoutItem[]): Promise<DashboardLayout> {
-    const problems = validateLayoutItems(pageKey, items);
+    // Only the fields we know (and no empty settings), then the shared rules.
+    const clean = items.map(cleanLayoutItem);
+    const problems = validateLayoutItems(pageKey, clean);
     if (problems.length) throw DomainError.invalid(`Invalid layout: ${problems.join('; ')}`);
-    // Only the fields we know, in case the input carries more.
-    const clean = items.map(({ id, type, x, y, w, h }) => ({ id, type, x, y, w, h }));
     const saved = await this.repository.saveIfVersion({ workspaceId, userId, pageKey }, baseVersion, clean);
     if (!saved) throw DomainError.conflict('This layout was changed on another device');
     return saved;

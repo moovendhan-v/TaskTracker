@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { BlockAccent } from '@taskflow/shared-types';
 import { cn } from '@/lib/cn';
 import { READY, type BlockState } from './block-state';
 
@@ -39,7 +40,27 @@ interface BlockProps {
   bodyClassName?: string;
   /** Caps the body height and scrolls inside it. */
   maxBodyHeight?: number;
+  /** An accent colour chosen in the block's settings: a top rule and a tinted icon. */
+  accent?: BlockAccent;
 }
+
+/** Accent colours (BLOCK_ACCENTS), as text and as the block's top rule. */
+const ACCENT_TEXT: Record<BlockAccent, string> = {
+  orange: 'text-orange-500',
+  blue: 'text-sky-500',
+  green: 'text-emerald-500',
+  violet: 'text-violet-500',
+  pink: 'text-pink-500',
+  amber: 'text-amber-500',
+};
+const ACCENT_RULE: Record<BlockAccent, string> = {
+  orange: 'border-t-orange-500',
+  blue: 'border-t-sky-500',
+  green: 'border-t-emerald-500',
+  violet: 'border-t-violet-500',
+  pink: 'border-t-pink-500',
+  amber: 'border-t-amber-500',
+};
 
 /** Catches a crash inside one block and shows it in that block only. */
 class BlockBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -118,6 +139,7 @@ function Body({ state, skeleton, children }: { state: BlockState; skeleton: 'row
 export function Block({
   title,
   icon: Icon,
+  accent,
   chip,
   aside,
   toolbar,
@@ -144,12 +166,13 @@ export function Block({
         'relative flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card transition-[border-color,box-shadow]',
         'has-[:focus-visible]:border-ring has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-primary-soft has-[[data-state=open]]:border-ring has-[[data-state=open]]:ring-[3px] has-[[data-state=open]]:ring-primary-soft',
         arranging && 'border-dashed border-ring',
+        accent && !arranging && `border-t-2 ${ACCENT_RULE[accent]}`,
         className,
       )}
     >
       <header className={cn('flex h-10 shrink-0 items-center gap-2 border-b pr-2 pl-3', arranging && 'bg-primary-soft pr-10')}>
         {arranging ? <GripVerticalIcon aria-hidden className="size-4 shrink-0 cursor-grab text-subtle-foreground" /> : null}
-        {Icon ? <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" /> : null}
+        {Icon ? <Icon aria-hidden className={cn('size-4 shrink-0', accent ? ACCENT_TEXT[accent] : 'text-muted-foreground')} /> : null}
         <h2 className="min-w-0 truncate text-[13px] font-semibold">{title}</h2>
         {chip ? (
           <span

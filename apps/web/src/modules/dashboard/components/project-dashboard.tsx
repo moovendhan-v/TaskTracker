@@ -91,7 +91,7 @@ function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectCont
       category: 'Insights',
       skeleton: 'rows',
       size: { w: 12, h: 3 },
-      render: (data) => <StatusBreakdown data={data} openOnly={false} />,
+      render: (data, config) => <StatusBreakdown data={data} openOnly={config.includeClosed === false} />,
     },
     'hours-per-day': {
       title: 'Hours per day',
@@ -231,7 +231,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
         onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
       />
       {dashboard.isError ? <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} /> : null}
-      {!dashboard.isError ? <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} /> : null}
+      {!dashboard.isError ? <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} workspaceId={workspaceId} /> : null}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { HOME_BLOCK_TYPES, type DashboardResponse, type HomeBlockType } from '@taskflow/shared-types';
+import { HOME_BLOCK_TYPES, type BlockConfig, type DashboardResponse, type HomeBlockType } from '@taskflow/shared-types';
 import {
   CalendarClockIcon,
   CalendarRangeIcon,
@@ -30,8 +30,12 @@ export interface BlockDefinition {
   size: { w: number; h: number };
   aside?: string;
   chip?: (data: DashboardResponse) => string | undefined;
-  render: (data: DashboardResponse) => ReactNode;
+  /** Draws the block from its data; `config` is the block's own settings (view and data source). */
+  render: (data: DashboardResponse, config: BlockConfig) => ReactNode;
 }
+
+/** A task list cut to the block's limit, if it has one. */
+const limited = <T,>(tasks: readonly T[], config: BlockConfig) => (config.limit ? tasks.slice(0, config.limit) : tasks);
 
 /** Every block the Home page can hold (the order is the library's order). */
 export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
@@ -42,7 +46,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Insights',
     skeleton: 'rows',
     size: { w: 4, h: 5 },
-    render: (data) => <StatusBreakdown data={data} openOnly />,
+    render: (data, config) => <StatusBreakdown data={data} openOnly={!config.includeClosed} />,
   },
   priority: {
     title: 'Priority',
@@ -118,7 +122,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     skeleton: 'rows',
     size: { w: 4, h: 7 },
     chip: (data) => String(data.summary.overdue),
-    render: (data) => <DashboardTaskList tasks={data.overdueTasks} empty="Nothing overdue." />,
+    render: (data, config) => <DashboardTaskList tasks={limited(data.overdueTasks, config)} empty="Nothing overdue." />,
   },
   'due-soon-tasks': {
     title: 'Due in the next 14 days',
@@ -127,7 +131,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Tasks',
     skeleton: 'rows',
     size: { w: 4, h: 7 },
-    render: (data) => <DashboardTaskList tasks={data.dueSoonTasks} empty="Nothing due soon." />,
+    render: (data, config) => <DashboardTaskList tasks={limited(data.dueSoonTasks, config)} empty="Nothing due soon." />,
   },
   workload: {
     title: 'Team workload',
@@ -145,7 +149,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Tasks',
     skeleton: 'rows',
     size: { w: 12, h: 6 },
-    render: (data) => <DashboardTaskList tasks={data.recentlyUpdated} date="updated" columns={2} />,
+    render: (data, config) => <DashboardTaskList tasks={limited(data.recentlyUpdated, config)} date="updated" columns={2} />,
   },
 };
 

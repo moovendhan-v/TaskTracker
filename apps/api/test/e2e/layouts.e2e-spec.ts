@@ -76,4 +76,31 @@ describe('dashboard layouts', () => {
     expect((await ws.owner.error(SAVE, { w, input: { pageKey: 'project', baseVersion: 1, items: [{ id: 'status', type: 'status', x: 0, y: 0, w: 4, h: 5 }] } })).message).toMatch(/unknown block type/);
     expect((await ws.owner.error(SAVE, { w, input: { pageKey: 'home', baseVersion: null, items: projectItems } })).message).toMatch(/unknown block type/);
   });
+
+  it('stores block settings, data source apart from view, and checks them per block', async () => {
+    const ws = await createWorkspace('Block settings');
+    const w = ws.workspaceId;
+    const GET_CONFIG = 'query($w: ID!, $p: String!) { myLayout(workspaceId: $w, pageKey: $p) { items { id config { title accent spaceId limit includeClosed } } } }';
+    const items = [
+      { id: 'status', type: 'status', x: 0, y: 0, w: 4, h: 5, config: { title: 'Engineering status', accent: 'blue', spaceId: ws.spaceId, includeClosed: true } },
+      { id: 'overdue-tasks', type: 'overdue-tasks', x: 4, y: 0, w: 4, h: 7, config: { limit: 5 } },
+      { id: 'priority', type: 'priority', x: 8, y: 0, w: 4, h: 5, config: {} },
+    ];
+    await ws.owner.data(SAVE, { w, input: { pageKey: 'home', baseVersion: null, items } });
+    const stored = (await ws.owner.data<{ myLayout: { items: { id: string; config: Record<string, unknown> | null }[] } }>(GET_CONFIG, { w, p: 'home' })).myLayout.items;
+    expect(stored.map((item) => [item.id, item.config])).toEqual([
+      ['status', { title: 'Engineering status', accent: 'blue', spaceId: ws.spaceId, limit: null, includeClosed: true }],
+      ['overdue-tasks', { title: null, accent: null, spaceId: null, limit: 5, includeClosed: null }],
+      ['priority', null],
+    ]);
+    // Settings a block doesn't have, and bad values, are refused.
+    const bad = (config: Record<string, unknown>, type = 'priority') => ws.owner.error(SAVE, { w, input: { pageKey: 'home', baseVersion: 1, items: [{ id: type, type, x: 0, y: 0, w: 4, h: 5, config }] } });
+    expect((await bad({ limit: 5 })).message).toMatch(/limit isn't a setting of this block/);
+    expect((await bad({ includeClosed: true })).message).toMatch(/includeClosed isn't a setting/);
+    expect((await bad({ accent: 'neon' })).code).toBe('BAD_USER_INPUT');
+    expect((await bad({ limit: 7 }, 'overdue-tasks')).code).toBe('BAD_USER_INPUT');
+    expect((await bad({ title: 'x'.repeat(61) })).code).toBe('BAD_USER_INPUT');
+    // A project dashboard follows its page's project: no data source setting there.
+    expect((await ws.owner.error(SAVE, { w, input: { pageKey: 'project', baseVersion: null, items: [{ id: 'kpis', type: 'kpis', x: 0, y: 0, w: 12, h: 4, config: { spaceId: ws.spaceId } }] } })).message).toMatch(/spaceId isn't a setting/);
+  });
 });

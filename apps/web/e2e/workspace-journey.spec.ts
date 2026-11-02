@@ -357,6 +357,26 @@ test('opens the platform admin console after promotion by the operator CLI', asy
   await expect(page).toHaveURL(/\/w\//);
 });
 
+test('configures a Home block: its own title, colour and closed work, kept after a reload', async () => {
+  await page.getByRole('navigation', { name: 'Apps' }).getByRole('link', { name: 'Home', exact: true }).click();
+  const block = page.locator('section', { has: page.getByRole('heading', { name: 'Open work by status', exact: true }) }).last();
+  await block.hover();
+  await block.getByRole('button', { name: 'Block options' }).click();
+  await page.getByRole('menuitem', { name: 'Configure…' }).click();
+  const drawer = page.getByRole('dialog', { name: /Configure/ });
+  await drawer.getByLabel('Title').fill('Team status');
+  await drawer.getByRole('radio', { name: 'violet' }).click();
+  await drawer.getByLabel('Include closed work').click();
+  await drawer.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('heading', { name: 'Team status' })).toBeVisible();
+  const renamed = page.locator('section', { has: page.getByRole('heading', { name: 'Team status', exact: true }) }).last();
+  await expect(renamed.getByText('Done')).toBeVisible();
+  // Saved with the layout (debounced), so it survives a reload.
+  await page.waitForTimeout(1_500);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Team status' })).toBeVisible();
+});
+
 test('opens an empty inbox', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
   await expect(page).toHaveURL(/\/inbox$/);
