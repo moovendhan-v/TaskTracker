@@ -47,6 +47,8 @@ describe('chat file uploads', () => {
 
   it('uploads, checks, attaches and serves an image only to people who can read the channel', async () => {
     const ticket = await upload(ws.owner, 'screen shot.png', PNG);
+    // The link works once: the checked file can't be swapped afterwards.
+    expect((await put(ws.owner, ticket, Buffer.from('<html>swap</html>'))).status).toBe(409);
     const file = (await ws.owner.data<{ completeChatUpload: { attachment: { contentType: string; isImage: boolean; size: number } } }>(COMPLETE, { w, a: ticket.attachmentId })).completeChatUpload.attachment;
     expect(file).toMatchObject({ contentType: 'image/png', isImage: true, size: PNG.length });
 

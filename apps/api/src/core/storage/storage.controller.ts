@@ -31,6 +31,8 @@ export class StorageController {
     const declared = Number(request.headers['content-length']);
     if (!Number.isFinite(declared) || declared <= 0) return void refuse(response, 411, 'Content-Length is required');
     if (declared > grant.max) return void refuse(response, 413, 'File is too large');
+    // Single use: once bytes are stored (and possibly checked and sent), the link can't replace them.
+    if ((await this.storage.size(grant.key)) !== null) return void refuse(response, 409, 'This upload link was already used');
 
     let seen = 0;
     const limit = new Transform({
