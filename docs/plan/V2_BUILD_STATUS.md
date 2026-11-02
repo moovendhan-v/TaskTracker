@@ -23,7 +23,7 @@ Legend: ✅ built · 🟡 partial · ⬜ not started. "Gap" lists what v2 adds o
 | C4 | Dashboards (tabs, visibility) | 🟡 | Named dashboards as Home tabs next to Overview and My work: create, rename, duplicate, delete, share with the workspace or keep private; each has its own block layout on the grid (versions, conflict prompt, arrange for the owner only). New `dashboard` table with RLS per command (read: own + shared; write: own only), checked directly in SQL. Blocks load data with the viewer's own access | Team visibility (needs a teams model), date-range control per dashboard, KPI tiles with sparklines, dashboards on project pages |
 | C5 | Docs (tree, editor, embeds, present) | 🟡 | Tree with drag and drop, visual + markdown editor, slide presentation, export. Task references: `#123` renders as a live chip, `:::task 123` as a card and `:::tasks <open\|mine\|overdue\|due-soon> limit=N` as a live list (all plain markdown, fetched with the reader's access); `#` autocomplete in the markdown editor and visual paragraphs; Task card / Live task list blocks in the visual editor | Live cursors (Yjs), arbitrary filters in embedded lists, task embeds in slides' speaker notes |
 | C6 | Inbox | ✅ | Notification inbox with unread counts and live updates; docked side panel in the workbench (rail bell toggles it, remembered per browser; Unread / All; Today / Yesterday / Earlier groups; relative times; comment and automation excerpts; mark all read; Esc closes). Task notifications open the task over the current page; the new-notification toast opens the panel. `G I` still opens the full page | Snooze, per-kind filters, keyboard stepping through rows, @mentions (needs mentions in comments) |
-| D1 | Chat | ⬜ | | Channels, DMs, threads, create task from message |
+| D1 | Chat | ⬜ | Plan: [D1_CHAT.md](D1_CHAT.md) (data model, RLS, realtime fan-out, API, web, tests) | Channels, DMs, threads, create task from message |
 | D2 | Video calls, huddles | ⬜ | | Needs an SFU (LiveKit or similar); calls, lobby, PiP |
 | D3 | Virtual office | ⬜ | | Isometric floor + flat grid, presence states |
 | E1 | Automations | 🟡 | Rule builder: 9 triggers (task + GitHub PR), 5 actions, runs as the rule's owner | Flow canvas, conditions / branches / waits, run history and traces, bigger node catalogue |
@@ -40,7 +40,7 @@ Current state in [docs/screenshots/v2](../screenshots/v2).
 
 Following the handoff's build order (§10), with A1, A2, B1, C1, C2, C3 and C6 done, and B2 / B4 / C4 under way:
 
-1. **D1 chat**: write its plan first (data model, realtime, RLS), then build channels and threads.
+1. **D1 chat**: plan written ([D1_CHAT.md](D1_CHAT.md)); build in its order: migration + RLS, API, web.
 2. **B2 / B4 next steps**: the project dashboard on the grid, then team defaults (B4).
 3. **B3 block config drawer**: per-block data source and view settings, kept separate.
 
