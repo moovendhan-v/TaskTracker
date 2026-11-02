@@ -18,6 +18,7 @@ import { ProjectTemplates1729700000000 } from './1729700000000-project-templates
 import { Automations1729710000000 } from './1729710000000-automations.js';
 import { GithubIntegration1729720000000 } from './1729720000000-github-integration.js';
 import { Dashboards1729760000000 } from './1729760000000-dashboards.js';
+import { Chat1729770000000 } from './1729770000000-chat.js';
 import { SprintCommittedTasks1729750000000 } from './1729750000000-sprint-committed-tasks.js';
 import { DashboardLayouts1729740000000 } from './1729740000000-dashboard-layouts.js';
 import { MultipleAssignees1729730000000 } from './1729730000000-multiple-assignees.js';
@@ -47,4 +48,5 @@ export const MIGRATIONS = [
   DashboardLayouts1729740000000,
   SprintCommittedTasks1729750000000,
   Dashboards1729760000000,
+  Chat1729770000000,
 ];

@@ -114,9 +114,9 @@ export const MANAGED_POLICIES: readonly ManagedPolicy[] = [
   {
     key: 'Contributor',
     name: 'Contributor',
-    description: 'Create and update tasks and docs, log their own time, request time off and see the people directory.',
+    description: 'Create and update tasks and docs, chat, log their own time, request time off and see the people directory.',
     document: {
-      statements: [{ effect: 'allow', permissions: ['task.view', 'task.create', 'task.update', 'task.assign', 'doc.view', 'doc.create', 'hr.view', 'leave.request', 'time.log'] }],
+      statements: [{ effect: 'allow', permissions: ['task.view', 'task.create', 'task.update', 'task.assign', 'doc.view', 'doc.create', 'hr.view', 'leave.request', 'time.log', 'chat.use'] }],
     },
   },
   {

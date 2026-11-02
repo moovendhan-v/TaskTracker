@@ -41,5 +41,8 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
       return [queryKeys.automationsRoot(workspaceId)];
     case 'time_entry':
       return [queryKeys.timeRoot(workspaceId), queryKeys.dashboardRoot(workspaceId)];
+    case 'chat_channel':
+    case 'chat_message':
+      return [queryKeys.chatRoot(workspaceId)];
   }
 }

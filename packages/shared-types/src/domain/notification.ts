@@ -24,5 +24,7 @@ export const REALTIME_ENTITY_TYPES = [
   'time_entry',
   'automation',
   'integration',
+  'chat_channel',
+  'chat_message',
 ] as const;
 export type RealtimeEntityType = (typeof REALTIME_ENTITY_TYPES)[number];

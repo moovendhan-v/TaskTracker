@@ -40,7 +40,6 @@ All tables are tenant tables: `workspace_id` on every row, forced RLS, and `ON D
 | `dm_key` text null | sorted member ids joined, unique per workspace, so a DM between the same people is found, not duplicated |
 | `created_by` text → user, set null | |
 | `archived_at` timestamptz null | archived channels are read-only |
-| `last_message_at` timestamptz null | for sorting the channel list |
 | `created_at` timestamptz | |
 
 ### `chat_member`
@@ -69,7 +68,6 @@ When someone leaves the workspace, their memberships go too (a membership-remova
 | `body` text | 1–4000 chars after trimming; plain markdown, never raw HTML |
 | `task_id` uuid null → task, set null | the task created from this message |
 | `kind` text | `user` · `system` (the "created #123" line) |
-| `reply_count` int, `last_reply_at` timestamptz null | kept on the root inside the same transaction as the reply |
 | `edited_at`, `deleted_at` timestamptz null | delete clears `body` and keeps the row |
 | `created_at` timestamptz | |
 
@@ -79,26 +77,24 @@ Indexes: `(channel_id, created_at DESC, id)` for paging the channel, `(parent_id
 
 The core rule: **you can read a channel if it is public in a workspace you can access, or you are a member of it.** Private channels and DMs don't exist for anyone else, not even as names or counts.
 
-A `SECURITY DEFINER` helper does the membership lookup, so policies on `chat_member` don't call themselves (fixed `search_path`, `STABLE`, owned by the migration role, `EXECUTE` granted only to the app role):
+Helper functions (`app_chat_role`, `app_chat_has_members`, `app_can_read_chat_channel`, `app_can_post_chat`) do the membership lookups. They run as the caller, through the caller's own RLS.
 
-```sql
-app_can_read_chat_channel(channel uuid) → boolean
-  -- channel is in an accessible workspace AND (kind = 'public' OR current user is a member)
-app_is_chat_member(channel uuid) → boolean
-```
+**Built: why membership rows are workspace-wide.** A policy on `chat_member` can't read `chat_member` (Postgres rejects the recursion), and our owner role doesn't bypass RLS, so a `SECURITY DEFINER` helper wouldn't help either. Membership rows are therefore readable to anyone in the workspace at the database level. Channels and messages stay member-only in the database. The API returns members only for channels you can read.
 
 | table | SELECT | INSERT | UPDATE | DELETE |
 |---|---|---|---|---|
-| `chat_channel` | `app_can_read_chat_channel(id)` | workspace access AND `created_by = me` | owner of the channel (or `chat.manage` on public channels, enforced in the service) | none (archive instead) |
-| `chat_member` | workspace access AND (`user_id = me` OR `app_can_read_chat_channel(channel_id)`) | `user_id = me` AND channel is public (join), OR I own the channel (add people), OR the channel was created by me in this transaction (DM / new channel setup) | own row only (`last_read_at`, `muted`) | own row (leave), or I own the channel (remove) |
-| `chat_message` | `app_can_read_chat_channel(channel_id)` | `author_id = me` AND `app_is_chat_member(channel_id)` AND channel not archived | `author_id = me` (edit / delete) | none (soft delete) |
+| `chat_channel` | public, or I'm a member, or I created it and it has no members yet (setup) | workspace access AND `created_by = me` | public channels (the service requires the owner or `chat.manage`), or I own it | none (archive instead) |
+| `chat_member` | workspace access | join a public channel as a plain member; an owner adds people; the creator seeds an empty channel with themselves as owner | own row or as owner. A trigger stops self-promotion, and stops anyone changing someone else's read state or mute | own row (leave), or as owner (remove) |
+| `chat_message` | the channel is readable | `author_id = me`, I'm a member, and the channel isn't archived | `author_id = me`. A trigger allows only body, `edited_at` and `deleted_at` to change | none (soft delete) |
+
+Reply counts, last reply times and the channel's last message time are computed by queries, not stored, so nobody needs to update someone else's row. The `task_id` link goes on the system reply ("created #123"), which you author yourself.
 
 No `USING (true)`. Platform scope keeps its usual bypass for the admin console, as on every tenant table. A test proves each row of this table directly in SQL as two users (member and non-member of a private channel, and a DM outsider), like the dashboard tables.
 
 Service-level rules on top of RLS (the frontend sends ids and text only; never roles, authors or membership):
 
 - Author, owner and membership always come from the session.
-- DMs: the people must all be workspace members, there are 2–8 of them including you, nobody can be added later (start a new DM instead), and nobody owns them.
+- DMs: the people must all be workspace members, there are 2–8 of them including you, nobody can be added later (start a new DM instead). The creator holds the owner role in the database only so setup works; the service never lets anyone add people to a DM.
 - Private channels: only owners add or remove people. The last owner can't leave without handing over ownership.
 - Archived channels reject posts, edits and joins.
 - Every lookup by id goes through RLS-scoped queries in the session's workspace (no IDOR: a message id from another channel or workspace simply isn't found).
