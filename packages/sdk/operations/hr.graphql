@@ -68,3 +68,26 @@ query TeamAvailability($workspaceId: ID!, $from: String!, $to: String!) {
 query LeaveCalendar($workspaceId: ID!, $from: String!, $to: String!) {
   leaveCalendar(workspaceId: $workspaceId, from: $from, to: $to) { userId startDate endDate }
 }
+
+fragment AttendanceShiftFields on AttendanceShift {
+  id
+  userId
+  startedAt
+  endedAt
+  onBreak
+  workedMinutes
+  breaks { start end }
+}
+
+query MyAttendance($workspaceId: ID!) {
+  myAttendance(workspaceId: $workspaceId) { current { ...AttendanceShiftFields } recent { ...AttendanceShiftFields } }
+}
+
+query TeamAttendance($workspaceId: ID!, $from: String!, $to: String!) {
+  teamAttendance(workspaceId: $workspaceId, from: $from, to: $to) { ...AttendanceShiftFields }
+}
+
+mutation ClockIn($workspaceId: ID!) { clockIn(workspaceId: $workspaceId) { ...AttendanceShiftFields } }
+mutation ClockOut($workspaceId: ID!) { clockOut(workspaceId: $workspaceId) { ...AttendanceShiftFields } }
+mutation StartBreak($workspaceId: ID!) { startBreak(workspaceId: $workspaceId) { ...AttendanceShiftFields } }
+mutation EndBreak($workspaceId: ID!) { endBreak(workspaceId: $workspaceId) { ...AttendanceShiftFields } }

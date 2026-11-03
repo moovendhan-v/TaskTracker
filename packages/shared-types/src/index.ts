@@ -6,6 +6,7 @@ export * from './domain/pagination.js';
 export * from './domain/sprint.js';
 export * from './domain/document.js';
 export * from './domain/hr.js';
+export * from './domain/attendance.js';
 export * from './domain/notification.js';
 export * from './contracts/workspace.contract.js';
 export * from './contracts/member.contract.js';

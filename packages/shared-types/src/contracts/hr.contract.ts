@@ -1,3 +1,4 @@
+import type { AttendanceBreak } from '../domain/attendance.js';
 import type { EmploymentType, LeaveDecision, LeaveStatus } from '../domain/hr.js';
 
 export interface DepartmentResponse {
@@ -120,3 +121,22 @@ export interface TeamAbsenceResponse {
 
 /** Longest range one availability query may cover (at least the longest sprint). */
 export const AVAILABILITY_MAX_DAYS = 92;
+
+export interface AttendanceShiftResponse {
+  id: string;
+  userId: string;
+  startedAt: string;
+  /** Null while clocked in. */
+  endedAt: string | null;
+  breaks: AttendanceBreak[];
+  onBreak: boolean;
+  /** Worked so far: length minus breaks, as of the server's now. */
+  workedMinutes: number;
+}
+
+export interface MyAttendanceResponse {
+  /** The open shift, if you're clocked in. */
+  current: AttendanceShiftResponse | null;
+  /** Your latest shifts, newest first (the open one included). */
+  recent: AttendanceShiftResponse[];
+}

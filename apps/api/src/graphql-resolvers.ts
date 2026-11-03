@@ -9,6 +9,7 @@ import { DocumentsResolver } from './modules/documents/presentation/graphql/docu
 import { DepartmentsResolver } from './modules/hr/departments/presentation/graphql/departments.resolver.js';
 import { EmployeesResolver } from './modules/hr/employees/presentation/graphql/employees.resolver.js';
 import { LeaveResolver } from './modules/hr/leave/presentation/graphql/leave.resolver.js';
+import { AttendanceResolver } from './modules/hr/attendance/presentation/graphql/attendance.resolver.js';
 import { FoldersResolver } from './modules/lists/presentation/graphql/folders.resolver.js';
 import { GithubResolver } from './modules/integrations/presentation/graphql/github.resolver.js';
 import { AutomationsResolver } from './modules/automations/presentation/graphql/automations.resolver.js';
@@ -55,6 +56,7 @@ export const RESOLVERS = [
   DepartmentsResolver,
   EmployeesResolver,
   LeaveResolver,
+  AttendanceResolver,
   WorkspaceAuditLogResolver,
   AdminResolver,
   NotificationsResolver,

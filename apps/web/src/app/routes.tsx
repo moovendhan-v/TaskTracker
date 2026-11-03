@@ -13,7 +13,7 @@ import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@
 import { DocumentsPage } from '@/modules/documents';
 import { ChatMessageRedirect, ChatPage } from '@/modules/chat';
 import { HomePage } from '@/modules/dashboard';
-import { ApprovalsPage, DepartmentsPage, DirectoryPage, LeaveTypesPage, TimeOffPage } from '@/modules/hr';
+import { ApprovalsPage, AttendancePage, DepartmentsPage, DirectoryPage, LeaveTypesPage, TimeOffPage } from '@/modules/hr';
 import { listsApi } from '@/modules/lists';
 import { InboxPage } from '@/modules/inbox';
 import { AppearancePage } from '@/modules/preferences';
@@ -300,6 +300,7 @@ function workspacePage<TPath extends string>(path: TPath, Page: (props: { worksp
 const directoryRoute = workspacePage('/people', DirectoryPage);
 const departmentsRoute = workspacePage('/people/departments', DepartmentsPage);
 const timeOffRoute = workspacePage('/people/time-off', TimeOffPage);
+const attendanceRoute = workspacePage('/people/attendance', AttendancePage);
 const approvalsRoute = workspacePage('/people/approvals', ApprovalsPage);
 const leaveTypesRoute = workspacePage('/people/leave-types', LeaveTypesPage);
 const auditLogRoute = workspacePage('/audit-log', WorkspaceAuditLogPage);
@@ -361,6 +362,7 @@ const routeTree = rootRoute.addChildren([
       directoryRoute,
       departmentsRoute,
       timeOffRoute,
+      attendanceRoute,
       approvalsRoute,
       leaveTypesRoute,
       auditLogRoute,

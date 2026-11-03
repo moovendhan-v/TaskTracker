@@ -1,5 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MembersModule } from '../members/members.module.js';
+import { AttendanceService } from './attendance/application/attendance.service.js';
+import { AttendanceRepository } from './attendance/domain/attendance.repository.js';
+import { TypeOrmAttendanceRepository } from './attendance/infrastructure/typeorm-attendance.repository.js';
+import { AttendanceResolver } from './attendance/presentation/graphql/attendance.resolver.js';
 import { DepartmentsService } from './departments/application/departments.service.js';
 import { DepartmentRepository } from './departments/domain/department.repository.js';
 import { TypeOrmDepartmentRepository } from './departments/infrastructure/typeorm-department.repository.js';
@@ -18,7 +22,7 @@ import { TypeOrmLeaveRequestRepository } from './leave/infrastructure/typeorm-le
 import { TypeOrmLeaveTypeRepository } from './leave/infrastructure/typeorm-leave-type.repository.js';
 import { LeaveResolver } from './leave/presentation/graphql/leave.resolver.js';
 
-/** People features: departments, employee profiles and time off. */
+/** People features: departments, employee profiles, time off and attendance. */
 @Module({
   imports: [MembersModule],
   providers: [
@@ -29,6 +33,9 @@ import { LeaveResolver } from './leave/presentation/graphql/leave.resolver.js';
     DepartmentsResolver,
     EmployeesResolver,
     LeaveResolver,
+    AttendanceService,
+    AttendanceResolver,
+    { provide: AttendanceRepository, useClass: TypeOrmAttendanceRepository },
     { provide: DepartmentRepository, useClass: TypeOrmDepartmentRepository },
     { provide: EmployeeProfileRepository, useClass: TypeOrmEmployeeProfileRepository },
     { provide: LeaveTypeRepository, useClass: TypeOrmLeaveTypeRepository },

@@ -1585,6 +1585,52 @@ export type LeaveCalendarQueryVariables = Exact<{
 
 export type LeaveCalendarQuery = { leaveCalendar: Array<{ userId: string, startDate: string, endDate: string }> };
 
+export type AttendanceShiftFieldsFragment = { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> };
+
+export type MyAttendanceQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type MyAttendanceQuery = { myAttendance: { current: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } | null, recent: Array<{ id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> }> } };
+
+export type TeamAttendanceQueryVariables = Exact<{
+  workspaceId: string;
+  from: string;
+  to: string;
+}>;
+
+
+export type TeamAttendanceQuery = { teamAttendance: Array<{ id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> }> };
+
+export type ClockInMutationVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ClockInMutation = { clockIn: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } };
+
+export type ClockOutMutationVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ClockOutMutation = { clockOut: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } };
+
+export type StartBreakMutationVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type StartBreakMutation = { startBreak: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } };
+
+export type EndBreakMutationVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type EndBreakMutation = { endBreak: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } };
+
 export type GithubConnectionFieldsFragment = { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } };
 
 export type GithubConnectionsQueryVariables = Exact<{
@@ -3131,6 +3177,20 @@ export const PreferencesFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"PreferencesFields"}) as unknown as TypedDocumentString<PreferencesFieldsFragment, unknown>;
+export const AttendanceShiftFieldsFragmentDoc = new TypedDocumentString(`
+    fragment AttendanceShiftFields on AttendanceShift {
+  id
+  userId
+  startedAt
+  endedAt
+  onBreak
+  workedMinutes
+  breaks {
+    start
+    end
+  }
+}
+    `, {"fragmentName":"AttendanceShiftFields"}) as unknown as TypedDocumentString<AttendanceShiftFieldsFragment, unknown>;
 export const GithubConnectionFieldsFragmentDoc = new TypedDocumentString(`
     fragment GithubConnectionFields on GithubConnection {
   id
@@ -4870,6 +4930,119 @@ export const LeaveCalendarDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<LeaveCalendarQuery, LeaveCalendarQueryVariables>;
+export const MyAttendanceDocument = new TypedDocumentString(`
+    query MyAttendance($workspaceId: ID!) {
+  myAttendance(workspaceId: $workspaceId) {
+    current {
+      ...AttendanceShiftFields
+    }
+    recent {
+      ...AttendanceShiftFields
+    }
+  }
+}
+    fragment AttendanceShiftFields on AttendanceShift {
+  id
+  userId
+  startedAt
+  endedAt
+  onBreak
+  workedMinutes
+  breaks {
+    start
+    end
+  }
+}`) as unknown as TypedDocumentString<MyAttendanceQuery, MyAttendanceQueryVariables>;
+export const TeamAttendanceDocument = new TypedDocumentString(`
+    query TeamAttendance($workspaceId: ID!, $from: String!, $to: String!) {
+  teamAttendance(workspaceId: $workspaceId, from: $from, to: $to) {
+    ...AttendanceShiftFields
+  }
+}
+    fragment AttendanceShiftFields on AttendanceShift {
+  id
+  userId
+  startedAt
+  endedAt
+  onBreak
+  workedMinutes
+  breaks {
+    start
+    end
+  }
+}`) as unknown as TypedDocumentString<TeamAttendanceQuery, TeamAttendanceQueryVariables>;
+export const ClockInDocument = new TypedDocumentString(`
+    mutation ClockIn($workspaceId: ID!) {
+  clockIn(workspaceId: $workspaceId) {
+    ...AttendanceShiftFields
+  }
+}
+    fragment AttendanceShiftFields on AttendanceShift {
+  id
+  userId
+  startedAt
+  endedAt
+  onBreak
+  workedMinutes
+  breaks {
+    start
+    end
+  }
+}`) as unknown as TypedDocumentString<ClockInMutation, ClockInMutationVariables>;
+export const ClockOutDocument = new TypedDocumentString(`
+    mutation ClockOut($workspaceId: ID!) {
+  clockOut(workspaceId: $workspaceId) {
+    ...AttendanceShiftFields
+  }
+}
+    fragment AttendanceShiftFields on AttendanceShift {
+  id
+  userId
+  startedAt
+  endedAt
+  onBreak
+  workedMinutes
+  breaks {
+    start
+    end
+  }
+}`) as unknown as TypedDocumentString<ClockOutMutation, ClockOutMutationVariables>;
+export const StartBreakDocument = new TypedDocumentString(`
+    mutation StartBreak($workspaceId: ID!) {
+  startBreak(workspaceId: $workspaceId) {
+    ...AttendanceShiftFields
+  }
+}
+    fragment AttendanceShiftFields on AttendanceShift {
+  id
+  userId
+  startedAt
+  endedAt
+  onBreak
+  workedMinutes
+  breaks {
+    start
+    end
+  }
+}`) as unknown as TypedDocumentString<StartBreakMutation, StartBreakMutationVariables>;
+export const EndBreakDocument = new TypedDocumentString(`
+    mutation EndBreak($workspaceId: ID!) {
+  endBreak(workspaceId: $workspaceId) {
+    ...AttendanceShiftFields
+  }
+}
+    fragment AttendanceShiftFields on AttendanceShift {
+  id
+  userId
+  startedAt
+  endedAt
+  onBreak
+  workedMinutes
+  breaks {
+    start
+    end
+  }
+}`) as unknown as TypedDocumentString<EndBreakMutation, EndBreakMutationVariables>;
 export const GithubConnectionsDocument = new TypedDocumentString(`
     query GithubConnections($workspaceId: ID!) {
   githubConnections(workspaceId: $workspaceId) {
