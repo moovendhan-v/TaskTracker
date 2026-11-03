@@ -1456,7 +1456,9 @@ type Mutation {
   updateComment(commentId: ID!, input: CommentInput!, workspaceId: ID!): Comment!
   updateCustomField(fieldId: ID!, input: UpdateCustomFieldInput!, workspaceId: ID!): CustomField!
 
-  """Rename or share / unshare one of your dashboards"""
+  """
+  Rename, share / unshare, or set the date range of one of your dashboards
+  """
   updateDashboard(dashboardId: ID!, input: UpdateDashboardInput!, workspaceId: ID!): NamedDashboard!
   updateDepartment(departmentId: ID!, input: UpdateDepartmentInput!, workspaceId: ID!): Department!
   updateDocument(documentId: ID!, input: UpdateDocumentInput!, workspaceId: ID!): Document!
@@ -1501,6 +1503,11 @@ type NamedDashboard {
   mine: Boolean!
   name: String!
   ownerId: ID!
+
+  """
+  The date range it opens with (this_week, last_30, …); null for the page’s own
+  """
+  period: String
   updatedAt: String!
   version: Int!
   visibility: String!
@@ -2492,6 +2499,9 @@ input UpdateCustomFieldInput {
 
 input UpdateDashboardInput {
   name: String
+
+  """The date range it opens with"""
+  period: String
   visibility: String
 }
 

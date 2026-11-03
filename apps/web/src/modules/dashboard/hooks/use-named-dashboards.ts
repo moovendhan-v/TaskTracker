@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { DashboardVisibility, LayoutItem, NamedDashboardResponse } from '@taskflow/shared-types';
+import type { DashboardPeriod, DashboardVisibility, LayoutItem, NamedDashboardResponse } from '@taskflow/shared-types';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
 import { queryKeys } from '@/lib/query-keys';
@@ -25,7 +25,7 @@ export function useNamedDashboardMutations(workspaceId: string) {
       onError,
     }),
     update: useMutation({
-      mutationFn: ({ id, ...input }: { id: string; name?: string; visibility?: DashboardVisibility }) => dashboardsApi.update(workspaceId, id, input),
+      mutationFn: ({ id, ...input }: { id: string; name?: string; visibility?: DashboardVisibility; period?: DashboardPeriod }) => dashboardsApi.update(workspaceId, id, input),
       onSuccess: refresh,
       onError,
     }),

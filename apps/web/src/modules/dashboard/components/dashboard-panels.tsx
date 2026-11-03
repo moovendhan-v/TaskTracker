@@ -1,7 +1,7 @@
 import { ClipboardListIcon, ClockIcon, FolderIcon, ListChecksIcon, TriangleAlertIcon, CalendarClockIcon, UserXIcon } from 'lucide-react';
 import type { DashboardResponse } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
-import { BarList, ColumnChart, GroupedColumnChart, Legend, StackedBar } from '@/components/kit/charts';
+import { BarList, ColumnChart, GroupedColumnChart, Legend, Sparkline, StackedBar } from '@/components/kit/charts';
 import { StatCard } from '@/components/kit/stat-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatMonthDay, formatNumericDate } from '@/lib/periods';
@@ -12,11 +12,28 @@ type Dashboard = DashboardResponse;
 export function KpiRow({ data, mode }: { data: Dashboard; mode: 'home' | 'project' }) {
   const { summary } = data;
   const total = summary.openTasks + summary.closedTasks;
+  // Trends from data the dashboard already has: the last eight weeks, and the hours of the chosen period.
+  const weeks = (key: 'created' | 'closed') => data.createdVsClosed.map((week) => ({ label: `Week of ${formatMonthDay(week.weekStart)}`, value: week[key] }));
+  const hours = data.minutesPerDay.map((day) => ({ label: formatMonthDay(day.day), value: day.minutes }));
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       {mode === 'home' ? <StatCard label="Projects" icon={<FolderIcon />} value={summary.projects} /> : null}
-      <StatCard label="Open tasks" icon={<ListChecksIcon />} value={summary.openTasks} hint={mode === 'home' ? `${summary.closedTasks} closed` : `${total} total`} />
-      {mode === 'project' ? <StatCard label="Closed" icon={<ClipboardListIcon />} value={summary.closedTasks} hint={total ? `${Math.round((summary.closedTasks / total) * 100)}% of all` : undefined} /> : null}
+      <StatCard
+        label="Open tasks"
+        icon={<ListChecksIcon />}
+        value={summary.openTasks}
+        hint={mode === 'home' ? `${summary.closedTasks} closed` : `${total} total`}
+        trend={<Sparkline points={weeks('created')} label="Tasks created per week, last 8 weeks" />}
+      />
+      {mode === 'project' ? (
+        <StatCard
+          label="Closed"
+          icon={<ClipboardListIcon />}
+          value={summary.closedTasks}
+          hint={total ? `${Math.round((summary.closedTasks / total) * 100)}% of all` : undefined}
+          trend={<Sparkline points={weeks('closed')} label="Tasks closed per week, last 8 weeks" />}
+        />
+      ) : null}
       <StatCard label="Overdue" icon={<TriangleAlertIcon />} value={summary.overdue} tone={summary.overdue > 0 ? 'critical' : 'default'} />
       <StatCard label="Due in 7 days" icon={<CalendarClockIcon />} value={summary.dueSoon} tone={summary.dueSoon > 0 ? 'warning' : 'default'} />
       <StatCard label={mode === 'home' ? 'Unassigned' : 'Unassigned (open)'} icon={<UserXIcon />} value={summary.unassigned} />
@@ -25,6 +42,7 @@ export function KpiRow({ data, mode }: { data: Dashboard; mode: 'home' | 'projec
         icon={<ClockIcon />}
         value={formatHours(summary.minutesLogged)}
         hint={data.hoursOnlyMine ? 'your time only' : mode === 'project' ? `${summary.entries} entries · ${formatMinutes(summary.minutesAllTime)} all-time` : 'selected people'}
+        trend={<Sparkline points={hours} label="Hours logged per day in this period" formatValue={formatMinutes} />}
       />
     </div>
   );

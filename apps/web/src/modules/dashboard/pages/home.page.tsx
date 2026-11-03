@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/core/auth/use-current-user';
 import { usePreferences } from '@/core/preferences/use-preferences';
 import { queryKeys } from '@/lib/query-keys';
-import type { Period } from '@/lib/periods';
+import { PERIOD_LABELS, type Period } from '@/lib/periods';
 import { useMemberName } from '@/modules/members';
 import { NewTaskDialog, useOpenTask } from '@/modules/tasks';
 import { ArrangeableGrid } from '../components/arrangeable-grid';
@@ -65,7 +65,8 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
   const openTask = useOpenTask();
   const memberName = useMemberName(workspaceId);
   const [tab, setTab] = useState<HomeTab>('overview');
-  const [period, setPeriod] = useState<Period>('this_week');
+  // Each tab keeps its own range; a named dashboard opens with the one its owner saved.
+  const [periods, setPeriods] = useState<Partial<Record<string, Period>>>({});
   const [people, setPeople] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const named = useNamedDashboards(workspaceId);
@@ -76,6 +77,17 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
   // list has loaded: never show (and let someone edit) the overview in a dashboard's place.
   const waiting = tab.startsWith('dashboard:') && !active && named.isFetching;
   const current: HomeTab = tab.startsWith('dashboard:') && !active && !waiting ? 'overview' : tab;
+  const period: Period = periods[current] ?? active?.period ?? 'this_week';
+  const setPeriod = (next: Period) => {
+    setPeriods((all) => ({ ...all, [current]: next }));
+    // The owner's choice is saved with the dashboard, so it opens that way for everyone.
+    if (active?.mine && active.period !== next) mutations.update.mutate({ id: active.id, period: next });
+  };
+  const periodNote = active
+    ? active.mine
+      ? 'hours are for this period (saved with this dashboard), task counts are live'
+      : `hours are for this period (this dashboard opens with ${PERIOD_LABELS[active.period ?? 'this_week'].toLowerCase()}), task counts are live`
+    : 'hours are for this period, task counts are live';
 
   const userIds = current === 'mine' && me ? [me.id] : people;
   const dashboard = useDashboard(workspaceId, dashboardInput(period, weekStart, { userIds }));
@@ -121,7 +133,7 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
           period={period}
           onPeriod={setPeriod}
           weekStart={weekStart}
-          note="hours are for this period, task counts are live"
+          note={periodNote}
           refreshing={dashboard.isFetching}
           onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
           people={current === 'mine' ? undefined : { workspaceId, selected: people, onChange: setPeople, meId: me?.id }}

@@ -1,4 +1,4 @@
-import { cleanLayoutItem, type BlockConfig, type DashboardVisibility, type LayoutItem, type LayoutPage, type NamedDashboardResponse } from '@taskflow/shared-types';
+import { cleanLayoutItem, DASHBOARD_PERIODS, type BlockConfig, type DashboardPeriod, type DashboardVisibility, type LayoutItem, type LayoutPage, type NamedDashboardResponse } from '@taskflow/shared-types';
 import {
   CreateDashboardDocument,
   DashboardsDocument,
@@ -43,9 +43,11 @@ export const layoutsApi = {
 };
 
 const itemsOnly = (items: readonly LayoutItem[]) => items.map(toInput);
-const asDashboard = (fields: { visibility: string; items: readonly ApiItem[] } & Omit<NamedDashboardResponse, 'visibility' | 'items'>): NamedDashboardResponse => ({
+const asDashboard = (fields: { visibility: string; period?: string | null; items: readonly ApiItem[] } & Omit<NamedDashboardResponse, 'visibility' | 'period' | 'items'>): NamedDashboardResponse => ({
   ...fields,
   visibility: fields.visibility as DashboardVisibility,
+  // Only ranges this app knows; anything else falls back to the page's own.
+  period: (DASHBOARD_PERIODS as readonly string[]).includes(fields.period ?? '') ? (fields.period as DashboardPeriod) : null,
   items: fromApiItems(fields.items),
 });
 
@@ -54,7 +56,7 @@ export const dashboardsApi = {
   list: async (workspaceId: string) => (await graphql(DashboardsDocument, { workspaceId })).dashboards.map(asDashboard),
   create: async (workspaceId: string, input: { name: string; visibility: DashboardVisibility; items?: LayoutItem[] }) =>
     asDashboard((await graphql(CreateDashboardDocument, { workspaceId, input: { ...input, items: input.items ? itemsOnly(input.items) : null } })).createDashboard),
-  update: async (workspaceId: string, dashboardId: string, input: { name?: string; visibility?: DashboardVisibility }) =>
+  update: async (workspaceId: string, dashboardId: string, input: { name?: string; visibility?: DashboardVisibility; period?: DashboardPeriod }) =>
     asDashboard((await graphql(UpdateDashboardDocument, { workspaceId, dashboardId, input })).updateDashboard),
   saveLayout: async (workspaceId: string, dashboardId: string, baseVersion: number, items: LayoutItem[]) =>
     asDashboard((await graphql(SaveDashboardLayoutDocument, { workspaceId, dashboardId, input: { baseVersion, items: itemsOnly(items) } })).saveDashboardLayout),

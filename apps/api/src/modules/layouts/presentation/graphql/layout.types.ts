@@ -4,6 +4,8 @@ import { ArrayMaxSize, ArrayUnique, IsArray, IsBoolean, IsIn, IsInt, IsString, I
 import { TaskPriorityEnum } from '../../../../core/graphql/enums.js';
 import {
   DASHBOARD_LIMITS,
+  DASHBOARD_PERIODS,
+  type DashboardPeriod,
   DASHBOARD_VISIBILITIES,
   GRID_COLUMNS,
   LAYOUT_LIMITS,
@@ -108,6 +110,7 @@ export class NamedDashboardGql implements NamedDashboardResponse {
   @Field({ description: 'You own it, so you can edit, share or delete it' }) mine: boolean;
   @Field(() => Int) version: number;
   @Field(() => [LayoutItemGql]) items: LayoutItemGql[];
+  @Field(() => String, { nullable: true, description: 'The date range it opens with (this_week, last_30, …); null for the page’s own' }) period: DashboardPeriod | null;
   @Field() updatedAt: string;
 }
 
@@ -129,6 +132,7 @@ export class CreateDashboardInput {
 export class UpdateDashboardInput {
   @Field({ nullable: true }) @IsOmittable() @IsString() @IsNotBlank() @MaxLength(DASHBOARD_LIMITS.nameMax) name?: string;
   @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(DASHBOARD_VISIBILITIES) visibility?: DashboardVisibility;
+  @Field(() => String, { nullable: true, description: 'The date range it opens with' }) @IsOmittable() @IsIn(DASHBOARD_PERIODS) period?: DashboardPeriod;
 }
 
 @InputType('SaveDashboardLayoutInput')

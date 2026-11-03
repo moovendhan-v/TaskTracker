@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { cleanLayoutItem, DASHBOARD_LIMITS, DEFAULT_LAYOUTS, validateLayoutItems, type NamedDashboardResponse, type DashboardVisibility, type LayoutItem } from '@taskflow/shared-types';
+import { cleanLayoutItem, DASHBOARD_LIMITS, DEFAULT_LAYOUTS, validateLayoutItems, type NamedDashboardResponse, type DashboardPeriod, type DashboardVisibility, type LayoutItem } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { DashboardRepository, type DashboardRecord } from '../domain/dashboard.repository.js';
 
@@ -14,6 +14,7 @@ function toResponse(record: DashboardRecord, userId: string): NamedDashboardResp
     mine: record.ownerId === userId,
     version: record.version,
     items: record.items,
+    period: record.period ?? null,
     updatedAt: record.updatedAt.toISOString(),
   };
 }
@@ -40,9 +41,9 @@ export class DashboardsService {
     return toResponse(await this.dashboards.create({ workspaceId, ownerId: userId, name: input.name.trim(), visibility: input.visibility, items }), userId);
   }
 
-  async update(workspaceId: string, userId: string, id: string, changes: { name?: string | null; visibility?: DashboardVisibility | null }): Promise<NamedDashboardResponse> {
+  async update(workspaceId: string, userId: string, id: string, changes: { name?: string | null; visibility?: DashboardVisibility | null; period?: DashboardPeriod | null }): Promise<NamedDashboardResponse> {
     await this.assertOwner(workspaceId, userId, id);
-    const saved = await this.dashboards.rename(workspaceId, userId, id, { name: changes.name?.trim() || undefined, visibility: changes.visibility ?? undefined });
+    const saved = await this.dashboards.rename(workspaceId, userId, id, { name: changes.name?.trim() || undefined, visibility: changes.visibility ?? undefined, period: changes.period ?? undefined });
     if (!saved) throw DomainError.notFound('Dashboard');
     return toResponse(saved, userId);
   }
