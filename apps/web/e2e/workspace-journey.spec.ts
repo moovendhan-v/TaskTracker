@@ -331,6 +331,24 @@ test("requests time off, can't approve it themselves, and auto-approved leave up
   await expect(calendar.getByRole('cell', { name: /December 8: nobody away$/ })).toBeVisible();
 });
 
+test('clocks in, takes a break, clocks out, and shows on the team week', async () => {
+  await page.getByRole('link', { name: 'Attendance' }).click();
+  await expect(page.getByRole('heading', { name: 'You’re not clocked in' })).toBeVisible();
+  await page.getByRole('button', { name: 'Clock in' }).click();
+  await expect(page.getByRole('heading', { name: /^Working since / })).toBeVisible();
+  await page.getByRole('button', { name: 'Start break' }).click();
+  await expect(page.getByRole('heading', { name: /^On a break since / })).toBeVisible();
+  await page.getByRole('button', { name: 'End break' }).click();
+  await expect(page.getByRole('heading', { name: /^Working since / })).toBeVisible();
+  const team = page.getByRole('table', { name: /^Team attendance/ });
+  await expect(team.getByText('In now')).toBeVisible();
+  await page.getByRole('button', { name: 'Clock out' }).click();
+  await expect(page.getByRole('heading', { name: 'You’re not clocked in' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Your recent shifts' }).getByRole('listitem')).toHaveCount(1);
+  await expect(page.getByRole('list', { name: 'Your recent shifts' })).toContainText('1 break');
+  await expect(team.getByText('In now')).toHaveCount(0);
+});
+
 test('creates a custom role and lists members', async () => {
   await page.getByRole('link', { name: 'Roles' }).click();
   await page.getByRole('button', { name: 'New role' }).click();

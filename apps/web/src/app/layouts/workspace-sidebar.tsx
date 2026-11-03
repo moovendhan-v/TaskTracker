@@ -145,6 +145,11 @@ export function WorkspaceSidebar({ workspaceId, unread }: { workspaceId: string;
               Time off
             </SidebarLink>
           ) : null}
+          {can('time.log') ? (
+            <SidebarLink to="/w/$workspaceId/people/attendance" params={params} icon={<TimerIcon />}>
+              Attendance
+            </SidebarLink>
+          ) : null}
           {can('leave.approve') ? (
             <SidebarLink to="/w/$workspaceId/people/approvals" params={params} icon={<ClipboardCheckIcon />}>
               Approvals

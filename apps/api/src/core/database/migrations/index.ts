@@ -28,6 +28,7 @@ import { TaskAttachments1729830000000 } from './1729830000000-task-attachments.j
 import { AutomationFlows1729840000000 } from './1729840000000-automation-flows.js';
 import { AutomationSchedules1729850000000 } from './1729850000000-automation-schedules.js';
 import { DashboardPeriod1729860000000 } from './1729860000000-dashboard-period.js';
+import { Attendance1729870000000 } from './1729870000000-attendance.js';
 import { SprintCommittedTasks1729750000000 } from './1729750000000-sprint-committed-tasks.js';
 import { DashboardLayouts1729740000000 } from './1729740000000-dashboard-layouts.js';
 import { MultipleAssignees1729730000000 } from './1729730000000-multiple-assignees.js';
@@ -67,4 +68,5 @@ export const MIGRATIONS = [
   AutomationFlows1729840000000,
   AutomationSchedules1729850000000,
   DashboardPeriod1729860000000,
+  Attendance1729870000000,
 ];

@@ -47,6 +47,27 @@ type AttachedPolicy {
   ref: String!
 }
 
+type AttendanceBreak {
+  """Null while the break is running"""
+  end: String
+  start: String!
+}
+
+"""One clocked shift: in, breaks, out. Times are the server’s"""
+type AttendanceShift {
+  breaks: [AttendanceBreak!]!
+
+  """Null while clocked in"""
+  endedAt: String
+  id: ID!
+  onBreak: Boolean!
+  startedAt: String!
+  userId: ID!
+
+  """Worked so far: length minus breaks"""
+  workedMinutes: Int!
+}
+
 type AuditLogEntry {
   action: String!
   actorId: ID!
@@ -1222,6 +1243,10 @@ type Mutation {
   Back to the built-in default for everyone who has not arranged the page (audited)
   """
   clearWorkspaceLayout(pageKey: String!, workspaceId: ID!): Boolean!
+  clockIn(workspaceId: ID!): AttendanceShift!
+
+  """Ends your shift, and a running break with it"""
+  clockOut(workspaceId: ID!): AttendanceShift!
 
   """
   Checks an uploaded file (size, real type). Files that fail are deleted and the reason returned
@@ -1332,6 +1357,7 @@ type Mutation {
   discardChatUpload(attachmentId: ID!, workspaceId: ID!): Boolean!
   disconnectGithub(connectionId: ID!, workspaceId: ID!): Boolean!
   editChatMessage(body: String!, messageId: ID!, workspaceId: ID!): ChatMessage!
+  endBreak(workspaceId: ID!): AttendanceShift!
 
   """Adds a template from an exported JSON file"""
   importTemplate(input: ImportTemplateInput!, workspaceId: ID!): ProjectTemplate!
@@ -1433,6 +1459,7 @@ type Mutation {
 
   """Makes a layout the workspace default for a page (audited)"""
   setWorkspaceLayout(input: SetWorkspaceLayoutInput!, workspaceId: ID!): WorkspaceLayout!
+  startBreak(workspaceId: ID!): AttendanceShift!
   startSprint(sprintId: ID!, workspaceId: ID!): Sprint!
 
   """Starts a timer; a timer already running is stopped first"""
@@ -1490,6 +1517,11 @@ type MyAccess {
   permissions: [String!]!
   readableFields: [String!]!
   spaceRules: [SpaceRule!]!
+}
+
+type MyAttendance {
+  current: AttendanceShift
+  recent: [AttendanceShift!]!
 }
 
 """
@@ -1780,6 +1812,9 @@ type Query {
   """
   myAccess(workspaceId: ID!): MyAccess!
 
+  """Whether you are clocked in, and your recent shifts"""
+  myAttendance(workspaceId: ID!): MyAttendance!
+
   """Your saved layout for a page; null means the built-in default"""
   myLayout(pageKey: String!, workspaceId: ID!): DashboardLayout
 
@@ -1881,6 +1916,18 @@ type Query {
 
   """Users following the task"""
   taskWatchers(taskId: ID!, workspaceId: ID!): [ID!]!
+
+  """
+  Everyone’s shifts that overlap the range (at most 31 days and 500 shifts)
+  """
+  teamAttendance(
+    """ISO date-time"""
+    from: String!
+
+    """ISO date-time, exclusive"""
+    to: String!
+    workspaceId: ID!
+  ): [AttendanceShift!]!
 
   """
   Who is away when (approved leave, dates only), for sprint capacity planning
