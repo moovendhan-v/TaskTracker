@@ -38,6 +38,10 @@ export function useMyLeave(workspaceId: string) {
   return useQuery({ queryKey: queryKeys.myLeave(workspaceId), queryFn: () => leaveRequestsApi.mine(workspaceId) });
 }
 
+export function useLeaveCalendar(workspaceId: string, from: string, to: string, enabled = true) {
+  return useQuery({ queryKey: [...queryKeys.hrRoot(workspaceId), 'leave', 'calendar', from, to], queryFn: () => leaveRequestsApi.calendar(workspaceId, from, to), enabled });
+}
+
 export function useLeaveQueue(workspaceId: string, status: LeaveStatus | undefined) {
   return useQuery({ queryKey: queryKeys.leaveQueue(workspaceId, status ?? 'all'), queryFn: () => leaveRequestsApi.queue(workspaceId, status) });
 }

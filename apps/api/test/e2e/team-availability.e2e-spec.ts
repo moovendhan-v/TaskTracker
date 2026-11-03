@@ -43,4 +43,28 @@ describe('team availability for sprint planning', () => {
     expect((await ws.owner.error(AVAILABILITY, { w, from: '2026-01-01', to: '2026-06-01' })).message).toMatch(/At most 92 days/);
     expect((await ws.owner.error(AVAILABILITY, { w, from: 'yesterday', to: '2026-06-01' })).message).toMatch(/yyyy-mm-dd/);
   });
+
+  it('shows the team leave calendar to anyone who sees the directory, as dates and people only', async () => {
+    const CALENDAR = 'query($w: ID!, $from: String!, $to: String!) { leaveCalendar(workspaceId: $w, from: $from, to: $to) { userId startDate endDate } }';
+    const ws = await createWorkspace('Calendar owner');
+    const w = ws.workspaceId;
+    const member = await TestUser.signUp('Calendar member');
+    const guest = await TestUser.signUp('Calendar guest');
+    await addMember(ws, member, 'Member');
+    await addMember(ws, guest, 'Guest');
+    const year = new Date().getUTCFullYear() + 1;
+    const { createLeaveType } = await ws.owner.data<{ createLeaveType: { id: string } }>('mutation($w: ID!) { createLeaveType(workspaceId: $w, input: { name: "Holiday", annualAllowanceDays: 20 }) { id } }', { w });
+    const ask = async (startDate: string, endDate: string) =>
+      (await member.data<{ requestLeave: { id: string } }>(REQUEST, { w, input: { leaveTypeId: createLeaveType.id, startDate, endDate, reason: 'Family visit' } })).requestLeave.id;
+    await ws.owner.data(DECIDE, { w, r: await ask(`${year}-03-02`, `${year}-03-04`), d: 'approved' });
+    await ask(`${year}-03-10`, `${year}-03-10`); // pending: not on the calendar
+
+    // A plain member (hr.view) sees approved leave only, without the type or reason.
+    const { leaveCalendar } = await member.data<{ leaveCalendar: Record<string, unknown>[] }>(CALENDAR, { w, from: `${year}-02-23`, to: `${year}-04-05` });
+    expect(leaveCalendar).toEqual([{ userId: member.id, startDate: `${year}-03-02`, endDate: `${year}-03-04` }]);
+    expect((await member.gql(`query($w: ID!) { leaveCalendar(workspaceId: $w, from: "${year}-03-01", to: "${year}-03-31") { reason } }`, { w })).errors?.[0]?.message).toMatch(/Cannot query field "reason"/);
+    // Guests don't see the directory, so they don't see who's away either; ranges are capped as for sprints.
+    expect((await guest.error(CALENDAR, { w, from: `${year}-03-01`, to: `${year}-03-31` })).code).toBe('FORBIDDEN');
+    expect((await member.error(CALENDAR, { w, from: `${year}-01-01`, to: `${year}-06-01` })).message).toMatch(/At most 92 days/);
+  });
 });

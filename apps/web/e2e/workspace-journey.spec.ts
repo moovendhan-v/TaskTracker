@@ -322,6 +322,13 @@ test("requests time off, can't approve it themselves, and auto-approved leave up
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(page.getByText('Approved', { exact: true })).toBeVisible();
   await expect(page.getByText('of 2 days left')).toBeVisible();
+
+  // The approved day shows on the team calendar, dates and names only; the pending week doesn't.
+  const months = (2026 - new Date().getFullYear()) * 12 + 11 - new Date().getMonth();
+  for (let step = 0; step < Math.abs(months); step++) await page.getByRole('button', { name: months > 0 ? 'Next month' : 'Previous month' }).click();
+  const calendar = page.getByRole('table', { name: /Who’s away, December 2026/ });
+  await expect(calendar.getByRole('cell', { name: /December 14: .+ away$/ })).toBeVisible();
+  await expect(calendar.getByRole('cell', { name: /December 8: nobody away$/ })).toBeVisible();
 });
 
 test('creates a custom role and lists members', async () => {
@@ -589,6 +596,18 @@ test('chats in a channel, replies in a thread and turns a message into a task', 
   const image = page.getByRole('log', { name: 'Messages in #release-train' }).getByRole('img', { name: 'diagram.png' });
   await expect(image).toBeVisible();
   await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(1);
+
+  // The owner renames the channel and gives it a topic.
+  await page.getByRole('button', { name: 'Channel options' }).click();
+  await page.getByRole('menuitem', { name: 'Edit name and topic' }).click();
+  const edit = page.getByRole('dialog', { name: 'Edit channel' });
+  await edit.getByLabel('Name').fill('Release Crew');
+  await expect(edit.getByText('Will be saved as #release-crew')).toBeVisible();
+  await edit.getByLabel('Topic').fill('Ship notes every Friday');
+  await edit.getByRole('button', { name: 'Save' }).click();
+  await expect(edit).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'release-crew', level: 2 })).toBeVisible();
+  await expect(page.getByText('· Ship notes every Friday')).toBeVisible();
 });
 
 test('signs out', async () => {

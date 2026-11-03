@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/common/page-header';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/modules/workspaces';
 import { LeaveBalanceCard } from '../components/leave-balance-card';
+import { LeaveCalendar } from '../components/leave-calendar';
 import { LeaveRequestDialog } from '../components/leave-request-dialog';
 import { LeaveStatusBadge } from '../components/leave-status-badge';
 import { useLeaveMutations, useLeaveTypes, useMyBalances, useMyLeave } from '../hooks/use-hr';
@@ -37,6 +38,7 @@ export function TimeOffPage({ workspaceId }: { workspaceId: string }) {
             ))}
           </div>
         )}
+        {can('hr.view') ? <LeaveCalendar workspaceId={workspaceId} /> : null}
         <section className="grid gap-3">
           <h2 className="text-sm font-semibold">Your requests</h2>
           {requests.length === 0 ? <p className="text-sm text-muted-foreground">No requests yet.</p> : null}

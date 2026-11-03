@@ -90,6 +90,18 @@ export class LeaveResolver {
     return this.leaveRequestsService.teamAvailability(access.workspaceId, from.slice(0, 10), to.slice(0, 10));
   }
 
+  @Query(() => [TeamAbsenceGql], { complexity: cappedListComplexity(1000), description: 'The team leave calendar: who is away when (approved leave, dates and people only)' })
+  @RequirePermissions('hr.view')
+  leaveCalendar(
+    @WorkspaceIdArg() _workspaceId: string,
+    @Args('from', { description: 'yyyy-mm-dd' }) from: string,
+    @Args('to', { description: 'yyyy-mm-dd' }) to: string,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<TeamAbsenceGql[]> {
+    // Same answer as teamAvailability: the type, reason and notes stay with the person and their approvers.
+    return this.leaveRequestsService.teamAvailability(access.workspaceId, from.slice(0, 10), to.slice(0, 10));
+  }
+
   @Query(() => LeaveRequestPageGql, { complexity: pagedComplexity, description: 'Approver queue, oldest first' })
   @RequirePermissions('leave.approve')
   leaveRequests(@Args() args: LeaveQueueArgs, @CurrentAccess() access: WorkspaceAccess): Promise<LeaveRequestPageGql> {

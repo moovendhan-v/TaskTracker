@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import type { ChatChannelResponse, ChatMessageResponse } from '@taskflow/shared-types';
-import { ArchiveIcon, BellIcon, BellOffIcon, HashIcon, LockIcon, LogOutIcon, MessagesSquareIcon, MoreHorizontalIcon, UserPlusIcon, UsersIcon, XIcon } from 'lucide-react';
+import { ArchiveIcon, BellIcon, BellOffIcon, HashIcon, LockIcon, LogOutIcon, MessagesSquareIcon, MoreHorizontalIcon, PencilIcon, UserPlusIcon, UsersIcon, XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
 import { UserAvatar } from '@/components/common/user-avatar';
@@ -15,7 +15,7 @@ import { useOpenTask } from '@/modules/tasks';
 import { usePermissions } from '@/modules/workspaces';
 import { AddPeopleDialog } from '../components/add-people-dialog';
 import { ChannelList } from '../components/channel-list';
-import { BrowseChannelsDialog, CreateTaskDialog, NewChannelDialog, NewDirectMessageDialog } from '../components/chat-dialogs';
+import { BrowseChannelsDialog, CreateTaskDialog, EditChannelDialog, NewChannelDialog, NewDirectMessageDialog } from '../components/chat-dialogs';
 import { Composer } from '../components/composer';
 import { MessageFeed } from '../components/message-feed';
 import { MessageItem } from '../components/message-item';
@@ -271,6 +271,7 @@ function ChannelHeader({ workspaceId, channel }: { workspaceId: string; channel:
   const { can } = usePermissions(workspaceId);
   const mutations = useChatMutations(workspaceId);
   const [adding, setAdding] = useState(false);
+  const [editingChannel, setEditingChannel] = useState(false);
   if (!channel) return <header className="h-12 shrink-0 border-b" />;
   const owner = channel.myRole === 'owner';
   const canManage = channel.kind !== 'dm' && (owner || (channel.kind === 'public' && can('chat.manage')));
@@ -313,6 +314,11 @@ function ChannelHeader({ workspaceId, channel }: { workspaceId: string; channel:
               <UserPlusIcon /> Add people
             </DropdownMenuItem>
           ) : null}
+          {canManage && !channel.archived ? (
+            <DropdownMenuItem onSelect={() => setEditingChannel(true)}>
+              <PencilIcon /> Edit name and topic
+            </DropdownMenuItem>
+          ) : null}
           {canManage ? (
             <DropdownMenuItem onSelect={() => mutations.archive.mutate({ channelId: channel.id, archived: !channel.archived }, { onError: fail })}>
               <ArchiveIcon /> {channel.archived ? 'Unarchive' : 'Archive'}
@@ -337,6 +343,7 @@ function ChannelHeader({ workspaceId, channel }: { workspaceId: string; channel:
         </DropdownMenuContent>
       </DropdownMenu>
       <AddPeopleDialog workspaceId={workspaceId} channelId={channel.id} open={adding} onOpenChange={setAdding} />
+      {editingChannel ? <EditChannelDialog workspaceId={workspaceId} channel={channel} open onOpenChange={setEditingChannel} /> : null}
     </header>
   );
 }
