@@ -5,6 +5,7 @@ fragment DashboardTaskFields on DashboardTask {
   spaceId
   spaceName
   assigneeName
+  priority
   status { name color category }
   dueDate
   updatedAt

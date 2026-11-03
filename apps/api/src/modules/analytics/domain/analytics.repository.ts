@@ -8,6 +8,8 @@ export interface DashboardScope {
   assigneeIds: readonly string[] | null;
   /** People whose hours count; null for everyone. */
   timeUserIds: readonly string[] | null;
+  /** Priorities the task lists keep; null for all. */
+  priorities: readonly string[] | null;
   from: Date;
   to: Date;
   timeZone: string;

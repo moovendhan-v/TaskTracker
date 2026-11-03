@@ -69,8 +69,11 @@ export type AutomationTriggerType =
 
 export type BlockConfigInput = {
   accent?: string | null | undefined;
+  fields?: Array<string> | null | undefined;
   includeClosed?: boolean | null | undefined;
   limit?: number | null | undefined;
+  mine?: boolean | null | undefined;
+  priorities?: Array<TaskPriority> | null | undefined;
   spaceId?: string | null | undefined;
   title?: string | null | undefined;
 };
@@ -244,6 +247,10 @@ export type CustomFieldType =
 
 export type DashboardInput = {
   from: string;
+  /** Only your own tasks and hours (from your session); overrides userIds */
+  mine?: boolean | null | undefined;
+  /** Narrows the task lists to these priorities */
+  priorities?: Array<TaskPriority> | null | undefined;
   spaceId?: string | null | undefined;
   /** IANA time zone, e.g. Europe/Berlin */
   timeZone: string;
@@ -887,7 +894,7 @@ export type AdminAuditLogQueryVariables = Exact<{
 
 export type AdminAuditLogQuery = { adminAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string }> } };
 
-export type DashboardTaskFieldsFragment = { id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } };
+export type DashboardTaskFieldsFragment = { id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } };
 
 export type DashboardQueryVariables = Exact<{
   workspaceId: string;
@@ -895,7 +902,7 @@ export type DashboardQueryVariables = Exact<{
 }>;
 
 
-export type DashboardQuery = { dashboard: { hoursOnlyMine: boolean, overdueAging: Array<number>, summary: { projects: number, openTasks: number, closedTasks: number, overdue: number, dueSoon: number, unassigned: number, minutesLogged: number, entries: number, minutesAllTime: number }, byStatus: Array<{ name: string, color: string, category: StatusCategory, count: number }>, byPriority: Array<{ priority: TaskPriority, open: number, overdue: number }>, dueForecast: Array<{ label: string, weekStart: string | null, count: number, kind: ForecastKind }>, createdVsClosed: Array<{ weekStart: string, created: number, closed: number }>, minutesPerDay: Array<{ day: string, minutes: number }>, minutesByPerson: Array<{ userId: string, name: string, minutes: number }>, minutesByProject: Array<{ spaceId: string | null, name: string, minutes: number }>, minutesByTask: Array<{ taskId: string, number: number, title: string, minutes: number }>, people: Array<{ userId: string | null, name: string, open: number, overdue: number, minutes: number }>, projects: Array<{ spaceId: string, name: string, status: SpaceStatus, open: number, closed: number, overdue: number, dueSoon: number, progress: number, minutes: number, assignees: number, updatedAt: string | null }>, phases: Array<{ id: string, number: number, title: string, assigneeName: string | null, dueDate: string | null, done: number, total: number, minutes: number, status: { name: string, color: string, category: StatusCategory } }>, overdueTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, dueSoonTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, recentlyUpdated: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }> } };
+export type DashboardQuery = { dashboard: { hoursOnlyMine: boolean, overdueAging: Array<number>, summary: { projects: number, openTasks: number, closedTasks: number, overdue: number, dueSoon: number, unassigned: number, minutesLogged: number, entries: number, minutesAllTime: number }, byStatus: Array<{ name: string, color: string, category: StatusCategory, count: number }>, byPriority: Array<{ priority: TaskPriority, open: number, overdue: number }>, dueForecast: Array<{ label: string, weekStart: string | null, count: number, kind: ForecastKind }>, createdVsClosed: Array<{ weekStart: string, created: number, closed: number }>, minutesPerDay: Array<{ day: string, minutes: number }>, minutesByPerson: Array<{ userId: string, name: string, minutes: number }>, minutesByProject: Array<{ spaceId: string | null, name: string, minutes: number }>, minutesByTask: Array<{ taskId: string, number: number, title: string, minutes: number }>, people: Array<{ userId: string | null, name: string, open: number, overdue: number, minutes: number }>, projects: Array<{ spaceId: string, name: string, status: SpaceStatus, open: number, closed: number, overdue: number, dueSoon: number, progress: number, minutes: number, assignees: number, updatedAt: string | null }>, phases: Array<{ id: string, number: number, title: string, assigneeName: string | null, dueDate: string | null, done: number, total: number, minutes: number, status: { name: string, color: string, category: StatusCategory } }>, overdueTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, dueSoonTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, recentlyUpdated: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }> } };
 
 export type TaskAttachmentFieldsFragment = { id: string, taskId: string, fileName: string, contentType: string, size: number, isImage: boolean, url: string, uploaderId: string | null, uploaderName: string | null, createdAt: string };
 
@@ -1617,7 +1624,7 @@ export type DisconnectGithubMutationVariables = Exact<{
 
 export type DisconnectGithubMutation = { disconnectGithub: boolean };
 
-export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> };
+export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> };
 
 export type MyLayoutQueryVariables = Exact<{
   workspaceId: string;
@@ -1625,7 +1632,7 @@ export type MyLayoutQueryVariables = Exact<{
 }>;
 
 
-export type MyLayoutQuery = { myLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } | null };
+export type MyLayoutQuery = { myLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> } | null };
 
 export type SaveLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1633,7 +1640,7 @@ export type SaveLayoutMutationVariables = Exact<{
 }>;
 
 
-export type SaveLayoutMutation = { saveLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } };
+export type SaveLayoutMutation = { saveLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> } };
 
 export type ResetLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1643,14 +1650,14 @@ export type ResetLayoutMutationVariables = Exact<{
 
 export type ResetLayoutMutation = { resetLayout: boolean };
 
-export type NamedDashboardFieldsFragment = { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> };
+export type NamedDashboardFieldsFragment = { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> };
 
 export type DashboardsQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type DashboardsQuery = { dashboards: Array<{ id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> }> };
+export type DashboardsQuery = { dashboards: Array<{ id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> }> };
 
 export type CreateDashboardMutationVariables = Exact<{
   workspaceId: string;
@@ -1658,7 +1665,7 @@ export type CreateDashboardMutationVariables = Exact<{
 }>;
 
 
-export type CreateDashboardMutation = { createDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } };
+export type CreateDashboardMutation = { createDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> } };
 
 export type UpdateDashboardMutationVariables = Exact<{
   workspaceId: string;
@@ -1667,7 +1674,7 @@ export type UpdateDashboardMutationVariables = Exact<{
 }>;
 
 
-export type UpdateDashboardMutation = { updateDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } };
+export type UpdateDashboardMutation = { updateDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> } };
 
 export type SaveDashboardLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1676,7 +1683,7 @@ export type SaveDashboardLayoutMutationVariables = Exact<{
 }>;
 
 
-export type SaveDashboardLayoutMutation = { saveDashboardLayout: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } };
+export type SaveDashboardLayoutMutation = { saveDashboardLayout: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> } };
 
 export type DeleteDashboardMutationVariables = Exact<{
   workspaceId: string;
@@ -1692,7 +1699,7 @@ export type MyLayoutVersionsQueryVariables = Exact<{
 }>;
 
 
-export type MyLayoutVersionsQuery = { myLayoutVersions: Array<{ version: number, savedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> }> };
+export type MyLayoutVersionsQuery = { myLayoutVersions: Array<{ version: number, savedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> }> };
 
 export type WorkspaceLayoutQueryVariables = Exact<{
   workspaceId: string;
@@ -1700,7 +1707,7 @@ export type WorkspaceLayoutQueryVariables = Exact<{
 }>;
 
 
-export type WorkspaceLayoutQuery = { workspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null } | null }> } | null };
+export type WorkspaceLayoutQuery = { workspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> } | null };
 
 export type SetWorkspaceLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -2537,6 +2544,7 @@ export const DashboardTaskFieldsFragmentDoc = new TypedDocumentString(`
   spaceId
   spaceName
   assigneeName
+  priority
   status {
     name
     color
@@ -3146,6 +3154,9 @@ export const LayoutFieldsFragmentDoc = new TypedDocumentString(`
       spaceId
       limit
       includeClosed
+      mine
+      priorities
+      fields
     }
   }
 }
@@ -3172,6 +3183,9 @@ export const NamedDashboardFieldsFragmentDoc = new TypedDocumentString(`
       spaceId
       limit
       includeClosed
+      mine
+      priorities
+      fields
     }
   }
 }
@@ -3411,6 +3425,7 @@ export const DashboardDocument = new TypedDocumentString(`
   spaceId
   spaceName
   assigneeName
+  priority
   status {
     name
     color
@@ -4968,6 +4983,9 @@ export const MyLayoutDocument = new TypedDocumentString(`
       spaceId
       limit
       includeClosed
+      mine
+      priorities
+      fields
     }
   }
 }`) as unknown as TypedDocumentString<MyLayoutQuery, MyLayoutQueryVariables>;
@@ -4994,6 +5012,9 @@ export const SaveLayoutDocument = new TypedDocumentString(`
       spaceId
       limit
       includeClosed
+      mine
+      priorities
+      fields
     }
   }
 }`) as unknown as TypedDocumentString<SaveLayoutMutation, SaveLayoutMutationVariables>;
@@ -5029,6 +5050,9 @@ export const DashboardsDocument = new TypedDocumentString(`
       spaceId
       limit
       includeClosed
+      mine
+      priorities
+      fields
     }
   }
 }`) as unknown as TypedDocumentString<DashboardsQuery, DashboardsQueryVariables>;
@@ -5059,6 +5083,9 @@ export const CreateDashboardDocument = new TypedDocumentString(`
       spaceId
       limit
       includeClosed
+      mine
+      priorities
+      fields
     }
   }
 }`) as unknown as TypedDocumentString<CreateDashboardMutation, CreateDashboardMutationVariables>;
@@ -5093,6 +5120,9 @@ export const UpdateDashboardDocument = new TypedDocumentString(`
       spaceId
       limit
       includeClosed
+      mine
+      priorities
+      fields
     }
   }
 }`) as unknown as TypedDocumentString<UpdateDashboardMutation, UpdateDashboardMutationVariables>;
@@ -5127,6 +5157,9 @@ export const SaveDashboardLayoutDocument = new TypedDocumentString(`
       spaceId
       limit
       includeClosed
+      mine
+      priorities
+      fields
     }
   }
 }`) as unknown as TypedDocumentString<SaveDashboardLayoutMutation, SaveDashboardLayoutMutationVariables>;
@@ -5153,6 +5186,9 @@ export const MyLayoutVersionsDocument = new TypedDocumentString(`
         spaceId
         limit
         includeClosed
+        mine
+        priorities
+        fields
       }
     }
   }
@@ -5177,6 +5213,9 @@ export const WorkspaceLayoutDocument = new TypedDocumentString(`
         spaceId
         limit
         includeClosed
+        mine
+        priorities
+        fields
       }
     }
   }

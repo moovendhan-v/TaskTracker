@@ -1,5 +1,6 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { ArrayMaxSize, IsArray, IsISO8601, IsString, IsUUID, MaxLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsISO8601, IsString, IsUUID, MaxLength } from 'class-validator';
+import { TASK_PRIORITIES } from '@taskflow/shared-types';
 import type { DashboardRequest, DashboardResponse, ForecastKind, SpaceStatus, StatusCategory, TaskPriority } from '@taskflow/shared-types';
 import { ForecastKindEnum, SpaceStatusEnum, StatusCategoryEnum, TaskPriorityEnum } from '../../../../core/graphql/enums.js';
 import { IsClearable } from '../../../../core/graphql/validation.js';
@@ -13,6 +14,13 @@ export class DashboardInput implements DashboardRequest {
   @Field({ description: 'IANA time zone, e.g. Europe/Berlin' }) @IsString() @MaxLength(64) timeZone: string;
   @Field(() => ID, { nullable: true }) @IsClearable() @IsUUID('4') spaceId?: string | null;
   @Field(() => [ID], { nullable: true }) @IsClearable() @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) @MaxLength(64, { each: true }) userIds?: string[] | null;
+  @Field(() => Boolean, { nullable: true, description: 'Only your own tasks and hours (from your session); overrides userIds' }) @IsClearable() @IsBoolean() mine?: boolean | null;
+  @Field(() => [TaskPriorityEnum], { nullable: true, description: 'Narrows the task lists to these priorities' })
+  @IsClearable()
+  @IsArray()
+  @ArrayMaxSize(TASK_PRIORITIES.length)
+  @IsIn(TASK_PRIORITIES, { each: true })
+  priorities?: TaskPriority[] | null;
 }
 
 @ObjectType('DashboardStatusRef')
@@ -30,6 +38,7 @@ export class DashboardTaskGql {
   @Field(() => ID) spaceId: string;
   @Field() spaceName: string;
   @Field(() => String, { nullable: true }) assigneeName: string | null;
+  @Field(() => TaskPriorityEnum) priority: TaskPriority;
   @Field(() => DashboardStatusRefGql) status: DashboardStatusRefGql;
   @Field(() => String, { nullable: true }) dueDate: string | null;
   @Field() updatedAt: string;

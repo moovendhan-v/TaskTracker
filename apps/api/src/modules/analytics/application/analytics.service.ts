@@ -13,6 +13,7 @@ interface ResolvedScope {
   spaceId: string | null;
   assigneeIds: string[] | null;
   timeUserIds: string[] | null;
+  priorities: string[] | null;
   from: string;
   to: string;
   timeZone: string;
@@ -34,12 +35,14 @@ export class AnalyticsService {
     checkWindow(request.from, request.to);
     if (!isTimeZone(request.timeZone)) throw DomainError.invalid('Unknown time zone');
     if (request.spaceId) await this.spaces.getInWorkspace(access.workspaceId, request.spaceId);
-    const people = request.userIds?.length ? [...new Set(request.userIds)].sort() : null;
+    // "Mine" comes from the session, never from ids in the request.
+    const people = request.mine ? [userId] : request.userIds?.length ? [...new Set(request.userIds)].sort() : null;
     const hoursOnlyMine = !access.permissions.has('time.view_all');
     const scope: ResolvedScope = {
       spaceId: request.spaceId ?? null,
       assigneeIds: people,
       timeUserIds: hoursOnlyMine ? [userId] : people,
+      priorities: request.priorities?.length ? [...new Set(request.priorities)].sort() : null,
       from: new Date(request.from).toISOString(),
       to: new Date(request.to).toISOString(),
       timeZone: request.timeZone,

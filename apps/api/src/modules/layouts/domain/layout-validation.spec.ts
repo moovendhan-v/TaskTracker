@@ -30,7 +30,8 @@ describe('validateLayoutItems', () => {
 describe('block settings', () => {
   const at = { x: 0, y: 0, w: 4, h: 5 };
   it('offers each block only its own settings', () => {
-    expect(blockConfigKeys('home', 'overdue-tasks')).toEqual(['title', 'accent', 'spaceId', 'limit']);
+    expect(blockConfigKeys('home', 'overdue-tasks')).toEqual(['title', 'accent', 'spaceId', 'limit', 'mine', 'priorities', 'fields']);
+    expect(blockConfigKeys('project', 'recent-tasks')).toEqual(['title', 'accent', 'limit', 'mine', 'priorities', 'fields']);
     expect(blockConfigKeys('home', 'status')).toEqual(['title', 'accent', 'spaceId', 'includeClosed']);
     expect(blockConfigKeys('home', 'hours-by-project')).toEqual(['title', 'accent']);
     expect(blockConfigKeys('project', 'kpis')).toEqual(['title', 'accent']);
@@ -48,5 +49,21 @@ describe('block settings', () => {
   it('stores nothing for empty settings', () => {
     expect(cleanLayoutItem({ id: 'a', type: 'status', ...at, config: { title: '', accent: undefined } })).toEqual({ id: 'a', type: 'status', ...at });
     expect(cleanLayoutItem({ id: 'a', type: 'status', ...at, config: { title: 'T', limit: null as never } })).toEqual({ id: 'a', type: 'status', ...at, config: { title: 'T' } });
+  });
+});
+
+describe('task-list block filters and fields', () => {
+  const list = (config: Record<string, unknown>) => validateLayoutItems('home', [{ id: 'overdue-tasks', type: 'overdue-tasks', x: 0, y: 0, w: 4, h: 7, config } as LayoutItem]);
+
+  it('accepts filters and columns, each once and from the list', () => {
+    expect(list({ mine: true, priorities: ['urgent', 'high'], fields: ['number', 'date'] })).toEqual([]);
+    expect(list({ fields: [] })).toEqual([]);
+    expect(list({ priorities: ['urgent', 'urgent'] })).toEqual(['Block 1: priorities: pick from the list, each once']);
+    expect(list({ fields: ['email'] })).toEqual(['Block 1: fields: pick from the list, each once']);
+    expect(list({ mine: 'yes' })).toEqual(['Block 1: mine must be true or false']);
+  });
+
+  it('stores "not mine" and no priorities as nothing', () => {
+    expect(cleanLayoutItem({ id: 'overdue-tasks', type: 'overdue-tasks', x: 0, y: 0, w: 4, h: 7, config: { mine: false, priorities: [] } }).config).toBeUndefined();
   });
 });

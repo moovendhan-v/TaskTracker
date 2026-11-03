@@ -384,6 +384,28 @@ test('configures a Home block: its own title, colour and closed work, kept after
   await expect(page.getByRole('heading', { name: 'Team status' })).toBeVisible();
 });
 
+test('narrows a task list block to my urgent work and picks its columns', async () => {
+  const block = page.locator('section', { has: page.getByRole('heading', { name: 'Overdue', exact: true }) }).last();
+  await block.hover();
+  await block.getByRole('button', { name: 'Block options' }).click();
+  await page.getByRole('menuitem', { name: 'Configure…' }).click();
+  const drawer = page.getByRole('dialog', { name: /Configure/ });
+  await drawer.getByLabel('Only tasks assigned to me').click();
+  await drawer.getByRole('group', { name: 'Priority' }).getByRole('button', { name: 'Urgent' }).click();
+  // Show the number, hide the project, and put the date before the status.
+  const columns = drawer.getByRole('list', { name: 'Columns' });
+  await columns.getByRole('listitem').filter({ hasText: 'Number' }).getByRole('checkbox').click();
+  await columns.getByRole('listitem').filter({ hasText: 'Project' }).getByRole('checkbox').click();
+  await drawer.getByRole('button', { name: 'Move Date up' }).click();
+  // Rows: Number, Title, then the columns in order.
+  await expect(columns.getByRole('listitem').nth(2)).toContainText('Date');
+  await drawer.getByRole('button', { name: 'Done' }).click();
+  await expect(block.getByText('Mine · Urgent')).toBeVisible();
+  await page.waitForTimeout(1_500);
+  await page.reload();
+  await expect(page.locator('section', { has: page.getByRole('heading', { name: 'Overdue', exact: true }) }).last().getByText('Mine · Urgent')).toBeVisible();
+});
+
 test('goes back through layout versions and publishes the workspace default', async () => {
   await page.getByRole('button', { name: /Arrange/ }).click();
   // Move a block from the keyboard, which saves a second version.

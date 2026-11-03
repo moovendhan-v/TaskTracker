@@ -1,6 +1,7 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsString, IsUUID, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, ArrayUnique, IsArray, IsBoolean, IsIn, IsInt, IsString, IsUUID, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { TaskPriorityEnum } from '../../../../core/graphql/enums.js';
 import {
   DASHBOARD_LIMITS,
   DASHBOARD_VISIBILITIES,
@@ -18,17 +19,24 @@ import {
   BLOCK_ACCENTS,
   BLOCK_LIMITS,
   BLOCK_TITLE_MAX,
+  TASK_LIST_FIELDS,
+  TASK_PRIORITIES,
+  type TaskListField,
+  type TaskPriority,
   type LayoutPage,
 } from '@taskflow/shared-types';
 import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
 
-@ObjectType('BlockConfig', { description: 'One block\'s settings: data source (spaceId) kept apart from view (title, accent, limit, includeClosed)' })
+@ObjectType('BlockConfig', { description: 'One block\'s settings: data (spaceId, mine, priorities) kept apart from view (title, accent, limit, includeClosed, fields)' })
 export class BlockConfigGql implements BlockConfig {
   @Field({ nullable: true }) title?: string;
   @Field(() => String, { nullable: true }) accent?: BlockAccent;
   @Field(() => ID, { nullable: true, description: 'Data source: one project; read with the viewer\'s own access' }) spaceId?: string;
   @Field(() => Int, { nullable: true }) limit?: (typeof BLOCK_LIMITS)[number];
   @Field({ nullable: true }) includeClosed?: boolean;
+  @Field({ nullable: true, description: 'Data: only the viewer\'s own tasks' }) mine?: boolean;
+  @Field(() => [TaskPriorityEnum], { nullable: true, description: 'Data: only these priorities' }) priorities?: TaskPriority[];
+  @Field(() => [String], { nullable: true, description: 'View: task-list columns, in order' }) fields?: TaskListField[];
 }
 
 @InputType('BlockConfigInput')
@@ -38,6 +46,9 @@ export class BlockConfigInput implements BlockConfig {
   @Field(() => ID, { nullable: true }) @IsOmittable() @IsUUID() spaceId?: string;
   @Field(() => Int, { nullable: true }) @IsOmittable() @IsIn(BLOCK_LIMITS) limit?: (typeof BLOCK_LIMITS)[number];
   @Field({ nullable: true }) @IsOmittable() @IsBoolean() includeClosed?: boolean;
+  @Field({ nullable: true }) @IsOmittable() @IsBoolean() mine?: boolean;
+  @Field(() => [TaskPriorityEnum], { nullable: true }) @IsOmittable() @IsArray() @ArrayMaxSize(TASK_PRIORITIES.length) @ArrayUnique() @IsIn(TASK_PRIORITIES, { each: true }) priorities?: TaskPriority[];
+  @Field(() => [String], { nullable: true }) @IsOmittable() @IsArray() @ArrayMaxSize(TASK_LIST_FIELDS.length) @ArrayUnique() @IsIn(TASK_LIST_FIELDS, { each: true }) fields?: TaskListField[];
 }
 
 @ObjectType('LayoutItem')

@@ -14,6 +14,10 @@ export interface DashboardRequest {
   spaceId?: string | null;
   /** Narrows tasks to these assignees and hours to these people. Others' hours need time.view_all. */
   userIds?: string[] | null;
+  /** Only the caller's own tasks (and hours); the server takes "who" from the session. Overrides userIds. */
+  mine?: boolean | null;
+  /** Narrows the task lists (overdue, due soon, recent) to these priorities. */
+  priorities?: TaskPriority[] | null;
 }
 
 export interface DashboardTask {
@@ -23,6 +27,7 @@ export interface DashboardTask {
   spaceId: string;
   spaceName: string;
   assigneeName: string | null;
+  priority: TaskPriority;
   status: { name: string; color: string; category: StatusCategory };
   dueDate: string | null;
   updatedAt: string;

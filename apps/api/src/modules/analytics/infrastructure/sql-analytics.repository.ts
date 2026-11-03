@@ -298,8 +298,8 @@ export class SqlAnalyticsRepository extends AnalyticsRepository {
       `WITH ${SCOPED_TASKS}
        SELECT t.*, sp.name AS space_name, u.name AS assignee_name
        FROM scoped t JOIN space sp ON sp.id = t.space_id LEFT JOIN "user" u ON u.id = t.assignee_id
-       WHERE ${condition} LIMIT $4`,
-      [...this.taskParams(scope), limit],
+       WHERE ($5::text[] IS NULL OR t.priority = ANY($5::text[])) AND ${condition} LIMIT $4`,
+      [...this.taskParams(scope), limit, scope.priorities],
     );
     return rows.map((row) => ({
       id: String(row['id']),
@@ -308,6 +308,7 @@ export class SqlAnalyticsRepository extends AnalyticsRepository {
       spaceId: String(row['space_id']),
       spaceName: String(row['space_name']),
       assigneeName: (row['assignee_name'] as string | null) ?? null,
+      priority: row['priority'] as TaskPriority,
       status: { name: String(row['status_name']), color: String(row['status_color']), category: row['status_category'] as StatusCategory },
       dueDate: row['due_date'] instanceof Date ? row['due_date'].toISOString() : null,
       updatedAt: (row['updated_at'] as Date).toISOString(),
