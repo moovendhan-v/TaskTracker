@@ -21,6 +21,8 @@ export interface Choices {
   statuses: { id: string; name: string; color: string }[];
   lists: { id: string; name: string }[];
   members: { userId: string; name: string }[];
+  /** Channels you can post in (for "Post in chat"). */
+  channels: { id: string; name: string }[];
 }
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -80,6 +82,8 @@ const STARTERS: Record<AutomationAction['type'], AutomationAction> = {
   comment: { type: 'comment', message: '' },
   set_due_date: { type: 'set_due_date', days: 2 },
   add_watcher: { type: 'add_watcher' },
+  post_chat: { type: 'post_chat', message: 'New: {{task}}' },
+  webhook: { type: 'webhook', url: '' },
 };
 
 /** Settings of one action, by its type. */
@@ -100,6 +104,38 @@ export function ActionFields({ action, onChange, choices }: { action: Automation
           </SelectContent>
         </Select>
       </Field>
+      {action.type === 'post_chat' ? (
+        <>
+          <Field label="Channel">
+            <Select value={action.channelId ?? ''} onValueChange={(channelId) => onChange({ ...action, channelId })}>
+              <SelectTrigger aria-label="Channel to post in">
+                <SelectValue placeholder="Pick a channel" />
+              </SelectTrigger>
+              <SelectContent>
+                {choices.channels.map((channel) => (
+                  <SelectItem key={channel.id} value={channel.id}>
+                    #{channel.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Message">
+            <Textarea aria-label="Chat message" value={action.message ?? ''} maxLength={AUTOMATION_LIMITS.messageMax} onChange={(event) => onChange({ ...action, message: event.target.value })} rows={3} />
+          </Field>
+          <span className="text-xs text-muted-foreground">Posted as you. Fills in {'{{task}}'}, {'{{status}}'} and, for GitHub triggers, {'{{pr}}'}.</span>
+        </>
+      ) : null}
+      {action.type === 'webhook' ? (
+        <>
+          <Field label="URL">
+            <Input aria-label="Webhook URL" type="url" inputMode="url" placeholder="https://hooks.example.com/…" value={action.url ?? ''} maxLength={AUTOMATION_LIMITS.urlMax} onChange={(event) => onChange({ ...action, url: event.target.value })} />
+          </Field>
+          <span className="text-xs text-muted-foreground">
+            Sends a signed JSON POST about the task once the change is saved, with up to three tries. Only hosts your administrator allows; https only. Once saved, “Signing secret” on the automation gives the secret to check the signature with.
+          </span>
+        </>
+      ) : null}
       {action.type === 'set_status' ? (
         <Field label="Status">
           <Select value={action.statusId ?? ''} onValueChange={(statusId) => onChange({ ...action, statusId })}>

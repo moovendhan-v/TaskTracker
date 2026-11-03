@@ -521,6 +521,23 @@ test('schedules an overdue automation with a wait', async () => {
   await editor.getByRole('button', { name: 'Cancel' }).click();
 });
 
+test('starts an automation from a template and test-runs it on a task without changing it', async () => {
+  await page.getByRole('button', { name: 'New automation' }).click();
+  const builder = page.getByRole('dialog', { name: 'New automation' });
+  await builder.getByLabel('Start from a template').click();
+  await page.getByRole('option', { name: /Nudge, then escalate overdue work/ }).click();
+  await expect(builder.getByLabel('Automation name')).toHaveValue('Nudge, then escalate overdue work');
+  await expect(builder.getByRole('treeitem').filter({ hasText: 'Wait 1 day' })).toBeVisible();
+
+  await builder.getByLabel('Test run').click();
+  await page.getByRole('option').first().click();
+  await expect(builder.getByRole('status').filter({ hasText: /Test run on #\d+/ })).toContainText('nothing was changed');
+  await expect(builder.getByRole('treeitem').filter({ hasText: 'Wait 1 day' })).toContainText('Waited');
+  await builder.getByRole('button', { name: 'Create automation' }).click();
+  await expect(builder).toBeHidden();
+  await expect(page.getByText('Nudge, then escalate overdue work', { exact: true })).toBeVisible();
+});
+
 test('opens an empty inbox', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
   await expect(page).toHaveURL(/\/inbox$/);

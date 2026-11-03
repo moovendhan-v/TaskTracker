@@ -31,7 +31,7 @@ export function isScheduledTrigger(type: AutomationTriggerType): type is Schedul
   return (SCHEDULED_TRIGGERS as readonly string[]).includes(type);
 }
 
-export const AUTOMATION_ACTIONS = ['set_status', 'set_priority', 'assign', 'unassign', 'notify', 'comment', 'set_due_date', 'add_watcher'] as const;
+export const AUTOMATION_ACTIONS = ['set_status', 'set_priority', 'assign', 'unassign', 'notify', 'comment', 'set_due_date', 'add_watcher', 'post_chat', 'webhook'] as const;
 export type AutomationActionType = (typeof AUTOMATION_ACTIONS)[number];
 
 /** Who a notify action reaches, besides people named by id. */
@@ -70,6 +70,10 @@ export interface AutomationAction {
   message?: string | null;
   /** set_due_date: days from the day it runs (0 = today); null clears the due date. */
   days?: number | null;
+  /** post_chat: the channel to post in (one the rule's owner can post to). */
+  channelId?: string | null;
+  /** webhook: an https:// URL on a host this server allows (AUTOMATION_WEBHOOK_HOSTS). */
+  url?: string | null;
 }
 
 export const AUTOMATION_LIMITS = {
@@ -78,6 +82,7 @@ export const AUTOMATION_LIMITS = {
   rulesPerSpace: 50,
   idsMax: 50,
   messageMax: 500,
+  urlMax: 500,
   /** task_due_soon looks at most this many days ahead. */
   dueSoonDaysMax: 30,
 } as const;

@@ -26,6 +26,7 @@ import type { DomainEvent } from '../../../core/events/domain-event.js';
 import { EventBus } from '../../../core/events/event-bus.port.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { Clock } from '../../../core/time/clock.port.js';
+import { ChatService } from '../../chat/application/chat.service.js';
 import { CommentsService } from '../../comments/application/comments.service.js';
 import { MembersService } from '../../members/application/members.service.js';
 import { NotificationsService } from '../../notifications/application/notifications.service.js';
@@ -40,6 +41,8 @@ export interface RunContext {
   actorId: string | null;
   /** A pull request, for GitHub triggers: "Fix login (#42)". */
   pr?: string;
+  /** Webhook calls this run queued, linked to the run once it's recorded. */
+  queued?: string[];
 }
 
 /** Where a walk through steps ended. */
@@ -88,6 +91,7 @@ export class AutomationEngine implements OnModuleInit {
     private readonly transactional: TransactionalManager,
     private readonly clock: Clock,
     private readonly commentsService: CommentsService,
+    private readonly chatService: ChatService,
   ) {}
 
   onModuleInit(): void {
@@ -172,7 +176,8 @@ export class AutomationEngine implements OnModuleInit {
     await this.execute(rule, task, job.context, { steps, trace: [...trace], runId: job.runId });
   }
 
-  private async execute(rule: AutomationRule, task: TaskResponse, context: RunContext, resume?: Resume): Promise<void> {
+  private async execute(rule: AutomationRule, task: TaskResponse, given: RunContext, resume?: Resume): Promise<void> {
+    const context: RunContext = { ...given, queued: [] };
     const flow = rule.flow ?? flowFromRule(rule.conditions, rule.actions);
     const trace: FlowTraceEntry[] = resume?.trace ?? [];
     const record = (status: 'succeeded' | 'failed' | 'skipped' | 'waiting', message: string, resumesAt: Date | null = null) =>
@@ -197,6 +202,7 @@ export class AutomationEngine implements OnModuleInit {
         // What ran before the wait is kept; the rest runs when the scheduler picks the job up.
         const runAt = new Date(this.clock.now().getTime() + ended.step.minutes * 60_000);
         const runId = await record('waiting', `Waiting ${describeWait(ended.step.minutes)}`, runAt);
+        await this.automations.attachWebhooks(rule.workspaceId, context.queued ?? [], runId);
         await this.automations.scheduleJob({
           workspaceId: rule.workspaceId,
           ruleId: rule.id,
@@ -208,7 +214,8 @@ export class AutomationEngine implements OnModuleInit {
           runAt,
         });
       } else {
-        await record('succeeded', '');
+        const runId = await record('succeeded', '');
+        await this.automations.attachWebhooks(rule.workspaceId, context.queued ?? [], runId);
       }
     } catch (error) {
       // Domain errors explain themselves; anything else stays in the server log. The savepoint undid every step.
@@ -243,8 +250,8 @@ export class AutomationEngine implements OnModuleInit {
         continue;
       }
       // Marked as ran first: if the action throws, execute() turns this entry into the failure.
-      trace.push({ stepId: step.id, outcome: 'ran', detail: '' });
-      await this.applyAction(step.action, rule, actor, access, taskId, context);
+      trace.push({ stepId: step.id, outcome: 'ran', detail: step.action.type === 'webhook' ? 'Queued to send' : '' });
+      await this.applyAction(step.action, rule, actor, access, taskId, context, step.id);
     }
     return { end: 'done' };
   }
@@ -263,7 +270,7 @@ export class AutomationEngine implements OnModuleInit {
     };
   }
 
-  private async applyAction(action: AutomationAction, rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext): Promise<void> {
+  private async applyAction(action: AutomationAction, rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext, stepId: string): Promise<void> {
     switch (action.type) {
       case 'set_status':
         await this.tasksService.update(actor, access, taskId, { statusId: action.statusId as string });
@@ -293,6 +300,27 @@ export class AutomationEngine implements OnModuleInit {
         if (!(await this.membersService.isMember(rule.workspaceId, action.userId as string))) throw DomainError.invalid('That person is no longer in the workspace');
         await this.tasksService.addWatcher(actor, rule.workspaceId, taskId, action.userId as string);
         return;
+      case 'post_chat': {
+        // Posts as the rule's owner, with their channel access as it is now.
+        const task = await this.tasksService.get(rule.workspaceId, taskId);
+        const body = fillAutomationMessage(action.message ?? '', { task: `#${task.number} ${task.title}`, status: task.status.name, actor: 'Automation', pr: context.pr });
+        await this.chatService.send(actor, access, { channelId: action.channelId as string, body });
+        return;
+      }
+      case 'webhook': {
+        // Queued, not sent: the scheduler calls it after this transaction commits, outside it.
+        const task = await this.tasksService.get(rule.workspaceId, taskId);
+        const body = JSON.stringify({
+          event: 'automation.webhook',
+          workspaceId: rule.workspaceId,
+          automation: { id: rule.id, name: rule.name, trigger: rule.triggerType },
+          task: { id: task.id, number: task.number, title: task.title, status: task.status.name, statusCategory: task.status.category, priority: task.priority, dueDate: task.dueDate, spaceId: task.spaceId },
+          ...(context.pr ? { pullRequest: context.pr } : {}),
+          queuedAt: this.clock.now().toISOString(),
+        });
+        context.queued?.push(await this.automations.queueWebhook({ workspaceId: rule.workspaceId, ruleId: rule.id, stepId, url: action.url as string, body }));
+        return;
+      }
     }
   }
 

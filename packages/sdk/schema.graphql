@@ -97,23 +97,31 @@ type AuditLogPage {
 type AutomationAction {
   audiences: [NotifyAudience!]
 
+  """post_chat: the channel"""
+  channelId: ID
+
   """set_due_date: days from the day it runs; null clears"""
   days: Int
   message: String
   priority: TaskPriority
   statusId: ID
   type: AutomationActionType!
+
+  """webhook: an https URL on an allowlisted host"""
+  url: String
   userId: String
   userIds: [String!]
 }
 
 input AutomationActionInput {
   audiences: [NotifyAudience!]
+  channelId: ID
   days: Int
   message: String
   priority: TaskPriority
   statusId: ID
   type: AutomationActionType!
+  url: String
   userId: String
   userIds: [String!]
 }
@@ -123,10 +131,12 @@ enum AutomationActionType {
   assign
   comment
   notify
+  post_chat
   set_due_date
   set_priority
   set_status
   unassign
+  webhook
 }
 
 type AutomationConditions {
@@ -1423,6 +1433,11 @@ type Mutation {
   resetPreferences: Preferences!
   resetTableLayout(key: String!): Preferences!
 
+  """
+  The secret this automation signs webhook calls with. Audited; rotate makes a new one
+  """
+  revealAutomationWebhookSecret(rotate: Boolean! = false, ruleId: ID!, workspaceId: ID!): String!
+
   """A new webhook secret; the old one stops working at once"""
   rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
 
@@ -1845,6 +1860,11 @@ type Query {
 
   """Managed and custom policies, with how many roles use each"""
   policies(workspaceId: ID!): [Policy!]!
+
+  """
+  A test run: the path a flow would take for one task of the space. Changes nothing
+  """
+  previewAutomation(input: SaveAutomationInput!, spaceId: ID!, taskId: ID!, workspaceId: ID!): [AutomationRunStep!]!
 
   """The built-in gallery and the workspace’s own templates"""
   projectTemplates(workspaceId: ID!): [ProjectTemplate!]!

@@ -14,6 +14,8 @@ export interface AutomationRule {
   flow: AutomationFlow | null;
   /** The person the rule acts as. Null once they are gone, which stops the rule. */
   createdById: string | null;
+  /** Signs webhook calls; sealed with the server key, never sent to clients except by an audited reveal. */
+  webhookSecretSealed?: string | null;
   runCount: number;
   lastRunAt: Date | null;
   createdAt: Date;
@@ -65,4 +67,17 @@ export interface DueTask {
   taskId: string;
   /** YYYY-MM-DD (UTC). */
   dueDate: string;
+}
+
+/** A webhook call waiting to be sent (or retried), with what's needed to sign it. */
+export interface WebhookDeliveryJob {
+  id: string;
+  workspaceId: string;
+  ruleId: string;
+  runId: string | null;
+  stepId: string;
+  url: string;
+  body: string;
+  attempts: number;
+  secretSealed: string | null;
 }

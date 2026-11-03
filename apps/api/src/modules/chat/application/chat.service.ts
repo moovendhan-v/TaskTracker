@@ -477,6 +477,17 @@ export class ChatService {
   }
 
   /** You need to be a member to post; posting in a public channel joins it. */
+  /**
+   * For automations, when a rule is saved: the person it runs as must be able to
+   * post here now (a member, or a public channel), and it can't be a DM. Doesn't join.
+   */
+  async assertCanPost(actor: Actor, access: WorkspaceAccess, channelId: string): Promise<void> {
+    const channel = await this.readable(access, actor, channelId);
+    this.assertOpen(channel);
+    if (channel.kind === 'dm') throw DomainError.invalid('Automations post to channels, not direct messages');
+    if (!channel.myRole && channel.kind !== 'public') throw DomainError.notFound('Channel');
+  }
+
   private async postable(actor: Actor, access: WorkspaceAccess, channelId: string): Promise<ChatChannelRecord> {
     const channel = await this.readable(access, actor, channelId);
     this.assertOpen(channel);

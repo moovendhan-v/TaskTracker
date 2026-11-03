@@ -1,4 +1,4 @@
-import { GitBranchIcon, Undo2Icon, ZapIcon } from 'lucide-react';
+import { FlaskConicalIcon, GitBranchIcon, LayoutTemplateIcon, Undo2Icon, ZapIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import {
   AUTOMATION_LIMITS,
@@ -27,7 +27,10 @@ import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
 import { useLists } from '@/modules/lists';
 import { useMembers } from '@/modules/members';
-import { useStatuses } from '@/modules/tasks';
+import { useChatChannels } from '@/modules/chat';
+import { useStatuses, useTaskSearch } from '@/modules/tasks';
+import { automationsApi } from '../api/automations.api';
+import { AUTOMATION_TEMPLATES } from '../lib/templates';
 import { CATEGORY_LABELS, describeAction, describeCondition, describeFlow, PRIORITY_LABELS, TRIGGER_LABELS } from '../lib/describe-rule';
 import { findStep, insertStep, newStepId, removeStep, replaceStep, type FlowSlot } from '../lib/flow-edit';
 import { ActionFields, Chips, ConditionFields, Field, type Choices } from './fields';
@@ -54,7 +57,11 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
   const { data: statuses = [] } = useStatuses(workspaceId, spaceId);
   const { data: lists = [] } = useLists(workspaceId);
   const { data: members = [] } = useMembers(workspaceId);
-  const choices: Choices = { statuses, lists: lists.filter((list) => list.spaceId === spaceId), members };
+  const { data: channelList = [] } = useChatChannels(workspaceId);
+  // Channels the rule could post in as you: ones you're in, or public ones. Never DMs.
+  const channels = channelList.filter((channel) => channel.kind !== 'dm' && !channel.archived && (channel.myRole || channel.kind === 'public')).map((channel) => ({ id: channel.id, name: channel.name ?? '' }));
+  const choices: Choices = { statuses, lists: lists.filter((list) => list.spaceId === spaceId), members, channels };
+  const [testPath, setTestPath] = useState<{ label: string; path: Map<string, FlowTraceOutcome> } | null>(null);
 
   const [name, setName] = useState(rule?.name ?? '');
   const [trigger, setTrigger] = useState<AutomationTrigger>(rule?.trigger ?? { type: 'task_created' });
@@ -67,6 +74,7 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
     status: (id: string) => statuses.find((status) => status.id === id)?.name ?? 'a status',
     list: (id: string) => choices.lists.find((list) => list.id === id)?.name ?? 'a list',
     person: (id: string) => members.find((member) => member.userId === id)?.name ?? 'someone',
+    channel: (id: string) => channels.find((channel) => channel.id === id)?.name ?? 'a channel',
   };
   const describe = (step: FlowStep) =>
     step.kind === 'action' ? sentenceCase(describeAction(step.action, names)) : step.kind === 'if' ? sentenceCase(describeCondition(step.condition, names)) : step.kind === 'wait' ? `Wait ${describeWait(step.minutes)}` : 'Stop here';
@@ -76,6 +84,15 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
   const setFlow = (next: AutomationFlow) => {
     setHistory((current) => [...current.slice(-29), flow]);
     setFlowState(next);
+    setTestPath(null);
+  };
+  const useTemplate = (id: string) => {
+    const template = AUTOMATION_TEMPLATES.find((item) => item.id === id);
+    if (!template) return;
+    setTrigger(template.trigger);
+    setFlow(template.flow);
+    if (!name.trim()) setName(template.name);
+    setSelectedId(template.flow.steps[0]?.id ?? null);
   };
   const undo = () => {
     const previous = history[history.length - 1];
@@ -132,6 +149,7 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
           <Button variant="outline" size="sm" disabled={history.length === 0} onClick={undo}>
             <Undo2Icon /> Undo
           </Button>
+          <TestRun workspaceId={workspaceId} spaceId={spaceId} body={{ name: name || 'Test', trigger, conditions: {}, actions: flowActions(flow), flow }} onResult={setTestPath} />
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
@@ -152,6 +170,25 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
       >
         <section className="grid content-start gap-3" aria-label="When">
           <StepLabel step="1" title="When" hint="What starts it" />
+          {!rule ? (
+            <Select value="" onValueChange={useTemplate}>
+              <SelectTrigger aria-label="Start from a template" className="bg-card">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <LayoutTemplateIcon className="size-4" /> Start from a template…
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {AUTOMATION_TEMPLATES.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    <span className="grid">
+                      <span>{template.name}</span>
+                      <span className="text-xs text-muted-foreground">{template.description}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           <Card>
             <Select value={trigger.type} onValueChange={(type: AutomationTriggerType) => setTrigger(type === 'task_due_soon' ? { type, days: 1 } : { type })}>
               <SelectTrigger aria-label="Trigger">
@@ -206,8 +243,16 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
 
         <section className="grid content-start gap-3" aria-label="Then">
           <StepLabel step="2" title="Then" hint="Runs as you, top to bottom; if a step fails, nothing sticks" />
+          {testPath ? (
+            <p role="status" className="flex items-center gap-2 rounded-lg bg-violet-500/10 px-3 py-2 text-xs text-violet-700 dark:text-violet-300">
+              <FlaskConicalIcon className="size-3.5" /> Test run on {testPath.label}. The lit steps would run; nothing was changed.
+              <button type="button" className="ml-auto underline" onClick={() => setTestPath(null)}>
+                Clear
+              </button>
+            </p>
+          ) : null}
           <div className="rounded-xl bg-muted/30 p-3">
-            <FlowCanvas steps={flow.steps} selectedId={selectedId} describe={describe} onSelect={setSelectedId} onInsert={insert} onRemove={remove} path={path} />
+            <FlowCanvas steps={flow.steps} selectedId={selectedId} describe={describe} onSelect={setSelectedId} onInsert={insert} onRemove={remove} path={testPath?.path ?? path} />
           </div>
         </section>
 
@@ -234,6 +279,43 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
         </section>
       </div>
     </Modal>
+  );
+}
+
+/** Pick a task of the project and see the path the flow would take for it. Nothing changes. */
+function TestRun({ workspaceId, spaceId, body, onResult }: { workspaceId: string; spaceId: string; body: SaveAutomationRequest; onResult: (result: { label: string; path: Map<string, FlowTraceOutcome> }) => void }) {
+  const [open, setOpen] = useState(false);
+  const [running, setRunning] = useState(false);
+  // Loaded once the picker opens; the most recently updated tasks first.
+  const tasks = useTaskSearch(workspaceId, { spaceId }, { sort: [{ field: 'updatedAt', direction: 'desc' }] }, open);
+  const run = async (taskId: string) => {
+    const task = tasks.data?.items.find((item) => item.id === taskId);
+    setRunning(true);
+    try {
+      const trace = await automationsApi.preview(workspaceId, spaceId, taskId, body);
+      onResult({ label: task ? `#${task.number} ${task.title}` : 'the task', path: new Map(trace.map((entry) => [entry.stepId, entry.outcome as FlowTraceOutcome])) });
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setRunning(false);
+    }
+  };
+  // Always mounted, with no value of its own, so every pick (even the same task again) runs.
+  return (
+    <Select value="" open={open} onOpenChange={setOpen} onValueChange={(taskId) => void run(taskId)} disabled={running || flowActions(body.flow ?? { steps: [] }).length === 0}>
+      <SelectTrigger aria-label="Test run" className="h-8 w-auto gap-1.5 bg-background px-3 text-sm font-medium [&>svg:last-child]:hidden">
+        <FlaskConicalIcon className="size-4" /> {running ? 'Testing…' : 'Test run'}
+      </SelectTrigger>
+      <SelectContent>
+        {tasks.isLoading ? <p className="px-2 py-1.5 text-sm text-muted-foreground">Loading tasks…</p> : null}
+        {tasks.data && tasks.data.items.length === 0 ? <p className="px-2 py-1.5 text-sm text-muted-foreground">No tasks in this project yet.</p> : null}
+        {(tasks.data?.items ?? []).slice(0, 30).map((task) => (
+          <SelectItem key={task.id} value={task.id}>
+            #{task.number} {task.title}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 

@@ -32,6 +32,9 @@ export class AutomationRuleOrmEntity extends TenantOrmEntity implements Automati
   @Column({ type: 'text', nullable: true })
   createdById: string | null;
 
+  @Column({ type: 'text', nullable: true, select: true })
+  webhookSecretSealed: string | null;
+
   @Column({ type: 'integer', default: 0 })
   runCount: number;
 

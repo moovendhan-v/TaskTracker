@@ -1,4 +1,4 @@
-import { CheckCircle2Icon, CircleSlashIcon, HistoryIcon, HourglassIcon, PencilIcon, PlusIcon, TrashIcon, XCircleIcon, ZapIcon } from 'lucide-react';
+import { CheckCircle2Icon, CircleSlashIcon, CopyIcon, HistoryIcon, HourglassIcon, KeyRoundIcon, PencilIcon, PlusIcon, RefreshCwIcon, TrashIcon, XCircleIcon, ZapIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { AutomationRuleResponse, FlowTraceOutcome } from '@taskflow/shared-types';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
@@ -10,7 +10,10 @@ import { useLists } from '@/modules/lists';
 import { useMemberName, useMembers } from '@/modules/members';
 import { useStatuses } from '@/modules/tasks';
 import { usePermissions } from '@/modules/workspaces';
-import { toSaveRequest } from '../api/automations.api';
+import { useChatChannels } from '@/modules/chat';
+import { toast } from '@/components/ui/sonner';
+import { getErrorMessage } from '@/lib/errors';
+import { automationsApi, toSaveRequest } from '../api/automations.api';
 import { useAutomationMutations, useAutomationRuns, useAutomations } from '../hooks/use-automations';
 import { describeFlow, describeRule } from '../lib/describe-rule';
 import { AutomationBuilder } from './automation-builder';
@@ -33,6 +36,8 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
   const nameOf = useMemberName(workspaceId);
   const [editing, setEditing] = useState<AutomationRuleResponse | 'new' | null>(null);
   const [history, setHistory] = useState<AutomationRuleResponse | null>(null);
+  const [secretFor, setSecretFor] = useState<AutomationRuleResponse | null>(null);
+  const { data: channels = [] } = useChatChannels(workspaceId);
   // Run history → "Show on flow": the builder opens read-mostly with that run's path lit.
   const [showPath, setShowPath] = useState<{ rule: AutomationRuleResponse; path: Map<string, FlowTraceOutcome> } | null>(null);
 
@@ -40,6 +45,7 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
     status: (id: string) => statuses.find((status) => status.id === id)?.name ?? 'a deleted status',
     list: (id: string) => lists.find((list) => list.id === id)?.name ?? 'a deleted list',
     person: (id: string) => members.find((member) => member.userId === id)?.name ?? 'a former member',
+    channel: (id: string) => channels.find((channel) => channel.id === id)?.name ?? 'a channel',
   };
   const rules = automations.data ?? [];
   const summary = (rule: AutomationRuleResponse) => (rule.flow ? describeFlow(rule.trigger, rule.flow, names) : describeRule(rule, names));
@@ -105,6 +111,11 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
                 <Button variant="ghost" size="sm" onClick={() => setHistory(rule)}>
                   <HistoryIcon /> Runs
                 </Button>
+                {rule.actions.some((action) => action.type === 'webhook') ? (
+                  <Button variant="ghost" size="sm" onClick={() => setSecretFor(rule)}>
+                    <KeyRoundIcon /> Signing secret
+                  </Button>
+                ) : null}
                 <ConfirmDialog
                   trigger={
                     <Button variant="ghost" size="sm">
@@ -131,6 +142,7 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
           onSave={(body) => (editing === 'new' ? mutations.create.mutateAsync(toSaveRequest(body)) : mutations.update.mutateAsync({ ruleId: editing.id, body: toSaveRequest(body) }))}
         />
       ) : null}
+      {secretFor ? <WebhookSecret workspaceId={workspaceId} rule={secretFor} onClose={() => setSecretFor(null)} /> : null}
       {history ? (
         <RunHistory
           workspaceId={workspaceId}
@@ -154,6 +166,65 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
         />
       ) : null}
     </div>
+  );
+}
+
+/**
+ * The secret webhook receivers check the signature with. It's fetched only when
+ * asked for (each reveal is in the audit log) and never kept in the page's cache.
+ */
+function WebhookSecret({ workspaceId, rule, onClose }: { workspaceId: string; rule: AutomationRuleResponse; onClose: () => void }) {
+  const [secret, setSecret] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const load = async (rotate: boolean) => {
+    setBusy(true);
+    try {
+      setSecret(await automationsApi.revealSecret(workspaceId, rule.id, rotate));
+      if (rotate) toast.success('New secret made. The old one no longer verifies.');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal open onOpenChange={(open) => !open && onClose()} title={`${rule.name}: webhook signing secret`} size="md">
+      <div className="grid gap-3 p-5 text-sm">
+        <p className="text-muted-foreground">
+          Each call carries <code className="font-mono text-xs">X-TaskFlow-Timestamp</code> and <code className="font-mono text-xs">X-TaskFlow-Signature</code>, which is{' '}
+          <code className="font-mono text-xs">sha256=</code> plus the HMAC-SHA256 of “timestamp.body” with this secret. Check it, and reject old timestamps and repeated{' '}
+          <code className="font-mono text-xs">X-TaskFlow-Delivery</code> ids.
+        </p>
+        {secret ? (
+          <div className="flex items-center gap-2">
+            <code aria-label="Signing secret" className="min-w-0 flex-1 truncate rounded-md border bg-muted/40 px-2 py-1.5 font-mono text-xs">
+              {secret}
+            </code>
+            <Button variant="outline" size="sm" onClick={() => void navigator.clipboard?.writeText(secret).then(() => toast.success('Copied'))}>
+              <CopyIcon /> Copy
+            </Button>
+          </div>
+        ) : (
+          <Button className="justify-self-start" disabled={busy} onClick={() => void load(false)}>
+            <KeyRoundIcon /> Show secret
+          </Button>
+        )}
+        <div className="flex items-center gap-2 border-t pt-3">
+          <p className="flex-1 text-xs text-muted-foreground">Showing or replacing the secret is recorded in the audit log.</p>
+          <ConfirmDialog
+            trigger={
+              <Button variant="ghost" size="sm" disabled={busy}>
+                <RefreshCwIcon /> Replace secret
+              </Button>
+            }
+            title="Replace the signing secret?"
+            description="Receivers checking the old secret will reject calls until they use the new one."
+            confirmLabel="Replace secret"
+            onConfirm={() => load(true)}
+          />
+        </div>
+      </div>
+    </Modal>
   );
 }
 

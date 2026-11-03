@@ -1,4 +1,4 @@
-import { continuationAfter, describeWait, evaluateCondition, flowActions, flowFromRule, validateFlowShape, type AutomationFlow, type FlowStep, type FlowTaskFacts } from '@taskflow/shared-types';
+import { continuationAfter, describeWait, simulateFlow, evaluateCondition, flowActions, flowFromRule, validateFlowShape, type AutomationFlow, type FlowStep, type FlowTaskFacts } from '@taskflow/shared-types';
 import { describe, expect, it } from 'vitest';
 
 const STATUS = '0f6c2a8e-3a52-4c1e-9d1a-2b3c4d5e6f70';
@@ -93,5 +93,23 @@ describe('waits', () => {
     expect(describeWait(90)).toBe('90 minutes');
     expect(describeWait(120)).toBe('2 hours');
     expect(describeWait(1440)).toBe('1 day');
+  });
+});
+
+describe('test runs (simulateFlow)', () => {
+  it('follows the path a real run would take, applying effects later conditions read', () => {
+    const DONE = '2f6c2a8e-3a52-4c1e-9d1a-2b3c4d5e6f72';
+    const flow: AutomationFlow = {
+      steps: [
+        { id: 'close', kind: 'action', action: { type: 'set_status', statusId: DONE } },
+        { id: 'pause', kind: 'wait', minutes: 60 },
+        { id: 'closed', kind: 'if', condition: { field: 'status', categories: ['done'] }, yes: [{ id: 'hook', kind: 'action', action: { type: 'webhook', url: 'https://hooks.example.com/x' } }], no: [{ id: 'stop', kind: 'stop' }] },
+      ],
+    };
+    const trace = simulateFlow(flow, task, '2026-11-03', { statusCategoryOf: (id) => (id === DONE ? 'done' : undefined) });
+    expect(trace.map((entry) => `${entry.stepId}:${entry.outcome}`)).toEqual(['close:ran', 'pause:waited', 'closed:took-yes', 'hook:ran']);
+    expect(trace[1]!.detail).toBe('would wait 1 hour');
+    // The task itself is untouched.
+    expect(task.statusCategory).toBe('started');
   });
 });
