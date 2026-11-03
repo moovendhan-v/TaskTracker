@@ -86,6 +86,39 @@ function PeoplePicker({ workspaceId, me, selected, onChange, max }: { workspaceI
   );
 }
 
+/**
+ * Rename a channel or change its topic. Owners can, and so can people with
+ * chat.manage for public channels (the server checks, and audits the latter).
+ */
+export function EditChannelDialog({ workspaceId, channel, open, onOpenChange }: DialogProps & { channel: ChatChannelResponse }) {
+  const { updateChannel } = useChatMutations(workspaceId);
+  const [name, setName] = useState(channel.name ?? '');
+  const [topic, setTopic] = useState(channel.topic);
+  const normalized = normalizeChannelName(name);
+  const changed = normalized !== channel.name || topic.trim() !== channel.topic;
+  const submit = () =>
+    updateChannel.mutate(
+      { channelId: channel.id, ...(normalized !== channel.name ? { name: normalized } : {}), topic: topic.trim() },
+      { onSuccess: () => onOpenChange(false), onError: (error) => notify.error(error) },
+    );
+  return (
+    <FormDialog open={open} onOpenChange={onOpenChange} title="Edit channel" description="Everyone in the channel sees the new name and topic." submitLabel="Save" busy={updateChannel.isPending} canSubmit={normalized.length > 0 && changed} onSubmit={submit}>
+      <div className="grid gap-1.5">
+        <Label htmlFor="edit-channel-name">Name</Label>
+        <div className="relative">
+          {channel.kind === 'private' ? <LockIcon aria-hidden className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" /> : <HashIcon aria-hidden className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />}
+          <Input id="edit-channel-name" autoFocus value={name} maxLength={90} onChange={(event) => setName(event.target.value)} className="pl-8" />
+        </div>
+        {name && normalized !== name ? <p className="text-xs text-muted-foreground">Will be saved as #{normalized || '…'}</p> : null}
+      </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor="edit-channel-topic">Topic</Label>
+        <Input id="edit-channel-topic" value={topic} maxLength={CHAT_TOPIC_MAX} onChange={(event) => setTopic(event.target.value)} placeholder="What it's about (empty to clear)" />
+      </div>
+    </FormDialog>
+  );
+}
+
 export function NewChannelDialog({ workspaceId, me, open, onOpenChange, onCreated }: DialogProps & { me: string; onCreated: (channel: ChatChannelResponse) => void }) {
   const { createChannel } = useChatMutations(workspaceId);
   const [name, setName] = useState('');

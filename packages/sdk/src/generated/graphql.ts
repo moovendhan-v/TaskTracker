@@ -1576,6 +1576,15 @@ export type TeamAvailabilityQueryVariables = Exact<{
 
 export type TeamAvailabilityQuery = { teamAvailability: Array<{ userId: string, startDate: string, endDate: string }> };
 
+export type LeaveCalendarQueryVariables = Exact<{
+  workspaceId: string;
+  from: string;
+  to: string;
+}>;
+
+
+export type LeaveCalendarQuery = { leaveCalendar: Array<{ userId: string, startDate: string, endDate: string }> };
+
 export type GithubConnectionFieldsFragment = { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null } };
 
 export type GithubConnectionsQueryVariables = Exact<{
@@ -4852,6 +4861,15 @@ export const TeamAvailabilityDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<TeamAvailabilityQuery, TeamAvailabilityQueryVariables>;
+export const LeaveCalendarDocument = new TypedDocumentString(`
+    query LeaveCalendar($workspaceId: ID!, $from: String!, $to: String!) {
+  leaveCalendar(workspaceId: $workspaceId, from: $from, to: $to) {
+    userId
+    startDate
+    endDate
+  }
+}
+    `) as unknown as TypedDocumentString<LeaveCalendarQuery, LeaveCalendarQueryVariables>;
 export const GithubConnectionsDocument = new TypedDocumentString(`
     query GithubConnections($workspaceId: ID!) {
   githubConnections(workspaceId: $workspaceId) {

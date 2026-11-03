@@ -10,6 +10,7 @@ import type {
 } from '@taskflow/shared-types';
 import {
   CancelLeaveRequestDocument,
+  LeaveCalendarDocument,
   CreateDepartmentDocument,
   CreateLeaveTypeDocument,
   DecideLeaveRequestDocument,
@@ -69,4 +70,6 @@ export const leaveRequestsApi = {
     (await graphql(CancelLeaveRequestDocument, { workspaceId, requestId })).cancelLeaveRequest,
   myBalances: async (workspaceId: string, year: number) =>
     (await graphql(MyLeaveBalancesDocument, { workspaceId, year })).myLeaveBalances,
+  /** Who is away when: approved leave, dates and people only. */
+  calendar: async (workspaceId: string, from: string, to: string) => (await graphql(LeaveCalendarDocument, { workspaceId, from, to })).leaveCalendar,
 };

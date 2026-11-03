@@ -1745,6 +1745,18 @@ type Query {
   formSchemas(names: [String!]): [FormSchema!]!
   githubConnections(workspaceId: ID!): [GithubConnection!]!
 
+  """
+  The team leave calendar: who is away when (approved leave, dates and people only)
+  """
+  leaveCalendar(
+    """yyyy-mm-dd"""
+    from: String!
+
+    """yyyy-mm-dd"""
+    to: String!
+    workspaceId: ID!
+  ): [TeamAbsence!]!
+
   """Approver queue, oldest first"""
   leaveRequests(
     page: Int

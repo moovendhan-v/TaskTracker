@@ -64,3 +64,7 @@ query MyLeaveBalances($workspaceId: ID!, $year: Int) {
 query TeamAvailability($workspaceId: ID!, $from: String!, $to: String!) {
   teamAvailability(workspaceId: $workspaceId, from: $from, to: $to) { userId startDate endDate }
 }
+
+query LeaveCalendar($workspaceId: ID!, $from: String!, $to: String!) {
+  leaveCalendar(workspaceId: $workspaceId, from: $from, to: $to) { userId startDate endDate }
+}
