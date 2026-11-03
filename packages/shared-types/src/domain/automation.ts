@@ -15,8 +15,21 @@ export const AUTOMATION_TRIGGERS = [
   'github_pull_request_opened',
   'github_pull_request_merged',
   'github_pull_request_closed',
+  'task_due_soon',
+  'task_overdue',
 ] as const;
 export type AutomationTriggerType = (typeof AUTOMATION_TRIGGERS)[number];
+
+/**
+ * Triggers that no change fires: a background sweep checks the clock and fires
+ * each of these once per task and due date (E1 phase 2).
+ */
+export const SCHEDULED_TRIGGERS = ['task_due_soon', 'task_overdue'] as const satisfies readonly AutomationTriggerType[];
+export type ScheduledTriggerType = (typeof SCHEDULED_TRIGGERS)[number];
+
+export function isScheduledTrigger(type: AutomationTriggerType): type is ScheduledTriggerType {
+  return (SCHEDULED_TRIGGERS as readonly string[]).includes(type);
+}
 
 export const AUTOMATION_ACTIONS = ['set_status', 'set_priority', 'assign', 'unassign', 'notify', 'comment', 'set_due_date', 'add_watcher'] as const;
 export type AutomationActionType = (typeof AUTOMATION_ACTIONS)[number];
@@ -33,6 +46,8 @@ export interface AutomationTrigger {
   categories?: StatusCategory[] | null;
   /** task_priority_changed: only when it becomes one of these. */
   priorities?: TaskPriority[] | null;
+  /** task_due_soon: how many days ahead counts as soon (0 = due today). */
+  days?: number | null;
 }
 
 /** Every condition that is set must hold for the task, as it is after the change. */
@@ -63,9 +78,12 @@ export const AUTOMATION_LIMITS = {
   rulesPerSpace: 50,
   idsMax: 50,
   messageMax: 500,
+  /** task_due_soon looks at most this many days ahead. */
+  dueSoonDaysMax: 30,
 } as const;
 
-export const AUTOMATION_RUN_STATUSES = ['succeeded', 'failed', 'skipped'] as const;
+/** `waiting`: the run reached a wait step and resumes later (its trace grows when it does). */
+export const AUTOMATION_RUN_STATUSES = ['succeeded', 'failed', 'skipped', 'waiting'] as const;
 export type AutomationRunStatus = (typeof AUTOMATION_RUN_STATUSES)[number];
 
 /** Fills a notify message's placeholders. The result is plain text and is shown as text, never HTML. */

@@ -1,4 +1,4 @@
-import { evaluateCondition, flowActions, flowFromRule, validateFlowShape, type AutomationFlow, type FlowTaskFacts } from '@taskflow/shared-types';
+import { continuationAfter, describeWait, evaluateCondition, flowActions, flowFromRule, validateFlowShape, type AutomationFlow, type FlowStep, type FlowTaskFacts } from '@taskflow/shared-types';
 import { describe, expect, it } from 'vitest';
 
 const STATUS = '0f6c2a8e-3a52-4c1e-9d1a-2b3c4d5e6f70';
@@ -63,5 +63,35 @@ describe('automation flows', () => {
     expect(evaluateCondition({ field: 'due', match: 'none' }, { ...task, dueDate: null }, today)).toBe(true);
     expect(evaluateCondition({ field: 'title', contains: 'login' }, task, today)).toBe(true);
     expect(evaluateCondition({ field: 'type', types: ['task'] }, task, today)).toBe(false);
+  });
+});
+
+describe('waits', () => {
+  const act = (id: string): FlowStep => ({ id, kind: 'action', action: { type: 'unassign' } });
+  const steps: FlowStep[] = [
+    act('a'),
+    { id: 'if', kind: 'if', condition: { field: 'priority', priorities: ['urgent'] }, yes: [act('b'), { id: 'w', kind: 'wait', minutes: 60 }, act('c')], no: [act('d')] },
+    act('e'),
+  ];
+
+  it('resumes with the rest of the branch, then the steps after the if', () => {
+    expect(continuationAfter(steps, 'w')?.map((step) => step.id)).toEqual(['c', 'e']);
+    expect(continuationAfter(steps, 'a')?.map((step) => step.id)).toEqual(['if', 'e']);
+    expect(continuationAfter(steps, 'e')).toEqual([]);
+    expect(continuationAfter(steps, 'missing')).toBeNull();
+  });
+
+  it('checks wait lengths and how many there are', () => {
+    expect(validateFlowShape({ steps })).toEqual([]);
+    expect(validateFlowShape({ steps: [{ id: 'w', kind: 'wait', minutes: 1 }, act('a')] })[0]).toMatch(/5 minutes to 30 days/);
+    expect(validateFlowShape({ steps: [{ id: 'w', kind: 'wait', minutes: 1.5 } as FlowStep, act('a')] })[0]).toMatch(/a wait lasts/);
+    const many = Array.from({ length: 6 }, (_, index): FlowStep => ({ id: `w${index}`, kind: 'wait', minutes: 5 }));
+    expect(validateFlowShape({ steps: [...many, act('a')] })).toContain('A flow can have at most 5 waits');
+  });
+
+  it('describes a wait in its largest whole unit', () => {
+    expect(describeWait(90)).toBe('90 minutes');
+    expect(describeWait(120)).toBe('2 hours');
+    expect(describeWait(1440)).toBe('1 day');
   });
 });

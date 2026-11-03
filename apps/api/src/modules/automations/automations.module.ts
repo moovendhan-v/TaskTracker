@@ -7,6 +7,7 @@ import { SpacesModule } from '../spaces/spaces.module.js';
 import { StatusesModule } from '../statuses/statuses.module.js';
 import { TasksModule } from '../tasks/tasks.module.js';
 import { AutomationEngine } from './application/automation-engine.js';
+import { AutomationScheduler } from './application/automation-scheduler.js';
 import { AutomationsService } from './application/automations.service.js';
 import { AutomationRepository } from './domain/automation.repository.js';
 import { TypeOrmAutomationRepository } from './infrastructure/typeorm-automation.repository.js';
@@ -14,7 +15,7 @@ import { AutomationsResolver } from './presentation/graphql/automations.resolver
 
 @Module({
   imports: [SpacesModule, StatusesModule, ListsModule, MembersModule, TasksModule, NotificationsModule, CommentsModule],
-  providers: [AutomationsService, AutomationEngine, AutomationsResolver, { provide: AutomationRepository, useClass: TypeOrmAutomationRepository }],
+  providers: [AutomationsService, AutomationEngine, AutomationScheduler, AutomationsResolver, { provide: AutomationRepository, useClass: TypeOrmAutomationRepository }],
   exports: [AutomationEngine],
 })
 export class AutomationsModule {}

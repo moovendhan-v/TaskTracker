@@ -35,5 +35,7 @@ export interface AutomationRunResponse {
   message: string;
   /** The steps this run reached, in order. */
   trace: FlowTraceEntry[];
+  /** A waiting run: when it carries on. */
+  resumesAt: string | null;
   createdAt: string;
 }

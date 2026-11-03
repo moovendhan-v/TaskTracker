@@ -3,7 +3,7 @@ fragment AutomationRuleFields on AutomationRule {
   spaceId
   name
   enabled
-  trigger { type statusIds categories priorities }
+  trigger { type statusIds categories priorities days }
   conditions { listIds priorities types }
   actions { type statusId priority userId audiences userIds message days }
   flowJson
@@ -16,7 +16,7 @@ fragment AutomationRuleFields on AutomationRule {
 query Automations($workspaceId: ID!, $spaceId: ID!) { automations(workspaceId: $workspaceId, spaceId: $spaceId) { ...AutomationRuleFields } }
 
 query AutomationRuns($workspaceId: ID!, $ruleId: ID!) {
-  automationRuns(workspaceId: $workspaceId, ruleId: $ruleId) { id ruleId taskId status message createdAt trace { stepId outcome detail } }
+  automationRuns(workspaceId: $workspaceId, ruleId: $ruleId) { id ruleId taskId status message resumesAt createdAt trace { stepId outcome detail } }
 }
 
 mutation CreateAutomation($workspaceId: ID!, $spaceId: ID!, $input: SaveAutomationInput!) {

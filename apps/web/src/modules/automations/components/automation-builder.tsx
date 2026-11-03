@@ -3,10 +3,13 @@ import { useState, type ReactNode } from 'react';
 import {
   AUTOMATION_LIMITS,
   AUTOMATION_TRIGGERS,
+  FLOW_LIMITS,
   STATUS_CATEGORIES,
   TASK_PRIORITIES,
   flowActions,
+  describeWait,
   flowFromRule,
+  isScheduledTrigger,
   type AutomationAction,
   type AutomationFlow,
   type AutomationRuleResponse,
@@ -65,7 +68,8 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
     list: (id: string) => choices.lists.find((list) => list.id === id)?.name ?? 'a list',
     person: (id: string) => members.find((member) => member.userId === id)?.name ?? 'someone',
   };
-  const describe = (step: FlowStep) => (step.kind === 'action' ? sentenceCase(describeAction(step.action, names)) : step.kind === 'if' ? sentenceCase(describeCondition(step.condition, names)) : 'Stop here');
+  const describe = (step: FlowStep) =>
+    step.kind === 'action' ? sentenceCase(describeAction(step.action, names)) : step.kind === 'if' ? sentenceCase(describeCondition(step.condition, names)) : step.kind === 'wait' ? `Wait ${describeWait(step.minutes)}` : 'Stop here';
   const sentence = describeFlow(trigger, flow, names);
   const selected = findStep(flow.steps, selectedId);
 
@@ -86,7 +90,9 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
         ? { id, kind, action: { type: 'set_priority', priority: 'high' } }
         : kind === 'if'
           ? { id, kind, condition: { field: 'priority', priorities: ['urgent'] }, yes: [], no: [] }
-          : { id, kind };
+          : kind === 'wait'
+            ? { id, kind, minutes: 1440 }
+            : { id, kind };
     setFlow({ steps: insertStep(flow.steps, slot, step) });
     setSelectedId(id);
   };
@@ -147,7 +153,7 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
         <section className="grid content-start gap-3" aria-label="When">
           <StepLabel step="1" title="When" hint="What starts it" />
           <Card>
-            <Select value={trigger.type} onValueChange={(type: AutomationTriggerType) => setTrigger({ type })}>
+            <Select value={trigger.type} onValueChange={(type: AutomationTriggerType) => setTrigger(type === 'task_due_soon' ? { type, days: 1 } : { type })}>
               <SelectTrigger aria-label="Trigger">
                 <SelectValue />
               </SelectTrigger>
@@ -178,6 +184,22 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
                 <Chips options={TASK_PRIORITIES.map((priority) => ({ value: priority, label: PRIORITY_LABELS[priority] }))} value={trigger.priorities ?? []} onChange={(priorities) => setTrigger({ ...trigger, priorities })} />
               </Field>
             ) : null}
+            {trigger.type === 'task_due_soon' ? (
+              <Field label="How far ahead (days, 0 = due today)">
+                <Input
+                  type="number"
+                  min={0}
+                  max={AUTOMATION_LIMITS.dueSoonDaysMax}
+                  value={trigger.days ?? 1}
+                  aria-label="Days ahead"
+                  onChange={(event) => setTrigger({ ...trigger, days: Math.min(AUTOMATION_LIMITS.dueSoonDaysMax, Math.max(0, Math.round(Number(event.target.value) || 0))) })}
+                  className="w-24"
+                />
+              </Field>
+            ) : null}
+            {isScheduledTrigger(trigger.type) ? (
+              <p className="text-xs text-muted-foreground">Checked every minute. Fires once per open task and due date; finished and cancelled tasks are left alone.</p>
+            ) : null}
             {trigger.type.startsWith('github_') ? <p className="text-xs text-muted-foreground">Needs a connected GitHub repository (workspace settings → Integrations). Pull requests link to tasks by number, like TF-42.</p> : null}
           </Card>
         </section>
@@ -203,6 +225,8 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
                 <ConditionFields condition={selected.condition} onChange={(condition) => update({ ...selected, condition })} choices={choices} />
                 <p className="text-xs text-muted-foreground">Checked against the task as it is at that moment, after any earlier steps.</p>
               </>
+            ) : selected.kind === 'wait' ? (
+              <WaitFields minutes={selected.minutes} onChange={(minutes) => update({ ...selected, minutes })} />
             ) : (
               <p className="text-sm text-muted-foreground">The flow ends here; later steps in this branch don’t run.</p>
             )}
@@ -210,6 +234,42 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
         </section>
       </div>
     </Modal>
+  );
+}
+
+const WAIT_UNITS = [
+  { value: 1, label: 'minutes' },
+  { value: 60, label: 'hours' },
+  { value: 1440, label: 'days' },
+] as const;
+
+/** A wait as an amount and a unit; stored as minutes (5 minutes to 30 days). */
+function WaitFields({ minutes, onChange }: { minutes: number; onChange: (minutes: number) => void }) {
+  const unit = minutes % 1440 === 0 ? 1440 : minutes % 60 === 0 ? 60 : 1;
+  const clamp = (value: number) => Math.min(FLOW_LIMITS.waitMinutesMax, Math.max(FLOW_LIMITS.waitMinutesMin, Math.round(value)));
+  return (
+    <>
+      <Field label="Wait for">
+        <div className="flex gap-2">
+          <Input type="number" min={1} value={minutes / unit} aria-label="Wait amount" onChange={(event) => onChange(clamp((Number(event.target.value) || 1) * unit))} className="w-24" />
+          <Select value={String(unit)} onValueChange={(next) => onChange(clamp((minutes / unit) * Number(next)))}>
+            <SelectTrigger aria-label="Wait unit" className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {WAIT_UNITS.map((option) => (
+                <SelectItem key={option.value} value={String(option.value)}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </Field>
+      <p className="text-xs text-muted-foreground">
+        What ran before the wait is kept. Then the steps after it run, looking at the task as it is by then. Editing the flow drops runs that are waiting. 5 minutes to 30 days.
+      </p>
+    </>
   );
 }
 

@@ -30,7 +30,39 @@ export interface AutomationRun {
   status: AutomationRunStatus;
   message: string;
   trace: FlowTraceEntry[];
+  /** For a waiting run: when it carries on. */
+  resumesAt: Date | null;
   createdAt: Date;
 }
 
-export type NewAutomationRun = Omit<AutomationRun, 'id' | 'createdAt'>;
+export type NewAutomationRun = Omit<AutomationRun, 'id' | 'createdAt' | 'resumesAt'> & { resumesAt?: Date | null };
+
+/** What a resumed run needs to know about the change that started it. */
+export interface AutomationJobContext {
+  actorId: string | null;
+  pr?: string;
+}
+
+/** A run paused at a wait step. */
+export interface AutomationJob {
+  id: string;
+  workspaceId: string;
+  ruleId: string;
+  taskId: string;
+  runId: string | null;
+  /** The wait step; the run carries on after it. */
+  stepId: string;
+  /** Fingerprint of the flow it paused in. */
+  flowHash: string;
+  context: AutomationJobContext;
+  runAt: Date;
+}
+
+export type NewAutomationJob = Omit<AutomationJob, 'id'>;
+
+/** A task a scheduled trigger may fire for. */
+export interface DueTask {
+  taskId: string;
+  /** YYYY-MM-DD (UTC). */
+  dueDate: string;
+}

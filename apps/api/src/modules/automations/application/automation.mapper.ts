@@ -20,6 +20,6 @@ export const AutomationMapper = {
   },
 
   toRunResponse(run: AutomationRun): AutomationRunResponse {
-    return { id: run.id, ruleId: run.ruleId, taskId: run.taskId, status: run.status, message: run.message, trace: run.trace ?? [], createdAt: run.createdAt.toISOString() };
+    return { id: run.id, ruleId: run.ruleId, taskId: run.taskId, status: run.status, message: run.message, trace: run.trace ?? [], resumesAt: run.resumesAt?.toISOString() ?? null, createdAt: run.createdAt.toISOString() };
   },
 };

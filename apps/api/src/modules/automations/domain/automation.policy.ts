@@ -66,7 +66,15 @@ export const AutomationPolicy = {
         ? { statusIds: list(trigger.statusIds, null, 'statuses'), categories: list(trigger.categories, STATUS_CATEGORIES, 'categories') }
         : {}),
       ...(trigger.type === 'task_priority_changed' ? { priorities: list(trigger.priorities, TASK_PRIORITIES, 'priorities') } : {}),
+      ...(trigger.type === 'task_due_soon' ? { days: AutomationPolicy.dueSoonDays(trigger.days) } : {}),
     };
+  },
+
+  /** How far ahead "due soon" looks: 0 (due today) to 30 days, 1 when not set. */
+  dueSoonDays(days: number | null | undefined): number {
+    if (days === null || days === undefined) return 1;
+    if (!Number.isInteger(days) || days < 0 || days > AUTOMATION_LIMITS.dueSoonDaysMax) throw DomainError.invalid(`Due soon looks 0 to ${AUTOMATION_LIMITS.dueSoonDaysMax} days ahead`);
+    return days;
   },
 
   normalizeConditions(conditions: AutomationConditions | undefined): AutomationConditions {
@@ -133,6 +141,7 @@ export const AutomationPolicy = {
       steps.map((step) => {
         if (step.kind === 'action') return { id: step.id, kind: 'action', action: AutomationPolicy.normalizeActions([step.action])[0]! };
         if (step.kind === 'if') return { id: step.id, kind: 'if', condition: step.condition, yes: clean(step.yes), no: clean(step.no) };
+        if (step.kind === 'wait') return { id: step.id, kind: 'wait', minutes: step.minutes };
         return { id: step.id, kind: 'stop' };
       });
     const normalized = { steps: clean(flow.steps) };

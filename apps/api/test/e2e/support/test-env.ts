@@ -40,6 +40,8 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     CORS_ORIGINS: TEST_ORIGIN,
     // Each test user sends its own X-Forwarded-For address, so per-IP auth limits apply per user.
     TRUST_PROXY: '1',
+    // Check waits and due-soon / overdue triggers every second, so tests don't wait a minute.
+    AUTOMATION_TICK_SECONDS: '1',
     // Optional: run the suite against a real Redis (CI does) instead of the in-process cache.
     ...(process.env['E2E_REDIS_URL'] ? { REDIS_URL: process.env['E2E_REDIS_URL'] } : {}),
     // Uploads: a throwaway directory, or an S3-compatible service (MinIO, moto) when E2E_S3_ENDPOINT is set.

@@ -1,4 +1,4 @@
-import type { AutomationAction, AutomationConditions, AutomationFlow, AutomationTrigger, AutomationTriggerType, FlowCondition, NotifyAudience, StatusCategory, TaskPriority } from '@taskflow/shared-types';
+import { describeWait, type AutomationAction, type AutomationConditions, type AutomationFlow, type AutomationTrigger, type AutomationTriggerType, type FlowCondition, type NotifyAudience, type StatusCategory, type TaskPriority } from '@taskflow/shared-types';
 
 export const TRIGGER_LABELS: Record<AutomationTriggerType, string> = {
   task_created: 'A task is created',
@@ -10,6 +10,8 @@ export const TRIGGER_LABELS: Record<AutomationTriggerType, string> = {
   github_pull_request_opened: 'A linked pull request is opened',
   github_pull_request_merged: 'A linked pull request is merged',
   github_pull_request_closed: 'A linked pull request is closed without merging',
+  task_due_soon: 'A task is due soon',
+  task_overdue: 'A task becomes overdue',
 };
 
 export const ACTION_LABELS: Record<AutomationAction['type'], string> = {
@@ -54,12 +56,18 @@ export function describeRule(rule: { trigger: AutomationTrigger; conditions: Aut
   const targets = [...(trigger.statusIds ?? []).map(names.status), ...(trigger.categories ?? []).map((category) => `any ${CATEGORY_LABELS[category]} status`)];
   if (targets.length) when += ` to ${targets.join(' or ')}`;
   if (trigger.priorities?.length) when += ` to ${trigger.priorities.map((priority) => PRIORITY_LABELS[priority]).join(' or ')}`;
+  if (trigger.type === 'task_due_soon') when += dueSoonWindow(trigger.days ?? 1);
   const filters: string[] = [];
   if (conditions.listIds?.length) filters.push(`in ${conditions.listIds.map(names.list).join(', ')}`);
   if (conditions.types?.length) filters.push(`for ${conditions.types.join(', ')} tasks`);
   if (conditions.priorities?.length) filters.push(`when priority is ${conditions.priorities.map((priority) => PRIORITY_LABELS[priority]).join(' or ')}`);
   const then = rule.actions.map((action) => describeAction(action, names));
   return `When ${when}${filters.length ? ` ${filters.join(' ')}` : ''}, then ${then.length ? then.join(', then ') : '…'}.`;
+}
+
+/** " (due today)", " (within 3 days)". */
+export function dueSoonWindow(days: number): string {
+  return days === 0 ? ' (due today)' : ` (within ${days} ${days === 1 ? 'day' : 'days'})`;
 }
 
 /** One action in words: "set the priority to High". */
@@ -110,7 +118,7 @@ export function describeCondition(condition: FlowCondition, names: Names): strin
 export function describeFlow(trigger: AutomationTrigger, flow: AutomationFlow, names: Names): string {
   const when = describeRule({ trigger, conditions: {}, actions: [] }, names).replace(/, then ….$/, '');
   const steps = flow.steps.map((step): string =>
-    step.kind === 'action' ? describeAction(step.action, names) : step.kind === 'stop' ? 'stop' : `if ${describeCondition(step.condition, names)}, ${step.yes.length} ${step.yes.length === 1 ? 'step' : 'steps'}, otherwise ${step.no.length || 'nothing'}`,
+    step.kind === 'action' ? describeAction(step.action, names) : step.kind === 'stop' ? 'stop' : step.kind === 'wait' ? `wait ${describeWait(step.minutes)}` : `if ${describeCondition(step.condition, names)}, ${step.yes.length} ${step.yes.length === 1 ? 'step' : 'steps'}, otherwise ${step.no.length || 'nothing'}`,
   );
   return `${when}, then ${steps.join(', then ') || '…'}.`;
 }
