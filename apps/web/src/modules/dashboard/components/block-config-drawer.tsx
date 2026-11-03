@@ -1,5 +1,17 @@
-import { BLOCK_ACCENTS, BLOCK_LIMITS, BLOCK_TITLE_MAX, blockConfigKeys, type BlockConfig, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
-import { CheckIcon, RotateCcwIcon } from 'lucide-react';
+import {
+  BLOCK_ACCENTS,
+  BLOCK_LIMITS,
+  BLOCK_TITLE_MAX,
+  TASK_LIST_FIELDS,
+  TASK_PRIORITIES,
+  blockConfigKeys,
+  type BlockConfig,
+  type LayoutItem,
+  type LayoutPage,
+  type TaskListField,
+  type TaskPriority,
+} from '@taskflow/shared-types';
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon, RotateCcwIcon } from 'lucide-react';
 import { Segmented } from '@/components/kit/segmented';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,6 +30,14 @@ const SWATCH: Record<(typeof BLOCK_ACCENTS)[number], string> = {
   pink: 'bg-pink-500',
   amber: 'bg-amber-500',
 };
+
+const PRIORITY_LABEL: Record<TaskPriority, string> = { urgent: 'Urgent', high: 'High', normal: 'Normal', low: 'Low', none: 'No priority' };
+const FIELD_LABEL: Record<TaskListField, string> = { number: 'Number', status: 'Status', priority: 'Priority', date: 'Date', assignee: 'Assignee', project: 'Project' };
+
+/** What a task list shows when its columns were never picked: the same as the default look. */
+export function defaultFields(pageKey: LayoutPage): TaskListField[] {
+  return pageKey === 'project' ? ['number', 'status', 'date'] : ['status', 'date', 'project', 'assignee'];
+}
 
 interface BlockConfigDrawerProps {
   workspaceId: string | undefined;
@@ -49,27 +69,62 @@ export function BlockConfigDrawer({ workspaceId, pageKey, item, block, onOpenCha
           <SheetDescription>{block.description}</SheetDescription>
         </div>
 
-        {keys.includes('spaceId') && workspaceId ? (
-          <section aria-labelledby="block-data" className="grid gap-2">
+        {(keys.includes('spaceId') && workspaceId) || keys.includes('mine') ? (
+          <section aria-labelledby="block-data" className="grid gap-3">
             <h3 id="block-data" className="font-mono text-[10.5px] font-semibold tracking-[0.06em] text-subtle-foreground uppercase">
               Data source
             </h3>
-            <Label htmlFor="block-space" className="sr-only">
-              Project
-            </Label>
-            <select
-              id="block-space"
-              value={config.spaceId ?? ''}
-              onChange={(event) => set({ spaceId: event.target.value || undefined })}
-              className="h-9 rounded-md border bg-background px-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              <option value="">Same as the page (all projects)</option>
-              {spaces.map((space) => (
-                <option key={space.id} value={space.id}>
-                  {space.name}
-                </option>
-              ))}
-            </select>
+            {keys.includes('spaceId') && workspaceId ? (
+              <>
+                <Label htmlFor="block-space" className="sr-only">
+                  Project
+                </Label>
+                <select
+                  id="block-space"
+                  value={config.spaceId ?? ''}
+                  onChange={(event) => set({ spaceId: event.target.value || undefined })}
+                  className="h-9 rounded-md border bg-background px-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <option value="">Same as the page (all projects)</option>
+                  {spaces.map((space) => (
+                    <option key={space.id} value={space.id}>
+                      {space.name}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : null}
+            {keys.includes('mine') ? (
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={config.mine === true} onCheckedChange={(checked) => set({ mine: checked === true ? true : undefined })} />
+                Only tasks assigned to me
+              </label>
+            ) : null}
+            {keys.includes('priorities') ? (
+              <div className="grid gap-1.5">
+                <span className="text-sm font-medium">Priority</span>
+                <div role="group" aria-label="Priority" className="flex flex-wrap gap-1.5">
+                  {TASK_PRIORITIES.map((priority) => {
+                    const on = config.priorities?.includes(priority) ?? false;
+                    return (
+                      <button
+                        key={priority}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => {
+                          const next = on ? (config.priorities ?? []).filter((item) => item !== priority) : [...(config.priorities ?? []), priority];
+                          set({ priorities: next.length ? TASK_PRIORITIES.filter((item) => next.includes(item)) : undefined });
+                        }}
+                        className={cn('rounded-full border px-2.5 py-1 text-xs', on ? 'border-ring bg-primary-soft text-ring' : 'text-muted-foreground hover:bg-muted')}
+                      >
+                        {PRIORITY_LABEL[priority]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">None picked shows every priority.</p>
+              </div>
+            ) : null}
             <p className="text-xs text-muted-foreground">Everyone who sees this block sees it with their own access.</p>
           </section>
         ) : null}
@@ -118,6 +173,7 @@ export function BlockConfigDrawer({ workspaceId, pageKey, item, block, onOpenCha
               options={[...BLOCK_LIMITS.map((limit) => ({ value: String(limit), label: `${limit}` })), { value: 'all', label: 'All' }]}
             />
           ) : null}
+          {keys.includes('fields') ? <FieldPicker value={config.fields ?? defaultFields(pageKey)} onChange={(fields) => set({ fields })} /> : null}
           {keys.includes('includeClosed') ? (
             <label className="flex items-center gap-2 text-sm">
               <Checkbox checked={includeClosed} onCheckedChange={(checked) => set({ includeClosed: checked === true })} />
@@ -135,5 +191,55 @@ export function BlockConfigDrawer({ workspaceId, pageKey, item, block, onOpenCha
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** Which columns a task list shows, and in what order: tick to show, arrows to move. The number always sits before the title. */
+function FieldPicker({ value, onChange }: { value: TaskListField[]; onChange: (fields: TaskListField[]) => void }) {
+  const ordered: TaskListField[] = value.filter((field) => field !== 'number');
+  const hasNumber = value.includes('number');
+  const emit = (columns: TaskListField[], number = hasNumber) => onChange(number ? ['number', ...columns] : columns);
+  // Shown columns first, in their order, then the hidden ones.
+  const rows: TaskListField[] = [...ordered, ...TASK_LIST_FIELDS.filter((field) => field !== 'number' && !ordered.includes(field))];
+  const move = (field: TaskListField, by: -1 | 1) => {
+    const index = ordered.indexOf(field);
+    const next = [...ordered];
+    next.splice(index, 1);
+    next.splice(index + by, 0, field);
+    emit(next);
+  };
+  return (
+    <div className="grid gap-1.5">
+      <span className="text-sm font-medium">Columns</span>
+      <ul aria-label="Columns" className="grid rounded-md border">
+        <li className="flex items-center gap-2 border-b px-2 py-1.5 text-sm">
+          <label className="flex flex-1 items-center gap-2">
+            <Checkbox checked={hasNumber} onCheckedChange={(checked) => emit(ordered, checked === true)} />
+            Number <span className="text-xs text-muted-foreground">(before the title)</span>
+          </label>
+        </li>
+        <li className="flex items-center gap-2 border-b px-2 py-1.5 text-sm text-muted-foreground">
+          <Checkbox checked disabled aria-label="Title (always shown)" /> Title
+        </li>
+        {rows.map((field) => {
+          const index = ordered.indexOf(field);
+          const shown = index >= 0;
+          return (
+            <li key={field} className="flex items-center gap-2 border-b px-2 py-1 text-sm last:border-b-0">
+              <label className="flex flex-1 items-center gap-2">
+                <Checkbox checked={shown} onCheckedChange={(checked) => emit(checked === true ? [...ordered, field] : ordered.filter((item) => item !== field))} />
+                {FIELD_LABEL[field]}
+              </label>
+              <Button variant="ghost" size="icon" className="size-7" aria-label={`Move ${FIELD_LABEL[field]} up`} disabled={!shown || index === 0} onClick={() => move(field, -1)}>
+                <ArrowUpIcon />
+              </Button>
+              <Button variant="ghost" size="icon" className="size-7" aria-label={`Move ${FIELD_LABEL[field]} down`} disabled={!shown || index === ordered.length - 1} onClick={() => move(field, 1)}>
+                <ArrowDownIcon />
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

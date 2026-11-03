@@ -202,12 +202,21 @@ enum AutomationTriggerType {
 }
 
 """
-One block's settings: data source (spaceId) kept apart from view (title, accent, limit, includeClosed)
+One block's settings: data (spaceId, mine, priorities) kept apart from view (title, accent, limit, includeClosed, fields)
 """
 type BlockConfig {
   accent: String
+
+  """View: task-list columns, in order"""
+  fields: [String!]
   includeClosed: Boolean
   limit: Int
+
+  """Data: only the viewer's own tasks"""
+  mine: Boolean
+
+  """Data: only these priorities"""
+  priorities: [TaskPriority!]
 
   """Data source: one project; read with the viewer's own access"""
   spaceId: ID
@@ -216,8 +225,11 @@ type BlockConfig {
 
 input BlockConfigInput {
   accent: String
+  fields: [String!]
   includeClosed: Boolean
   limit: Int
+  mine: Boolean
+  priorities: [TaskPriority!]
   spaceId: ID
   title: String
 }
@@ -609,6 +621,12 @@ type DashboardForecastBucket {
 
 input DashboardInput {
   from: String!
+
+  """Only your own tasks and hours (from your session); overrides userIds"""
+  mine: Boolean
+
+  """Narrows the task lists to these priorities"""
+  priorities: [TaskPriority!]
   spaceId: ID
 
   """IANA time zone, e.g. Europe/Berlin"""
@@ -713,6 +731,7 @@ type DashboardTask {
   dueDate: String
   id: ID!
   number: Int!
+  priority: TaskPriority!
   spaceId: ID!
   spaceName: String!
   status: DashboardStatusRef!

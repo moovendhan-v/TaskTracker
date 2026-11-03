@@ -1,3 +1,5 @@
+import { TASK_PRIORITIES, type TaskPriority } from './task.js';
+
 /**
  * Arrangeable dashboard layouts (v2 "lego" grid). Shared so the server
  * validates exactly what the client produces.
@@ -69,6 +71,10 @@ export type BlockAccent = (typeof BLOCK_ACCENTS)[number];
 export const BLOCK_LIMITS = [5, 10, 20] as const;
 export const BLOCK_TITLE_MAX = 60;
 
+/** Columns a task-list block can show, in the order picked. The title always shows. */
+export const TASK_LIST_FIELDS = ['number', 'status', 'priority', 'date', 'assignee', 'project'] as const;
+export type TaskListField = (typeof TASK_LIST_FIELDS)[number];
+
 /**
  * One block's settings. Data (where its numbers come from) is kept apart from
  * view (how it looks): changing the view never changes what the block may read.
@@ -84,23 +90,34 @@ export interface BlockConfig {
   limit?: (typeof BLOCK_LIMITS)[number];
   /** View: count closed work too (status breakdowns). */
   includeClosed?: boolean;
+  /** Data: only tasks assigned to the viewer (resolved from their session on the server). */
+  mine?: boolean;
+  /** Data: only tasks with these priorities. */
+  priorities?: TaskPriority[];
+  /** View: which columns a task list shows, in order. */
+  fields?: TaskListField[];
 }
 
 export type BlockConfigKey = keyof BlockConfig;
 
 const VIEW_KEYS: readonly BlockConfigKey[] = ['title', 'accent'];
-const HOME_TASK_LISTS = ['overdue-tasks', 'due-soon-tasks', 'recent-tasks'];
+/** Task-list blocks (the same types on Home and project dashboards). */
+const TASK_LISTS = ['overdue-tasks', 'due-soon-tasks', 'recent-tasks'];
 
 /** Which settings a block offers. Home blocks can also pick their data source. */
 export function blockConfigKeys(pageKey: LayoutPage, type: string): BlockConfigKey[] {
   const keys: BlockConfigKey[] = [...VIEW_KEYS];
   if (pageKey === 'home' && !['hours-by-project'].includes(type)) keys.push('spaceId');
-  if (HOME_TASK_LISTS.includes(type)) keys.push('limit');
+  if (TASK_LISTS.includes(type)) keys.push('limit', 'mine', 'priorities', 'fields');
   if (type === 'status' || type === 'status-breakdown') keys.push('includeClosed');
   return keys;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isSubsetOf(values: unknown, allowed: readonly string[]): boolean {
+  return Array.isArray(values) && values.length <= allowed.length && new Set(values).size === values.length && values.every((value) => allowed.includes(value as string));
+}
 
 /** Problems with one block's settings; empty when they are fine. */
 export function validateBlockConfig(pageKey: LayoutPage, type: string, config: BlockConfig): string[] {
@@ -116,13 +133,16 @@ export function validateBlockConfig(pageKey: LayoutPage, type: string, config: B
   if (config.spaceId !== undefined && (typeof config.spaceId !== 'string' || !UUID.test(config.spaceId))) problems.push('spaceId must be a project id');
   if (config.limit !== undefined && !(BLOCK_LIMITS as readonly number[]).includes(config.limit)) problems.push('limit must be 5, 10 or 20');
   if (config.includeClosed !== undefined && typeof config.includeClosed !== 'boolean') problems.push('includeClosed must be true or false');
+  if (config.mine !== undefined && typeof config.mine !== 'boolean') problems.push('mine must be true or false');
+  if (config.priorities !== undefined && !isSubsetOf(config.priorities, TASK_PRIORITIES)) problems.push('priorities: pick from the list, each once');
+  if (config.fields !== undefined && !isSubsetOf(config.fields, TASK_LIST_FIELDS)) problems.push('fields: pick from the list, each once');
   return problems;
 }
 
 /** Drops empty values, so "no setting" is stored as nothing. */
 export function cleanBlockConfig(config: BlockConfig | null | undefined): BlockConfig | undefined {
   if (!config) return undefined;
-  const entries = Object.entries(config).filter(([, value]) => value !== undefined && value !== null && value !== '');
+  const entries = Object.entries(config).filter(([key, value]) => value !== undefined && value !== null && value !== '' && !(key === 'priorities' && Array.isArray(value) && value.length === 0) && !(key === 'mine' && value === false));
   return entries.length ? (Object.fromEntries(entries) as BlockConfig) : undefined;
 }
 

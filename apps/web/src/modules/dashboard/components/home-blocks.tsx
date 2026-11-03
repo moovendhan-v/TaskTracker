@@ -35,7 +35,7 @@ export interface BlockDefinition {
 }
 
 /** A task list cut to the block's limit, if it has one. */
-const limited = <T,>(tasks: readonly T[], config: BlockConfig) => (config.limit ? tasks.slice(0, config.limit) : tasks);
+export const limited = <T,>(tasks: readonly T[], config: BlockConfig) => (config.limit ? tasks.slice(0, config.limit) : tasks);
 
 /** Every block the Home page can hold (the order is the library's order). */
 export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
@@ -122,7 +122,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     skeleton: 'rows',
     size: { w: 4, h: 7 },
     chip: (data) => String(data.summary.overdue),
-    render: (data, config) => <DashboardTaskList tasks={limited(data.overdueTasks, config)} empty="Nothing overdue." />,
+    render: (data, config) => <DashboardTaskList tasks={limited(data.overdueTasks, config)} fields={config.fields} empty="Nothing overdue." />,
   },
   'due-soon-tasks': {
     title: 'Due in the next 14 days',
@@ -131,7 +131,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Tasks',
     skeleton: 'rows',
     size: { w: 4, h: 7 },
-    render: (data, config) => <DashboardTaskList tasks={limited(data.dueSoonTasks, config)} empty="Nothing due soon." />,
+    render: (data, config) => <DashboardTaskList tasks={limited(data.dueSoonTasks, config)} fields={config.fields} empty="Nothing due soon." />,
   },
   workload: {
     title: 'Team workload',
@@ -149,7 +149,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Tasks',
     skeleton: 'rows',
     size: { w: 12, h: 6 },
-    render: (data, config) => <DashboardTaskList tasks={limited(data.recentlyUpdated, config)} date="updated" columns={2} />,
+    render: (data, config) => <DashboardTaskList tasks={limited(data.recentlyUpdated, config)} fields={config.fields} date="updated" columns={2} />,
   },
 };
 

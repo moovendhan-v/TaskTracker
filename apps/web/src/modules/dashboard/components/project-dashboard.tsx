@@ -18,7 +18,8 @@ import { ArrangeableGrid } from './arrangeable-grid';
 import { DashboardFilters } from './dashboard-filters';
 import { HoursByTask, HoursPerDay, KpiRow, StatusBreakdown, Workload } from './dashboard-panels';
 import { DashboardTaskList } from './dashboard-task-list';
-import type { BlockDefinition, BlockRegistry } from './home-blocks';
+import type { BlockScope } from './configured-block';
+import { limited, type BlockDefinition, type BlockRegistry } from './home-blocks';
 import { SpaceStatusChip } from './space-status-chip';
 
 interface Attribute {
@@ -139,7 +140,7 @@ function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectCont
       skeleton: 'rows',
       size: { w: 4, h: 7 },
       chip: (data) => String(data.summary.overdue),
-      render: (data) => <DashboardTaskList tasks={data.overdueTasks} variant="number" empty="Nothing overdue." />,
+      render: (data, config) => <DashboardTaskList tasks={limited(data.overdueTasks, config)} fields={config.fields} variant="number" empty="Nothing overdue." />,
     },
     'due-soon-tasks': {
       title: 'Due in the next 7 days',
@@ -149,8 +150,16 @@ function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectCont
       skeleton: 'rows',
       size: { w: 4, h: 7 },
       chip: (data) => String(data.summary.dueSoon),
-      render: (data) => (
-        <DashboardTaskList tasks={data.dueSoonTasks.filter((task) => task.dueDate && new Date(task.dueDate).getTime() < weekAhead)} variant="number" empty="Nothing due this week." />
+      render: (data, config) => (
+        <DashboardTaskList
+          tasks={limited(
+            data.dueSoonTasks.filter((task) => task.dueDate && new Date(task.dueDate).getTime() < weekAhead),
+            config,
+          )}
+          fields={config.fields}
+          variant="number"
+          empty="Nothing due this week."
+        />
       ),
     },
     'recent-tasks': {
@@ -160,7 +169,7 @@ function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectCont
       category: 'Tasks',
       skeleton: 'rows',
       size: { w: 12, h: 6 },
-      render: (data) => <DashboardTaskList tasks={data.recentlyUpdated} variant="number" date="updated" />,
+      render: (data, config) => <DashboardTaskList tasks={limited(data.recentlyUpdated, config)} fields={config.fields} variant="number" date="updated" />,
     },
   };
   return { order: PROJECT_BLOCK_TYPES, blocks };
@@ -207,6 +216,8 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   const dashboard = useDashboard(workspaceId, dashboardInput(period, weekStart, { spaceId: space.id }));
   const state = blockStateOf(dashboard, { what: 'this project' });
   const layout = useLayout(workspaceId, 'project');
+  // A task list set to "mine" or some priorities asks for the same period and project, narrowed.
+  const scope: BlockScope = { workspaceId, inputFor: ({ mine, priorities }) => dashboardInput(period, weekStart, { spaceId: space.id, mine, priorities }) };
   const { data: fields = [] } = useCustomFields(workspaceId, 'space');
 
   const registry = useMemo(() => {
@@ -231,7 +242,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
         onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
       />
       {dashboard.isError ? <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} /> : null}
-      {!dashboard.isError ? <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} workspaceId={workspaceId} personal /> : null}
+      {!dashboard.isError ? <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} scope={scope} workspaceId={workspaceId} personal /> : null}
     </div>
   );
 }
