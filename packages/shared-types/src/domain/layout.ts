@@ -237,6 +237,10 @@ export type DashboardVisibility = (typeof DASHBOARD_VISIBILITIES)[number];
 
 export const DASHBOARD_LIMITS = { perOwner: 20, nameMax: 60 } as const;
 
+/** Date ranges a dashboard can show its hours for; a named dashboard remembers one. */
+export const DASHBOARD_PERIODS = ['this_week', 'last_week', 'this_month', 'last_month', 'last_30', 'this_year'] as const;
+export type DashboardPeriod = (typeof DASHBOARD_PERIODS)[number];
+
 export interface NamedDashboardResponse {
   id: string;
   name: string;
@@ -246,6 +250,8 @@ export interface NamedDashboardResponse {
   mine: boolean;
   version: number;
   items: LayoutItem[];
+  /** The date range it opens with, set by the owner; null means the page's own. */
+  period: DashboardPeriod | null;
   updatedAt: string;
 }
 

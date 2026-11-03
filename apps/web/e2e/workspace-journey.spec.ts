@@ -406,6 +406,24 @@ test('narrows a task list block to my urgent work and picks its columns', async 
   await expect(page.locator('section', { has: page.getByRole('heading', { name: 'Overdue', exact: true }) }).last().getByText('Mine · Urgent')).toBeVisible();
 });
 
+test('a named dashboard remembers its date range, and tiles show trends', async () => {
+  await expect(page.getByRole('img', { name: /^Tasks created per week, last 8 weeks: Week of/ })).toBeVisible();
+  await page.getByRole('button', { name: 'New dashboard' }).click();
+  const dialog = page.getByRole('dialog', { name: 'New dashboard' });
+  await dialog.getByLabel('Dashboard name').fill('Monthly review');
+  await dialog.getByRole('button', { name: 'Create' }).click();
+  const period = page.getByRole('radiogroup', { name: 'Period' });
+  await period.getByRole('radio', { name: 'Last month' }).click();
+  await expect(page.getByText(/saved with this dashboard/)).toBeVisible();
+  await page.waitForTimeout(500);
+  await page.reload();
+  // The overview keeps its own range; the dashboard opens with the saved one.
+  await expect(period.getByRole('radio', { name: 'This week' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('navigation', { name: 'Dashboards' }).getByText('Monthly review').click();
+  await expect(period.getByRole('radio', { name: 'Last month' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('navigation', { name: 'Dashboards' }).getByText('Overview').click();
+});
+
 test('goes back through layout versions and publishes the workspace default', async () => {
   await page.getByRole('button', { name: /Arrange/ }).click();
   // Move a block from the keyboard, which saves a second version.

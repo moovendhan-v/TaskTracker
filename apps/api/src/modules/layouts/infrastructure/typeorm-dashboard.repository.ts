@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { DashboardVisibility, LayoutItem } from '@taskflow/shared-types';
+import type { DashboardPeriod, DashboardVisibility, LayoutItem } from '@taskflow/shared-types';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import { DashboardRepository, type DashboardRecord } from '../domain/dashboard.repository.js';
 
@@ -11,10 +11,11 @@ interface Row {
   visibility: DashboardVisibility;
   items: LayoutItem[];
   version: number;
+  period: DashboardPeriod | null;
   updated_at: Date;
 }
 
-const COLUMNS = 'id, workspace_id, owner_id, name, visibility, items, version, updated_at';
+const COLUMNS = 'id, workspace_id, owner_id, name, visibility, items, version, period, updated_at';
 const toRecord = (row: Row): DashboardRecord => ({
   id: row.id,
   workspaceId: row.workspace_id,
@@ -23,6 +24,7 @@ const toRecord = (row: Row): DashboardRecord => ({
   visibility: row.visibility,
   items: row.items,
   version: row.version,
+  period: row.period ?? null,
   updatedAt: new Date(row.updated_at),
 });
 /** UPDATE/DELETE … RETURNING come back as [rows, count]; SELECT and INSERT as rows. */
@@ -68,11 +70,11 @@ export class TypeOrmDashboardRepository extends DashboardRepository {
     return toRecord(row!);
   }
 
-  async rename(workspaceId: string, ownerId: string, id: string, changes: { name?: string; visibility?: DashboardVisibility }): Promise<DashboardRecord | null> {
+  async rename(workspaceId: string, ownerId: string, id: string, changes: { name?: string; visibility?: DashboardVisibility; period?: DashboardPeriod }): Promise<DashboardRecord | null> {
     const [row] = await this.query(
-      `UPDATE dashboard SET name = coalesce($4, name), visibility = coalesce($5, visibility), updated_at = now()
+      `UPDATE dashboard SET name = coalesce($4, name), visibility = coalesce($5, visibility), period = coalesce($6, period), updated_at = now()
        WHERE workspace_id = $1 AND owner_id = $2 AND id = $3 RETURNING ${COLUMNS}`,
-      [workspaceId, ownerId, id, changes.name ?? null, changes.visibility ?? null],
+      [workspaceId, ownerId, id, changes.name ?? null, changes.visibility ?? null, changes.period ?? null],
     );
     return row ? toRecord(row) : null;
   }

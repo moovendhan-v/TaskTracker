@@ -358,3 +358,47 @@ export function LineChart({ series, labels, label, height = 180, formatValue = S
     </figure>
   );
 }
+
+export interface SparkPoint {
+  label: string;
+  value: number;
+}
+
+/**
+ * A small trend under a stat tile's number: a 2px line in a quiet ink, with the
+ * latest point marked in the accent. Hovering shows each point's value; the
+ * accessible name reads the whole series, so it never depends on the picture.
+ */
+export function Sparkline({ points, label, formatValue = String }: { points: readonly SparkPoint[]; label: string; formatValue?: (value: number) => string }) {
+  const [hover, setHover] = useState<number | null>(null);
+  if (points.length < 2) return null;
+  const max = Math.max(1, ...points.map((point) => point.value));
+  const step = 100 / (points.length - 1);
+  // Two pixels of headroom top and bottom, so the line and marker never clip.
+  const y = (value: number) => 26 - (value / max) * 22;
+  const path = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${(index * step).toFixed(2)},${y(point.value).toFixed(2)}`).join(' ');
+  const last = points[points.length - 1]!;
+  const shown = hover === null ? null : points[hover];
+  return (
+    <div className="relative mt-1 h-7" role="img" aria-label={`${label}: ${points.map((point) => `${point.label} ${formatValue(point.value)}`).join(', ')}`}>
+      <svg viewBox="0 0 100 28" preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible" aria-hidden>
+        <path d={path} fill="none" stroke="var(--muted-foreground)" strokeOpacity={0.55} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      </svg>
+      {/* Markers are HTML so they stay round while the line stretches. */}
+      <span aria-hidden className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-chart-1 ring-2 ring-card" style={{ left: '100%', top: `${(y(last.value) / 28) * 100}%` }} />
+      {hover !== null && hover !== points.length - 1 ? (
+        <span aria-hidden className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted-foreground ring-2 ring-card" style={{ left: `${hover * step}%`, top: `${(y(points[hover]!.value) / 28) * 100}%` }} />
+      ) : null}
+      <div aria-hidden className="absolute inset-0 flex" onMouseLeave={() => setHover(null)}>
+        {points.map((point, index) => (
+          <span key={point.label} className="h-full flex-1" onMouseEnter={() => setHover(index)} />
+        ))}
+      </div>
+      {shown ? (
+        <Tooltip left={`${(hover as number) * step}%`}>
+          {shown.label}: <span className="font-medium tabular-nums">{formatValue(shown.value)}</span>
+        </Tooltip>
+      ) : null}
+    </div>
+  );
+}

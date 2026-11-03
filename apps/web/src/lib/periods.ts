@@ -1,6 +1,8 @@
 /** Date windows the dashboards and time views offer. Every window is [from, to): `to` is exclusive. */
-export const PERIODS = ['this_week', 'last_week', 'this_month', 'last_month', 'last_30', 'this_year'] as const;
-export type Period = (typeof PERIODS)[number];
+import { DASHBOARD_PERIODS, type DashboardPeriod } from '@taskflow/shared-types';
+
+export const PERIODS = DASHBOARD_PERIODS;
+export type Period = DashboardPeriod;
 
 export const PERIOD_LABELS: Record<Period, string> = {
   this_week: 'This week',

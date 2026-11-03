@@ -18,6 +18,7 @@ fragment NamedDashboardFields on NamedDashboard {
   ownerId
   mine
   version
+  period
   updatedAt
   items { id type x y w h config { title accent spaceId limit includeClosed mine priorities fields } }
 }

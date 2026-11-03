@@ -29,7 +29,7 @@ export class DashboardsResolver {
     return this.service.create(access.workspaceId, actor.userId, input);
   }
 
-  @Mutation(() => NamedDashboardGql, { description: 'Rename or share / unshare one of your dashboards' })
+  @Mutation(() => NamedDashboardGql, { description: 'Rename, share / unshare, or set the date range of one of your dashboards' })
   @RequirePermissions('task.view')
   updateDashboard(
     @WorkspaceIdArg() _workspaceId: string,

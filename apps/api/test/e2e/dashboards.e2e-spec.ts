@@ -62,4 +62,24 @@ describe('named dashboards', () => {
     expect((await ws.owner.error(CREATE, { w, input: { name: 'One too many', items: [] } })).message).toMatch(/at most 20/);
     expect((await ws.owner.data<{ deleteDashboard: boolean }>(DELETE, { w, d })).deleteDashboard).toBe(true);
   });
+
+  it('remembers the date range the owner picks, for everyone who opens it', async () => {
+    const ws = await createWorkspace('Period owner');
+    const w = ws.workspaceId;
+    const member = await TestUser.signUp('Period member');
+    await addMember(ws, member, 'Member');
+    const PERIOD = 'mutation($w: ID!, $d: ID!, $input: UpdateDashboardInput!) { updateDashboard(workspaceId: $w, dashboardId: $d, input: $input) { period name } }';
+    const LISTED = 'query($w: ID!) { dashboards(workspaceId: $w) { id period } }';
+    const d = (await ws.owner.data<{ createDashboard: { id: string } }>(CREATE, { w, input: { name: 'Monthly', visibility: 'workspace', items: one } })).createDashboard.id;
+    const periodSeenBy = async (user: TestUser) => (await user.data<{ dashboards: { id: string; period: string | null }[] }>(LISTED, { w })).dashboards.find((item) => item.id === d)?.period;
+
+    expect(await periodSeenBy(member)).toBeNull();
+    expect((await ws.owner.data<{ updateDashboard: { period: string; name: string } }>(PERIOD, { w, d, input: { period: 'last_month' } })).updateDashboard).toEqual({ period: 'last_month', name: 'Monthly' });
+    expect(await periodSeenBy(member)).toBe('last_month');
+    // Renaming keeps it; only the owner can change it; only known ranges are accepted.
+    await ws.owner.data(PERIOD, { w, d, input: { name: 'Last month' } });
+    expect(await periodSeenBy(ws.owner)).toBe('last_month');
+    expect((await member.error(PERIOD, { w, d, input: { period: 'this_week' } })).code).toBe('FORBIDDEN');
+    expect((await ws.owner.error(PERIOD, { w, d, input: { period: 'forever' } })).code).toBe('BAD_USER_INPUT');
+  });
 });
