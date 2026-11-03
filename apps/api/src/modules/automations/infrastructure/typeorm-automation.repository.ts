@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { In } from 'typeorm';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
-import type { AutomationRule, AutomationRun, NewAutomationRule, NewAutomationRun } from '../domain/automation-rule.js';
+import type { AutomationJob, AutomationRule, AutomationRun, DueTask, NewAutomationJob, NewAutomationRule, NewAutomationRun } from '../domain/automation-rule.js';
 import { AutomationRepository } from '../domain/automation.repository.js';
-import { AutomationRuleOrmEntity, AutomationRunOrmEntity } from './automation.orm-entities.js';
+import { AutomationJobOrmEntity, AutomationRuleOrmEntity, AutomationRunOrmEntity } from './automation.orm-entities.js';
 
 /** Runs kept per rule; older ones are dropped as new ones arrive. */
 const RUNS_KEPT = 100;
@@ -20,6 +20,10 @@ export class TypeOrmAutomationRepository extends AutomationRepository {
 
   private get runs() {
     return this.transactional.repository(AutomationRunOrmEntity);
+  }
+
+  private get jobs() {
+    return this.transactional.repository(AutomationJobOrmEntity);
   }
 
   listInSpace(workspaceId: string, spaceId: string): Promise<AutomationRule[]> {
@@ -54,13 +58,86 @@ export class TypeOrmAutomationRepository extends AutomationRepository {
     await this.rules.update({ id: ruleId, workspaceId }, { runCount: () => 'run_count + 1', lastRunAt: at } as never);
   }
 
-  async recordRun(run: NewAutomationRun): Promise<void> {
-    await this.runs.insert(run);
+  async recordRun(run: NewAutomationRun, runId?: string | null): Promise<string> {
+    const values = { ...run, resumesAt: run.resumesAt ?? null };
+    if (runId) {
+      const result = await this.runs.update({ id: runId, workspaceId: run.workspaceId }, values as never);
+      if (result.affected) return runId;
+    }
+    const inserted = await this.runs.insert(values);
     await this.transactional.manager.query(
       `DELETE FROM automation_run WHERE workspace_id = $1 AND rule_id = $2 AND id NOT IN (
          SELECT id FROM automation_run WHERE workspace_id = $1 AND rule_id = $2 ORDER BY created_at DESC LIMIT $3)`,
       [run.workspaceId, run.ruleId, RUNS_KEPT],
     );
+    return (inserted.identifiers[0] as { id: string }).id;
+  }
+
+  findRun(workspaceId: string, runId: string): Promise<AutomationRun | null> {
+    return this.runs.findOneBy({ id: runId, workspaceId });
+  }
+
+  async scheduleJob(job: NewAutomationJob): Promise<void> {
+    await this.jobs.insert(job);
+  }
+
+  async claimDueJobs(workspaceId: string, now: Date, limit: number): Promise<AutomationJob[]> {
+    const rows: { id: string }[] = await this.transactional.manager.query(
+      `SELECT id FROM automation_job WHERE workspace_id = $1 AND run_at <= $2 ORDER BY run_at LIMIT $3 FOR UPDATE SKIP LOCKED`,
+      [workspaceId, now, limit],
+    );
+    if (rows.length === 0) return [];
+    return this.jobs.find({ where: { workspaceId, id: In(rows.map((row) => row.id)) }, order: { runAt: 'ASC' } });
+  }
+
+  async deleteJob(workspaceId: string, jobId: string): Promise<void> {
+    await this.jobs.delete({ id: jobId, workspaceId });
+  }
+
+  async workspacesToSweep(now: Date, scheduledTriggers: readonly string[], limit: number): Promise<string[]> {
+    const rows: { workspace_id: string }[] = await this.transactional.manager.query(
+      `SELECT workspace_id FROM (
+         SELECT workspace_id FROM automation_job WHERE run_at <= $1
+         UNION
+         SELECT workspace_id FROM automation_rule WHERE enabled AND trigger_type = ANY($2)
+       ) due LIMIT $3`,
+      [now, [...scheduledTriggers], limit],
+    );
+    return rows.map((row) => row.workspace_id);
+  }
+
+  async dueTasks(workspaceId: string, spaceId: string, ruleId: string, keyPrefix: string, from: string | null, to: string, limit: number): Promise<DueTask[]> {
+    const rows: { id: string; due: string }[] = await this.transactional.manager.query(
+      `SELECT t.id, to_char((t.due_date AT TIME ZONE 'UTC')::date, 'YYYY-MM-DD') AS due
+         FROM task t
+         JOIN task_status s ON s.id = t.status_id
+        WHERE t.workspace_id = $1 AND t.space_id = $2 AND t.due_date IS NOT NULL
+          AND s.category NOT IN ('done', 'cancelled')
+          AND ($3::date IS NULL OR (t.due_date AT TIME ZONE 'UTC')::date >= $3::date)
+          AND (t.due_date AT TIME ZONE 'UTC')::date <= $4::date
+          AND NOT EXISTS (
+            SELECT 1 FROM automation_fire f
+             WHERE f.rule_id = $5 AND f.task_id = t.id
+               AND f.fire_key = $6 || to_char((t.due_date AT TIME ZONE 'UTC')::date, 'YYYY-MM-DD'))
+        ORDER BY t.due_date, t.id
+        LIMIT $7`,
+      [workspaceId, spaceId, from, to, ruleId, keyPrefix, limit],
+    );
+    return rows.map((row) => ({ taskId: row.id, dueDate: row.due }));
+  }
+
+  async claimFire(workspaceId: string, ruleId: string, taskId: string, key: string): Promise<boolean> {
+    const rows: unknown[] = await this.transactional.manager.query(
+      `INSERT INTO automation_fire (workspace_id, rule_id, task_id, fire_key) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (rule_id, task_id, fire_key) DO NOTHING RETURNING id`,
+      [workspaceId, ruleId, taskId, key],
+    );
+    return rows.length > 0;
+  }
+
+  async tryLock(key: string): Promise<boolean> {
+    const [row] = (await this.transactional.manager.query(`SELECT pg_try_advisory_xact_lock(hashtext($1)) AS locked`, [key])) as { locked: boolean }[];
+    return row?.locked === true;
   }
 
   listRuns(workspaceId: string, ruleId: string, limit: number): Promise<AutomationRun[]> {

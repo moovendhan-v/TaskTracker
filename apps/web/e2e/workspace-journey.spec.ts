@@ -431,6 +431,31 @@ test('builds an automation flow with an if / else branch and gets it back', asyn
   await editor.getByRole('button', { name: 'Cancel' }).click();
 });
 
+test('schedules an overdue automation with a wait', async () => {
+  await page.getByRole('button', { name: 'New automation' }).click();
+  const builder = page.getByRole('dialog', { name: 'New automation' });
+  await builder.getByLabel('Automation name').fill('Overdue nudge');
+  await builder.getByLabel('Trigger').click();
+  await page.getByRole('option', { name: 'A task becomes overdue' }).click();
+  await expect(builder.getByText(/Fires once per open task and due date/)).toBeVisible();
+
+  // Wait 2 hours before the starter step.
+  await builder.getByRole('button', { name: 'Add a step here' }).first().click();
+  await page.getByRole('menuitem', { name: 'Wait' }).click();
+  await builder.getByLabel('Wait unit').click();
+  await page.getByRole('option', { name: 'hours' }).click();
+  await builder.getByLabel('Wait amount').fill('2');
+  await expect(builder.getByRole('treeitem').filter({ hasText: 'Wait 2 hours' })).toBeVisible();
+  await expect(page.getByText(/When a task becomes overdue, then wait 2 hours, then notify/)).toBeVisible();
+  await builder.getByRole('button', { name: 'Create automation' }).click();
+  await expect(builder).toBeHidden();
+
+  await page.getByRole('button', { name: 'Edit' }).last().click();
+  const editor = page.getByRole('dialog', { name: 'Edit automation' });
+  await expect(editor.getByRole('treeitem').first()).toContainText('Wait 2 hours');
+  await editor.getByRole('button', { name: 'Cancel' }).click();
+});
+
 test('opens an empty inbox', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
   await expect(page).toHaveURL(/\/inbox$/);

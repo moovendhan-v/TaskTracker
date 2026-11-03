@@ -1,4 +1,4 @@
-import { CheckCircle2Icon, CircleSlashIcon, HistoryIcon, PencilIcon, PlusIcon, TrashIcon, XCircleIcon, ZapIcon } from 'lucide-react';
+import { CheckCircle2Icon, CircleSlashIcon, HistoryIcon, HourglassIcon, PencilIcon, PlusIcon, TrashIcon, XCircleIcon, ZapIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { AutomationRuleResponse, FlowTraceOutcome } from '@taskflow/shared-types';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
@@ -161,6 +161,7 @@ const RUN_ICON = {
   succeeded: <CheckCircle2Icon className="size-4 text-good" aria-label="Succeeded" />,
   failed: <XCircleIcon className="size-4 text-critical" aria-label="Failed" />,
   skipped: <CircleSlashIcon className="size-4 text-muted-foreground" aria-label="Skipped" />,
+  waiting: <HourglassIcon className="size-4 text-amber-600" aria-label="Waiting" />,
 };
 
 function RunHistory({ workspaceId, rule, onClose, onOpenTask, onShowPath }: { workspaceId: string; rule: AutomationRuleResponse; onClose: () => void; onOpenTask: (taskId: string) => void; onShowPath: (path: Map<string, FlowTraceOutcome>) => void }) {
@@ -175,7 +176,12 @@ function RunHistory({ workspaceId, rule, onClose, onOpenTask, onShowPath }: { wo
               {RUN_ICON[run.status]}
               <div className="min-w-0 flex-1">
                 <p className="capitalize">{run.status}</p>
-                {run.message ? <p className="text-xs text-muted-foreground">{run.message}</p> : null}
+                {run.message ? (
+                  <p className="text-xs text-muted-foreground">
+                    {run.message}
+                    {run.resumesAt ? `, carries on ${formatLongDate(run.resumesAt)} at ${new Date(run.resumesAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}
+                  </p>
+                ) : null}
                 {run.trace.length ? (
                   <p className="mt-0.5 font-mono text-[11px] text-subtle-foreground">
                     {run.trace.map((entry) => `${entry.stepId} ${entry.outcome}`).join(' → ')}{' '}

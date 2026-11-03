@@ -41,6 +41,8 @@ const envSchema = z.object({
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
   /** For `local`: a directory the API can write to. */
   STORAGE_LOCAL_DIR: z.string().min(1).default('.data/uploads'),
+  /** How often the automation scheduler wakes (waits, due soon, overdue). 0 turns it off in this process. */
+  AUTOMATION_TICK_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
   /** For `s3`. The bucket must be private; the API streams files in and out. */
   S3_BUCKET: optionalString(z.string().trim().min(3).max(63)),
   S3_REGION: z.string().trim().min(1).default('us-east-1'),

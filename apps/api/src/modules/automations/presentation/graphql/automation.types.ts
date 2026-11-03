@@ -47,6 +47,7 @@ export class AutomationTriggerGql implements AutomationTrigger {
   @Field(() => [ID], { nullable: true }) statusIds?: string[] | null;
   @Field(() => [StatusCategoryEnum], { nullable: true }) categories?: StatusCategory[] | null;
   @Field(() => [TaskPriorityEnum], { nullable: true }) priorities?: TaskPriority[] | null;
+  @Field(() => Int, { nullable: true, description: 'task_due_soon: days ahead (0 = due today)' }) days?: number | null;
 }
 
 @ObjectType('AutomationConditions')
@@ -88,7 +89,7 @@ export class AutomationRuleGql implements AutomationRuleResponse {
 @ObjectType('AutomationRunStep')
 export class AutomationRunStepGql implements FlowTraceEntry {
   @Field() stepId: string;
-  @Field(() => String, { description: 'ran, took-yes, took-no, stopped or failed' }) outcome: FlowTraceOutcome;
+  @Field(() => String, { description: 'ran, took-yes, took-no, stopped, failed or waited' }) outcome: FlowTraceOutcome;
   @Field() detail: string;
 }
 
@@ -100,6 +101,7 @@ export class AutomationRunGql implements AutomationRunResponse {
   @Field(() => AutomationRunStatusEnum) status: AutomationRunStatus;
   @Field() message: string;
   @Field(() => [AutomationRunStepGql], { description: 'The steps this run reached, in order' }) trace: AutomationRunStepGql[];
+  @Field(() => String, { nullable: true, description: 'A waiting run: when it carries on' }) resumesAt: string | null;
   @Field() createdAt: string;
 }
 
@@ -109,6 +111,7 @@ export class AutomationTriggerInput implements AutomationTrigger {
   @Field(() => [ID], { nullable: true }) @IsOptional() @IsArray() @ArrayMaxSize(IDS) @IsUUID('4', { each: true }) statusIds?: string[] | null;
   @Field(() => [StatusCategoryEnum], { nullable: true }) @IsOptional() @IsArray() @ArrayMaxSize(IDS) @IsIn(STATUS_CATEGORIES, { each: true }) categories?: StatusCategory[] | null;
   @Field(() => [TaskPriorityEnum], { nullable: true }) @IsOptional() @IsArray() @ArrayMaxSize(IDS) @IsIn(TASK_PRIORITIES, { each: true }) priorities?: TaskPriority[] | null;
+  @Field(() => Int, { nullable: true }) @IsOptional() @IsInt() @Min(0) @Max(AUTOMATION_LIMITS.dueSoonDaysMax) days?: number | null;
 }
 
 @InputType('AutomationConditionsInput')

@@ -143,6 +143,9 @@ type AutomationRun {
   createdAt: String!
   id: ID!
   message: String!
+
+  """A waiting run: when it carries on"""
+  resumesAt: String
   ruleId: ID!
   status: AutomationRunStatus!
   taskId: ID
@@ -155,18 +158,22 @@ enum AutomationRunStatus {
   failed
   skipped
   succeeded
+  waiting
 }
 
 type AutomationRunStep {
   detail: String!
 
-  """ran, took-yes, took-no, stopped or failed"""
+  """ran, took-yes, took-no, stopped, failed or waited"""
   outcome: String!
   stepId: String!
 }
 
 type AutomationTrigger {
   categories: [StatusCategory!]
+
+  """task_due_soon: days ahead (0 = due today)"""
+  days: Int
   priorities: [TaskPriority!]
   statusIds: [ID!]
   type: AutomationTriggerType!
@@ -174,6 +181,7 @@ type AutomationTrigger {
 
 input AutomationTriggerInput {
   categories: [StatusCategory!]
+  days: Int
   priorities: [TaskPriority!]
   statusIds: [ID!]
   type: AutomationTriggerType!
@@ -187,6 +195,8 @@ enum AutomationTriggerType {
   task_commented
   task_created
   task_due_date_changed
+  task_due_soon
+  task_overdue
   task_priority_changed
   task_status_changed
 }

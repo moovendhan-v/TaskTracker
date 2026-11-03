@@ -1,5 +1,5 @@
 import type { FlowStep, FlowTraceOutcome } from '@taskflow/shared-types';
-import { CheckIcon, GitBranchIcon, OctagonXIcon, PlusIcon, Trash2Icon, XIcon, ZapIcon } from 'lucide-react';
+import { CheckIcon, GitBranchIcon, HourglassIcon, OctagonXIcon, PlusIcon, Trash2Icon, XIcon, ZapIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/cn';
 import type { FlowSlot } from '../lib/flow-edit';
@@ -42,12 +42,19 @@ function StepList({ steps, parentId, branch, ...props }: CanvasProps & { parentI
   );
 }
 
-const OUTCOME_LABEL: Record<FlowTraceOutcome, string> = { ran: 'Ran', 'took-yes': 'Yes', 'took-no': 'No', stopped: 'Stopped', failed: 'Failed' };
+const KIND: Record<FlowStep['kind'], { icon: typeof ZapIcon; tone: string; label: string }> = {
+  action: { icon: ZapIcon, tone: 'bg-primary-soft text-ring', label: 'Then' },
+  if: { icon: GitBranchIcon, tone: 'bg-violet-500/15 text-violet-600', label: 'If' },
+  wait: { icon: HourglassIcon, tone: 'bg-amber-500/15 text-amber-600', label: 'Wait' },
+  stop: { icon: OctagonXIcon, tone: 'bg-muted text-muted-foreground', label: 'Stop' },
+};
+
+const OUTCOME_LABEL: Record<FlowTraceOutcome, string> = { ran: 'Ran', 'took-yes': 'Yes', 'took-no': 'No', stopped: 'Stopped', failed: 'Failed', waited: 'Waited' };
 
 function StepCard({ step, selectedId, describe, onSelect, onRemove, path, ...props }: CanvasProps & { step: FlowStep }) {
   const selected = step.id === selectedId;
   const outcome = path?.get(step.id);
-  const Icon = step.kind === 'if' ? GitBranchIcon : step.kind === 'stop' ? OctagonXIcon : ZapIcon;
+  const Icon = KIND[step.kind].icon;
   const card = (
     <div
       role="treeitem"
@@ -68,11 +75,11 @@ function StepCard({ step, selectedId, describe, onSelect, onRemove, path, ...pro
         outcome === 'failed' && 'border-destructive',
       )}
     >
-      <span className={cn('mt-0.5 grid size-6 shrink-0 place-items-center rounded-md', step.kind === 'if' ? 'bg-violet-500/15 text-violet-600' : step.kind === 'stop' ? 'bg-muted text-muted-foreground' : 'bg-primary-soft text-ring')}>
+      <span className={cn('mt-0.5 grid size-6 shrink-0 place-items-center rounded-md', KIND[step.kind].tone)}>
         <Icon className="size-3.5" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-semibold tracking-wide text-subtle-foreground uppercase">{step.kind === 'if' ? 'If' : step.kind === 'stop' ? 'Stop' : 'Then'}</span>
+        <span className="block text-[11px] font-semibold tracking-wide text-subtle-foreground uppercase">{KIND[step.kind].label}</span>
         <span className="block">{describe(step)}</span>
       </span>
       {outcome ? (
@@ -125,6 +132,9 @@ function Insert({ onInsert }: { onInsert: (kind: FlowStep['kind']) => void }) {
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => onInsert('if')}>
             <GitBranchIcon /> If / else
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onInsert('wait')}>
+            <HourglassIcon /> Wait
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => onInsert('stop')}>
             <OctagonXIcon /> Stop

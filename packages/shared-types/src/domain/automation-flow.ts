@@ -6,7 +6,7 @@ import { STATUS_CATEGORIES, TASK_PRIORITIES, TASK_TYPES, type StatusCategory, ty
  * the trigger. A tree has no cycles or joins, so every flow ends and is easy to
  * draw and check. Rules without a flow are converted with `flowFromRule`.
  */
-export type FlowStep = FlowActionStep | FlowIfStep | FlowStopStep;
+export type FlowStep = FlowActionStep | FlowIfStep | FlowStopStep | FlowWaitStep;
 
 export interface FlowActionStep {
   id: string;
@@ -27,6 +27,16 @@ export interface FlowStopStep {
   kind: 'stop';
 }
 
+/**
+ * Pauses the run, then carries on with the steps after it. What ran before the
+ * wait is kept; the rest runs later with the task as it is then.
+ */
+export interface FlowWaitStep {
+  id: string;
+  kind: 'wait';
+  minutes: number;
+}
+
 export type FlowCondition =
   | { field: 'status'; statusIds?: string[]; categories?: StatusCategory[] }
   | { field: 'priority'; priorities: TaskPriority[] }
@@ -42,7 +52,18 @@ export interface AutomationFlow {
   steps: FlowStep[];
 }
 
-export const FLOW_LIMITS = { steps: 30, depth: 5, idsMax: 50, titleMax: 100, daysMax: 365, jsonMax: 32_768 } as const;
+export const FLOW_LIMITS = {
+  steps: 30,
+  depth: 5,
+  idsMax: 50,
+  titleMax: 100,
+  daysMax: 365,
+  jsonMax: 32_768,
+  /** A wait lasts 5 minutes to 30 days, and a flow has at most 5 of them. */
+  waitMinutesMin: 5,
+  waitMinutesMax: 43_200,
+  waits: 5,
+} as const;
 
 const STEP_ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -99,6 +120,7 @@ export function validateFlowShape(flow: AutomationFlow): string[] {
   const problems: string[] = [];
   const ids = new Set<string>();
   let count = 0;
+  let waits = 0;
   const walk = (steps: unknown, depth: number, path: string) => {
     if (!isList(steps)) return void problems.push(`${path}: steps must be a list`);
     // depth counts the if-steps around this list, plus one.
@@ -116,6 +138,11 @@ export function validateFlowShape(flow: AutomationFlow): string[] {
         checkCondition(step.condition, at, problems);
         walk(step.yes, depth + 1, `${at} yes`);
         walk(step.no, depth + 1, `${at} no`);
+      } else if (step.kind === 'wait') {
+        waits += 1;
+        if (!Number.isInteger(step.minutes) || step.minutes < FLOW_LIMITS.waitMinutesMin || step.minutes > FLOW_LIMITS.waitMinutesMax) {
+          problems.push(`${at}: a wait lasts ${FLOW_LIMITS.waitMinutesMin} minutes to ${FLOW_LIMITS.waitMinutesMax / 1440} days`);
+        }
       } else if (step.kind !== 'stop') {
         problems.push(`${at}: unknown step`);
       }
@@ -124,6 +151,7 @@ export function validateFlowShape(flow: AutomationFlow): string[] {
   if (!flow || typeof flow !== 'object') return ['A flow must be an object'];
   walk(flow.steps, 1, 'Flow');
   if (count > FLOW_LIMITS.steps) problems.push(`A flow can have at most ${FLOW_LIMITS.steps} steps`);
+  if (waits > FLOW_LIMITS.waits) problems.push(`A flow can have at most ${FLOW_LIMITS.waits} waits`);
   if (count === 0) problems.push('Add at least one step');
   return [...new Set(problems)];
 }
@@ -131,6 +159,30 @@ export function validateFlowShape(flow: AutomationFlow): string[] {
 /** Every step, depth first. */
 export function flowSteps(steps: readonly FlowStep[]): FlowStep[] {
   return steps.flatMap((step) => (step.kind === 'if' ? [step, ...flowSteps(step.yes), ...flowSteps(step.no)] : [step]));
+}
+
+/**
+ * The steps that run after `stepId`, in order: the rest of its own list, then
+ * the rest of each list around it, inner first. Null when the step isn't there.
+ * A wait resumes with these.
+ */
+export function continuationAfter(steps: readonly FlowStep[], stepId: string): FlowStep[] | null {
+  for (let index = 0; index < steps.length; index += 1) {
+    const step = steps[index]!;
+    const rest = steps.slice(index + 1);
+    if (step.id === stepId) return rest;
+    if (step.kind === 'if') {
+      const inner = continuationAfter(step.yes, stepId) ?? continuationAfter(step.no, stepId);
+      if (inner) return [...inner, ...rest];
+    }
+  }
+  return null;
+}
+
+/** "2 days", "3 hours", "90 minutes": the largest whole unit. */
+export function describeWait(minutes: number): string {
+  const [amount, unit] = minutes % 1440 === 0 ? [minutes / 1440, 'day'] : minutes % 60 === 0 ? [minutes / 60, 'hour'] : [minutes, 'minute'];
+  return `${amount} ${unit}${amount === 1 ? '' : 's'}`;
 }
 
 export function flowActions(flow: AutomationFlow): AutomationAction[] {
@@ -195,7 +247,7 @@ export function addDays(date: string, days: number): string {
   return value.toISOString().slice(0, 10);
 }
 
-export const FLOW_TRACE_OUTCOMES = ['ran', 'took-yes', 'took-no', 'stopped', 'failed'] as const;
+export const FLOW_TRACE_OUTCOMES = ['ran', 'took-yes', 'took-no', 'stopped', 'failed', 'waited'] as const;
 export type FlowTraceOutcome = (typeof FLOW_TRACE_OUTCOMES)[number];
 
 /** One step a run reached, in order. Details are our own short text, never task content. */

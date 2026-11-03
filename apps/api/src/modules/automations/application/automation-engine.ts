@@ -1,17 +1,22 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { createHash } from 'node:crypto';
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import {
   addDays,
   canInSpace,
+  continuationAfter,
+  describeWait,
   evaluateCondition,
   fillAutomationMessage,
   flowActions,
   flowFromRule,
   type AutomationAction,
+  type AutomationFlow,
   type AutomationTriggerType,
   type FlowStep,
   type FlowTaskFacts,
   type FlowTraceEntry,
+  type FlowWaitStep,
   type TaskResponse,
 } from '@taskflow/shared-types';
 import { AccessService } from '../../../core/access/access.service.js';
@@ -25,7 +30,7 @@ import { CommentsService } from '../../comments/application/comments.service.js'
 import { MembersService } from '../../members/application/members.service.js';
 import { NotificationsService } from '../../notifications/application/notifications.service.js';
 import { TasksService } from '../../tasks/application/tasks.service.js';
-import type { AutomationRule } from '../domain/automation-rule.js';
+import type { AutomationJob, AutomationRule } from '../domain/automation-rule.js';
 import { AutomationPolicy } from '../domain/automation.policy.js';
 import { AutomationRepository } from '../domain/automation.repository.js';
 
@@ -35,6 +40,21 @@ export interface RunContext {
   actorId: string | null;
   /** A pull request, for GitHub triggers: "Fix login (#42)". */
   pr?: string;
+}
+
+/** Where a walk through steps ended. */
+type StepsEnd = { end: 'done' } | { end: 'stopped' } | { end: 'wait'; step: FlowWaitStep };
+
+/** Picks a run back up after a wait: the steps left, the path so far, and the run to update. */
+interface Resume {
+  steps: FlowStep[];
+  trace: FlowTraceEntry[];
+  runId: string | null;
+}
+
+/** Fingerprint of a flow, so a paused run only resumes in the flow it paused in. */
+export function flowHash(flow: AutomationFlow): string {
+  return createHash('sha256').update(JSON.stringify(flow)).digest('hex');
 }
 
 const SUBJECT_MAX = 300;
@@ -103,57 +123,130 @@ export class AutomationEngine implements OnModuleInit {
     }
   }
 
-  private async execute(rule: AutomationRule, task: TaskResponse, context: RunContext): Promise<void> {
+  /**
+   * Fires one scheduled rule (due soon, overdue) for one task. The scheduler has
+   * already made sure this is the first fire for the task's due date.
+   */
+  async runScheduled(rule: AutomationRule, taskId: string): Promise<void> {
+    if (AutomationEngine.running.getStore()) return;
+    let task: TaskResponse;
+    try {
+      task = await this.tasksService.get(rule.workspaceId, taskId);
+    } catch (error) {
+      if (error instanceof DomainError) return;
+      throw error;
+    }
+    if (task.spaceId !== rule.spaceId) return;
+    const facts = { listId: task.listId, statusId: task.statusId, statusCategory: task.status.category, priority: task.priority, type: task.type };
+    if (!AutomationPolicy.matches(rule, rule.triggerType, facts)) return;
+    await this.execute(rule, task, { actorId: null });
+  }
+
+  /**
+   * Carries on a run that reached a wait step, with the rule's owner's access as
+   * it is now. Dropped (and the run marked skipped) if the rule was turned off or
+   * its flow changed while waiting.
+   */
+  async resume(job: AutomationJob): Promise<void> {
+    if (AutomationEngine.running.getStore()) return;
+    const run = job.runId ? await this.automations.findRun(job.workspaceId, job.runId) : null;
+    const trace = run?.trace ?? [];
+    const skip = (message: string) =>
+      this.automations.recordRun({ workspaceId: job.workspaceId, ruleId: job.ruleId, taskId: job.taskId, status: 'skipped', message, trace }, job.runId);
+
+    const rule = await this.automations.findInWorkspace(job.workspaceId, job.ruleId);
+    if (!rule) return;
     const flow = rule.flow ?? flowFromRule(rule.conditions, rule.actions);
-    const trace: FlowTraceEntry[] = [];
-    const record = (status: 'succeeded' | 'failed' | 'skipped', message: string) =>
-      this.automations.recordRun({ workspaceId: rule.workspaceId, ruleId: rule.id, taskId: task.id, status, message: message.slice(0, 300), trace: trace.slice(0, TRACE_MAX) });
+    const steps = continuationAfter(flow.steps, job.stepId);
+    if (!rule.enabled) return void (await skip('The automation was turned off while this run was waiting'));
+    if (flowHash(flow) !== job.flowHash || !steps) return void (await skip('The automation was changed while this run was waiting'));
+    let task: TaskResponse;
+    try {
+      task = await this.tasksService.get(job.workspaceId, job.taskId);
+    } catch (error) {
+      if (error instanceof DomainError) return void (await skip('The task is gone'));
+      throw error;
+    }
+    // The rule only acts in its own space; a task moved elsewhere while waiting is left alone.
+    if (task.spaceId !== rule.spaceId) return void (await skip('The task moved to another project while this run was waiting'));
+    await this.execute(rule, task, job.context, { steps, trace: [...trace], runId: job.runId });
+  }
+
+  private async execute(rule: AutomationRule, task: TaskResponse, context: RunContext, resume?: Resume): Promise<void> {
+    const flow = rule.flow ?? flowFromRule(rule.conditions, rule.actions);
+    const trace: FlowTraceEntry[] = resume?.trace ?? [];
+    const record = (status: 'succeeded' | 'failed' | 'skipped' | 'waiting', message: string, resumesAt: Date | null = null) =>
+      this.automations.recordRun(
+        { workspaceId: rule.workspaceId, ruleId: rule.id, taskId: task.id, status, message: message.slice(0, 300), trace: trace.slice(0, TRACE_MAX), resumesAt },
+        resume?.runId,
+      );
 
     const access = rule.createdById ? await this.accessService.resolveMember(rule.createdById, rule.workspaceId) : null;
-    if (!rule.createdById || !access) return record('skipped', 'The person this automation runs as is no longer in the workspace');
+    if (!rule.createdById || !access) return void (await record('skipped', 'The person this automation runs as is no longer in the workspace'));
     const missing = ['task.view' as const, ...AutomationPolicy.requiredPermissions(flowActions(flow))].filter((permission) => !canInSpace(access, rule.spaceId, permission));
-    if (missing.length) return record('skipped', `The person this automation runs as no longer has ${missing.join(', ')} here`);
+    if (missing.length) return void (await record('skipped', `The person this automation runs as no longer has ${missing.join(', ')} here`));
 
     const actor: Actor = { userId: rule.createdById, platformRole: 'USER', ip: null };
     try {
-      await this.transactional.savepoint(() =>
+      const ended = await this.transactional.savepoint(() =>
         this.transactional.runInScope({ kind: 'workspace', workspaceId: rule.workspaceId, userId: actor.userId, spaceRules: access.spaceRules }, () =>
-          AutomationEngine.running.run(true, () => this.runSteps(flow.steps, rule, actor, access, task.id, context, trace)),
+          AutomationEngine.running.run(true, () => this.runSteps(resume?.steps ?? flow.steps, rule, actor, access, task.id, context, trace)),
         ),
       );
-      await record('succeeded', '');
+      if (ended.end === 'wait') {
+        // What ran before the wait is kept; the rest runs when the scheduler picks the job up.
+        const runAt = new Date(this.clock.now().getTime() + ended.step.minutes * 60_000);
+        const runId = await record('waiting', `Waiting ${describeWait(ended.step.minutes)}`, runAt);
+        await this.automations.scheduleJob({
+          workspaceId: rule.workspaceId,
+          ruleId: rule.id,
+          taskId: task.id,
+          runId,
+          stepId: ended.step.id,
+          flowHash: flowHash(flow),
+          context: { actorId: context.actorId, ...(context.pr ? { pr: context.pr.slice(0, 300) } : {}) },
+          runAt,
+        });
+      } else {
+        await record('succeeded', '');
+      }
     } catch (error) {
       // Domain errors explain themselves; anything else stays in the server log. The savepoint undid every step.
       const message = error instanceof DomainError ? error.message : 'Something went wrong';
       const failed = trace[trace.length - 1];
       if (failed && failed.outcome === 'ran') trace[trace.length - 1] = { ...failed, outcome: 'failed', detail: message.slice(0, 200) };
-      await record('failed', `${message} Nothing was changed.`);
+      await record('failed', `${message} ${resume ? 'Nothing after the wait was changed.' : 'Nothing was changed.'}`);
       if (!(error instanceof DomainError)) this.logger.error(`Automation ${rule.id} failed`, error instanceof Error ? error.stack : undefined);
     }
-    await this.automations.markRun(rule.workspaceId, rule.id, this.clock.now());
+    if (!resume) await this.automations.markRun(rule.workspaceId, rule.id, this.clock.now());
   }
 
   /**
-   * Walks the flow in order. If-steps look at the task as it is at that moment, so an
-   * earlier step's change counts. Returns false when a stop step ended the run.
+   * Walks the steps in order. If-steps look at the task as it is at that moment,
+   * so an earlier step's change counts. Ends early at a stop or a wait.
    */
-  private async runSteps(steps: readonly FlowStep[], rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext, trace: FlowTraceEntry[]): Promise<boolean> {
+  private async runSteps(steps: readonly FlowStep[], rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext, trace: FlowTraceEntry[]): Promise<StepsEnd> {
     for (const step of steps) {
       if (step.kind === 'stop') {
         trace.push({ stepId: step.id, outcome: 'stopped', detail: '' });
-        return false;
+        return { end: 'stopped' };
+      }
+      if (step.kind === 'wait') {
+        trace.push({ stepId: step.id, outcome: 'waited', detail: describeWait(step.minutes) });
+        return { end: 'wait', step };
       }
       if (step.kind === 'if') {
         const holds = evaluateCondition(step.condition, await this.factsOf(rule.workspaceId, taskId), this.clock.now().toISOString().slice(0, 10));
         trace.push({ stepId: step.id, outcome: holds ? 'took-yes' : 'took-no', detail: '' });
-        if (!(await this.runSteps(holds ? step.yes : step.no, rule, actor, access, taskId, context, trace))) return false;
+        const inner = await this.runSteps(holds ? step.yes : step.no, rule, actor, access, taskId, context, trace);
+        if (inner.end !== 'done') return inner;
         continue;
       }
       // Marked as ran first: if the action throws, execute() turns this entry into the failure.
       trace.push({ stepId: step.id, outcome: 'ran', detail: '' });
       await this.applyAction(step.action, rule, actor, access, taskId, context);
     }
-    return true;
+    return { end: 'done' };
   }
 
   private async factsOf(workspaceId: string, taskId: string): Promise<FlowTaskFacts> {

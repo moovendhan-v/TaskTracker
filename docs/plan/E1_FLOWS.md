@@ -74,5 +74,9 @@ Trigger ── If priority is urgent ──┬── yes: Assign @Dana → Comme
 
 ## Later phases
 
-- **Phase 2: time.** Waits and delays, scheduled triggers (due soon, overdue, cron-like schedule) and sprint start/end. This needs a job table with a worker, idempotency keys and retries.
+- **Phase 2: time (built).**
+  - **Wait step**: 5 minutes to 30 days, at most 5 per flow. Steps before it are kept; the run is stored as `waiting` with `resumes_at`, and an `automation_job` row holds the wait step id and a SHA-256 fingerprint of the flow. When it's due, the steps after the wait run (the rest of its branch, then the steps after each enclosing if), as the rule's owner with their access at that moment, and the same run row grows its trace. If the rule was turned off, its flow changed, or the task left the rule's project, the run ends as `skipped` instead.
+  - **Scheduled triggers**: *a task is due soon* (0 to 30 days ahead, default 1) and *a task becomes overdue* (due before today, UTC). Each fires once per rule, task and due date (`automation_fire`, unique key), so changing the due date can fire it again. Finished and cancelled tasks are left out.
+  - **Scheduler** (`AutomationScheduler`, every `AUTOMATION_TICK_SECONDS`, default 60, 0 turns it off): one platform-scope read finds workspaces with due jobs or scheduled rules; everything else runs in that workspace's scope, one transaction each, under a per-workspace advisory lock, with jobs claimed `FOR UPDATE SKIP LOCKED`. Safe with several API instances. Bounded per tick (200 workspaces, 50 jobs, 100 tasks per rule).
+  - Not yet: cron-like schedules and sprint start/end triggers.
 - **Phase 3: reach.** Webhook action (with SSRF rules: allowlisted HTTPS hosts, no private IPs, timeouts, signed payloads), Slack/chat post, chat-message trigger, flow templates, and a test run against a sample task.

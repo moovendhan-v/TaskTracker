@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import type { AutomationAction, AutomationConditions, AutomationFlow, AutomationRunStatus, AutomationTrigger, FlowTraceEntry } from '@taskflow/shared-types';
 import { TenantOrmEntity } from '../../../core/database/base.orm-entity.js';
-import type { AutomationRule, AutomationRun } from '../domain/automation-rule.js';
+import type { AutomationJob, AutomationJobContext, AutomationRule, AutomationRun } from '../domain/automation-rule.js';
 
 @Entity({ name: 'automation_rule' })
 export class AutomationRuleOrmEntity extends TenantOrmEntity implements AutomationRule {
@@ -61,6 +61,42 @@ export class AutomationRunOrmEntity implements AutomationRun {
 
   @Column({ type: 'jsonb', default: () => `'[]'::jsonb` })
   trace: FlowTraceEntry[];
+
+  @Column({ type: 'timestamptz', nullable: true })
+  resumesAt: Date | null;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
+}
+
+@Entity({ name: 'automation_job' })
+export class AutomationJobOrmEntity implements AutomationJob {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ type: 'uuid' })
+  workspaceId: string;
+
+  @Column({ type: 'uuid' })
+  ruleId: string;
+
+  @Column({ type: 'uuid' })
+  taskId: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  runId: string | null;
+
+  @Column({ type: 'varchar', length: 40 })
+  stepId: string;
+
+  @Column({ type: 'char', length: 64 })
+  flowHash: string;
+
+  @Column({ type: 'jsonb', default: () => `'{}'::jsonb` })
+  context: AutomationJobContext;
+
+  @Column({ type: 'timestamptz' })
+  runAt: Date;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
