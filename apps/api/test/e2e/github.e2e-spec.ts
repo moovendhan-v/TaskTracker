@@ -152,4 +152,34 @@ describe('GitHub integration', () => {
     expect(after.status.category).not.toBe('done');
     expect((await ws.owner.data<{ taskPullRequests: unknown[] }>(LINKS, vars({ t: hidden.id }))).taskPullRequests).toEqual([]);
   });
+
+  it('logs every delivery, and keeps pull requests that mention no task in an inbox to link or dismiss', async () => {
+    const LOG = 'query($w: ID!, $c: ID!) { githubSyncLog(workspaceId: $w, connectionId: $c) { event outcome detail prNumber taskNumbers } }';
+    const INBOX = 'query($w: ID!) { githubPullRequestInbox(workspaceId: $w) { id number title url state } }';
+    const LINK = 'mutation($w: ID!, $i: ID!, $n: Int!) { linkInboxPullRequest(workspaceId: $w, itemId: $i, taskNumber: $n) { number } }';
+    const DISMISS = 'mutation($w: ID!, $i: ID!) { dismissInboxPullRequest(workspaceId: $w, itemId: $i) }';
+
+    const log = (await ws.owner.data<{ githubSyncLog: { event: string; outcome: string; detail: string; prNumber: number | null; taskNumbers: number[] }[] }>(LOG, vars({ c: connection.id }))).githubSyncLog;
+    expect(log.some((entry) => entry.outcome === 'error' && entry.detail === 'bad signature')).toBe(true);
+    expect(log.some((entry) => entry.outcome === 'ok' && entry.event === 'pull_request' && entry.taskNumbers.includes(task.number))).toBe(true);
+    expect((await member.error(LOG, vars({ c: connection.id }))).code).toBe('FORBIDDEN');
+
+    // Two pull requests that mention no task land in the inbox.
+    for (const number of [30, 31]) expect(await (await deliver(pullRequest('opened', { number, title: 'Tidy the README', html_url: `https://github.com/acme/web/pull/${number}` }))).json()).toEqual({ result: 'ok' });
+    const inbox = (await ws.owner.data<{ githubPullRequestInbox: { id: string; number: number; title: string; url: string; state: string }[] }>(INBOX, vars())).githubPullRequestInbox;
+    const thirty = inbox.find((item) => item.number === 30)!;
+    const thirtyOne = inbox.find((item) => item.number === 31)!;
+    expect(thirty).toMatchObject({ title: 'Tidy the README', url: 'https://github.com/acme/web/pull/30', state: 'open' });
+    expect((await ws.owner.data<{ githubSyncLog: { detail: string }[] }>(LOG, vars({ c: connection.id }))).githubSyncLog[0]!.detail).toMatch(/0 linked \(in the pull request inbox\)/);
+    expect((await member.error(INBOX, vars())).code).toBe('FORBIDDEN');
+
+    // Link one to a task by number; dismiss the other.
+    expect((await ws.owner.error(LINK, vars({ i: thirty.id, n: 999_999 }))).message).toMatch(/no task #999999/);
+    await ws.owner.data(LINK, vars({ i: thirty.id, n: task.number }));
+    expect((await ws.owner.data<{ taskPullRequests: { number: number }[] }>(LINKS, vars({ t: task.id }))).taskPullRequests.map((link) => link.number)).toContain(30);
+    expect((await ws.owner.data<{ dismissInboxPullRequest: boolean }>(DISMISS, vars({ i: thirtyOne.id }))).dismissInboxPullRequest).toBe(true);
+    const left = (await ws.owner.data<{ githubPullRequestInbox: { number: number }[] }>(INBOX, vars())).githubPullRequestInbox.map((item) => item.number);
+    expect(left).not.toContain(30);
+    expect(left).not.toContain(31);
+  });
 });

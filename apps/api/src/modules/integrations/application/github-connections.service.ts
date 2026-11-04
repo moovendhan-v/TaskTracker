@@ -5,11 +5,15 @@ import {
   DEFAULT_TASK_PREFIX,
   REPO_PATTERN,
   TASK_PREFIX_PATTERN,
+  canInSpace,
   type GithubConnectionResponse,
+  type GithubInboxPullRequestResponse,
   type GithubSecretResponse,
+  type GithubSyncEventResponse,
   type PullRequestLinkResponse,
   type SaveGithubConnectionRequest,
 } from '@taskflow/shared-types';
+import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { Audited } from '../../../core/audit/audited.decorator.js';
 import { SecretBox } from '../../../core/crypto/secret-box.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
@@ -23,6 +27,8 @@ import { GithubRepository } from '../domain/github.repository.js';
 import { GithubMapper } from './github.mapper.js';
 
 const CONNECTIONS_MAX = 20;
+const SYNC_LOG_SHOWN = 100;
+const INBOX_SHOWN = 100;
 const REPO = new RegExp(REPO_PATTERN);
 const PREFIX = new RegExp(TASK_PREFIX_PATTERN);
 
@@ -36,7 +42,47 @@ export class GithubConnectionsService {
     private readonly github: GithubRepository,
     private readonly secretBox: SecretBox,
     private readonly tasksService: TasksService,
+    private readonly auditLogger: AuditLogger,
   ) {}
+
+  /** What the connection's latest deliveries did, newest first. */
+  async syncLog(workspaceId: string, connectionId: string): Promise<GithubSyncEventResponse[]> {
+    await this.get(workspaceId, connectionId);
+    return this.github.listEvents(workspaceId, connectionId, SYNC_LOG_SHOWN);
+  }
+
+  /** Pull requests that mention no task, across the workspace's connections. */
+  inbox(workspaceId: string): Promise<GithubInboxPullRequestResponse[]> {
+    return this.github.listInbox(workspaceId, INBOX_SHOWN);
+  }
+
+  /**
+   * Links an inbox pull request to a task by its number, as you: you must be
+   * able to edit that task. Audited. Status sync isn't applied; later events
+   * for the pull request find the link and sync as usual.
+   */
+  async linkFromInbox(actor: Actor, access: WorkspaceAccess, itemId: string, taskNumber: number): Promise<GithubInboxPullRequestResponse> {
+    const item = found(await this.github.findInboxItem(access.workspaceId, itemId), 'Pull request');
+    let task;
+    try {
+      task = await this.tasksService.getByNumber(access.workspaceId, taskNumber);
+    } catch (error) {
+      if (error instanceof DomainError) throw DomainError.invalid(`There is no task #${taskNumber} you can see`);
+      throw error;
+    }
+    if (!canInSpace(access, task.spaceId, 'task.update')) throw DomainError.forbidden('You need to be able to edit that task to link it');
+    await this.github.upsertLink({ workspaceId: access.workspaceId, connectionId: item.connectionId, taskId: task.id, repo: item.repo, number: item.number, title: item.title, url: item.url, state: item.state, author: item.author, branch: item.branch });
+    await this.github.deleteInboxItem(access.workspaceId, item.id);
+    await this.auditLogger.record(actor, { action: 'github.pull_request.link', targetType: 'task', targetId: task.id, workspaceId: access.workspaceId, metadata: { repo: item.repo, number: item.number, taskNumber } });
+    return item;
+  }
+
+  async dismissFromInbox(actor: Actor, access: WorkspaceAccess, itemId: string): Promise<boolean> {
+    const item = found(await this.github.findInboxItem(access.workspaceId, itemId), 'Pull request');
+    await this.github.deleteInboxItem(access.workspaceId, item.id);
+    await this.auditLogger.record(actor, { action: 'github.pull_request.dismiss', targetType: 'integration', targetId: item.connectionId, workspaceId: access.workspaceId, metadata: { repo: item.repo, number: item.number } });
+    return true;
+  }
 
   async list(workspaceId: string): Promise<GithubConnectionResponse[]> {
     return (await this.github.list(workspaceId)).map(GithubMapper.toResponse);

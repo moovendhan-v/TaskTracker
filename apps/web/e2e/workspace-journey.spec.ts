@@ -380,6 +380,26 @@ test('shows the workspace audit log without IP addresses', async () => {
   await expect(page.getByRole('columnheader', { name: 'IP' })).toHaveCount(0);
 });
 
+test('connects GitHub with a status mapping, a sync log and a pull request inbox', async () => {
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Connect a repository' }).click();
+  const connect = page.getByRole('dialog', { name: 'Connect a GitHub repository' });
+  await connect.getByLabel('Repository').fill('acme/web');
+  await connect.getByLabel('When: Closed without merging').click();
+  await page.getByRole('option', { name: 'Move to “Active”' }).click();
+  await page.getByRole('button', { name: 'Connect', exact: true }).click();
+  const secret = page.getByRole('dialog', { name: 'Add the webhook to acme/web' });
+  await expect(secret).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  const mapping = page.getByRole('table', { name: 'Status mapping' });
+  await expect(mapping.getByRole('row').filter({ hasText: 'Closed without merging' })).toContainText('Active');
+  await page.getByRole('button', { name: 'Sync log' }).click();
+  await expect(page.getByRole('dialog', { name: 'acme/web: sync log' }).getByText('Nothing received yet.')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('region', { name: 'Pull requests without a task' })).toContainText('Every pull request mentions a task');
+});
+
 test('opens the platform admin console after promotion by the operator CLI', async () => {
   const output = execFileSync('node', ['dist/cli/promote-super-admin.js', email], { cwd: API_DIR, env: apiEnv() }).toString();
   expect(output).toContain('Granted SUPER_ADMIN');

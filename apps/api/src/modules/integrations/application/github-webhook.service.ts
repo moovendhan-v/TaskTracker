@@ -79,43 +79,47 @@ export class GithubWebhookService {
 
       const event = (delivery.event ?? '').slice(0, 40);
       if (event === 'ping') {
-        await this.note(connection, 'ok: connected');
+        await this.note(connection, 'ok: connected', { event });
         return 'ok';
       }
       if (event !== 'pull_request') {
-        await this.note(connection, `ignored: ${event || 'unknown'} event`);
+        await this.note(connection, `ignored: ${event || 'unknown'} event`, { event: event || 'unknown' });
         return 'ignored';
       }
       let payload: unknown;
       try {
         payload = JSON.parse(delivery.rawBody.toString('utf8'));
       } catch {
-        await this.note(connection, 'ignored: not JSON (set the content type to application/json)');
+        await this.note(connection, 'ignored: not JSON (set the content type to application/json)', { event });
         return 'ignored';
       }
       const pr = GithubWebhookPolicy.parsePullRequest(payload);
       if (!pr) {
-        await this.note(connection, 'ignored: unreadable pull request');
+        await this.note(connection, 'ignored: unreadable pull request', { event });
         return 'ignored';
       }
       if (pr.repo.toLowerCase() !== connection.repo.toLowerCase()) {
-        await this.note(connection, `ignored: from ${pr.repo.slice(0, 50)}`);
+        await this.note(connection, `ignored: from ${pr.repo.slice(0, 50)}`, { event, prNumber: pr.number });
         return 'ignored';
       }
       // Everything a delivery does is limited to what the connection's owner can see now.
       const access = connection.createdById ? await this.accessService.resolveMember(connection.createdById, workspaceId) : null;
       if (!access) {
-        await this.note(connection, 'ignored: the owner left; save the connection again');
+        await this.note(connection, 'ignored: the owner left; save the connection again', { event, prNumber: pr.number });
         return 'ignored';
       }
       const linked = await this.handlePullRequest(connection, access, pr);
-      await this.note(connection, `ok: #${pr.number} ${pr.action}, ${linked} linked`);
+      await this.note(connection, `ok: #${pr.number} ${pr.action}, ${linked.length} linked${linked.length ? '' : ' (in the pull request inbox)'}`, { event, prNumber: pr.number, taskNumbers: linked });
       return 'ok';
     });
   }
 
-  /** Links the pull request to every task it mentions; returns how many. */
-  private async handlePullRequest(connection: GithubConnection, access: WorkspaceAccess, pr: PullRequestEvent): Promise<number> {
+  /**
+   * Links the pull request to every task it mentions; returns the linked task
+   * numbers. A pull request that links to nothing waits in the inbox, where
+   * someone can link it by hand.
+   */
+  private async handlePullRequest(connection: GithubConnection, access: WorkspaceAccess, pr: PullRequestEvent): Promise<number[]> {
     const { workspaceId } = connection;
     const trigger: AutomationTriggerType | null =
       pr.action === 'closed'
@@ -125,9 +129,16 @@ export class GithubWebhookService {
         : ['opened', 'reopened', 'ready_for_review'].includes(pr.action)
           ? 'github_pull_request_opened'
           : null;
-    const category = trigger === 'github_pull_request_merged' ? connection.sync.onMerged : trigger === 'github_pull_request_opened' ? connection.sync.onOpened : null;
+    const category =
+      trigger === 'github_pull_request_merged'
+        ? connection.sync.onMerged
+        : trigger === 'github_pull_request_opened'
+          ? connection.sync.onOpened
+          : trigger === 'github_pull_request_closed'
+            ? (connection.sync.onClosed ?? null)
+            : null;
 
-    let linked = 0;
+    const linked: number[] = [];
     for (const number of taskReferences(connection.taskPrefix, pr.title, pr.body, pr.branch)) {
       let task: TaskResponse;
       try {
@@ -149,10 +160,12 @@ export class GithubWebhookService {
         author: pr.author,
         branch: pr.branch,
       });
-      linked += 1;
+      linked.push(number);
       if (category) await this.moveTo(connection, access, task, category);
       if (trigger) await this.automationEngine.run(workspaceId, [trigger], task.id, { actorId: null, pr: `${pr.title} (#${pr.number})` });
     }
+    if (linked.length) await this.github.removeFromInbox(workspaceId, connection.id, pr.number);
+    else await this.github.upsertInbox({ workspaceId, connectionId: connection.id, repo: connection.repo, number: pr.number, title: pr.title, url: pr.url, author: pr.author, branch: pr.branch, state: pr.state });
     return linked;
   }
 
@@ -177,7 +190,18 @@ export class GithubWebhookService {
     }
   }
 
-  private async note(connection: GithubConnection, status: string): Promise<void> {
+  /** The connection's last status, and a sync log entry with our own short text (never payload content). */
+  private async note(connection: GithubConnection, status: string, details: { event?: string; prNumber?: number; taskNumbers?: number[] } = {}): Promise<void> {
     await this.github.save({ ...connection, lastDeliveryAt: this.clock.now(), lastDeliveryStatus: status.slice(0, 80) });
+    const outcome = status.startsWith('ok') ? 'ok' : status.startsWith('ignored') ? 'ignored' : 'error';
+    await this.github.logEvent({
+      workspaceId: connection.workspaceId,
+      connectionId: connection.id,
+      event: details.event ?? 'delivery',
+      outcome,
+      detail: status,
+      prNumber: details.prNumber ?? null,
+      taskNumbers: details.taskNumbers ?? [],
+    });
   }
 }

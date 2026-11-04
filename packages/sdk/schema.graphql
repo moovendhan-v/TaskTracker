@@ -1019,6 +1019,22 @@ type GithubConnection {
   webhookPath: String!
 }
 
+"""
+A pull request that mentions no task, waiting to be linked or dismissed
+"""
+type GithubInboxPullRequest {
+  author: String!
+  branch: String!
+  connectionId: ID!
+  id: ID!
+  number: Int!
+  repo: String!
+  state: PullRequestState!
+  title: String!
+  updatedAt: String!
+  url: String!
+}
+
 """Shown once; store it in the GitHub webhook settings"""
 type GithubSecret {
   connection: GithubConnection!
@@ -1026,6 +1042,9 @@ type GithubSecret {
 }
 
 type GithubSync {
+  """Move linked tasks here when a pull request is closed without merging"""
+  onClosed: StatusCategory
+
   """Move linked tasks here when a pull request merges"""
   onMerged: StatusCategory
 
@@ -1033,7 +1052,22 @@ type GithubSync {
   onOpened: StatusCategory
 }
 
+"""What one webhook delivery did"""
+type GithubSyncEvent {
+  connectionId: ID!
+  createdAt: String!
+  detail: String!
+  event: String!
+  id: ID!
+
+  """ok, ignored or error"""
+  outcome: String!
+  prNumber: Int
+  taskNumbers: [Int!]!
+}
+
 input GithubSyncInput {
+  onClosed: StatusCategory
   onMerged: StatusCategory
   onOpened: StatusCategory
 }
@@ -1393,6 +1427,7 @@ type Mutation {
   """Removes a file you added but haven't sent"""
   discardChatUpload(attachmentId: ID!, workspaceId: ID!): Boolean!
   disconnectGithub(connectionId: ID!, workspaceId: ID!): Boolean!
+  dismissInboxPullRequest(itemId: ID!, workspaceId: ID!): Boolean!
   editChatMessage(body: String!, messageId: ID!, workspaceId: ID!): ChatMessage!
   endBreak(workspaceId: ID!): AttendanceShift!
 
@@ -1403,6 +1438,11 @@ type Mutation {
 
   """Leave a workspace. The last owner cannot leave."""
   leaveWorkspace(workspaceId: ID!): Boolean!
+
+  """
+  Links an inbox pull request to a task by number (you must be able to edit the task)
+  """
+  linkInboxPullRequest(itemId: ID!, taskNumber: Int!, workspaceId: ID!): GithubInboxPullRequest!
   logTime(input: LogTimeInput!, workspaceId: ID!): TimeEntry!
 
   """
@@ -1832,6 +1872,12 @@ type Query {
   """Validation rules for the named forms, or all of them"""
   formSchemas(names: [String!]): [FormSchema!]!
   githubConnections(workspaceId: ID!): [GithubConnection!]!
+
+  """Pull requests that mention no task"""
+  githubPullRequestInbox(workspaceId: ID!): [GithubInboxPullRequest!]!
+
+  """What the latest webhook deliveries did, newest first"""
+  githubSyncLog(connectionId: ID!, workspaceId: ID!): [GithubSyncEvent!]!
 
   """
   The team leave calendar: who is away when (approved leave, dates and people only)

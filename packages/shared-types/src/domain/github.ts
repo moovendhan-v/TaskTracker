@@ -12,9 +12,46 @@ export type PullRequestState = (typeof PULL_REQUEST_STATES)[number];
 export interface GithubSyncSettings {
   onOpened: StatusCategory | null;
   onMerged: StatusCategory | null;
+  /** Closed without merging. Off by default: closing a PR often just means another one replaces it. */
+  onClosed?: StatusCategory | null;
 }
 
-export const DEFAULT_GITHUB_SYNC: GithubSyncSettings = { onOpened: 'review', onMerged: 'done' };
+export const DEFAULT_GITHUB_SYNC: GithubSyncSettings = { onOpened: 'review', onMerged: 'done', onClosed: null };
+
+/** How a delivery went, for the sync log. */
+export const GITHUB_SYNC_OUTCOMES = ['ok', 'ignored', 'error'] as const;
+export type GithubSyncOutcome = (typeof GITHUB_SYNC_OUTCOMES)[number];
+
+/** Sync log entries kept per connection; older ones are dropped. */
+export const GITHUB_SYNC_LOG_KEPT = 200;
+
+export interface GithubSyncEventResponse {
+  id: string;
+  connectionId: string;
+  event: string;
+  outcome: GithubSyncOutcome;
+  /** Our own short text, never payload content beyond a PR number. */
+  detail: string;
+  prNumber: number | null;
+  /** Task numbers the delivery linked. */
+  taskNumbers: number[];
+  createdAt: string;
+}
+
+/** A pull request that mentions no task (or none the connection's owner can see), waiting to be linked or dismissed. */
+export interface GithubInboxPullRequestResponse {
+  id: string;
+  connectionId: string;
+  repo: string;
+  number: number;
+  title: string;
+  /** Always https://github.com/… (checked when the webhook arrives). */
+  url: string;
+  author: string;
+  branch: string;
+  state: PullRequestState;
+  updatedAt: string;
+}
 
 /** Task numbers a pull request mentions, e.g. "TF-42 fix login" or branch "tf-42-login". */
 export function taskReferences(prefix: string, ...texts: readonly (string | null | undefined)[]): number[] {

@@ -9,6 +9,9 @@ import {
   type GithubConnectionResponse,
   type GithubSecretResponse,
   type GithubSyncSettings,
+  type GithubSyncEventResponse,
+  type GithubSyncOutcome,
+  type GithubInboxPullRequestResponse,
   type PullRequestLinkResponse,
   type PullRequestState,
   type SaveGithubConnectionRequest,
@@ -26,6 +29,33 @@ registerEnumType(PullRequestStateEnum, { name: 'PullRequestState' });
 export class GithubSyncGql implements GithubSyncSettings {
   @Field(() => StatusCategoryEnum, { nullable: true, description: 'Move linked tasks here when a pull request opens' }) onOpened: StatusCategory | null;
   @Field(() => StatusCategoryEnum, { nullable: true, description: 'Move linked tasks here when a pull request merges' }) onMerged: StatusCategory | null;
+  @Field(() => StatusCategoryEnum, { nullable: true, description: 'Move linked tasks here when a pull request is closed without merging' }) onClosed?: StatusCategory | null;
+}
+
+@ObjectType('GithubSyncEvent', { description: 'What one webhook delivery did' })
+export class GithubSyncEventGql implements GithubSyncEventResponse {
+  @Field(() => ID) id: string;
+  @Field(() => ID) connectionId: string;
+  @Field() event: string;
+  @Field(() => String, { description: 'ok, ignored or error' }) outcome: GithubSyncOutcome;
+  @Field() detail: string;
+  @Field(() => Int, { nullable: true }) prNumber: number | null;
+  @Field(() => [Int]) taskNumbers: number[];
+  @Field() createdAt: string;
+}
+
+@ObjectType('GithubInboxPullRequest', { description: 'A pull request that mentions no task, waiting to be linked or dismissed' })
+export class GithubInboxPullRequestGql implements GithubInboxPullRequestResponse {
+  @Field(() => ID) id: string;
+  @Field(() => ID) connectionId: string;
+  @Field() repo: string;
+  @Field(() => Int) number: number;
+  @Field() title: string;
+  @Field() url: string;
+  @Field() author: string;
+  @Field() branch: string;
+  @Field(() => PullRequestStateEnum) state: PullRequestState;
+  @Field() updatedAt: string;
 }
 
 @ObjectType('GithubConnection')
@@ -65,6 +95,7 @@ export class PullRequestLinkGql implements PullRequestLinkResponse {
 export class GithubSyncInput implements Partial<GithubSyncSettings> {
   @Field(() => StatusCategoryEnum, { nullable: true }) @ValidateIf((_, value) => value !== null && value !== undefined) @IsIn(STATUS_CATEGORIES) onOpened?: StatusCategory | null;
   @Field(() => StatusCategoryEnum, { nullable: true }) @ValidateIf((_, value) => value !== null && value !== undefined) @IsIn(STATUS_CATEGORIES) onMerged?: StatusCategory | null;
+  @Field(() => StatusCategoryEnum, { nullable: true }) @ValidateIf((_, value) => value !== null && value !== undefined) @IsIn(STATUS_CATEGORIES) onClosed?: StatusCategory | null;
 }
 
 @FormSchema('github.connect')
