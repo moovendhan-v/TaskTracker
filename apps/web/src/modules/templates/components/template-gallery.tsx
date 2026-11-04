@@ -12,6 +12,7 @@ import { toast } from '@/components/ui/sonner';
 import { cn } from '@/lib/cn';
 import { getErrorMessage } from '@/lib/errors';
 import { useTemplateMutations, useTemplates } from '../hooks/use-templates';
+import { TFLOW_ACCEPT } from '@/lib/tflow';
 import { downloadTemplate } from '../lib/download-template';
 
 const CATEGORY_LABELS: Record<TemplateCategory, string> = {
@@ -71,6 +72,7 @@ export function TemplateGallery({ workspaceId, open, onOpenChange }: TemplateGal
     }
     try {
       const json = await file.text();
+      // .tflow files and older .json exports both carry a name and description at the top.
       let meta: { name?: unknown; description?: unknown } = {};
       try {
         meta = JSON.parse(json) as typeof meta;
@@ -141,7 +143,7 @@ export function TemplateGallery({ workspaceId, open, onOpenChange }: TemplateGal
           <input
             ref={fileInput}
             type="file"
-            accept="application/json,.json"
+            accept={TFLOW_ACCEPT}
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0];
@@ -178,6 +180,7 @@ export function TemplateGallery({ workspaceId, open, onOpenChange }: TemplateGal
               <span className="line-clamp-2 text-sm text-muted-foreground">{template.description || 'No description.'}</span>
               <span className="text-xs text-muted-foreground">
                 {template.counts.lists} lists · {template.counts.statuses || 'default'} statuses · {template.counts.tasks} tasks
+                {template.counts.automations ? ` · ${template.counts.automations} automation${template.counts.automations === 1 ? '' : 's'}` : ''}
               </span>
             </button>
           ))}

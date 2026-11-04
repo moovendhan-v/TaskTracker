@@ -2434,14 +2434,14 @@ export type UnrelateTasksMutationVariables = Exact<{
 
 export type UnrelateTasksMutation = { unrelateTasks: boolean };
 
-export type TemplateFieldsFragment = { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } };
+export type TemplateFieldsFragment = { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number, automations: number } };
 
 export type ProjectTemplatesQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type ProjectTemplatesQuery = { projectTemplates: Array<{ id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } }> };
+export type ProjectTemplatesQuery = { projectTemplates: Array<{ id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number, automations: number } }> };
 
 export type SpaceTemplateContentQueryVariables = Exact<{
   workspaceId: string;
@@ -2468,7 +2468,7 @@ export type SaveSpaceAsTemplateMutationVariables = Exact<{
 }>;
 
 
-export type SaveSpaceAsTemplateMutation = { saveSpaceAsTemplate: { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } } };
+export type SaveSpaceAsTemplateMutation = { saveSpaceAsTemplate: { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number, automations: number } } };
 
 export type ImportTemplateMutationVariables = Exact<{
   workspaceId: string;
@@ -2476,7 +2476,7 @@ export type ImportTemplateMutationVariables = Exact<{
 }>;
 
 
-export type ImportTemplateMutation = { importTemplate: { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number } } };
+export type ImportTemplateMutation = { importTemplate: { id: string, name: string, description: string, category: TemplateCategory, builtIn: boolean, icon: IconKey | null, color: string, content: Record<string, unknown>, createdAt: string | null, counts: { statuses: number, customFields: number, folders: number, lists: number, tasks: number, docs: number, automations: number } } };
 
 export type DeleteTemplateMutationVariables = Exact<{
   workspaceId: string;
@@ -3303,6 +3303,7 @@ export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
     lists
     tasks
     docs
+    automations
   }
   content
   createdAt
@@ -7345,6 +7346,7 @@ export const ProjectTemplatesDocument = new TypedDocumentString(`
     lists
     tasks
     docs
+    automations
   }
   content
   createdAt
@@ -7402,6 +7404,7 @@ export const SaveSpaceAsTemplateDocument = new TypedDocumentString(`
     lists
     tasks
     docs
+    automations
   }
   content
   createdAt
@@ -7427,6 +7430,7 @@ export const ImportTemplateDocument = new TypedDocumentString(`
     lists
     tasks
     docs
+    automations
   }
   content
   createdAt

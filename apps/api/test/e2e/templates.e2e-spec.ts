@@ -86,4 +86,51 @@ describe('project templates', () => {
     expect((await importBad(JSON.stringify({ version: 1, space: { icon: 'javascript:alert(1)' } }))).message).toMatch(/icon/);
     expect((await ws.owner.error('mutation($w: ID!) { createSpaceFromTemplate(workspaceId: $w, templateId: "builtin:nope", input: { name: "x" }) { id } }', vars())).code).toBe('NOT_FOUND');
   });
+
+  it('carries automations in a template, without people, and sets them up in the new project', async () => {
+    const w = ws.workspaceId;
+    const done = ws.statuses['Done']!;
+    const flow = {
+      steps: [
+        { id: 'raise', kind: 'action', action: { type: 'set_priority', priority: 'high' } },
+        { id: 'assign', kind: 'action', action: { type: 'assign', userId: member.id } },
+        { id: 'in-list', kind: 'if', condition: { field: 'list', listIds: [ws.listId] }, yes: [{ id: 'close', kind: 'action', action: { type: 'set_status', statusId: done } }], no: [] },
+      ],
+    };
+    await ws.owner.data('mutation($w: ID!, $s: ID!, $input: SaveAutomationInput!) { createAutomation(workspaceId: $w, spaceId: $s, input: $input) { id } }', {
+      w,
+      s: ws.spaceId,
+      input: { name: 'Triage', trigger: { type: 'task_created' }, actions: [], flowJson: JSON.stringify(flow) },
+    });
+    const { saveSpaceAsTemplate: saved } = await ws.owner.data<{ saveSpaceAsTemplate: Template & { counts: { automations: number } } }>(
+      'mutation($w: ID!, $s: ID!) { saveSpaceAsTemplate(workspaceId: $w, spaceId: $s, input: { name: "With automations" }) { id counts { automations } content } }',
+      vars({ s: ws.spaceId }),
+    );
+    expect(saved.counts.automations).toBe(1);
+    const text = JSON.stringify(saved.content);
+    expect(text).not.toContain(member.id);
+    expect(text).not.toContain(done);
+    expect(text).not.toContain(ws.listId);
+
+    const { createSpaceFromTemplate: space } = await ws.owner.data<{ createSpaceFromTemplate: { id: string } }>(APPLY, vars({ t: saved.id, input: { name: 'Copied with automations' } }));
+    const rules = (await ws.owner.data<{ automations: { name: string; flowJson: string; createdById: string }[] }>('query($w: ID!, $s: ID!) { automations(workspaceId: $w, spaceId: $s) { name flowJson createdById } }', { w, s: space.id })).automations;
+    expect(rules).toHaveLength(1);
+    expect(rules[0]).toMatchObject({ name: 'Triage', createdById: ws.owner.id });
+    const statuses = (await ws.owner.data<{ statuses: { id: string; name: string }[] }>('query($w: ID!, $s: ID!) { statuses(workspaceId: $w, spaceId: $s) { id name } }', { w, s: space.id })).statuses;
+    const newFlow = JSON.parse(rules[0]!.flowJson) as { steps: { id: string; yes?: { action: { statusId: string } }[] }[] };
+    expect(newFlow.steps.map((step) => step.id)).toEqual(['raise', 'in-list']);
+    expect(newFlow.steps[1]!.yes![0]!.action.statusId).toBe(statuses.find((status) => status.name === 'Done')!.id);
+
+    // Imported files can't smuggle in people or point outside the template.
+    const content = saved.content as { automations: { flow: { steps: unknown[] } }[] };
+    const importWith = (automation: unknown) =>
+      ws.owner.error('mutation($w: ID!, $input: ImportTemplateInput!) { importTemplate(workspaceId: $w, input: $input) { id } }', {
+        w,
+        input: { name: 'Bad', json: JSON.stringify({ ...saved.content, automations: [automation] }) },
+      });
+    const leaking = { ...content.automations[0], flow: { steps: [{ id: 'a', kind: 'action', action: { type: 'assign', userId: member.id } }] } };
+    expect((await importWith(leaking)).message).toMatch(/people, channels or webhooks/);
+    const outside = { ...content.automations[0], flow: { steps: [{ id: 's', kind: 'action', action: { type: 'set_status', statusId: done } }] } };
+    expect((await importWith(outside)).message).toMatch(/status the template doesn’t have/);
+  });
 });

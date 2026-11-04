@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { LayoutPage } from '@taskflow/shared-types';
-import { BuildingIcon, ChevronDownIcon, HistoryIcon, Undo2Icon } from 'lucide-react';
-import { useState } from 'react';
+import { cleanLayoutItem, validateLayoutItems, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
+import { BuildingIcon, ChevronDownIcon, DownloadIcon, HistoryIcon, Undo2Icon, UploadIcon } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { downloadTflow, readTflow, TFLOW_ACCEPT } from '@/lib/tflow';
 import { notify } from '@/components/kit/notify';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,6 +12,17 @@ import { timeAgo } from '@/lib/relative-time';
 import { usePermissions } from '@/modules/workspaces';
 import { layoutsApi } from '../api/layouts.api';
 import type { ArrangeableLayout } from '../hooks/use-layout';
+
+const PAGE_NAMES: Record<LayoutPage, string> = { home: 'Home', project: 'Project dashboard' };
+
+/** A layout without the workspace-specific bits (a block's own project), so it fits anywhere. */
+function portableItems(items: readonly LayoutItem[]): LayoutItem[] {
+  return items.map((item) => {
+    if (!item.config?.spaceId) return item;
+    const { spaceId: _drop, ...config } = item.config;
+    return { ...item, config: Object.keys(config).length ? config : null };
+  });
+}
 
 /**
  * The layout menu for a personal page layout (Features #11c): go back to an earlier save,
@@ -31,6 +43,27 @@ export function LayoutMenu({ workspaceId, layout }: { workspaceId: string; layou
       notify.success('This is now the workspace default');
       void queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId, 'layouts'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.layout(workspaceId, pageKey) });
+    } catch (error) {
+      notify.error(error);
+    }
+  };
+  const fileInput = useRef<HTMLInputElement>(null);
+  const exportLayout = () => {
+    if (!layout.items) return;
+    downloadTflow('dashboard-layout', `${PAGE_NAMES[pageKey]} layout`, { pageKey, items: portableItems(layout.items) });
+  };
+  const importLayout = async (file: File) => {
+    try {
+      const { payload } = await readTflow(file, 'dashboard-layout');
+      const data = payload as { pageKey?: unknown; items?: unknown };
+      if (data.pageKey !== pageKey) throw new Error(`That layout is for ${typeof data.pageKey === 'string' && data.pageKey in PAGE_NAMES ? `the ${PAGE_NAMES[data.pageKey as LayoutPage]} page` : 'another page'}`);
+      if (!Array.isArray(data.items)) throw new Error('That layout has no blocks');
+      const items = portableItems((data.items as LayoutItem[]).map(cleanLayoutItem));
+      // The same rules the server applies; it checks them again when the layout saves.
+      const problems = validateLayoutItems(pageKey, items);
+      if (problems.length) throw new Error(`That layout doesn’t fit this page: ${problems[0]}`);
+      layout.setItems(items);
+      notify.success('Layout imported. Undo puts the old one back.');
     } catch (error) {
       notify.error(error);
     }
@@ -58,6 +91,12 @@ export function LayoutMenu({ workspaceId, layout }: { workspaceId: string; layou
           <DropdownMenuItem onSelect={() => setHistory(true)}>
             <HistoryIcon /> Version history…
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={exportLayout} disabled={!layout.items}>
+            <DownloadIcon /> Export as .tflow
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => fileInput.current?.click()}>
+            <UploadIcon /> Import a layout…
+          </DropdownMenuItem>
           {manage ? (
             <>
               <DropdownMenuSeparator />
@@ -73,6 +112,18 @@ export function LayoutMenu({ workspaceId, layout }: { workspaceId: string; layou
           ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
+      <input
+        ref={fileInput}
+        type="file"
+        accept={TFLOW_ACCEPT}
+        className="hidden"
+        aria-label="Layout file to import"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = '';
+          if (file) void importLayout(file);
+        }}
+      />
       {history ? <VersionHistory workspaceId={workspaceId} layout={layout} pageKey={pageKey} onClose={() => setHistory(false)} /> : null}
     </>
   );

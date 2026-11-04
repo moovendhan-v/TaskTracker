@@ -11,7 +11,7 @@ export interface TemplateResponse {
   icon: IconKey | null;
   color: string;
   /** Sizes, for the gallery card. */
-  counts: { statuses: number; customFields: number; folders: number; lists: number; tasks: number; docs: number };
+  counts: { statuses: number; customFields: number; folders: number; lists: number; tasks: number; docs: number; automations: number };
   content: TemplateContent;
   createdAt: string | null;
 }

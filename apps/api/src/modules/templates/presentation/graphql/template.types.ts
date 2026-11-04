@@ -26,6 +26,7 @@ export class TemplateCountsGql {
   @Field(() => Int) lists: number;
   @Field(() => Int) tasks: number;
   @Field(() => Int) docs: number;
+  @Field(() => Int) automations: number;
 }
 
 @ObjectType('ProjectTemplate')

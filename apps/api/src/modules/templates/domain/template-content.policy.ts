@@ -17,7 +17,9 @@ import {
   type IconKey,
   type TemplateContent,
 } from '@taskflow/shared-types';
+import { flowSteps, placeholderIndex, templateAutomationLeaks, type TemplateAutomation } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
+import { AutomationPolicy } from '../../automations/domain/automation.policy.js';
 
 const COLOR = new RegExp(COLOR_PATTERN);
 
@@ -190,8 +192,44 @@ export const TemplateContentPolicy = {
       });
     }
 
+    const automations: TemplateAutomation[] = root
+      .at('automations')
+      .list(content['automations'], TEMPLATE_LIMITS.automations)
+      .map((item, index) => {
+        const reader = root.at(`automations[${index}]`);
+        const raw = reader.object(item);
+        const name = reader.at('name').text(raw['name'], 80);
+        const enabled = raw['enabled'] === undefined ? true : raw['enabled'] === true;
+        let automation: TemplateAutomation;
+        try {
+          // The same rules a saved automation meets.
+          automation = { name, enabled, trigger: AutomationPolicy.normalizeTrigger(raw['trigger'] as never), flow: AutomationPolicy.normalizeFlow(raw['flow'] as never) };
+        } catch (error) {
+          return reader.fail(error instanceof DomainError ? error.message : 'is not a valid automation');
+        }
+        // Only placeholders that point into this template; nothing from another workspace.
+        if (templateAutomationLeaks(automation)) reader.fail('names people, channels or webhooks, which templates leave out');
+        const statusIds = [
+          ...(automation.trigger.statusIds ?? []),
+          ...flowSteps(automation.flow.steps).flatMap((step) =>
+            step.kind === 'action' && step.action.statusId ? [step.action.statusId] : step.kind === 'if' && step.condition.field === 'status' ? (step.condition.statusIds ?? []) : [],
+          ),
+        ];
+        const listIds = flowSteps(automation.flow.steps).flatMap((step) => (step.kind === 'if' && step.condition.field === 'list' ? step.condition.listIds : []));
+        for (const id of statusIds) {
+          const at = placeholderIndex('status', id);
+          if (at === null || at >= statuses.length) reader.fail('points at a status the template doesn’t have');
+        }
+        for (const id of listIds) {
+          const at = placeholderIndex('list', id);
+          if (at === null || at >= lists.length) reader.fail('points at a list the template doesn’t have');
+        }
+        return automation;
+      });
+
     return {
       version: 1,
+      ...(automations.length ? { automations } : {}),
       space: { color: root.at('space.color').color(space['color']) ?? '#0ea5e9', icon: root.at('space.icon').icon(space['icon']) },
       statuses,
       customFields,
@@ -211,8 +249,10 @@ export const TemplateContentPolicy = {
     } catch {
       throw DomainError.invalid('That file is not valid JSON');
     }
-    // An exported file may carry its name and description around the content.
-    const wrapped = raw && typeof raw === 'object' && !Array.isArray(raw) && 'content' in raw ? (raw as { content: unknown }).content : raw;
+    // A .tflow file ({ kind: 'project-template', payload }) or an older export ({ name, description, content }).
+    const record = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
+    if (record && 'kind' in record && record['kind'] !== 'project-template') throw DomainError.invalid('That file isn’t a project template');
+    const wrapped = record && 'payload' in record ? record['payload'] : record && 'content' in record ? record['content'] : raw;
     return TemplateContentPolicy.normalize(wrapped);
   },
 };

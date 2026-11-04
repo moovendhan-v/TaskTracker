@@ -1,3 +1,4 @@
+import { AutomationsModule } from '../automations/automations.module.js';
 import { Module } from '@nestjs/common';
 import { CustomFieldsModule } from '../custom-fields/custom-fields.module.js';
 import { DocumentsModule } from '../documents/documents.module.js';
@@ -11,7 +12,7 @@ import { TypeOrmProjectTemplateRepository } from './infrastructure/typeorm-proje
 import { TemplatesResolver } from './presentation/graphql/templates.resolver.js';
 
 @Module({
-  imports: [SpacesModule, StatusesModule, CustomFieldsModule, ListsModule, TasksModule, DocumentsModule],
+  imports: [SpacesModule, StatusesModule, CustomFieldsModule, ListsModule, TasksModule, DocumentsModule, AutomationsModule],
   providers: [TemplatesService, TemplatesResolver, { provide: ProjectTemplateRepository, useClass: TypeOrmProjectTemplateRepository }],
 })
 export class TemplatesModule {}

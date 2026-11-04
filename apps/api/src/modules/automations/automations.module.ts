@@ -18,6 +18,6 @@ import { AutomationsResolver } from './presentation/graphql/automations.resolver
 @Module({
   imports: [SpacesModule, StatusesModule, ListsModule, MembersModule, TasksModule, NotificationsModule, CommentsModule, ChatModule, CryptoModule],
   providers: [AutomationsService, AutomationEngine, AutomationScheduler, AutomationsResolver, { provide: AutomationRepository, useClass: TypeOrmAutomationRepository }],
-  exports: [AutomationEngine],
+  exports: [AutomationEngine, AutomationsService],
 })
 export class AutomationsModule {}

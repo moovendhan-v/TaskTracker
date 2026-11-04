@@ -35,6 +35,7 @@ export * from './contracts/analytics.contract.js';
 export * from './domain/time-tracking.js';
 export * from './domain/hierarchy.js';
 export * from './domain/template.js';
+export * from './domain/template-automations.js';
 export * from './contracts/template.contract.js';
 export * from './domain/automation.js';
 export * from './domain/automation-flow.js';
