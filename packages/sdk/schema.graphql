@@ -1546,6 +1546,11 @@ type Mutation {
 
   """Makes a layout the workspace default for a page (audited)"""
   setWorkspaceLayout(input: SetWorkspaceLayoutInput!, workspaceId: ID!): WorkspaceLayout!
+
+  """
+  Locks the workspace default: everyone sees it, and only layout managers arrange the page (audited)
+  """
+  setWorkspaceLayoutLocked(locked: Boolean!, pageKey: String!, workspaceId: ID!): WorkspaceLayout!
   startBreak(workspaceId: ID!): AttendanceShift!
   startSprint(sprintId: ID!, workspaceId: ID!): Sprint!
 
@@ -2832,6 +2837,9 @@ type WorkspaceEvent {
 """The arrangement everyone in the workspace starts on for a page"""
 type WorkspaceLayout {
   items: [LayoutItem!]!
+
+  """Everyone sees this layout; only layout managers arrange the page"""
+  locked: Boolean!
   pageKey: String!
   updatedAt: String!
   updatedByName: String

@@ -81,7 +81,7 @@ export class TypeOrmLayoutRepository extends LayoutRepository {
 
   async findDefault(workspaceId: string, pageKey: LayoutPage): Promise<WorkspaceLayout | null> {
     const [row]: DefaultRow[] = await this.transactional.manager.query(
-      `SELECT d.page_key, d.items, d.updated_at, u.name AS updated_by_name FROM layout_default d LEFT JOIN "user" u ON u.id = d.updated_by
+      `SELECT d.page_key, d.items, d.updated_at, d.locked, u.name AS updated_by_name FROM layout_default d LEFT JOIN "user" u ON u.id = d.updated_by
        WHERE d.workspace_id = $1 AND d.page_key = $2`,
       [workspaceId, pageKey],
     );
@@ -97,6 +97,12 @@ export class TypeOrmLayoutRepository extends LayoutRepository {
     return (await this.findDefault(workspaceId, pageKey))!;
   }
 
+  async setDefaultLocked(workspaceId: string, pageKey: LayoutPage, locked: boolean): Promise<boolean> {
+    const result: unknown = await this.transactional.manager.query(`UPDATE layout_default SET locked = $3 WHERE workspace_id = $1 AND page_key = $2 RETURNING page_key`, [workspaceId, pageKey, locked]);
+    const rows = Array.isArray(result) && Array.isArray(result[0]) ? result[0] : (result as unknown[]);
+    return rows.length > 0;
+  }
+
   async removeDefault(workspaceId: string, pageKey: LayoutPage): Promise<boolean> {
     const result: unknown = await this.transactional.manager.query(`DELETE FROM layout_default WHERE workspace_id = $1 AND page_key = $2 RETURNING page_key`, [workspaceId, pageKey]);
     const rows = Array.isArray(result) && Array.isArray(result[0]) ? result[0] : (result as unknown[]);
@@ -109,6 +115,7 @@ interface DefaultRow {
   items: LayoutItem[];
   updated_at: Date;
   updated_by_name: string | null;
+  locked: boolean;
 }
 
 const toDefault = (row: DefaultRow): WorkspaceLayout => ({
@@ -116,4 +123,5 @@ const toDefault = (row: DefaultRow): WorkspaceLayout => ({
   items: row.items,
   updatedAt: new Date(row.updated_at).toISOString(),
   updatedByName: row.updated_by_name,
+  locked: row.locked === true,
 });

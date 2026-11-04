@@ -16,11 +16,13 @@ interface ConfirmDialogProps {
   description: string;
   confirmLabel?: string;
   destructive?: boolean;
+  /** Extra content under the description, e.g. a preview of what the action leads to. */
+  children?: ReactNode;
   onConfirm: () => Promise<unknown> | void;
 }
 
 /** Asks before a destructive action. Stays open and disabled while the action runs. */
-export function ConfirmDialog({ trigger, title, description, confirmLabel = 'Confirm', destructive = true, onConfirm }: ConfirmDialogProps) {
+export function ConfirmDialog({ trigger, title, description, confirmLabel = 'Confirm', destructive = true, onConfirm, children }: ConfirmDialogProps) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -42,6 +44,7 @@ export function ConfirmDialog({ trigger, title, description, confirmLabel = 'Con
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {children}
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
             Cancel

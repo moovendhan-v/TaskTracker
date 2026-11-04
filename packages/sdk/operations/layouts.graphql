@@ -42,11 +42,15 @@ query MyLayoutVersions($workspaceId: ID!, $pageKey: String!) {
 }
 
 query WorkspaceLayout($workspaceId: ID!, $pageKey: String!) {
-  workspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey) { pageKey updatedAt updatedByName items { id type x y w h config { title accent spaceId limit includeClosed mine priorities fields } } }
+  workspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey) { pageKey updatedAt updatedByName locked items { id type x y w h config { title accent spaceId limit includeClosed mine priorities fields } } }
 }
 
 mutation SetWorkspaceLayout($workspaceId: ID!, $input: SetWorkspaceLayoutInput!) {
-  setWorkspaceLayout(workspaceId: $workspaceId, input: $input) { pageKey updatedAt updatedByName items { id } }
+  setWorkspaceLayout(workspaceId: $workspaceId, input: $input) { pageKey updatedAt updatedByName locked items { id } }
 }
 
 mutation ClearWorkspaceLayout($workspaceId: ID!, $pageKey: String!) { clearWorkspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey) }
+
+mutation SetWorkspaceLayoutLocked($workspaceId: ID!, $pageKey: String!, $locked: Boolean!) {
+  setWorkspaceLayoutLocked(workspaceId: $workspaceId, pageKey: $pageKey, locked: $locked) { pageKey locked }
+}

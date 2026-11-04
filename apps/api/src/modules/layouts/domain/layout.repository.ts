@@ -22,5 +22,7 @@ export abstract class LayoutRepository {
 
   abstract findDefault(workspaceId: string, pageKey: LayoutPage): Promise<WorkspaceLayout | null>;
   abstract saveDefault(workspaceId: string, pageKey: LayoutPage, items: LayoutItem[], userId: string): Promise<WorkspaceLayout>;
+  /** False when the page has no workspace default to lock. */
+  abstract setDefaultLocked(workspaceId: string, pageKey: LayoutPage, locked: boolean): Promise<boolean>;
   abstract removeDefault(workspaceId: string, pageKey: LayoutPage): Promise<boolean>;
 }

@@ -521,6 +521,23 @@ test('exports the Home layout as a .tflow file and imports it back', async () =>
   await page.getByRole('button', { name: /^Done/ }).click();
 });
 
+test('locks the workspace layout and previews what Reset brings back', async () => {
+  await page.getByRole('button', { name: /Arrange/ }).click();
+  await page.getByRole('button', { name: 'Layout' }).click();
+  await page.getByRole('menuitem', { name: 'Lock it for everyone' }).click();
+  await expect(page.getByText('Locked: everyone now sees the workspace default')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  const confirm = page.getByRole('dialog', { name: 'Reset this layout?' });
+  await expect(confirm.getByRole('img', { name: /^What Reset brings back: / })).toBeVisible();
+  await confirm.getByRole('button', { name: 'Cancel' }).click();
+
+  await page.getByRole('button', { name: 'Layout' }).click();
+  await page.getByRole('menuitem', { name: 'Unlock the workspace default' }).click();
+  await expect(page.getByText('Unlocked: people can arrange the page again')).toBeVisible();
+  await page.getByRole('button', { name: /^Done/ }).click();
+});
+
 test('builds an automation flow with an if / else branch and gets it back', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByText('Ops', { exact: true }).click();
   await page.goto(page.url().replace(/\/p\/([^/?]+).*/, '/p/$1/automations'));

@@ -153,6 +153,7 @@ export class WorkspaceLayoutGql implements WorkspaceLayout {
   @Field(() => [LayoutItemGql]) items: LayoutItemGql[];
   @Field() updatedAt: string;
   @Field(() => String, { nullable: true }) updatedByName: string | null;
+  @Field({ description: 'Everyone sees this layout; only layout managers arrange the page' }) locked: boolean;
 }
 
 @ObjectType('LayoutVersion', { description: 'One of your recent saves of a page' })

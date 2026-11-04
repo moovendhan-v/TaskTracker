@@ -25,6 +25,10 @@ interface SavedLayout {
   items: LayoutItem[];
   /** Not yours: the workspace default, shown until you arrange the page yourself. */
   fromWorkspace?: boolean;
+  /** The workspace default is locked: only layout managers arrange the page. */
+  locked?: boolean;
+  /** What Reset goes back to: the workspace default, or (null) the built-in layout. */
+  resetTo?: LayoutItem[] | null;
 }
 
 /** Where a layout lives: the personal per-page layout, or one named dashboard. */
@@ -46,7 +50,8 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
     // Yours, else the workspace default, else (null) the built-in layout.
     fetch: async () => {
       const [mine, workspace] = await Promise.all([layoutsApi.get(workspaceId, pageKey), layoutsApi.workspaceDefault(workspaceId, pageKey)]);
-      return mine ?? (workspace ? { version: null, items: workspace.items, fromWorkspace: true } : null);
+      const extra = { locked: workspace?.locked ?? false, resetTo: workspace?.items ?? null };
+      return mine ? { ...mine, ...extra } : workspace ? { version: null, items: workspace.items, fromWorkspace: true, ...extra } : null;
     },
     save: (baseVersion, items) => layoutsApi.save(workspaceId, pageKey, baseVersion, items),
     reset: async () => {
@@ -208,6 +213,9 @@ function useArrangeableLayout(source: LayoutSource) {
     reset,
     saving,
     isCustom: Boolean(query.data) && !query.data?.fromWorkspace,
+    locked: query.data?.locked ?? false,
+    /** The blocks Reset would bring back, for its preview. */
+    resetTo: query.data?.resetTo ?? DEFAULT_LAYOUTS[pageKey],
     /** Where the shown arrangement comes from. */
     origin: (query.data?.fromWorkspace ? 'workspace' : query.data ? 'mine' : 'builtin') as 'mine' | 'workspace' | 'builtin',
   };

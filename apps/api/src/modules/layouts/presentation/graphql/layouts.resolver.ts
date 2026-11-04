@@ -27,7 +27,7 @@ export class LayoutsResolver {
     @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<DashboardLayoutGql | null> {
-    return this.layouts.get(access.workspaceId, actor.userId, page(pageKey));
+    return this.layouts.get(access.workspaceId, actor.userId, page(pageKey), access.permissions.has('layout.manage'));
   }
 
   @Mutation(() => DashboardLayoutGql, { description: 'Saves your layout. Fails with CONFLICT if it changed since baseVersion' })
@@ -38,7 +38,7 @@ export class LayoutsResolver {
     @CurrentActor() actor: Actor,
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<DashboardLayoutGql> {
-    return this.layouts.save(access.workspaceId, actor.userId, input.pageKey, input.baseVersion ?? null, input.items);
+    return this.layouts.save(access.workspaceId, actor.userId, input.pageKey, input.baseVersion ?? null, input.items, access.permissions.has('layout.manage'));
   }
 
   @Mutation(() => Boolean, { description: "Drops your own layout for a page: you're back on the workspace default, or the built-in one" })
@@ -73,6 +73,18 @@ export class LayoutsResolver {
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<WorkspaceLayoutGql> {
     return this.layouts.setWorkspaceDefault(actor, access.workspaceId, input.pageKey, input.items);
+  }
+
+  @Mutation(() => WorkspaceLayoutGql, { description: 'Locks the workspace default: everyone sees it, and only layout managers arrange the page (audited)' })
+  @RequirePermissions('layout.manage')
+  setWorkspaceLayoutLocked(
+    @WorkspaceIdArg() _workspaceId: string,
+    @Args('pageKey') pageKey: string,
+    @Args('locked') locked: boolean,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<WorkspaceLayoutGql> {
+    return this.layouts.setWorkspaceDefaultLocked(actor, access.workspaceId, page(pageKey), locked);
   }
 
   @Mutation(() => Boolean, { description: 'Back to the built-in default for everyone who has not arranged the page (audited)' })

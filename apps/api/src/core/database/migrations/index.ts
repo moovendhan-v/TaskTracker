@@ -32,6 +32,7 @@ import { Attendance1729870000000 } from './1729870000000-attendance.js';
 import { AutomationWebhooks1729880000000 } from './1729880000000-automation-webhooks.js';
 import { AccessRequests1729890000000 } from './1729890000000-access-requests.js';
 import { GithubSyncLog1729900000000 } from './1729900000000-github-sync-log.js';
+import { LayoutLocks1729910000000 } from './1729910000000-layout-locks.js';
 import { SprintCommittedTasks1729750000000 } from './1729750000000-sprint-committed-tasks.js';
 import { DashboardLayouts1729740000000 } from './1729740000000-dashboard-layouts.js';
 import { MultipleAssignees1729730000000 } from './1729730000000-multiple-assignees.js';
@@ -75,4 +76,5 @@ export const MIGRATIONS = [
   AutomationWebhooks1729880000000,
   AccessRequests1729890000000,
   GithubSyncLog1729900000000,
+  LayoutLocks1729910000000,
 ];

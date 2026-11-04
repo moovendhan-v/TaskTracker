@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { cleanLayoutItem, validateLayoutItems, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
-import { BuildingIcon, ChevronDownIcon, DownloadIcon, HistoryIcon, Undo2Icon, UploadIcon } from 'lucide-react';
+import { BuildingIcon, ChevronDownIcon, DownloadIcon, HistoryIcon, LockIcon, LockOpenIcon, Undo2Icon, UploadIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { downloadTflow, readTflow, TFLOW_ACCEPT } from '@/lib/tflow';
 import { notify } from '@/components/kit/notify';
@@ -68,6 +68,16 @@ export function LayoutMenu({ workspaceId, layout }: { workspaceId: string; layou
       notify.error(error);
     }
   };
+  const setLocked = async (locked: boolean) => {
+    try {
+      await layoutsApi.setWorkspaceDefaultLocked(workspaceId, pageKey, locked);
+      notify.success(locked ? 'Locked: everyone now sees the workspace default' : 'Unlocked: people can arrange the page again');
+      void queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId, 'layouts'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.layout(workspaceId, pageKey) });
+    } catch (error) {
+      notify.error(error);
+    }
+  };
   const clear = async () => {
     try {
       await layoutsApi.clearWorkspaceDefault(workspaceId, pageKey);
@@ -103,6 +113,11 @@ export function LayoutMenu({ workspaceId, layout }: { workspaceId: string; layou
               <DropdownMenuItem onSelect={() => void publish()} disabled={!layout.items}>
                 <BuildingIcon /> Make this the workspace default
               </DropdownMenuItem>
+              {workspace.data ? (
+                <DropdownMenuItem onSelect={() => void setLocked(!workspace.data?.locked)}>
+                  {workspace.data.locked ? <LockOpenIcon /> : <LockIcon />} {workspace.data.locked ? 'Unlock the workspace default' : 'Lock it for everyone'}
+                </DropdownMenuItem>
+              ) : null}
               {workspace.data ? (
                 <DropdownMenuItem onSelect={() => void clear()}>
                   <Undo2Icon /> Remove the workspace default

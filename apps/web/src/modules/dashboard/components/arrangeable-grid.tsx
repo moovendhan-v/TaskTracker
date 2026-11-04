@@ -1,10 +1,11 @@
 import { cleanLayoutItem, type DashboardResponse, type LayoutItem } from '@taskflow/shared-types';
-import { LayoutDashboardIcon, PlusIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react';
+import { LayoutDashboardIcon, LockIcon, PlusIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import type { BlockState } from '@/components/kit/block-state';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
+import { usePermissions } from '@/modules/workspaces';
 import type { ArrangeableLayout } from '../hooks/use-layout';
 import { addItem, removeItem } from '../lib/grid';
 import { BlockConfigDrawer } from './block-config-drawer';
@@ -39,7 +40,11 @@ interface ArrangeableGridProps {
  * Home blocks on the grid, with arrange mode for whoever may change the layout:
  * E arranges, A adds a block, ⌘/Ctrl+Z undoes, Esc finishes.
  */
-export function ArrangeableGrid({ layout, canArrange, data, state, leading, registry = HOME_REGISTRY, scope, workspaceId, personal = false }: ArrangeableGridProps) {
+export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, state, leading, registry = HOME_REGISTRY, scope, workspaceId, personal = false }: ArrangeableGridProps) {
+  const { can } = usePermissions(workspaceId ?? scope?.workspaceId ?? '');
+  // A locked workspace layout: only layout managers arrange the page (the server refuses the others' saves too).
+  const lockedOut = personal && layout.locked && !can('layout.manage');
+  const canArrange = ownerMayArrange && !lockedOut;
   const [configuring, setConfiguring] = useState<string | null>(null);
   const configuringItem = layout.items?.find((item) => item.id === configuring) ?? null;
   const blockOf = (item: LayoutItem) => registry.blocks[item.type];
@@ -86,7 +91,11 @@ export function ArrangeableGrid({ layout, canArrange, data, state, leading, regi
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
           {leading}
-          {personal && layout.origin === 'workspace' ? (
+          {lockedOut ? (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <LockIcon className="size-3.5" /> Your workspace admins set and locked this layout.
+            </span>
+          ) : personal && layout.origin === 'workspace' ? (
             <span className="text-xs text-muted-foreground">Showing the workspace default. Arrange it to make it yours.</span>
           ) : null}
         </div>
@@ -111,7 +120,9 @@ export function ArrangeableGrid({ layout, canArrange, data, state, leading, regi
               description="Your arrangement goes; you're back on the workspace default (or the built-in one). Earlier saves stay in version history."
               confirmLabel="Reset layout"
               onConfirm={() => layout.reset()}
-            />
+            >
+              <LayoutPreview items={layout.resetTo} titleOf={(type) => registry.blocks[type]?.title ?? type} label="What Reset brings back" />
+            </ConfirmDialog>
             {personal && (workspaceId ?? scope?.workspaceId) ? <LayoutMenu workspaceId={(workspaceId ?? scope?.workspaceId)!} layout={layout} /> : null}
             <Button size="sm" onClick={() => setArranging(false)}>
               Done <kbd className="ml-1 font-mono text-[10.5px] opacity-70">E</kbd>
@@ -176,5 +187,31 @@ export function ArrangeableGrid({ layout, canArrange, data, state, leading, regi
       ) : null}
       {canArrange ? <BlockLibrary registry={registry} open={library} onOpenChange={setLibrary} placed={new Set((layout.items ?? []).map((item) => item.type))} onAdd={add} /> : null}
     </div>
+  );
+}
+
+/** A small picture of a layout (block outlines with their names), e.g. what Reset brings back. */
+export function LayoutPreview({ items, titleOf, label }: { items: readonly LayoutItem[]; titleOf: (type: string) => string; label: string }) {
+  const rows = Math.max(1, ...items.map((item) => item.y + item.h));
+  return (
+    <figure className="grid gap-1.5">
+      <figcaption className="text-xs font-medium text-muted-foreground">{label}</figcaption>
+      <div
+        role="img"
+        aria-label={`${label}: ${items.map((item) => titleOf(item.type)).join(', ')}`}
+        className="grid gap-1 rounded-lg border bg-muted/30 p-1.5"
+        style={{ gridTemplateColumns: 'repeat(12, minmax(0, 1fr))', gridTemplateRows: `repeat(${Math.min(rows, 40)}, 6px)` }}
+      >
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-start overflow-hidden rounded-sm border bg-card px-1 text-[9px] leading-tight text-muted-foreground"
+            style={{ gridColumn: `${item.x + 1} / span ${item.w}`, gridRow: `${item.y + 1} / span ${item.h}` }}
+          >
+            <span className="truncate">{titleOf(item.type)}</span>
+          </div>
+        ))}
+      </div>
+    </figure>
   );
 }

@@ -151,4 +151,34 @@ describe('dashboard layouts', () => {
     const audit = (await ws.owner.data<{ workspaceAuditLog: { items: { action: string }[] } }>('query($w: ID!) { workspaceAuditLog(workspaceId: $w) { items { action } } }', { w })).workspaceAuditLog.items.map((entry) => entry.action);
     expect(audit).toEqual(expect.arrayContaining(['layout.default.set', 'layout.default.clear']));
   });
+
+  it('locks a workspace layout: everyone sees it, only layout managers arrange the page', async () => {
+    const ws = await createWorkspace('Layout lock');
+    const w = ws.workspaceId;
+    const member = await TestUser.signUp('Layout lock member');
+    await addMember(ws, member, 'Member');
+    const SET = 'mutation($w: ID!, $input: SetWorkspaceLayoutInput!) { setWorkspaceLayout(workspaceId: $w, input: $input) { locked } }';
+    const LOCK = 'mutation($w: ID!, $p: String!, $l: Boolean!) { setWorkspaceLayoutLocked(workspaceId: $w, pageKey: $p, locked: $l) { locked } }';
+    const DEFAULT = 'query($w: ID!, $p: String!) { workspaceLayout(workspaceId: $w, pageKey: $p) { locked items { id } } }';
+    const mine = { pageKey: 'home', baseVersion: null, items: [items[0]] };
+
+    // Nothing to lock yet.
+    expect((await ws.owner.error(LOCK, { w, p: 'home', l: true })).message).toMatch(/Make a workspace default/);
+    await member.data(SAVE, { w, input: mine });
+    expect((await ws.owner.data<{ setWorkspaceLayout: { locked: boolean } }>(SET, { w, input: { pageKey: 'home', items } })).setWorkspaceLayout.locked).toBe(false);
+    expect((await member.error(LOCK, { w, p: 'home', l: true })).code).toBe('FORBIDDEN');
+    expect((await ws.owner.data<{ setWorkspaceLayoutLocked: { locked: boolean } }>(LOCK, { w, p: 'home', l: true })).setWorkspaceLayoutLocked.locked).toBe(true);
+
+    // The member's own layout steps aside, and saving is refused on the server.
+    expect((await member.data<{ myLayout: unknown }>(GET, { w, p: 'home' })).myLayout).toBeNull();
+    expect((await member.data<{ workspaceLayout: { locked: boolean; items: unknown[] } }>(DEFAULT, { w, p: 'home' })).workspaceLayout).toMatchObject({ locked: true, items: [{ id: 'status' }, { id: 'priority' }] });
+    expect((await member.error(SAVE, { w, input: { ...mine, baseVersion: 1 } })).message).toMatch(/locked/);
+    // Re-publishing keeps the lock; the owner still arranges their own.
+    expect((await ws.owner.data<{ setWorkspaceLayout: { locked: boolean } }>(SET, { w, input: { pageKey: 'home', items } })).setWorkspaceLayout.locked).toBe(true);
+    await ws.owner.data(SAVE, { w, input: mine });
+
+    // Unlocked, the member's own layout is back.
+    await ws.owner.data(LOCK, { w, p: 'home', l: false });
+    expect((await member.data<{ myLayout: { items: unknown[] } }>(GET, { w, p: 'home' })).myLayout.items).toHaveLength(1);
+  });
 });
