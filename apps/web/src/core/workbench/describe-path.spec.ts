@@ -22,3 +22,10 @@ describe('describePath', () => {
     expect(describePath(`${WS}/something/new`).label).toBe('Page');
   });
 });
+
+describe('people and access pages', () => {
+  it('names the Access and Attendance tabs', () => {
+    expect(describePath('/w/ws/access').label).toBe('Access');
+    expect(describePath('/w/ws/people/attendance').label).toBe('Attendance');
+  });
+});

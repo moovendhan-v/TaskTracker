@@ -139,6 +139,11 @@ export class MembersService {
     return this.members.isMember(workspaceId, userId);
   }
 
+  /** A member's role id, or null when they aren't a member. */
+  async roleOf(workspaceId: string, userId: string): Promise<string | null> {
+    return (await this.members.listMembersWithRoles(workspaceId)).find((member) => member.userId === userId)?.roleId ?? null;
+  }
+
   /** Members whose role (after every policy) includes `permission`, e.g. everyone who can approve leave. */
   async listUserIdsWithPermission(workspaceId: string, permission: Permission): Promise<string[]> {
     const members = await this.members.listMembersWithRoles(workspaceId);

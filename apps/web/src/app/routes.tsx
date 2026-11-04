@@ -20,7 +20,7 @@ import { AppearancePage } from '@/modules/preferences';
 import { tasksApi } from '@/modules/tasks';
 import { MembersPage } from '@/modules/members';
 import { isProjectView, MyTasksPage, ProjectPage } from '@/modules/projects';
-import { RolesPage } from '@/modules/roles';
+import { AccessPage, RolesPage } from '@/modules/roles';
 import { SprintBoardPage } from '@/modules/sprints';
 import { DailyLogPage, TimesheetsPage } from '@/modules/time';
 import { preferencesQuery as preferences } from '@/core/preferences/use-preferences';
@@ -325,6 +325,21 @@ const rolesRoute = createRoute({
   },
 });
 
+/** E3: what someone can do and why; opened from an access request with that request filled in. */
+const accessRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/access',
+  validateSearch: (search: Record<string, unknown>): { user?: string; permission?: string; space?: string } => ({
+    user: typeof search.user === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(search.user) ? search.user : undefined,
+    permission: typeof search.permission === 'string' && /^[a-z]+\.[a-z_]+$/.test(search.permission) ? search.permission : undefined,
+    space: typeof search.space === 'string' && UUID.test(search.space) ? search.space : undefined,
+  }),
+  component: function AccessRoute() {
+    const { user, permission, space } = accessRoute.useSearch();
+    return <AccessPage workspaceId={workspaceRoute.useParams().workspaceId} initial={{ userId: user, permission, spaceId: space }} />;
+  },
+});
+
 /** Personal appearance settings; shown inside the workspace shell, saved per user (not per workspace). */
 const appearanceRoute = createRoute({ getParentRoute: () => workspaceRoute, path: '/appearance', component: AppearancePage });
 
@@ -368,6 +383,7 @@ const routeTree = rootRoute.addChildren([
       auditLogRoute,
       membersRoute,
       rolesRoute,
+      accessRoute,
       settingsRoute,
       appearanceRoute,
     ]),

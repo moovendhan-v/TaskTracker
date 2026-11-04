@@ -20,8 +20,7 @@ import {
   TimerIcon,
   UsersIcon,
   UsersRoundIcon,
-  type LucideIcon,
-} from 'lucide-react';
+  type LucideIcon, KeyRoundIcon } from 'lucide-react';
 
 /** What a tab shows: a fixed label and icon, plus the record whose name should replace the label once loaded. */
 export interface TabDescription {
@@ -40,11 +39,13 @@ const PAGES: Record<string, Omit<TabDescription, 'entity'>> = {
   '/timesheets': { label: 'Timesheets', icon: TimerIcon },
   '/members': { label: 'Members', icon: UsersIcon },
   '/roles': { label: 'Roles', icon: ShieldIcon },
+  '/access': { label: 'Access', icon: KeyRoundIcon },
   '/audit-log': { label: 'Audit log', icon: ScrollTextIcon },
   '/settings': { label: 'Settings', icon: SettingsIcon },
   '/appearance': { label: 'Appearance', icon: PaletteIcon },
   '/people': { label: 'Directory', icon: UsersRoundIcon },
   '/people/time-off': { label: 'Time off', icon: PalmtreeIcon },
+  '/people/attendance': { label: 'Attendance', icon: TimerIcon },
   '/people/approvals': { label: 'Approvals', icon: ClipboardCheckIcon },
   '/people/departments': { label: 'Departments', icon: Building2Icon },
   '/people/leave-types': { label: 'Leave types', icon: TagsIcon },

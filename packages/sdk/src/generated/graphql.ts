@@ -458,6 +458,7 @@ export type MoveTaskListInput = {
 };
 
 export type NotificationKind =
+  | 'access_requested'
   | 'automation'
   | 'chat_mention'
   | 'leave_decided'
@@ -523,6 +524,12 @@ export type RealtimeEntityType =
   | 'task_attachment'
   | 'time_entry'
   | 'workspace';
+
+export type RequestAccessInput = {
+  note?: string | null | undefined;
+  permission: string;
+  spaceId?: string | null | undefined;
+};
 
 export type RequestChatUploadInput = {
   channelId: string;
@@ -862,6 +869,35 @@ export type WorkspaceTabInput = {
   pinned?: boolean;
   title: string;
 };
+
+export type AccessExplanationFieldsFragment = { userId: string, roleName: string, permission: string, spaceId: string | null, allowed: boolean, verdict: string, reasons: Array<{ effect: string, source: string, pattern: string, scope: string }> };
+
+export type ExplainAccessQueryVariables = Exact<{
+  workspaceId: string;
+  userId: string;
+  permission: string;
+  spaceId?: string | null | undefined;
+}>;
+
+
+export type ExplainAccessQuery = { explainAccess: { userId: string, roleName: string, permission: string, spaceId: string | null, allowed: boolean, verdict: string, reasons: Array<{ effect: string, source: string, pattern: string, scope: string }> } };
+
+export type ExplainMyAccessQueryVariables = Exact<{
+  workspaceId: string;
+  permission: string;
+  spaceId?: string | null | undefined;
+}>;
+
+
+export type ExplainMyAccessQuery = { explainMyAccess: { userId: string, roleName: string, permission: string, spaceId: string | null, allowed: boolean, verdict: string, reasons: Array<{ effect: string, source: string, pattern: string, scope: string }> } };
+
+export type RequestAccessMutationVariables = Exact<{
+  workspaceId: string;
+  input: RequestAccessInput;
+}>;
+
+
+export type RequestAccessMutation = { requestAccess: number };
 
 export type AdminUsersQueryVariables = Exact<{
   search?: string | null | undefined;
@@ -2616,6 +2652,22 @@ export class TypedDocumentString<TResult, TVariables>
     return this.value;
   }
 }
+export const AccessExplanationFieldsFragmentDoc = new TypedDocumentString(`
+    fragment AccessExplanationFields on AccessExplanation {
+  userId
+  roleName
+  permission
+  spaceId
+  allowed
+  verdict
+  reasons {
+    effect
+    source
+    pattern
+    scope
+  }
+}
+    `, {"fragmentName":"AccessExplanationFields"}) as unknown as TypedDocumentString<AccessExplanationFieldsFragment, unknown>;
 export const DashboardTaskFieldsFragmentDoc = new TypedDocumentString(`
     fragment DashboardTaskFields on DashboardTask {
   id
@@ -3329,6 +3381,60 @@ export const TimeEntryFieldsFragmentDoc = new TypedDocumentString(`
   activity
 }
     `, {"fragmentName":"TimeEntryFields"}) as unknown as TypedDocumentString<TimeEntryFieldsFragment, unknown>;
+export const ExplainAccessDocument = new TypedDocumentString(`
+    query ExplainAccess($workspaceId: ID!, $userId: ID!, $permission: String!, $spaceId: ID) {
+  explainAccess(
+    workspaceId: $workspaceId
+    userId: $userId
+    permission: $permission
+    spaceId: $spaceId
+  ) {
+    ...AccessExplanationFields
+  }
+}
+    fragment AccessExplanationFields on AccessExplanation {
+  userId
+  roleName
+  permission
+  spaceId
+  allowed
+  verdict
+  reasons {
+    effect
+    source
+    pattern
+    scope
+  }
+}`) as unknown as TypedDocumentString<ExplainAccessQuery, ExplainAccessQueryVariables>;
+export const ExplainMyAccessDocument = new TypedDocumentString(`
+    query ExplainMyAccess($workspaceId: ID!, $permission: String!, $spaceId: ID) {
+  explainMyAccess(
+    workspaceId: $workspaceId
+    permission: $permission
+    spaceId: $spaceId
+  ) {
+    ...AccessExplanationFields
+  }
+}
+    fragment AccessExplanationFields on AccessExplanation {
+  userId
+  roleName
+  permission
+  spaceId
+  allowed
+  verdict
+  reasons {
+    effect
+    source
+    pattern
+    scope
+  }
+}`) as unknown as TypedDocumentString<ExplainMyAccessQuery, ExplainMyAccessQueryVariables>;
+export const RequestAccessDocument = new TypedDocumentString(`
+    mutation RequestAccess($workspaceId: ID!, $input: RequestAccessInput!) {
+  requestAccess(workspaceId: $workspaceId, input: $input)
+}
+    `) as unknown as TypedDocumentString<RequestAccessMutation, RequestAccessMutationVariables>;
 export const AdminUsersDocument = new TypedDocumentString(`
     query AdminUsers($search: String, $page: Int, $pageSize: Int) {
   adminUsers(search: $search, page: $page, pageSize: $pageSize) {

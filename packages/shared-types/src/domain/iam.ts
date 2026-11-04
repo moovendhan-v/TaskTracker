@@ -284,3 +284,55 @@ export function isSpaceScoped(permission: string): permission is SpaceScopedPerm
 export function parseSpaceRules(rules: readonly { spaces: string[] | null; notSpaces: string[] | null; permissions: readonly string[] }[]): SpaceRule[] {
   return rules.map((rule) => ({ spaces: rule.spaces, notSpaces: rule.notSpaces, permissions: rule.permissions.filter(isSpaceScoped) }));
 }
+
+/** A policy document and where it comes from, for explaining a decision ("Role Member", "Policy Sprint planner"). */
+export interface LabelledPolicy {
+  source: string;
+  document: PolicyDocument;
+}
+
+/** One statement that took part in a decision. */
+export interface AccessReason {
+  effect: PolicyEffect;
+  source: string;
+  /** The pattern that matched, e.g. `task.*`. */
+  pattern: string;
+  /** For a space-limited deny: whether it covers the space asked about. */
+  scope: 'workspace' | 'this-space' | 'other-spaces';
+}
+
+export type AccessVerdict = 'allowed' | 'not-granted' | 'denied' | 'denied-in-space';
+
+export interface AccessExplanation {
+  allowed: boolean;
+  verdict: AccessVerdict;
+  reasons: AccessReason[];
+}
+
+/**
+ * Why a permission holds or not (the policy simulator): the allows that grant
+ * it, the denies that take it away (deny wins), and space-limited denies,
+ * marked by whether they cover `spaceId`. Matches `evaluatePolicies` + `canInSpace`.
+ */
+export function explainPermission(policies: readonly LabelledPolicy[], permission: Permission, spaceId: string | null): AccessExplanation {
+  const reasons: AccessReason[] = [];
+  for (const { source, document } of policies) {
+    for (const statement of document.statements) {
+      const pattern = (statement.permissions ?? []).find((candidate) => matchesPattern(candidate, permission));
+      if (!pattern) continue;
+      if (!isSpaceLimited(statement)) {
+        reasons.push({ effect: statement.effect, source, pattern, scope: 'workspace' });
+        continue;
+      }
+      // Space limits only apply to denies of permissions that act inside a space.
+      if (statement.effect !== 'deny' || !isSpaceScoped(permission)) continue;
+      const rule: SpaceRule = { spaces: statement.spaces?.length ? statement.spaces : null, notSpaces: statement.notSpaces?.length ? statement.notSpaces : null, permissions: [permission] };
+      reasons.push({ effect: 'deny', source, pattern, scope: spaceId && ruleCovers(rule, spaceId) ? 'this-space' : 'other-spaces' });
+    }
+  }
+  const allows = reasons.some((reason) => reason.effect === 'allow' && reason.scope === 'workspace');
+  const denied = reasons.some((reason) => reason.effect === 'deny' && reason.scope === 'workspace');
+  const deniedHere = reasons.some((reason) => reason.effect === 'deny' && reason.scope === 'this-space');
+  const verdict: AccessVerdict = denied ? 'denied' : !allows ? 'not-granted' : deniedHere ? 'denied-in-space' : 'allowed';
+  return { allowed: verdict === 'allowed', verdict, reasons };
+}

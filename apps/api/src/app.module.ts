@@ -23,6 +23,7 @@ import { CommentsModule } from './modules/comments/comments.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
 import { TemplatesModule } from './modules/templates/templates.module.js';
 import { AutomationsModule } from './modules/automations/automations.module.js';
+import { AccessReviewModule } from './modules/access-review/access-review.module.js';
 import { IntegrationsModule } from './modules/integrations/integrations.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { HrModule } from './modules/hr/hr.module.js';
@@ -78,6 +79,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     DocumentsModule,
     TemplatesModule,
     AutomationsModule,
+    AccessReviewModule,
     IntegrationsModule,
     HrModule,
     AuditLogModule,
