@@ -2,7 +2,7 @@ fragment GithubConnectionFields on GithubConnection {
   id
   repo
   taskPrefix
-  sync { onOpened onMerged }
+  sync { onOpened onMerged onClosed }
   webhookPath
   createdById
   lastDeliveryAt
@@ -29,3 +29,17 @@ mutation RotateGithubSecret($workspaceId: ID!, $connectionId: ID!) {
 }
 
 mutation DisconnectGithub($workspaceId: ID!, $connectionId: ID!) { disconnectGithub(workspaceId: $workspaceId, connectionId: $connectionId) }
+
+query GithubSyncLog($workspaceId: ID!, $connectionId: ID!) {
+  githubSyncLog(workspaceId: $workspaceId, connectionId: $connectionId) { id connectionId event outcome detail prNumber taskNumbers createdAt }
+}
+
+query GithubPullRequestInbox($workspaceId: ID!) {
+  githubPullRequestInbox(workspaceId: $workspaceId) { id connectionId repo number title url author branch state updatedAt }
+}
+
+mutation LinkInboxPullRequest($workspaceId: ID!, $itemId: ID!, $taskNumber: Int!) {
+  linkInboxPullRequest(workspaceId: $workspaceId, itemId: $itemId, taskNumber: $taskNumber) { id number }
+}
+
+mutation DismissInboxPullRequest($workspaceId: ID!, $itemId: ID!) { dismissInboxPullRequest(workspaceId: $workspaceId, itemId: $itemId) }

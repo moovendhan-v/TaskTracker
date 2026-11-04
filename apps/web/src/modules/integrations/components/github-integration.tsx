@@ -1,4 +1,4 @@
-import { CopyIcon, GitPullRequestIcon, KeyRoundIcon, PlusIcon, TrashIcon } from 'lucide-react';
+import { ArrowRightIcon, CopyIcon, ExternalLinkIcon, GitPullRequestIcon, HistoryIcon, InboxIcon, KeyRoundIcon, LinkIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
 import { useState } from 'react';
 import {
   DEFAULT_GITHUB_SYNC,
@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/components/ui/sonner';
 import { formatLongDate } from '@/lib/dates';
 import { getErrorMessage } from '@/lib/errors';
-import { useGithubConnections, useGithubMutations } from '../hooks/use-integrations';
+import { useGithubConnections, useGithubInbox, useGithubInboxMutations, useGithubMutations, useGithubSyncLog } from '../hooks/use-integrations';
 
 const NONE = 'none';
 const CATEGORY_LABELS: Record<StatusCategory, string> = {
@@ -45,6 +45,7 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
   const mutations = useGithubMutations(workspaceId);
   const [adding, setAdding] = useState(false);
   const [secret, setSecret] = useState<Secret | null>(null);
+  const [logFor, setLogFor] = useState<GithubConnectionResponse | null>(null);
   const showSecret = (result: { webhookSecret: string; connection: GithubConnectionResponse }) =>
     setSecret({ url: `${window.location.origin}${result.connection.webhookPath}`, secret: result.webhookSecret, repo: result.connection.repo });
 
@@ -65,6 +66,9 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
                   {connection.lastDeliveryAt ? `last delivery ${formatLongDate(connection.lastDeliveryAt)}: ${connection.lastDeliveryStatus}` : 'nothing received yet'}
                 </p>
               </div>
+              <Button variant="ghost" size="sm" onClick={() => setLogFor(connection)}>
+                <HistoryIcon /> Sync log
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => mutations.rotate.mutate(connection.id, { onSuccess: showSecret })}>
                 <KeyRoundIcon /> New secret
               </Button>
@@ -98,34 +102,149 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
         />
       ) : null}
       {secret ? <SecretDialog secret={secret} onClose={() => setSecret(null)} /> : null}
+      {logFor ? <SyncLog workspaceId={workspaceId} connection={logFor} onClose={() => setLogFor(null)} /> : null}
+      {connections.data?.length ? <PullRequestInbox workspaceId={workspaceId} /> : null}
     </div>
   );
 }
 
-function SyncSettings({ sync, onChange }: { sync: GithubSyncSettings; onChange: (sync: GithubSyncSettings) => void }) {
-  const select = (label: string, value: StatusCategory | null, set: (value: StatusCategory | null) => void) => (
-    <label className="flex items-center gap-2 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <Select value={value ?? NONE} onValueChange={(next) => set(next === NONE ? null : (next as StatusCategory))}>
-        <SelectTrigger className="h-8 w-48" aria-label={label}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={NONE}>Leave the task</SelectItem>
-          {STATUS_CATEGORIES.map((category) => (
-            <SelectItem key={category} value={category}>
-              Move to “{CATEGORY_LABELS[category]}”
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </label>
-  );
+const OUTCOME_TONE = { ok: 'bg-good/10 text-good', ignored: 'bg-muted text-muted-foreground', error: 'bg-critical/10 text-critical' } as const;
+
+/** What each delivery did, newest first; refreshes on its own while open. */
+function SyncLog({ workspaceId, connection, onClose }: { workspaceId: string; connection: GithubConnectionResponse; onClose: () => void }) {
+  const log = useGithubSyncLog(workspaceId, connection.id, true);
   return (
-    <div className="flex flex-wrap gap-x-6 gap-y-2 pl-7">
-      {select('When a PR opens', sync.onOpened, (onOpened) => onChange({ ...sync, onOpened }))}
-      {select('When a PR merges', sync.onMerged, (onMerged) => onChange({ ...sync, onMerged }))}
-    </div>
+    <Modal open onOpenChange={(open) => !open && onClose()} title={`${connection.repo}: sync log`} description="The latest deliveries from GitHub and what each one did. It updates by itself." size="lg">
+      <div className="p-5">
+        {log.data?.length === 0 ? <p className="text-sm text-muted-foreground">Nothing received yet.</p> : null}
+        <ul aria-label="Deliveries" className="divide-y rounded-lg border text-sm">
+          {log.data?.map((entry) => (
+            <li key={entry.id} className="flex items-start gap-3 px-3 py-2">
+              <span className={`mt-0.5 rounded-full px-1.5 py-0.5 font-mono text-[10.5px] uppercase ${OUTCOME_TONE[entry.outcome as keyof typeof OUTCOME_TONE] ?? OUTCOME_TONE.ignored}`}>{entry.outcome}</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate">{entry.detail}</p>
+                <p className="text-xs text-muted-foreground">
+                  {entry.event}
+                  {entry.prNumber ? ` · PR #${entry.prNumber}` : ''}
+                  {entry.taskNumbers.length ? ` · tasks ${entry.taskNumbers.map((number) => `#${number}`).join(', ')}` : ''}
+                </p>
+              </div>
+              <span className="text-xs whitespace-nowrap text-muted-foreground">{formatLongDate(entry.createdAt)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Modal>
+  );
+}
+
+/** Pull requests that mention no task: link one to a task by its number, or dismiss it. */
+function PullRequestInbox({ workspaceId }: { workspaceId: string }) {
+  const inbox = useGithubInbox(workspaceId, true);
+  const mutations = useGithubInboxMutations(workspaceId);
+  const [numbers, setNumbers] = useState<Record<string, string>>({});
+  const items = inbox.data ?? [];
+  return (
+    <section aria-labelledby="pr-inbox" className="grid gap-2 border-t pt-4">
+      <h3 id="pr-inbox" className="flex items-center gap-2 text-sm font-semibold">
+        <InboxIcon className="size-4 text-muted-foreground" /> Pull requests without a task
+        {items.length ? <span className="rounded-full bg-muted px-1.5 text-xs font-normal">{items.length}</span> : null}
+      </h3>
+      {items.length === 0 ? <p className="text-sm text-muted-foreground">Every pull request mentions a task. Ones that don’t show up here to link by hand.</p> : null}
+      <ul className="grid gap-2">
+        {items.map((item) => {
+          const value = numbers[item.id] ?? '';
+          const number = Number(value.replace(/^#/, ''));
+          return (
+            <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-lg border px-3 py-2 text-sm">
+              <GitPullRequestIcon className="size-4 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">
+                  #{item.number} {item.title}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {item.repo} · {item.author} · {item.state}
+                </p>
+              </div>
+              <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground" aria-label={`Open pull request #${item.number} on GitHub`}>
+                <ExternalLinkIcon className="size-4" />
+              </a>
+              <Input
+                value={value}
+                onChange={(event) => setNumbers({ ...numbers, [item.id]: event.target.value })}
+                placeholder="Task #"
+                inputMode="numeric"
+                aria-label={`Task number for pull request #${item.number}`}
+                className="h-8 w-24"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!Number.isInteger(number) || number < 1 || mutations.link.isPending}
+                onClick={() => mutations.link.mutate({ itemId: item.id, taskNumber: number }, { onSuccess: () => toast.success(`Linked #${item.number} to task #${number}`) })}
+              >
+                <LinkIcon /> Link
+              </Button>
+              <Button size="icon-sm" variant="ghost" aria-label={`Dismiss pull request #${item.number}`} onClick={() => mutations.dismiss.mutate(item.id)}>
+                <XIcon />
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/** How pull request events map onto linked tasks: GitHub → TaskFlow only (tasks never change GitHub). */
+function SyncSettings({ sync, onChange }: { sync: GithubSyncSettings; onChange: (sync: GithubSyncSettings) => void }) {
+  const rows: { key: 'onOpened' | 'onMerged' | 'onClosed'; label: string }[] = [
+    { key: 'onOpened', label: 'Pull request opened' },
+    { key: 'onMerged', label: 'Pull request merged' },
+    { key: 'onClosed', label: 'Closed without merging' },
+  ];
+  return (
+    <table className="ml-7 w-auto text-sm" aria-label="Status mapping">
+      <thead>
+        <tr className="text-left font-mono text-[10.5px] tracking-[0.06em] text-subtle-foreground uppercase">
+          <th className="py-1 pr-3 font-semibold">GitHub</th>
+          <th className="py-1 pr-3 font-semibold" aria-label="Direction" />
+          <th className="py-1 font-semibold">Linked task</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.key}>
+            <td className="py-1 pr-3 text-muted-foreground">{row.label}</td>
+            <td className="py-1 pr-3 text-muted-foreground">
+              <ArrowRightIcon className="size-3.5" aria-label="sets" />
+            </td>
+            <td className="py-1">
+              <Select value={sync[row.key] ?? NONE} onValueChange={(next) => onChange({ ...sync, [row.key]: next === NONE ? null : (next as StatusCategory) })}>
+                <SelectTrigger className="h-8 w-48" aria-label={`When: ${row.label}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>Leave the task</SelectItem>
+                  {STATUS_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      Move to “{CATEGORY_LABELS[category]}”
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colSpan={3} className="pt-1 text-xs text-muted-foreground">
+            One way: GitHub events move tasks; changing a task never changes GitHub. Finished work isn’t reopened by a new pull request.
+          </td>
+        </tr>
+      </tfoot>
+    </table>
   );
 }
 

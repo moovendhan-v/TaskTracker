@@ -13,6 +13,25 @@ export function useTaskPullRequests(workspaceId: string, taskId: string) {
   return useQuery({ queryKey: queryKeys.taskPullRequests(workspaceId, taskId), queryFn: () => integrationsApi.taskPullRequests(workspaceId, taskId) });
 }
 
+/** The connection's latest deliveries; refreshed every 15 s while open, so new ones show up. */
+export function useGithubSyncLog(workspaceId: string, connectionId: string, enabled: boolean) {
+  return useQuery({ queryKey: [...queryKeys.integrations(workspaceId), 'log', connectionId], queryFn: () => integrationsApi.syncLog(workspaceId, connectionId), enabled, refetchInterval: enabled ? 15_000 : false });
+}
+
+export function useGithubInbox(workspaceId: string, enabled: boolean) {
+  return useQuery({ queryKey: [...queryKeys.integrations(workspaceId), 'inbox'], queryFn: () => integrationsApi.inbox(workspaceId), enabled });
+}
+
+export function useGithubInboxMutations(workspaceId: string) {
+  const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.integrations(workspaceId) });
+  const onError = (error: unknown) => toast.error(getErrorMessage(error));
+  return {
+    link: useMutation({ mutationFn: ({ itemId, taskNumber }: { itemId: string; taskNumber: number }) => integrationsApi.linkInbox(workspaceId, itemId, taskNumber), onSuccess: invalidate, onError }),
+    dismiss: useMutation({ mutationFn: (itemId: string) => integrationsApi.dismissInbox(workspaceId, itemId), onSuccess: invalidate, onError }),
+  };
+}
+
 export function useGithubMutations(workspaceId: string) {
   const queryClient = useQueryClient();
   const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.integrations(workspaceId) });
