@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { API_DIR, apiEnv } from './support/stack';
 
@@ -465,6 +466,26 @@ test('goes back through layout versions and publishes the workspace default', as
   await page.getByRole('button', { name: 'Layout' }).click();
   await page.getByRole('menuitem', { name: 'Make this the workspace default' }).click();
   await expect(page.getByText('This is now the workspace default')).toBeVisible();
+  await page.getByRole('button', { name: /^Done/ }).click();
+});
+
+test('exports the Home layout as a .tflow file and imports it back', async () => {
+  await page.getByRole('button', { name: /Arrange/ }).click();
+  await page.getByRole('button', { name: 'Layout' }).click();
+  const downloading = page.waitForEvent('download');
+  await page.getByRole('menuitem', { name: 'Export as .tflow' }).click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toBe('home-layout.tflow');
+  const saved = await download.path();
+  const file = JSON.parse(readFileSync(saved, 'utf8')) as { kind: string; payload: { pageKey: string; items: unknown[] } };
+  expect(file).toMatchObject({ kind: 'dashboard-layout', payload: { pageKey: 'home' } });
+  expect(file.payload.items.length).toBeGreaterThan(3);
+
+  await page.getByLabel('Layout file to import').setInputFiles(saved);
+  await expect(page.getByText('Layout imported. Undo puts the old one back.')).toBeVisible();
+  // A file of another kind is refused with a reason.
+  await page.getByLabel('Layout file to import').setInputFiles({ name: 'template.tflow', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ kind: 'project-template', version: 1, payload: {} })) });
+  await expect(page.getByText('That file isn’t a dashboard layout')).toBeVisible();
   await page.getByRole('button', { name: /^Done/ }).click();
 });
 

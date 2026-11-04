@@ -6,7 +6,7 @@ fragment TemplateFields on ProjectTemplate {
   builtIn
   icon
   color
-  counts { statuses customFields folders lists tasks docs }
+  counts { statuses customFields folders lists tasks docs automations }
   content
   createdAt
 }

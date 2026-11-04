@@ -59,12 +59,13 @@ export function SaveAsTemplate({ workspaceId, spaceId, spaceName }: { workspaceI
       <label className="flex items-center gap-2 text-sm">
         <Checkbox checked={includeContent} onCheckedChange={(checked) => setIncludeContent(checked === true)} /> Include open tasks and docs as starter work
       </label>
+      <p className="text-xs text-muted-foreground">Statuses, fields, lists and automations come along. Steps that name people, channels or webhooks are left out, so the template works in any workspace.</p>
       <div className="flex flex-wrap gap-2">
         <Button size="sm" disabled={!name.trim() || mutations.saveFromSpace.isPending} onClick={save}>
           <LayoutTemplateIcon /> Save as template
         </Button>
         <Button size="sm" variant="outline" disabled={exporting} onClick={() => void exportFile()}>
-          <DownloadIcon /> Export as file
+          <DownloadIcon /> Export as .tflow
         </Button>
       </div>
     </div>

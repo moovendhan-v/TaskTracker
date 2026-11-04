@@ -2,6 +2,7 @@ import type { CustomFieldOption, CustomFieldType } from './custom-field.js';
 import type { DocKind } from './document.js';
 import type { IconKey } from './hierarchy.js';
 import type { StatusCategory, TaskPriority, TaskType } from './task.js';
+import type { TemplateAutomation } from './template-automations.js';
 
 /**
  * A project template: everything a new space starts with. Templates are plain
@@ -22,6 +23,8 @@ export interface TemplateContent {
   tasks: { title: string; list: number; description?: string; status?: string; priority?: TaskPriority; type?: TaskType; estimateMinutes?: number | null; subtasks?: string[] }[];
   /** `parent` is the index of an earlier doc. */
   docs: { title: string; kind?: DocKind; icon?: IconKey | null; content?: string; parent?: number | null }[];
+  /** Automations, with statuses and lists as placeholders (see template-automations). Optional: older files have none. */
+  automations?: TemplateAutomation[];
 }
 
 export const TEMPLATE_LIMITS = {
@@ -36,6 +39,7 @@ export const TEMPLATE_LIMITS = {
   tasks: 300,
   subtasksPerTask: 20,
   docs: 50,
+  automations: 50,
   perWorkspace: 100,
 } as const;
 

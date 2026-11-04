@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import {
   BUILT_IN_TEMPLATES,
   TEMPLATE_LIMITS,
+  canInSpace,
+  flowActions,
+  flowFromRule,
+  fromTemplateAutomation,
+  toTemplateAutomation,
   type CreateFromTemplateRequest,
   type ImportTemplateRequest,
   type SaveAsTemplateRequest,
@@ -14,6 +19,7 @@ import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { workspaceFromAccess } from '../../../core/runtime/change-target.js';
+import { AutomationsService } from '../../automations/application/automations.service.js';
 import { CustomFieldsService } from '../../custom-fields/application/custom-fields.service.js';
 import { DocumentsService } from '../../documents/application/documents.service.js';
 import { FoldersService } from '../../lists/application/folders.service.js';
@@ -46,6 +52,7 @@ export class TemplatesService {
     private readonly listsService: ListsService,
     private readonly tasksService: TasksService,
     private readonly documentsService: DocumentsService,
+    private readonly automationsService: AutomationsService,
   ) {}
 
   async list(workspaceId: string): Promise<TemplateResponse[]> {
@@ -104,6 +111,16 @@ export class TemplatesService {
     for (const list of content.lists) {
       const folderId = list.folder === null || list.folder === undefined ? null : (folderIds[list.folder] ?? null);
       listIds.push((await this.listsService.create(actor, workspaceId, space.id, { name: list.name, icon: list.icon ?? null, color: list.color ?? null, folderId })).id);
+    }
+
+    // Automations come with the structure, set up as you (they run as whoever saved them), if you may manage them here.
+    if (content.automations?.length && canInSpace(access, space.id, 'automation.manage')) {
+      const statusIds = content.statuses.map((status) => statusByName.get(status.name.toLowerCase()) ?? '');
+      for (const automation of content.automations) {
+        const bound = fromTemplateAutomation(automation, { statuses: statusIds, lists: listIds });
+        if (!bound) continue;
+        await this.automationsService.create(actor, access, space.id, { name: automation.name, enabled: automation.enabled, trigger: bound.trigger, conditions: {}, actions: flowActions(bound.flow), flow: bound.flow });
+      }
     }
 
     if (includeContent) {
@@ -178,7 +195,19 @@ export class TemplatesService {
       tasks: [],
       docs: [],
     };
-    if (!includeContent) return content;
+    // Automations travel with the structure; people, channels and webhooks are left out.
+    const statusIndex = new Map(statuses.map((status, index) => [status.id, index]));
+    const automations = (await this.automationsService.listInSpace(workspaceId, spaceId))
+      .slice(0, TEMPLATE_LIMITS.automations)
+      .map((rule) =>
+        toTemplateAutomation(
+          { name: rule.name, enabled: rule.enabled, trigger: rule.trigger, flow: rule.flow ?? flowFromRule(rule.conditions, rule.actions) },
+          { status: (id) => statusIndex.get(id), list: (id) => listIndex.get(id) },
+        ),
+      )
+      .filter((automation) => automation !== null);
+    if (automations.length) content.automations = automations;
+    if (!includeContent) return TemplateContentPolicy.normalize(content);
 
     const open = await this.tasksService.openInSpace(workspaceId, spaceId, TEMPLATE_LIMITS.tasks);
     content.tasks = open
@@ -255,6 +284,7 @@ function toResponse(template: Pick<TemplateResponse, 'id' | 'name' | 'descriptio
       lists: content.lists.length,
       tasks: content.tasks.length,
       docs: content.docs.length,
+      automations: content.automations?.length ?? 0,
     },
   };
 }

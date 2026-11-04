@@ -2517,6 +2517,7 @@ enum TemplateCategory {
 }
 
 type TemplateCounts {
+  automations: Int!
   customFields: Int!
   docs: Int!
   folders: Int!
