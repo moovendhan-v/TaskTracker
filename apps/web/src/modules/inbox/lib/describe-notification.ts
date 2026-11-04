@@ -17,10 +17,17 @@ export function describeNotification(notification: Describable): string {
       return `${who} ${notification.excerpt === 'rejected' ? 'declined' : 'approved'} your time off: ${notification.subject}`;
     case 'member_added':
       return `${who} added you to this workspace${notification.subject ? ` as ${notification.subject}` : ''}`;
+    case 'access_requested':
+      return `${who} asked for access: ${notification.subject}${notification.excerpt ? ` (“${notification.excerpt}”)` : ''}`;
     case 'chat_mention':
       return `${who} mentioned you in ${notification.subject || 'chat'}`;
     case 'automation':
       // The automation's own message, already filled in; the excerpt names the automation.
       return notification.subject;
   }
+}
+
+/** An access request opens the checker on that person and permission ("task.update in Ops"). */
+export function accessSearch(notification: Pick<NotificationResponse, 'actorId' | 'subject'>): { user?: string; permission?: string } {
+  return { user: notification.actorId ?? undefined, permission: notification.subject.split(' ')[0] || undefined };
 }

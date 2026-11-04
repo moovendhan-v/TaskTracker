@@ -362,6 +362,18 @@ test('creates a custom role and lists members', async () => {
   await expect(page.getByRole('main').getByRole('listitem').filter({ hasText: 'Dana Reyes' })).toBeVisible();
 });
 
+test('checks access and says which policy decides', async () => {
+  await page.getByRole('link', { name: 'Access', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Access' })).toBeVisible();
+  const result = page.getByRole('region', { name: 'Result' });
+  await expect(result.getByText('Allowed', { exact: true })).toBeVisible();
+  await expect(result.getByRole('list', { name: 'Why' }).getByRole('listitem').first()).toContainText(/allow.*Full access/i);
+  // Owners can delete the workspace; the answer names the role and the permission.
+  await page.getByLabel('Permission').selectOption('workspace.manage');
+  await expect(result).toContainText('role Owner');
+  await expect(result.getByText('Allowed', { exact: true })).toBeVisible();
+});
+
 test('shows the workspace audit log without IP addresses', async () => {
   await page.getByRole('link', { name: 'Audit log' }).click();
   await expect(page.getByRole('cell', { name: 'workspace.create' })).toBeVisible();

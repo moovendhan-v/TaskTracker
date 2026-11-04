@@ -1,0 +1,19 @@
+fragment AccessExplanationFields on AccessExplanation {
+  userId
+  roleName
+  permission
+  spaceId
+  allowed
+  verdict
+  reasons { effect source pattern scope }
+}
+
+query ExplainAccess($workspaceId: ID!, $userId: ID!, $permission: String!, $spaceId: ID) {
+  explainAccess(workspaceId: $workspaceId, userId: $userId, permission: $permission, spaceId: $spaceId) { ...AccessExplanationFields }
+}
+
+query ExplainMyAccess($workspaceId: ID!, $permission: String!, $spaceId: ID) {
+  explainMyAccess(workspaceId: $workspaceId, permission: $permission, spaceId: $spaceId) { ...AccessExplanationFields }
+}
+
+mutation RequestAccess($workspaceId: ID!, $input: RequestAccessInput!) { requestAccess(workspaceId: $workspaceId, input: $input) }

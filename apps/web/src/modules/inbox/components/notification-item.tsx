@@ -4,7 +4,7 @@ import type { NotificationResponse } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { formatLongDate } from '@/lib/dates';
 import { cn } from '@/lib/cn';
-import { describeNotification } from '../lib/describe-notification';
+import { accessSearch, describeNotification } from '../lib/describe-notification';
 
 interface NotificationItemProps {
   workspaceId: string;
@@ -49,6 +49,13 @@ export function NotificationItem({ workspaceId, notification, onOpen }: Notifica
   if (notification.kind === 'chat_mention') {
     return (
       <Link to="/w/$workspaceId/chat/m/$messageId" params={{ workspaceId, messageId: notification.entityId }} onClick={onClick} className={className}>
+        {body}
+      </Link>
+    );
+  }
+  if (notification.kind === 'access_requested') {
+    return (
+      <Link to="/w/$workspaceId/access" params={{ workspaceId }} search={accessSearch(notification)} onClick={onClick} className={className}>
         {body}
       </Link>
     );

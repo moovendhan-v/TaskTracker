@@ -9,7 +9,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/cn';
 import { dayGroup, timeAgo, type DayGroup } from '@/lib/relative-time';
 import { useInboxMutations, useNotifications } from '../hooks/use-inbox';
-import { describeNotification } from '../lib/describe-notification';
+import { accessSearch, describeNotification } from '../lib/describe-notification';
 import { useInboxPanel } from '../store/inbox-panel.store';
 
 const GROUPS: DayGroup[] = ['Today', 'Yesterday', 'Earlier'];
@@ -37,6 +37,7 @@ export function InboxPanel({ workspaceId, onOpenTask }: InboxPanelProps) {
     if (notification.readAt === null) markRead.mutate([notification.id]);
     if (notification.taskId) onOpenTask(notification.taskId);
     else if (notification.kind === 'leave_requested') void navigate({ to: '/w/$workspaceId/people/approvals', params: { workspaceId } });
+    else if (notification.kind === 'access_requested') void navigate({ to: '/w/$workspaceId/access', params: { workspaceId }, search: accessSearch(notification) });
     else if (notification.kind === 'chat_mention') void navigate({ to: '/w/$workspaceId/chat/m/$messageId', params: { workspaceId, messageId: notification.entityId } });
     else if (notification.kind === 'leave_decided') void navigate({ to: '/w/$workspaceId/people/time-off', params: { workspaceId } });
   };

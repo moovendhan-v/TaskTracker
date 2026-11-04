@@ -1,3 +1,30 @@
+"""Why a member can or can’t do something"""
+type AccessExplanation {
+  allowed: Boolean!
+  permission: String!
+  reasons: [AccessReason!]!
+  roleName: String!
+  spaceId: ID
+  userId: ID!
+
+  """allowed, not-granted, denied or denied-in-space"""
+  verdict: String!
+}
+
+type AccessReason {
+  """allow or deny"""
+  effect: String!
+
+  """The pattern that matched, e.g. task.*"""
+  pattern: String!
+
+  """workspace, this-space or other-spaces"""
+  scope: String!
+
+  """Where the statement lives: the role itself or an attached policy"""
+  source: String!
+}
+
 input AddMemberInput {
   email: String!
   roleId: ID!
@@ -1415,6 +1442,11 @@ type Mutation {
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
 
+  """
+  Asks the people who manage roles for access; returns how many were asked
+  """
+  requestAccess(input: RequestAccessInput!, workspaceId: ID!): Int!
+
   """Starts a file upload: returns a short-lived URL to PUT the bytes to"""
   requestChatUpload(input: RequestChatUploadInput!, workspaceId: ID!): ChatUploadTicket!
   requestLeave(input: RequestLeaveInput!, workspaceId: ID!): LeaveRequest!
@@ -1581,6 +1613,7 @@ type Notification {
 }
 
 enum NotificationKind {
+  access_requested
   automation
   chat_mention
   leave_decided
@@ -1784,6 +1817,14 @@ type Query {
 
   """Current members with their HR profiles"""
   employees(workspaceId: ID!): [Employee!]!
+
+  """
+  Why a member can or can’t do something, optionally in one space (the policy simulator)
+  """
+  explainAccess(permission: String!, spaceId: ID, userId: ID!, workspaceId: ID!): AccessExplanation!
+
+  """Why you can or can’t do something here"""
+  explainMyAccess(permission: String!, spaceId: ID, workspaceId: ID!): AccessExplanation!
 
   """Every folder in the workspace, for the sidebar tree"""
   folders(workspaceId: ID!): [Folder!]!
@@ -2032,6 +2073,12 @@ type RelatedTask {
   number: Int!
   status: TaskStatus!
   title: String!
+}
+
+input RequestAccessInput {
+  note: String
+  permission: String!
+  spaceId: ID
 }
 
 input RequestChatUploadInput {

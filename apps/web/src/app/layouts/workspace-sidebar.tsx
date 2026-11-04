@@ -17,6 +17,7 @@ import {
   TimerIcon,
   UsersIcon,
   UsersRoundIcon,
+  KeyRoundIcon,
 } from 'lucide-react';
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { PREFERENCE_LIMITS } from '@taskflow/shared-types';
@@ -124,6 +125,9 @@ export function WorkspaceSidebar({ workspaceId, unread }: { workspaceId: string;
           </SidebarLink>
           <SidebarLink to="/w/$workspaceId/roles" params={params} icon={<ShieldIcon />}>
             Roles
+          </SidebarLink>
+          <SidebarLink to="/w/$workspaceId/access" params={params} icon={<KeyRoundIcon />}>
+            Access
           </SidebarLink>
           {can('audit.view') ? (
             <SidebarLink to="/w/$workspaceId/audit-log" params={params} icon={<ScrollTextIcon />}>
