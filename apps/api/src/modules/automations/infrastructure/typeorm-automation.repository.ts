@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { In } from 'typeorm';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
-import type { AutomationJob, AutomationRule, AutomationRun, DueTask, NewAutomationJob, NewAutomationRule, NewAutomationRun } from '../domain/automation-rule.js';
+import type { AutomationJob, AutomationRule, AutomationRun, DueTask, NewAutomationJob, NewAutomationRule, NewAutomationRun, WebhookDeliveryJob } from '../domain/automation-rule.js';
 import { AutomationRepository } from '../domain/automation.repository.js';
 import { AutomationJobOrmEntity, AutomationRuleOrmEntity, AutomationRunOrmEntity } from './automation.orm-entities.js';
 
@@ -100,6 +100,8 @@ export class TypeOrmAutomationRepository extends AutomationRepository {
          SELECT workspace_id FROM automation_job WHERE run_at <= $1
          UNION
          SELECT workspace_id FROM automation_rule WHERE enabled AND trigger_type = ANY($2)
+         UNION
+         SELECT workspace_id FROM automation_webhook_delivery WHERE status = 'pending' AND next_attempt_at <= $1
        ) due LIMIT $3`,
       [now, [...scheduledTriggers], limit],
     );
@@ -138,6 +140,65 @@ export class TypeOrmAutomationRepository extends AutomationRepository {
   async tryLock(key: string): Promise<boolean> {
     const [row] = (await this.transactional.manager.query(`SELECT pg_try_advisory_xact_lock(hashtext($1)) AS locked`, [key])) as { locked: boolean }[];
     return row?.locked === true;
+  }
+
+  async queueWebhook(delivery: { workspaceId: string; ruleId: string; stepId: string; url: string; body: string }): Promise<string> {
+    const [row] = (await this.transactional.manager.query(
+      `INSERT INTO automation_webhook_delivery (workspace_id, rule_id, step_id, url, body) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [delivery.workspaceId, delivery.ruleId, delivery.stepId, delivery.url, delivery.body],
+    )) as { id: string }[];
+    return row!.id;
+  }
+
+  async attachWebhooks(workspaceId: string, deliveryIds: readonly string[], runId: string): Promise<void> {
+    if (deliveryIds.length === 0) return;
+    await this.transactional.manager.query(`UPDATE automation_webhook_delivery SET run_id = $3 WHERE workspace_id = $1 AND id = ANY($2::uuid[])`, [workspaceId, [...deliveryIds], runId]);
+  }
+
+  async leaseWebhooks(workspaceId: string, now: Date, leaseUntil: Date, limit: number): Promise<WebhookDeliveryJob[]> {
+    const result: unknown = await this.transactional.manager.query(
+      `UPDATE automation_webhook_delivery d SET attempts = d.attempts + 1, next_attempt_at = $3
+         FROM automation_rule r
+        WHERE r.id = d.rule_id AND r.workspace_id = d.workspace_id
+          AND d.id IN (SELECT id FROM automation_webhook_delivery
+                        WHERE workspace_id = $1 AND status = 'pending' AND next_attempt_at <= $2
+                        ORDER BY next_attempt_at LIMIT $4 FOR UPDATE SKIP LOCKED)
+        RETURNING d.id, d.workspace_id, d.rule_id, d.run_id, d.step_id, d.url, d.body, d.attempts, r.webhook_secret_sealed`,
+      [workspaceId, now, leaseUntil, limit],
+    );
+    const rows = (Array.isArray(result) && Array.isArray(result[0]) ? result[0] : result) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      id: String(row['id']),
+      workspaceId: String(row['workspace_id']),
+      ruleId: String(row['rule_id']),
+      runId: (row['run_id'] as string | null) ?? null,
+      stepId: String(row['step_id']),
+      url: String(row['url']),
+      body: String(row['body']),
+      attempts: Number(row['attempts']),
+      secretSealed: (row['webhook_secret_sealed'] as string | null) ?? null,
+    }));
+  }
+
+  async finishWebhook(workspaceId: string, id: string, result: { status: 'pending' | 'sent' | 'failed'; nextAttemptAt: Date; detail: string }): Promise<void> {
+    await this.transactional.manager.query(
+      `UPDATE automation_webhook_delivery SET status = $3, next_attempt_at = $4, last_detail = $5 WHERE workspace_id = $1 AND id = $2`,
+      [workspaceId, id, result.status, result.nextAttemptAt, result.detail.slice(0, 200)],
+    );
+  }
+
+  async setTraceDetail(workspaceId: string, runId: string, stepId: string, detail: string): Promise<void> {
+    await this.transactional.manager.query(
+      `UPDATE automation_run SET trace = (
+         SELECT coalesce(jsonb_agg(CASE WHEN entry->>'stepId' = $3 THEN jsonb_set(entry, '{detail}', to_jsonb($4::text)) ELSE entry END ORDER BY position), '[]'::jsonb)
+           FROM jsonb_array_elements(trace) WITH ORDINALITY AS item(entry, position))
+       WHERE workspace_id = $1 AND id = $2`,
+      [workspaceId, runId, stepId, detail.slice(0, 200)],
+    );
+  }
+
+  async saveWebhookSecret(workspaceId: string, ruleId: string, sealed: string): Promise<void> {
+    await this.rules.update({ id: ruleId, workspaceId }, { webhookSecretSealed: sealed } as never);
   }
 
   listRuns(workspaceId: string, ruleId: string, limit: number): Promise<AutomationRun[]> {

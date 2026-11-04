@@ -43,6 +43,10 @@ const envSchema = z.object({
   STORAGE_LOCAL_DIR: z.string().min(1).default('.data/uploads'),
   /** How often the automation scheduler wakes (waits, due soon, overdue). 0 turns it off in this process. */
   AUTOMATION_TICK_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
+  /** Hosts the automation webhook action may call, comma-separated ("hooks.example.com,*.acme.dev"). Empty turns the action off. */
+  AUTOMATION_WEBHOOK_HOSTS: optionalString(z.string().trim().max(2000)),
+  /** Tests only: let webhooks call http:// and private addresses (a local receiver). Refused in production. */
+  AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS: z.preprocess((value) => value === 'true' || value === '1' || value === true, z.boolean()).default(false),
   /** For `s3`. The bucket must be private; the API streams files in and out. */
   S3_BUCKET: optionalString(z.string().trim().min(3).max(63)),
   S3_REGION: z.string().trim().min(1).default('us-east-1'),
@@ -72,6 +76,10 @@ const envSchema = z.object({
   .refine((env) => env.NODE_ENV !== 'production' || env.STORAGE_DRIVER === 's3', {
     path: ['STORAGE_DRIVER'],
     message: 'STORAGE_DRIVER=s3 is required when NODE_ENV=production',
+  })
+  .refine((env) => env.NODE_ENV === 'test' || !env.AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS, {
+    path: ['AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS'],
+    message: 'AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS is only allowed when NODE_ENV=test',
   })
   .refine((env) => env.NODE_ENV !== 'production' || env.REDIS_URL !== undefined, {
     path: ['REDIS_URL'],

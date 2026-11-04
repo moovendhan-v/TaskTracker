@@ -1,4 +1,4 @@
-import type { AutomationJob, AutomationRule, AutomationRun, DueTask, NewAutomationJob, NewAutomationRule, NewAutomationRun } from './automation-rule.js';
+import type { AutomationJob, AutomationRule, AutomationRun, DueTask, NewAutomationJob, NewAutomationRule, NewAutomationRun, WebhookDeliveryJob } from './automation-rule.js';
 
 export abstract class AutomationRepository {
   abstract listInSpace(workspaceId: string, spaceId: string): Promise<AutomationRule[]>;
@@ -34,6 +34,17 @@ export abstract class AutomationRepository {
   abstract claimFire(workspaceId: string, ruleId: string, taskId: string, key: string): Promise<boolean>;
   /** Takes a transaction-level advisory lock; false when another scheduler holds it. */
   abstract tryLock(key: string): Promise<boolean>;
+
+  // ── Webhooks (E1 phase 3) ──
+  /** Queues a call; returns its id. Runs inside the run's savepoint, so a failed run queues nothing. */
+  abstract queueWebhook(delivery: { workspaceId: string; ruleId: string; stepId: string; url: string; body: string }): Promise<string>;
+  abstract attachWebhooks(workspaceId: string, deliveryIds: readonly string[], runId: string): Promise<void>;
+  /** Due deliveries, leased (next try pushed out) so no other scheduler takes them while this one sends. */
+  abstract leaseWebhooks(workspaceId: string, now: Date, leaseUntil: Date, limit: number): Promise<WebhookDeliveryJob[]>;
+  abstract finishWebhook(workspaceId: string, id: string, result: { status: 'pending' | 'sent' | 'failed'; nextAttemptAt: Date; detail: string }): Promise<void>;
+  /** Writes a step's outcome into a run's trace (a webhook's delivery result). */
+  abstract setTraceDetail(workspaceId: string, runId: string, stepId: string, detail: string): Promise<void>;
+  abstract saveWebhookSecret(workspaceId: string, ruleId: string, sealed: string): Promise<void>;
 
   abstract listRuns(workspaceId: string, ruleId: string, limit: number): Promise<AutomationRun[]>;
 }

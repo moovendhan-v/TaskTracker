@@ -29,6 +29,7 @@ import { AutomationFlows1729840000000 } from './1729840000000-automation-flows.j
 import { AutomationSchedules1729850000000 } from './1729850000000-automation-schedules.js';
 import { DashboardPeriod1729860000000 } from './1729860000000-dashboard-period.js';
 import { Attendance1729870000000 } from './1729870000000-attendance.js';
+import { AutomationWebhooks1729880000000 } from './1729880000000-automation-webhooks.js';
 import { SprintCommittedTasks1729750000000 } from './1729750000000-sprint-committed-tasks.js';
 import { DashboardLayouts1729740000000 } from './1729740000000-dashboard-layouts.js';
 import { MultipleAssignees1729730000000 } from './1729730000000-multiple-assignees.js';
@@ -69,4 +70,5 @@ export const MIGRATIONS = [
   AutomationSchedules1729850000000,
   DashboardPeriod1729860000000,
   Attendance1729870000000,
+  AutomationWebhooks1729880000000,
 ];

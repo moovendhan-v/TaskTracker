@@ -55,6 +55,8 @@ const ACTION_PERMISSIONS: Record<AutomationAction['type'], Permission[]> = {
   comment: ['task.update'],
   set_due_date: ['task.update'],
   add_watcher: ['task.update'],
+  post_chat: ['chat.use'],
+  webhook: [],
 };
 
 export const AutomationPolicy = {
@@ -126,6 +128,19 @@ export const AutomationPolicy = {
         case 'add_watcher':
           if (!action.userId || typeof action.userId !== 'string' || action.userId.length > 64) throw DomainError.invalid(`${where}: pick a person`);
           return { type: action.type, userId: action.userId };
+        case 'post_chat': {
+          if (!action.channelId || !UUID.test(action.channelId)) throw DomainError.invalid(`${where}: pick a channel`);
+          const message = (action.message ?? '').trim();
+          if (!message) throw DomainError.invalid(`${where}: write the message`);
+          if (message.length > AUTOMATION_LIMITS.messageMax) throw DomainError.invalid(`${where}: the message is too long`);
+          return { type: action.type, channelId: action.channelId, message };
+        }
+        case 'webhook': {
+          // The host rules need the server's allowlist, so the service checks the URL itself.
+          const url = typeof action.url === 'string' ? action.url.trim() : '';
+          if (!url || url.length > AUTOMATION_LIMITS.urlMax) throw DomainError.invalid(`${where}: enter the webhook URL`);
+          return { type: action.type, url };
+        }
         default:
           throw DomainError.invalid(`${where}: unknown action`);
       }
@@ -160,6 +175,11 @@ export const AutomationPolicy = {
       if (condition.field === 'assignee') ids.userIds.push(...(condition.userIds ?? []));
     }
     return ids;
+  },
+
+  /** Channels the actions post to. */
+  channelIds(actions: readonly AutomationAction[]): string[] {
+    return [...new Set(actions.flatMap((action) => (action.type === 'post_chat' && action.channelId ? [action.channelId] : [])))];
   },
 
   referencedIds(trigger: AutomationTrigger, conditions: AutomationConditions, actions: readonly AutomationAction[]): ReferencedIds {

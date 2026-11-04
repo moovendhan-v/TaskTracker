@@ -7,7 +7,8 @@ import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { AutomationsService } from '../../application/automations.service.js';
-import { AutomationRuleGql, AutomationRunGql, SaveAutomationInput } from './automation.types.js';
+import { Throttle } from '@nestjs/throttler';
+import { AutomationRuleGql, AutomationRunGql, AutomationRunStepGql, SaveAutomationInput } from './automation.types.js';
 
 @Resolver(() => AutomationRuleGql)
 export class AutomationsResolver {
@@ -66,6 +67,32 @@ export class AutomationsResolver {
   async deleteAutomation(@WorkspaceIdArg() _workspaceId: string, @UuidArg('ruleId') ruleId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
     await this.automationsService.remove(actor, access, ruleId);
     return true;
+  }
+
+  @Query(() => [AutomationRunStepGql], { description: 'A test run: the path a flow would take for one task of the space. Changes nothing' })
+  @RequirePermissions('automation.manage')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  previewAutomation(
+    @WorkspaceIdArg() _workspaceId: string,
+    @UuidArg('spaceId') spaceId: string,
+    @UuidArg('taskId') taskId: string,
+    @Args('input') input: SaveAutomationInput,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<AutomationRunStepGql[]> {
+    return this.automationsService.preview(access, spaceId, withFlow(input), taskId);
+  }
+
+  @Mutation(() => String, { description: 'The secret this automation signs webhook calls with. Audited; rotate makes a new one' })
+  @RequirePermissions('automation.manage')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  revealAutomationWebhookSecret(
+    @WorkspaceIdArg() _workspaceId: string,
+    @UuidArg('ruleId') ruleId: string,
+    @Args('rotate', { defaultValue: false }) rotate: boolean,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<string> {
+    return this.automationsService.revealWebhookSecret(actor, access, ruleId, rotate);
   }
 
   @ResolveField(() => String, { nullable: true, description: 'The rule\'s steps as a tree (JSON); null for a rule saved before flows' })

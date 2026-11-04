@@ -5,7 +5,7 @@ fragment AutomationRuleFields on AutomationRule {
   enabled
   trigger { type statusIds categories priorities days }
   conditions { listIds priorities types }
-  actions { type statusId priority userId audiences userIds message days }
+  actions { type statusId priority userId audiences userIds message days channelId url }
   flowJson
   createdById
   runCount
@@ -32,3 +32,11 @@ mutation SetAutomationEnabled($workspaceId: ID!, $ruleId: ID!, $enabled: Boolean
 }
 
 mutation DeleteAutomation($workspaceId: ID!, $ruleId: ID!) { deleteAutomation(workspaceId: $workspaceId, ruleId: $ruleId) }
+
+query PreviewAutomation($workspaceId: ID!, $spaceId: ID!, $taskId: ID!, $input: SaveAutomationInput!) {
+  previewAutomation(workspaceId: $workspaceId, spaceId: $spaceId, taskId: $taskId, input: $input) { stepId outcome detail }
+}
+
+mutation RevealAutomationWebhookSecret($workspaceId: ID!, $ruleId: ID!, $rotate: Boolean!) {
+  revealAutomationWebhookSecret(workspaceId: $workspaceId, ruleId: $ruleId, rotate: $rotate)
+}

@@ -10,5 +10,6 @@ import { ChatResolver } from './presentation/graphql/chat.resolver.js';
 @Module({
   imports: [TasksModule, MembersModule],
   providers: [ChatService, ChatResolver, { provide: ChatRepository, useClass: TypeOrmChatRepository }],
+  exports: [ChatService],
 })
 export class ChatModule {}

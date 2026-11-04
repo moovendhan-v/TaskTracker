@@ -248,6 +248,54 @@ export function addDays(date: string, days: number): string {
 }
 
 export const FLOW_TRACE_OUTCOMES = ['ran', 'took-yes', 'took-no', 'stopped', 'failed', 'waited'] as const;
+
+/** A step's effect on the task, as far as later if-steps can see it (for test runs). */
+export interface SimulatedEffects {
+  /** set_status: the status's category, so "status category is …" conditions can follow. */
+  statusCategoryOf: (statusId: string) => FlowTaskFacts['statusCategory'] | undefined;
+}
+
+/**
+ * A test run: walks the flow against a task without changing anything. Actions
+ * that change what a later condition reads (status, priority, assignee, due
+ * date) are applied to a copy of the facts, so the path matches a real run.
+ * Waits are passed straight through; a real run would pause there.
+ */
+export function simulateFlow(flow: AutomationFlow, task: FlowTaskFacts, today: string, effects: SimulatedEffects): FlowTraceEntry[] {
+  const facts: FlowTaskFacts = { ...task, assigneeIds: [...task.assigneeIds] };
+  const trace: FlowTraceEntry[] = [];
+  const walk = (steps: readonly FlowStep[]): boolean => {
+    for (const step of steps) {
+      if (step.kind === 'stop') {
+        trace.push({ stepId: step.id, outcome: 'stopped', detail: '' });
+        return false;
+      }
+      if (step.kind === 'wait') {
+        trace.push({ stepId: step.id, outcome: 'waited', detail: `would wait ${describeWait(step.minutes)}` });
+        continue;
+      }
+      if (step.kind === 'if') {
+        const holds = evaluateCondition(step.condition, facts, today);
+        trace.push({ stepId: step.id, outcome: holds ? 'took-yes' : 'took-no', detail: '' });
+        if (!walk(holds ? step.yes : step.no)) return false;
+        continue;
+      }
+      const action = step.action;
+      if (action.type === 'set_status' && action.statusId) {
+        facts.statusId = action.statusId;
+        facts.statusCategory = effects.statusCategoryOf(action.statusId) ?? facts.statusCategory;
+      }
+      if (action.type === 'set_priority' && action.priority) facts.priority = action.priority;
+      if (action.type === 'assign' && action.userId) facts.assigneeIds = [action.userId];
+      if (action.type === 'unassign') facts.assigneeIds = [];
+      if (action.type === 'set_due_date') facts.dueDate = action.days === null || action.days === undefined ? null : addDays(today, action.days);
+      trace.push({ stepId: step.id, outcome: 'ran', detail: 'would run' });
+    }
+    return true;
+  };
+  walk(flow.steps);
+  return trace;
+}
 export type FlowTraceOutcome = (typeof FLOW_TRACE_OUTCOMES)[number];
 
 /** One step a run reached, in order. Details are our own short text, never task content. */

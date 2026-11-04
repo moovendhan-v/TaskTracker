@@ -4,6 +4,8 @@ import {
   AutomationsDocument,
   CreateAutomationDocument,
   DeleteAutomationDocument,
+  PreviewAutomationDocument,
+  RevealAutomationWebhookSecretDocument,
   SetAutomationEnabledDocument,
   UpdateAutomationDocument,
   type AutomationRuleFieldsFragment,
@@ -29,4 +31,9 @@ export const automationsApi = {
   update: async (workspaceId: string, ruleId: string, input: SaveAutomationRequest) => toRule((await graphql(UpdateAutomationDocument, { workspaceId, ruleId, input: toInput(input) })).updateAutomation),
   setEnabled: async (workspaceId: string, ruleId: string, enabled: boolean) => toRule((await graphql(SetAutomationEnabledDocument, { workspaceId, ruleId, enabled })).setAutomationEnabled),
   remove: async (workspaceId: string, ruleId: string) => (await graphql(DeleteAutomationDocument, { workspaceId, ruleId })).deleteAutomation,
+  /** A test run: the path the flow would take for one task. Changes nothing. */
+  preview: async (workspaceId: string, spaceId: string, taskId: string, input: SaveAutomationRequest) =>
+    (await graphql(PreviewAutomationDocument, { workspaceId, spaceId, taskId, input: toInput(toSaveRequest(input)) })).previewAutomation,
+  /** The webhook signing secret (audited on the server). */
+  revealSecret: async (workspaceId: string, ruleId: string, rotate: boolean) => (await graphql(RevealAutomationWebhookSecretDocument, { workspaceId, ruleId, rotate })).revealAutomationWebhookSecret,
 };

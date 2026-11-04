@@ -1,3 +1,5 @@
+import { CryptoModule } from '../../core/crypto/crypto.module.js';
+import { ChatModule } from '../chat/chat.module.js';
 import { CommentsModule } from '../comments/comments.module.js';
 import { Module } from '@nestjs/common';
 import { ListsModule } from '../lists/lists.module.js';
@@ -14,7 +16,7 @@ import { TypeOrmAutomationRepository } from './infrastructure/typeorm-automation
 import { AutomationsResolver } from './presentation/graphql/automations.resolver.js';
 
 @Module({
-  imports: [SpacesModule, StatusesModule, ListsModule, MembersModule, TasksModule, NotificationsModule, CommentsModule],
+  imports: [SpacesModule, StatusesModule, ListsModule, MembersModule, TasksModule, NotificationsModule, CommentsModule, ChatModule, CryptoModule],
   providers: [AutomationsService, AutomationEngine, AutomationScheduler, AutomationsResolver, { provide: AutomationRepository, useClass: TypeOrmAutomationRepository }],
   exports: [AutomationEngine],
 })

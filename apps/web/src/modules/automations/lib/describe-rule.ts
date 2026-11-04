@@ -23,6 +23,8 @@ export const ACTION_LABELS: Record<AutomationAction['type'], string> = {
   comment: 'Add a comment',
   set_due_date: 'Set the due date',
   add_watcher: 'Add a watcher',
+  post_chat: 'Post in chat',
+  webhook: 'Call a webhook',
 };
 
 export const AUDIENCE_LABELS: Record<NotifyAudience, string> = {
@@ -47,6 +49,7 @@ export interface Names {
   status: (id: string) => string;
   list: (id: string) => string;
   person: (id: string) => string;
+  channel?: (id: string) => string;
 }
 
 /** The rule as one sentence: "When status changes to Done in Bugs, then notify the creator." */
@@ -70,6 +73,15 @@ export function dueSoonWindow(days: number): string {
   return days === 0 ? ' (due today)' : ` (within ${days} ${days === 1 ? 'day' : 'days'})`;
 }
 
+function hostOf(url: string | null | undefined): string {
+  if (!url) return '…';
+  try {
+    return new URL(url).host;
+  } catch {
+    return 'a URL';
+  }
+}
+
 /** One action in words: "set the priority to High". */
 export function describeAction(action: AutomationAction, names: Names): string {
   switch (action.type) {
@@ -91,6 +103,10 @@ export function describeAction(action: AutomationAction, names: Names): string {
       return action.days === null || action.days === undefined ? 'clear the due date' : action.days === 0 ? 'make it due today' : `make it due in ${action.days} ${action.days === 1 ? 'day' : 'days'}`;
     case 'add_watcher':
       return `add ${action.userId ? names.person(action.userId) : '…'} as a watcher`;
+    case 'post_chat':
+      return `post in ${action.channelId ? `#${names.channel?.(action.channelId) ?? 'a channel'}` : '…'}`;
+    case 'webhook':
+      return `call a webhook on ${hostOf(action.url)}`;
   }
 }
 
