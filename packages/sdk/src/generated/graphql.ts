@@ -1856,7 +1856,7 @@ export type WorkspaceLayoutQueryVariables = Exact<{
 }>;
 
 
-export type WorkspaceLayoutQuery = { workspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> } | null };
+export type WorkspaceLayoutQuery = { workspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, locked: boolean, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null } | null }> } | null };
 
 export type SetWorkspaceLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1864,7 +1864,7 @@ export type SetWorkspaceLayoutMutationVariables = Exact<{
 }>;
 
 
-export type SetWorkspaceLayoutMutation = { setWorkspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, items: Array<{ id: string }> } };
+export type SetWorkspaceLayoutMutation = { setWorkspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, locked: boolean, items: Array<{ id: string }> } };
 
 export type ClearWorkspaceLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1873,6 +1873,15 @@ export type ClearWorkspaceLayoutMutationVariables = Exact<{
 
 
 export type ClearWorkspaceLayoutMutation = { clearWorkspaceLayout: boolean };
+
+export type SetWorkspaceLayoutLockedMutationVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+  locked: boolean;
+}>;
+
+
+export type SetWorkspaceLayoutLockedMutation = { setWorkspaceLayoutLocked: { pageKey: string, locked: boolean } };
 
 export type ListsQueryVariables = Exact<{
   workspaceId: string;
@@ -5646,6 +5655,7 @@ export const WorkspaceLayoutDocument = new TypedDocumentString(`
     pageKey
     updatedAt
     updatedByName
+    locked
     items {
       id
       type
@@ -5673,6 +5683,7 @@ export const SetWorkspaceLayoutDocument = new TypedDocumentString(`
     pageKey
     updatedAt
     updatedByName
+    locked
     items {
       id
     }
@@ -5684,6 +5695,18 @@ export const ClearWorkspaceLayoutDocument = new TypedDocumentString(`
   clearWorkspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey)
 }
     `) as unknown as TypedDocumentString<ClearWorkspaceLayoutMutation, ClearWorkspaceLayoutMutationVariables>;
+export const SetWorkspaceLayoutLockedDocument = new TypedDocumentString(`
+    mutation SetWorkspaceLayoutLocked($workspaceId: ID!, $pageKey: String!, $locked: Boolean!) {
+  setWorkspaceLayoutLocked(
+    workspaceId: $workspaceId
+    pageKey: $pageKey
+    locked: $locked
+  ) {
+    pageKey
+    locked
+  }
+}
+    `) as unknown as TypedDocumentString<SetWorkspaceLayoutLockedMutation, SetWorkspaceLayoutLockedMutationVariables>;
 export const ListsDocument = new TypedDocumentString(`
     query Lists($workspaceId: ID!) {
   lists(workspaceId: $workspaceId) {

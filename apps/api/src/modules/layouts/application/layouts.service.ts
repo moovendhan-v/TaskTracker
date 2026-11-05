@@ -13,11 +13,17 @@ export class LayoutsService {
     private readonly auditLogger: AuditLogger,
   ) {}
 
-  get(workspaceId: string, userId: string, pageKey: LayoutPage): Promise<DashboardLayout | null> {
+  /**
+   * Your layout of a page. While the workspace default is locked, people who
+   * can't manage layouts get null, so they see the locked layout.
+   */
+  async get(workspaceId: string, userId: string, pageKey: LayoutPage, canManage = false): Promise<DashboardLayout | null> {
+    if (!canManage && (await this.repository.findDefault(workspaceId, pageKey))?.locked) return null;
     return this.repository.find({ workspaceId, userId, pageKey });
   }
 
-  async save(workspaceId: string, userId: string, pageKey: LayoutPage, baseVersion: number | null, items: LayoutItem[]): Promise<DashboardLayout> {
+  async save(workspaceId: string, userId: string, pageKey: LayoutPage, baseVersion: number | null, items: LayoutItem[], canManage = false): Promise<DashboardLayout> {
+    if (!canManage && (await this.repository.findDefault(workspaceId, pageKey))?.locked) throw DomainError.forbidden('This page’s layout is locked by your workspace admins');
     // Only the fields we know (and no empty settings), then the shared rules.
     const clean = items.map(cleanLayoutItem);
     const problems = validateLayoutItems(pageKey, clean);
@@ -51,6 +57,13 @@ export class LayoutsService {
     const saved = await this.repository.saveDefault(workspaceId, pageKey, clean, actor.userId);
     await this.auditLogger.record(actor, { action: 'layout.default.set', targetType: 'layout_default', targetId: pageKey, workspaceId, metadata: { pageKey, blocks: clean.length } });
     return saved;
+  }
+
+  /** Locks or unlocks the workspace default (layout.manage, checked by the resolver). Audited. */
+  async setWorkspaceDefaultLocked(actor: Actor, workspaceId: string, pageKey: LayoutPage, locked: boolean): Promise<WorkspaceLayout> {
+    if (!(await this.repository.setDefaultLocked(workspaceId, pageKey, locked))) throw DomainError.invalid('Make a workspace default for this page before locking it');
+    await this.auditLogger.record(actor, { action: locked ? 'layout.default.lock' : 'layout.default.unlock', targetType: 'layout_default', targetId: pageKey, workspaceId, metadata: { pageKey } });
+    return (await this.repository.findDefault(workspaceId, pageKey))!;
   }
 
   async clearWorkspaceDefault(actor: Actor, workspaceId: string, pageKey: LayoutPage): Promise<boolean> {

@@ -270,6 +270,8 @@ export interface WorkspaceLayout {
   items: LayoutItem[];
   updatedAt: string;
   updatedByName: string | null;
+  /** Locked: everyone sees this layout; only people with layout.manage arrange the page. */
+  locked: boolean;
 }
 
 export interface LayoutVersion {

@@ -11,6 +11,7 @@ import {
   MyLayoutVersionsDocument,
   WorkspaceLayoutDocument,
   SetWorkspaceLayoutDocument,
+  SetWorkspaceLayoutLockedDocument,
   ClearWorkspaceLayoutDocument,
 } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
@@ -39,6 +40,8 @@ export const layoutsApi = {
   workspaceDefault: async (workspaceId: string, pageKey: LayoutPage) => withItems((await graphql(WorkspaceLayoutDocument, { workspaceId, pageKey })).workspaceLayout),
   setWorkspaceDefault: async (workspaceId: string, pageKey: LayoutPage, items: LayoutItem[]) =>
     (await graphql(SetWorkspaceLayoutDocument, { workspaceId, input: { pageKey, items: items.map(toInput) } })).setWorkspaceLayout,
+  setWorkspaceDefaultLocked: async (workspaceId: string, pageKey: LayoutPage, locked: boolean) =>
+    (await graphql(SetWorkspaceLayoutLockedDocument, { workspaceId, pageKey, locked })).setWorkspaceLayoutLocked,
   clearWorkspaceDefault: async (workspaceId: string, pageKey: LayoutPage) => (await graphql(ClearWorkspaceLayoutDocument, { workspaceId, pageKey })).clearWorkspaceLayout,
 };
 
