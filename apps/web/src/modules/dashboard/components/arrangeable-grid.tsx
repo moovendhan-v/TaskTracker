@@ -1,6 +1,6 @@
 import { canStack, cleanLayoutItem, LAYOUT_LIMITS, SECTION_BLOCK, type DashboardResponse, type LayoutItem } from '@taskflow/shared-types';
 import { LayoutDashboardIcon, LockIcon, PlusIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import type { BlockState } from '@/components/kit/block-state';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,9 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
   // A locked workspace layout: only layout managers arrange the page (the server refuses the others' saves too).
   const lockedOut = personal && layout.locked && !can('layout.manage');
   const canArrange = ownerMayArrange && !lockedOut;
+  // Blocks pinned in the workspace default stay put for everyone but the people who set them.
+  const managesLayouts = can('layout.manage');
+  const fixed = useMemo(() => new Set(personal && !managesLayouts ? (layout.items ?? []).filter((item) => item.pinned).map((item) => item.id) : []), [layout.items, managesLayouts, personal]);
   const [configuring, setConfiguring] = useState<string | null>(null);
   const configuringItem = layout.items?.find((item) => item.id === configuring) ?? null;
   const blockOf = (item: LayoutItem) => registry.blocks[item.type];
@@ -54,7 +57,8 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
 
   const remove = (item: LayoutItem) => {
     if (!layout.items) return;
-    layout.setItems(removeItem(layout.items, item.id));
+    if (fixed.has(item.id)) return;
+    layout.setItems(removeItem(layout.items, item.id, fixed));
     toast(`Removed ${blockOf(item)?.title ?? 'block'}`, { duration: 10_000, action: { label: 'Undo', onClick: () => layout.undo() } });
   };
   // Stacking: the library opens for one slot and adds the picked block as a tab there.
@@ -71,7 +75,7 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
     // Sections can repeat, so they get the next free id.
     let id = type;
     for (let n = 1; type === SECTION_BLOCK && layout.items.some((item) => item.id === id); n++) id = `${type}-${n}`;
-    layout.setItems(addItem(layout.items, { id, type, ...block.size }));
+    layout.setItems(addItem(layout.items, { id, type, ...block.size }, fixed));
     setLibrary(false);
   };
   const unstack = (item: LayoutItem, type: string) => {
@@ -172,6 +176,7 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
             arranging={arranging}
             onChange={(items) => layout.setItems(items)}
             onRemove={remove}
+            fixed={fixed}
             titleOf={(item) => blockOf(item)?.title ?? 'Block'}
             renderBlock={(item) => {
               const block = blockOf(item);
@@ -182,13 +187,15 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
                   block={block}
                   data={data}
                   state={state}
-                  arranging={arranging}
-                  canArrange={canArrange}
+                  arranging={arranging && !fixed.has(item.id)}
+                  canArrange={canArrange && !fixed.has(item.id)}
+                  pinnedNote={fixed.has(item.id) ? 'Pinned by your workspace' : item.pinned && managesLayouts && personal ? 'Pinned for everyone once published' : undefined}
+                  onTogglePin={personal && managesLayouts && canArrange ? () => layout.items && layout.setItems(layout.items.map((other) => (other.id === item.id ? cleanLayoutItem({ ...other, pinned: !other.pinned }) : other))) : undefined}
                   scope={scope}
                   onConfigure={() => setConfiguring(item.id)}
                   onRemove={() => remove(item)}
                   registry={registry}
-                  onStack={canArrange && canStack(item.type) && (item.tabs?.length ?? 0) < LAYOUT_LIMITS.tabsMax ? () => {
+                  onStack={canArrange && !fixed.has(item.id) && canStack(item.type) && (item.tabs?.length ?? 0) < LAYOUT_LIMITS.tabsMax ? () => {
                     setStackOn(item.id);
                     setLibrary(true);
                   } : undefined}

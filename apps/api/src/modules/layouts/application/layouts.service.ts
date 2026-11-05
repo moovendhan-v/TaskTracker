@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { cleanLayoutItem, LAYOUT_VERSIONS_KEPT, validateLayoutItems, type DashboardLayout, type LayoutItem, type LayoutPage, type LayoutVersion, type WorkspaceLayout } from '@taskflow/shared-types';
+import { cleanLayoutItem, LAYOUT_VERSIONS_KEPT, validateLayoutItems, withPinnedBlocks, type DashboardLayout, type LayoutItem, type LayoutPage, type LayoutVersion, type WorkspaceLayout } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import type { Actor } from '../../../core/http/types/authenticated-request.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
@@ -18,14 +18,18 @@ export class LayoutsService {
    * can't manage layouts get null, so they see the locked layout.
    */
   async get(workspaceId: string, userId: string, pageKey: LayoutPage, canManage = false): Promise<DashboardLayout | null> {
-    if (!canManage && (await this.repository.findDefault(workspaceId, pageKey))?.locked) return null;
-    return this.repository.find({ workspaceId, userId, pageKey });
+    const workspaceDefault = canManage ? null : await this.repository.findDefault(workspaceId, pageKey);
+    if (workspaceDefault?.locked) return null;
+    const mine = await this.repository.find({ workspaceId, userId, pageKey });
+    // Blocks pinned in the workspace default are in everyone's layout, as set; layout managers see their own draft.
+    return mine && !canManage ? { ...mine, items: withPinnedBlocks(mine.items, workspaceDefault?.items) } : mine;
   }
 
   async save(workspaceId: string, userId: string, pageKey: LayoutPage, baseVersion: number | null, items: LayoutItem[], canManage = false): Promise<DashboardLayout> {
-    if (!canManage && (await this.repository.findDefault(workspaceId, pageKey))?.locked) throw DomainError.forbidden('This page’s layout is locked by your workspace admins');
-    // Only the fields we know (and no empty settings), then the shared rules.
-    const clean = items.map(cleanLayoutItem);
+    const workspaceDefault = canManage ? null : await this.repository.findDefault(workspaceId, pageKey);
+    if (workspaceDefault?.locked) throw DomainError.forbidden('This page’s layout is locked by your workspace admins');
+    // Only the fields we know (and no empty settings). Others can't pin, move or drop the pinned blocks: they're put back as set.
+    const clean = canManage ? items.map(cleanLayoutItem) : withPinnedBlocks(items, workspaceDefault?.items);
     const problems = validateLayoutItems(pageKey, clean);
     if (problems.length) throw DomainError.invalid(`Invalid layout: ${problems.join('; ')}`);
     const saved = await this.repository.saveIfVersion({ workspaceId, userId, pageKey }, baseVersion, clean);

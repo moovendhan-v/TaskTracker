@@ -1189,6 +1189,9 @@ type LayoutItem {
   h: Int!
   id: String!
 
+  """Pinned by the workspace default: it stays where it is for everyone"""
+  pinned: Boolean
+
   """Other blocks stacked in this slot, as tabs"""
   tabs: [String!]
   type: String!
@@ -1205,6 +1208,11 @@ input LayoutItemInput {
   """
   h: Int!
   id: String!
+
+  """
+  In a workspace default: pinned for everyone. Only layout managers set it; it is ignored in other people's saves
+  """
+  pinned: Boolean
   tabs: [String!]
   type: String!
   w: Int!

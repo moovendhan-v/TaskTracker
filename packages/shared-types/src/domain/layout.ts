@@ -85,6 +85,8 @@ export interface LayoutItem {
   config?: BlockConfig | null;
   /** Other block types stacked in this slot, shown as tabs after this one (B2). */
   tabs?: string[] | null;
+  /** Pinned by layout managers in the workspace default: everyone has it, there, as set (B4). */
+  pinned?: boolean | null;
 }
 
 /** Accent colours a block can wear, from the theme's palette. */
@@ -276,6 +278,7 @@ export function validateLayoutItems(pageKey: LayoutPage, items: readonly LayoutI
       }
     }
     if (item.x < 0 || item.y < 0 || item.x + item.w > GRID_COLUMNS || item.y > LAYOUT_LIMITS.maxRow) problems.push(`${at}: outside the grid`);
+    if (item.pinned !== undefined && item.pinned !== null && typeof item.pinned !== 'boolean') problems.push(`${at}: pinned must be true or false`);
     if (item.config !== undefined && item.config !== null) {
       if (typeof item.config !== 'object' || Array.isArray(item.config)) problems.push(`${at}: settings must be an object`);
       else for (const problem of validateBlockConfig(pageKey, item.type, item.config)) problems.push(`${at}: ${problem}`);
@@ -363,9 +366,9 @@ export interface DashboardTeam {
 }
 
 /** Just the stored fields of an item: position, size and any non-empty settings. */
-export function cleanLayoutItem({ id, type, x, y, w, h, config, tabs }: LayoutItem): LayoutItem {
+export function cleanLayoutItem({ id, type, x, y, w, h, config, tabs, pinned }: LayoutItem): LayoutItem {
   const settings = cleanBlockConfig(config);
-  return { id, type, x, y, w, h, ...(settings ? { config: settings } : {}), ...(tabs?.length ? { tabs: [...tabs] } : {}) };
+  return { id, type, x, y, w, h, ...(settings ? { config: settings } : {}), ...(tabs?.length ? { tabs: [...tabs] } : {}), ...(pinned === true ? { pinned: true } : {}) };
 }
 
 /** How many past saves of a page a person can go back to. */
@@ -385,4 +388,45 @@ export interface LayoutVersion {
   version: number;
   savedAt: string;
   items: LayoutItem[];
+}
+
+const byReadingOrder = (a: LayoutItem, b: LayoutItem) => a.y - b.y || a.x - b.x;
+
+/** The highest row at or below `from` where the block fits among the placed ones. */
+function dropInto(item: LayoutItem, placed: readonly LayoutItem[], from = 0): LayoutItem {
+  let candidate = { ...item, y: from };
+  for (let blocker = placed.find((other) => overlaps(candidate, other)); blocker; blocker = placed.find((other) => overlaps(candidate, other))) {
+    candidate = { ...item, y: blocker.y + blocker.h };
+  }
+  return candidate;
+}
+
+/**
+ * Settles a layout ("gravity"): fixed blocks stay exactly where they are; the
+ * block being moved keeps its spot unless that's on a fixed block (then it goes
+ * just below it); every other block, in reading order, drops into the highest row
+ * where it fits in its own columns. The caller's order is kept.
+ */
+export function settleLayout(items: readonly LayoutItem[], options: { movingId?: string | null; fixedIds?: ReadonlySet<string> } = {}): LayoutItem[] {
+  const fixedIds = options.fixedIds ?? new Set<string>();
+  const placed: LayoutItem[] = items.filter((item) => fixedIds.has(item.id));
+  const moving = items.find((item) => item.id === options.movingId && !fixedIds.has(item.id));
+  if (moving) placed.push(dropInto(moving, placed, moving.y));
+  for (const item of [...items].filter((item) => !fixedIds.has(item.id) && item !== moving).sort(byReadingOrder)) placed.push(dropInto(item, placed));
+  return items.map((item) => placed.find((other) => other.id === item.id)!);
+}
+
+/**
+ * Someone's layout with the workspace default's pinned blocks in it (B4): the pinned
+ * blocks exactly as set, their own blocks around them (minus their copies of pinned
+ * ones, and with no pins of their own).
+ */
+export function withPinnedBlocks(items: readonly LayoutItem[], workspaceDefault: readonly LayoutItem[] | null | undefined): LayoutItem[] {
+  const pinned = (workspaceDefault ?? []).filter((item) => item.pinned === true).map((item) => cleanLayoutItem({ ...item, pinned: true }));
+  const ids = new Set(pinned.map((item) => item.id));
+  const types = new Set(pinned.flatMap((item) => [item.type, ...(item.tabs ?? [])]).filter((type) => type !== SECTION_BLOCK));
+  const own = items
+    .filter((item) => !ids.has(item.id) && !types.has(item.type))
+    .map((item) => cleanLayoutItem({ ...item, pinned: false, tabs: item.tabs?.filter((tab) => !types.has(tab)) ?? null }));
+  return settleLayout([...pinned, ...own], { fixedIds: ids });
 }

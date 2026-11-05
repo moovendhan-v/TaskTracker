@@ -2,7 +2,7 @@ import { GRID_COLUMNS, type LayoutItem } from '@taskflow/shared-types';
 import { XIcon } from 'lucide-react';
 import { useRef, useState, useSyncExternalStore, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
-import { gridHeight, moveItem, resizeItem } from '../lib/grid';
+import { gridHeight, moveItem, resizeItem, type FixedIds } from '../lib/grid';
 
 /** Height of one grid row and the gap between cells, in px. */
 export const ROW_HEIGHT = 48;
@@ -39,7 +39,11 @@ interface BlockGridProps {
   onRemove: (item: LayoutItem) => void;
   titleOf: (item: LayoutItem) => string;
   renderBlock: (item: LayoutItem) => ReactNode;
+  /** Blocks pinned by the workspace: they don't move, resize or go, and others flow around them. */
+  fixed?: FixedIds;
 }
+
+const NO_FIXED: FixedIds = new Set();
 
 const describe = (item: LayoutItem) => `column ${item.x + 1}, row ${item.y + 1}, ${item.w} wide, ${item.h} tall`;
 
@@ -48,7 +52,7 @@ const describe = (item: LayoutItem) => `column ${item.x + 1}, row ${item.y + 1},
  * dragged by any point, resized from its corner, removed with ×, or moved from
  * the keyboard: focus it, then ⌥+arrows moves and ⇧⌥+arrows resizes.
  */
-export function BlockGrid({ items, arranging, onChange, onRemove, titleOf, renderBlock }: BlockGridProps) {
+export function BlockGrid({ items, arranging, onChange, onRemove, titleOf, renderBlock, fixed = NO_FIXED }: BlockGridProps) {
   const wide = useWideScreen();
   const container = useRef<HTMLDivElement>(null);
   const [dragState, setDrag] = useState<Drag | null>(null);
@@ -82,7 +86,7 @@ export function BlockGrid({ items, arranging, onChange, onRemove, titleOf, rende
     const rows = Math.round(dy / size.y);
     const { origin } = drag;
     setDrag({ ...drag, dx, dy });
-    setPreview(drag.mode === 'move' ? moveItem(drag.base, origin.id, origin.x + cols, origin.y + rows) : resizeItem(drag.base, origin.id, origin.w + cols, origin.h + rows));
+    setPreview(drag.mode === 'move' ? moveItem(drag.base, origin.id, origin.x + cols, origin.y + rows, fixed) : resizeItem(drag.base, origin.id, origin.w + cols, origin.h + rows, fixed));
   };
 
   const finish = () => {
@@ -97,7 +101,7 @@ export function BlockGrid({ items, arranging, onChange, onRemove, titleOf, rende
   };
 
   const onKey = (event: KeyboardEvent, item: LayoutItem) => {
-    if (!editable) return;
+    if (!editable || fixed.has(item.id)) return;
     if ((event.key === 'Delete' || event.key === 'Backspace') && event.target === event.currentTarget) {
       event.preventDefault();
       onRemove(item);
@@ -107,7 +111,7 @@ export function BlockGrid({ items, arranging, onChange, onRemove, titleOf, rende
     if (!step || !event.altKey) return;
     event.preventDefault();
     const [dx, dy] = step as [number, number];
-    const next = event.shiftKey ? resizeItem(items, item.id, item.w + dx, item.h + dy) : moveItem(items, item.id, item.x + dx, item.y + dy);
+    const next = event.shiftKey ? resizeItem(items, item.id, item.w + dx, item.h + dy, fixed) : moveItem(items, item.id, item.x + dx, item.y + dy, fixed);
     const placed = next.find((other) => other.id === item.id)!;
     onChange(next);
     setAnnouncement(`${titleOf(item)}: ${describe(placed)}`);
@@ -142,13 +146,14 @@ export function BlockGrid({ items, arranging, onChange, onRemove, titleOf, rende
         ) : null}
         {ordered.map((item) => {
           const moving = drag?.id === item.id && drag.mode === 'move';
+          const pinned = fixed.has(item.id);
           const at = moving ? drag.origin : item;
           const title = titleOf(item);
           return (
             <div
               key={item.id}
               role={editable ? 'group' : undefined}
-              aria-label={editable ? `${title} block, ${describe(item)}. Alt+arrows to move, Shift+Alt+arrows to resize, Delete to remove.` : undefined}
+              aria-label={editable ? (pinned ? `${title} block, pinned by your workspace` : `${title} block, ${describe(item)}. Alt+arrows to move, Shift+Alt+arrows to resize, Delete to remove.`) : undefined}
               tabIndex={editable ? 0 : undefined}
               onKeyDown={(event) => onKey(event, item)}
               className={cn(
@@ -163,7 +168,8 @@ export function BlockGrid({ items, arranging, onChange, onRemove, titleOf, rende
               }}
             >
               {renderBlock(item)}
-              {editable ? (
+              {/* A pinned block says so in its own header, and has no handles. */}
+              {editable && !pinned ? (
                 <>
                   {/* The whole block is the drag surface while arranging; the content underneath stays still. */}
                   <div

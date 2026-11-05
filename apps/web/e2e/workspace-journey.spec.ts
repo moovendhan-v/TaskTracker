@@ -605,6 +605,21 @@ test('locks the workspace layout and previews what Reset brings back', async () 
   await page.getByRole('button', { name: /^Done/ }).click();
 });
 
+test('pins a block for everyone, and unpins it', async () => {
+  const block = page.locator('section', { has: page.getByRole('heading', { name: 'Priority', exact: true }) }).last();
+  const options = async () => {
+    await block.hover();
+    await block.getByRole('button', { name: 'Block options' }).click();
+  };
+  await options();
+  await page.getByRole('menuitem', { name: 'Pin for everyone' }).click();
+  // A draft until it's published as the workspace default.
+  await expect(block.getByText('Pinned for everyone once published')).toBeVisible();
+  await options();
+  await page.getByRole('menuitem', { name: 'Unpin for everyone' }).click();
+  await expect(block.getByText('Pinned for everyone once published')).toHaveCount(0);
+});
+
 test('adds a section heading and stacks two blocks as tabs in one slot', async () => {
   await page.getByRole('button', { name: /Arrange/ }).click();
   await page.getByRole('button', { name: /Add block/ }).click();

@@ -152,6 +152,40 @@ describe('dashboard layouts', () => {
     expect(audit).toEqual(expect.arrayContaining(['layout.default.set', 'layout.default.clear']));
   });
 
+  it('pins single blocks for everyone: put back as set in other people’s layouts', async () => {
+    const ws = await createWorkspace('Layout pins');
+    const w = ws.workspaceId;
+    const member = await TestUser.signUp('Layout pins member');
+    await addMember(ws, member, 'Member');
+    const SET = 'mutation($w: ID!, $input: SetWorkspaceLayoutInput!) { setWorkspaceLayout(workspaceId: $w, input: $input) { items { id pinned } } }';
+    const MINE = 'query($w: ID!, $p: String!) { myLayout(workspaceId: $w, pageKey: $p) { version items { id x y w h pinned } } }';
+    const SAVE_PINNED = 'mutation($w: ID!, $input: SaveLayoutInput!) { saveLayout(workspaceId: $w, input: $input) { version items { id x y w h pinned } } }';
+    const announcement = { id: 'status', type: 'status', x: 0, y: 0, w: 12, h: 4, pinned: true };
+    expect((await member.error(SET, { w, input: { pageKey: 'home', items: [announcement] } })).code).toBe('FORBIDDEN');
+    await ws.owner.data(SET, { w, input: { pageKey: 'home', items: [announcement, { id: 'priority', type: 'priority', x: 0, y: 4, w: 6, h: 5 }] } });
+
+    // The member drops the pinned block, puts their own on its spot and tries to pin it.
+    const saved = (await member.data<{ saveLayout: { items: Record<string, unknown>[] } }>(SAVE_PINNED, { w, input: { pageKey: 'home', baseVersion: null, items: [{ id: 'workload', type: 'workload', x: 0, y: 0, w: 6, h: 6, pinned: true }] } })).saveLayout.items;
+    expect(saved).toEqual([
+      { id: 'status', x: 0, y: 0, w: 12, h: 4, pinned: true },
+      { id: 'workload', x: 0, y: 4, w: 6, h: 6, pinned: null },
+    ]);
+    // Moving or resizing it doesn't stick either.
+    const moved = (await member.data<{ saveLayout: { items: Record<string, unknown>[] } }>(SAVE_PINNED, { w, input: { pageKey: 'home', baseVersion: 1, items: [{ ...announcement, x: 6, y: 10, w: 6, pinned: false }, { id: 'workload', type: 'workload', x: 0, y: 0, w: 6, h: 6 }] } })).saveLayout.items;
+    expect(moved[0]).toEqual({ id: 'status', x: 0, y: 0, w: 12, h: 4, pinned: true });
+
+    // Unpinning in the default frees it on their next read: their copy stays, unpinned.
+    await ws.owner.data(SET, { w, input: { pageKey: 'home', items: [{ ...announcement, pinned: false }] } });
+    const mine = (await member.data<{ myLayout: { items: { id: string; pinned: boolean | null }[] } }>(MINE, { w, p: 'home' })).myLayout.items;
+    expect(mine.map((item) => [item.id, item.pinned])).toEqual([
+      ['status', null],
+      ['workload', null],
+    ]);
+    // Layout managers draft pins in their own layout freely; nothing is put back for them.
+    const draft = (await ws.owner.data<{ saveLayout: { items: Record<string, unknown>[] } }>(SAVE_PINNED, { w, input: { pageKey: 'home', baseVersion: null, items: [{ id: 'workload', type: 'workload', x: 0, y: 0, w: 6, h: 6, pinned: true }] } })).saveLayout.items;
+    expect(draft).toEqual([{ id: 'workload', x: 0, y: 0, w: 6, h: 6, pinned: true }]);
+  });
+
   it('locks a workspace layout: everyone sees it, only layout managers arrange the page', async () => {
     const ws = await createWorkspace('Layout lock');
     const w = ws.workspaceId;
