@@ -30,12 +30,15 @@ describe('validateLayoutItems', () => {
 describe('block settings', () => {
   const at = { x: 0, y: 0, w: 4, h: 5 };
   it('offers each block only its own settings', () => {
-    expect(blockConfigKeys('home', 'overdue-tasks')).toEqual(['title', 'accent', 'spaceId', 'limit', 'mine', 'priorities', 'categories', 'fields']);
-    expect(blockConfigKeys('home', 'hours-per-day')).toEqual(['title', 'accent', 'spaceId', 'chart']);
-    expect(blockConfigKeys('project', 'recent-tasks')).toEqual(['title', 'accent', 'limit', 'mine', 'priorities', 'categories', 'fields']);
-    expect(blockConfigKeys('home', 'status')).toEqual(['title', 'accent', 'spaceId', 'includeClosed']);
-    expect(blockConfigKeys('home', 'hours-by-project')).toEqual(['title', 'accent']);
-    expect(blockConfigKeys('project', 'kpis')).toEqual(['title', 'accent']);
+    expect(blockConfigKeys('home', 'overdue-tasks')).toEqual(['title', 'accent', 'followContext', 'spaceId', 'limit', 'mine', 'assigneeIds', 'priorities', 'categories', 'fields']);
+    expect(blockConfigKeys('home', 'hours-per-day')).toEqual(['title', 'accent', 'followContext', 'spaceId', 'chart']);
+    expect(blockConfigKeys('project', 'recent-tasks')).toEqual(['title', 'accent', 'followContext', 'limit', 'mine', 'assigneeIds', 'priorities', 'categories', 'fields']);
+    expect(blockConfigKeys('home', 'status')).toEqual(['title', 'accent', 'followContext', 'spaceId', 'includeClosed']);
+    expect(blockConfigKeys('home', 'hours-by-project')).toEqual(['title', 'accent', 'followContext']);
+    expect(blockConfigKeys('project', 'kpis')).toEqual(['title', 'accent', 'followContext']);
+    // Nothing on the project's status card reads data, so it has nothing to follow; nor does a section.
+    expect(blockConfigKeys('project', 'project-status')).toEqual(['title', 'accent']);
+    expect(blockConfigKeys('home', 'section')).toEqual(['title', 'accent']);
   });
 
   it('checks values and refuses settings a block does not have', () => {
@@ -62,6 +65,16 @@ describe('task-list block filters and fields', () => {
     expect(list({ priorities: ['urgent', 'urgent'] })).toEqual(['Block 1: priorities: pick from the list, each once']);
     expect(list({ fields: ['email'] })).toEqual(['Block 1: fields: pick from the list, each once']);
     expect(list({ mine: 'yes' })).toEqual(['Block 1: mine must be true or false']);
+  });
+
+  it('narrows to chosen people, each once, never alongside "mine"', () => {
+    expect(list({ assigneeIds: ['u_1', '0b7c7f1e-2d1a-4d6c-9a0e-2a1f3c4d5e6f'], followContext: true })).toEqual([]);
+    expect(list({ assigneeIds: ['u_1', 'u_1'] })).toEqual(['Block 1: assigneeIds: up to 20 people, each once']);
+    expect(list({ assigneeIds: ["x' OR 1=1"] })).toEqual(['Block 1: assigneeIds: up to 20 people, each once']);
+    expect(list({ assigneeIds: Array.from({ length: 21 }, (_, index) => `u${index}`) })).toEqual(['Block 1: assigneeIds: up to 20 people, each once']);
+    expect(list({ assigneeIds: ['u_1'], mine: true })).toEqual(['Block 1: pick "mine" or people, not both']);
+    expect(list({ followContext: 'yes' })).toEqual(['Block 1: followContext must be true or false']);
+    expect(cleanLayoutItem({ id: 'overdue-tasks', type: 'overdue-tasks', x: 0, y: 0, w: 4, h: 7, config: { assigneeIds: [], followContext: false } }).config).toBeUndefined();
   });
 
   it('stores "not mine" and no priorities as nothing', () => {

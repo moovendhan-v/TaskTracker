@@ -1,4 +1,4 @@
-import { CloudOffIcon, ExternalLinkIcon, GripVerticalIcon, InboxIcon, LockIcon, Maximize2Icon, MoreHorizontalIcon, RotateCwIcon, type LucideIcon } from 'lucide-react';
+import { CloudOffIcon, ExternalLinkIcon, GripVerticalIcon, InboxIcon, LockIcon, Maximize2Icon, MoreHorizontalIcon, RotateCwIcon, XIcon, type LucideIcon } from 'lucide-react';
 import { Component, useState, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -20,7 +20,7 @@ interface BlockProps {
   title: ReactNode;
   icon?: LucideIcon;
   /** A pill after the title: the block's filter or scope, or what it's linked to (tone "linked"). */
-  chip?: { label: string; icon?: LucideIcon; tone?: 'default' | 'linked' };
+  chip?: { label: string; icon?: LucideIcon; tone?: 'default' | 'linked'; onClear?: () => void; clearLabel?: string };
   /** Quiet text on the right of the header, e.g. "last 8 weeks". */
   aside?: ReactNode;
   /** Controls on the right of the header, e.g. a view switcher. */
@@ -183,6 +183,11 @@ export function Block({
           >
             {chip.icon ? <chip.icon aria-hidden className="size-3" /> : null}
             {chip.label}
+            {chip.onClear ? (
+              <button type="button" aria-label={chip.clearLabel ?? 'Clear'} onClick={chip.onClear} className="-mr-1 grid size-4 place-items-center rounded-full hover:bg-primary/15">
+                <XIcon className="size-3" />
+              </button>
+            ) : null}
           </span>
         ) : null}
         <div className="flex-1" />

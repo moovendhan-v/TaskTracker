@@ -63,6 +63,29 @@ describe('task-list block filters and fields', () => {
     expect((await bad('recent-tasks', { fields: ['salary'] })).message).toMatch(/Choose one of/);
   });
 
+  it('stores chosen people and "follow the page" per block, and checks them', async () => {
+    const PEOPLE = 'query($w: ID!, $p: String!) { myLayout(workspaceId: $w, pageKey: $p) { items { config { assigneeIds followContext mine } } } }';
+    const items = [
+      { id: 'overdue-tasks', type: 'overdue-tasks', x: 0, y: 0, w: 6, h: 7, config: { assigneeIds: [member.id], followContext: true } },
+      { id: 'hours-per-day', type: 'hours-per-day', x: 6, y: 0, w: 6, h: 6, config: { followContext: true } },
+    ];
+    await ws.owner.data(SAVE, { w, input: { pageKey: 'project', baseVersion: 1, items } });
+    const stored = (await ws.owner.data<{ myLayout: { items: { config: Record<string, unknown> }[] } }>(PEOPLE, { w, p: 'project' })).myLayout.items.map((item) => item.config);
+    expect(stored).toEqual([
+      { assigneeIds: [member.id], followContext: true, mine: null },
+      { assigneeIds: null, followContext: true, mine: null },
+    ]);
+    // The block's people narrow its list the way the page's people filter does.
+    expect(titles(await board(ws.owner, { userIds: [member.id] }))).toEqual(['Member urgent']);
+
+    const bad = (type: string, value: Record<string, unknown>) => ws.owner.error(SAVE, { w, input: { pageKey: 'project', baseVersion: 2, items: [{ id: type, type, x: 0, y: 0, w: 6, h: 7, config: value }] } });
+    expect((await bad('overdue-tasks', { assigneeIds: [member.id], mine: true })).message).toMatch(/"mine" or people, not both/);
+    expect((await bad('overdue-tasks', { assigneeIds: ["x' OR 1=1"] })).code).toBe('BAD_USER_INPUT');
+    expect((await bad('overdue-tasks', { assigneeIds: Array.from({ length: 21 }, (_, index) => `u${index}`) })).code).toBe('BAD_USER_INPUT');
+    expect((await bad('project-status', { followContext: true })).message).toMatch(/followContext isn't a setting/);
+    expect((await bad('hours-per-day', { assigneeIds: [member.id] })).message).toMatch(/assigneeIds isn't a setting/);
+  });
+
   it('narrows task lists by status meaning, and stores a chart choice', async () => {
     const STATUS = 'mutation($w: ID!, $t: ID!, $s: ID!) { updateTask(workspaceId: $w, taskId: $t, input: { statusId: $s }) { id } }';
     const all = (await board(ws.owner)).overdueTasks.map((task) => task.title);

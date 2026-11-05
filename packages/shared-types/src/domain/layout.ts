@@ -122,7 +122,16 @@ export interface BlockConfig {
   categories?: StatusCategory[];
   /** View: bars or a line, for blocks that chart over time. */
   chart?: BlockChart;
+  /** Data: only tasks assigned to these people (task lists). Can't be combined with `mine`. */
+  assigneeIds?: string[];
+  /** Data: narrow to the person or project picked elsewhere on the page (the page's selection). */
+  followContext?: boolean;
 }
+
+/** At most this many people in a block's assignee filter. */
+export const BLOCK_ASSIGNEES_MAX = 20;
+/** Blocks that don't read data, so there's nothing for a page selection to narrow. */
+const NO_CONTEXT_BLOCKS = ['project-status'];
 
 /** How a time-series block draws. */
 export const BLOCK_CHARTS = ['bar', 'line'] as const;
@@ -142,13 +151,16 @@ const TASK_LISTS = ['overdue-tasks', 'due-soon-tasks', 'recent-tasks'];
 export function blockConfigKeys(pageKey: LayoutPage, type: string): BlockConfigKey[] {
   const keys: BlockConfigKey[] = [...VIEW_KEYS];
   if (type === SECTION_BLOCK) return keys;
+  if (!NO_CONTEXT_BLOCKS.includes(type)) keys.push('followContext');
   if (pageKey === 'home' && !['hours-by-project'].includes(type)) keys.push('spaceId');
-  if (TASK_LISTS.includes(type)) keys.push('limit', 'mine', 'priorities', 'categories', 'fields');
+  if (TASK_LISTS.includes(type)) keys.push('limit', 'mine', 'assigneeIds', 'priorities', 'categories', 'fields');
   if (CHART_BLOCKS.includes(type)) keys.push('chart');
   if (type === 'status' || type === 'status-breakdown') keys.push('includeClosed');
   return keys;
 }
 
+/** A user id: letters, digits, dashes and underscores (auth ids aren't always UUIDs). */
+const USER_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isSubsetOf(values: unknown, allowed: readonly string[]): boolean {
@@ -174,13 +186,20 @@ export function validateBlockConfig(pageKey: LayoutPage, type: string, config: B
   if (config.fields !== undefined && !isSubsetOf(config.fields, TASK_LIST_FIELDS)) problems.push('fields: pick from the list, each once');
   if (config.categories !== undefined && !isSubsetOf(config.categories, OPEN_STATUS_CATEGORIES)) problems.push('categories: pick from the list, each once');
   if (config.chart !== undefined && !(BLOCK_CHARTS as readonly string[]).includes(config.chart)) problems.push('chart must be bar or line');
+  if (config.followContext !== undefined && typeof config.followContext !== 'boolean') problems.push('followContext must be true or false');
+  if (config.assigneeIds !== undefined) {
+    const ids = config.assigneeIds as unknown;
+    if (!Array.isArray(ids) || ids.length > BLOCK_ASSIGNEES_MAX || new Set(ids).size !== ids.length || !ids.every((id) => typeof id === 'string' && USER_ID.test(id))) {
+      problems.push(`assigneeIds: up to ${BLOCK_ASSIGNEES_MAX} people, each once`);
+    } else if (config.mine && ids.length) problems.push('pick "mine" or people, not both');
+  }
   return problems;
 }
 
 /** Drops empty values, so "no setting" is stored as nothing. */
 export function cleanBlockConfig(config: BlockConfig | null | undefined): BlockConfig | undefined {
   if (!config) return undefined;
-  const entries = Object.entries(config).filter(([key, value]) => value !== undefined && value !== null && value !== '' && !((key === 'priorities' || key === 'categories') && Array.isArray(value) && value.length === 0) && !(key === 'mine' && value === false));
+  const entries = Object.entries(config).filter(([key, value]) => value !== undefined && value !== null && value !== '' && !((key === 'priorities' || key === 'categories' || key === 'assigneeIds') && Array.isArray(value) && value.length === 0) && !((key === 'mine' || key === 'followContext') && value === false));
   return entries.length ? (Object.fromEntries(entries) as BlockConfig) : undefined;
 }
 

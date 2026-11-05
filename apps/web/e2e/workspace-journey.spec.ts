@@ -475,6 +475,35 @@ test('draws Hours per day as a line instead of bars', async () => {
   await expect(block.getByText('8 h day')).toBeVisible();
 });
 
+test('a block follows the person picked on the page, and another narrows to chosen people', async () => {
+  const blockNamed = (title: string) => page.locator('section', { has: page.getByRole('heading', { name: title, exact: true }) }).last();
+  const configure = async (title: string) => {
+    const block = blockNamed(title);
+    await block.hover();
+    await block.getByRole('button', { name: 'Block options' }).click();
+    await page.getByRole('menuitem', { name: 'Configure…' }).click();
+    return page.getByRole('dialog', { name: /Configure/ });
+  };
+  let drawer = await configure('Recently updated');
+  await drawer.getByLabel("Follow the page's selection").click();
+  await drawer.getByRole('button', { name: 'Done' }).click();
+
+  drawer = await configure('Due in the next 14 days');
+  await drawer.getByRole('group', { name: 'Assigned to' }).getByRole('button', { name: 'Dana Reyes' }).click();
+  await drawer.getByRole('button', { name: 'Done' }).click();
+  await expect(blockNamed('Due in the next 14 days').getByText('Dana Reyes', { exact: true })).toBeVisible();
+
+  // Pick Dana in the team workload: the following block links to her, the others don't move.
+  await blockNamed('Team workload').getByRole('button', { name: 'Dana Reyes' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'in blocks that follow the page' })).toContainText('Dana Reyes');
+  await expect(blockNamed('Recently updated').getByText('Linked to Dana Reyes')).toBeVisible();
+  await expect(blockNamed('Overdue').getByText(/Linked to/)).toHaveCount(0);
+  // The chip clears it, like the bar does.
+  await blockNamed('Recently updated').getByRole('button', { name: 'Clear the page selection' }).click();
+  await expect(blockNamed('Recently updated').getByText(/Linked to/)).toHaveCount(0);
+  await expect(page.getByText('in blocks that follow the page')).toHaveCount(0);
+});
+
 test('a named dashboard remembers its date range, and tiles show trends', async () => {
   await expect(page.getByRole('img', { name: /^Tasks created per week, last 8 weeks: Week of/ })).toBeVisible();
   await page.getByRole('button', { name: 'New dashboard' }).click();

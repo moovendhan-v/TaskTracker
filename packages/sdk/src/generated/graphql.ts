@@ -73,9 +73,11 @@ export type AutomationTriggerType =
 
 export type BlockConfigInput = {
   accent?: string | null | undefined;
+  assigneeIds?: Array<string> | null | undefined;
   categories?: Array<StatusCategory> | null | undefined;
   chart?: string | null | undefined;
   fields?: Array<string> | null | undefined;
+  followContext?: boolean | null | undefined;
   includeClosed?: boolean | null | undefined;
   limit?: number | null | undefined;
   mine?: boolean | null | undefined;
@@ -1779,7 +1781,7 @@ export type DismissInboxPullRequestMutationVariables = Exact<{
 
 export type DismissInboxPullRequestMutation = { dismissInboxPullRequest: boolean };
 
-export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> };
+export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> };
 
 export type MyLayoutQueryVariables = Exact<{
   workspaceId: string;
@@ -1787,7 +1789,7 @@ export type MyLayoutQueryVariables = Exact<{
 }>;
 
 
-export type MyLayoutQuery = { myLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> } | null };
+export type MyLayoutQuery = { myLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> } | null };
 
 export type SaveLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1795,7 +1797,7 @@ export type SaveLayoutMutationVariables = Exact<{
 }>;
 
 
-export type SaveLayoutMutation = { saveLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> } };
+export type SaveLayoutMutation = { saveLayout: { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> } };
 
 export type ResetLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1805,14 +1807,14 @@ export type ResetLayoutMutationVariables = Exact<{
 
 export type ResetLayoutMutation = { resetLayout: boolean };
 
-export type NamedDashboardFieldsFragment = { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> };
+export type NamedDashboardFieldsFragment = { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> };
 
 export type DashboardsQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type DashboardsQuery = { dashboards: Array<{ id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> }> };
+export type DashboardsQuery = { dashboards: Array<{ id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> }> };
 
 export type CreateDashboardMutationVariables = Exact<{
   workspaceId: string;
@@ -1820,7 +1822,7 @@ export type CreateDashboardMutationVariables = Exact<{
 }>;
 
 
-export type CreateDashboardMutation = { createDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> } };
+export type CreateDashboardMutation = { createDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> } };
 
 export type UpdateDashboardMutationVariables = Exact<{
   workspaceId: string;
@@ -1829,7 +1831,7 @@ export type UpdateDashboardMutationVariables = Exact<{
 }>;
 
 
-export type UpdateDashboardMutation = { updateDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> } };
+export type UpdateDashboardMutation = { updateDashboard: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> } };
 
 export type SaveDashboardLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -1838,7 +1840,7 @@ export type SaveDashboardLayoutMutationVariables = Exact<{
 }>;
 
 
-export type SaveDashboardLayoutMutation = { saveDashboardLayout: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> } };
+export type SaveDashboardLayoutMutation = { saveDashboardLayout: { id: string, name: string, visibility: string, ownerId: string, mine: boolean, version: number, period: string | null, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> } };
 
 export type DeleteDashboardMutationVariables = Exact<{
   workspaceId: string;
@@ -1854,7 +1856,7 @@ export type MyLayoutVersionsQueryVariables = Exact<{
 }>;
 
 
-export type MyLayoutVersionsQuery = { myLayoutVersions: Array<{ version: number, savedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> }> };
+export type MyLayoutVersionsQuery = { myLayoutVersions: Array<{ version: number, savedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> }> };
 
 export type WorkspaceLayoutQueryVariables = Exact<{
   workspaceId: string;
@@ -1862,7 +1864,7 @@ export type WorkspaceLayoutQueryVariables = Exact<{
 }>;
 
 
-export type WorkspaceLayoutQuery = { workspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, locked: boolean, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null } | null }> } | null };
+export type WorkspaceLayoutQuery = { workspaceLayout: { pageKey: string, updatedAt: string, updatedByName: string | null, locked: boolean, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> } | null };
 
 export type SetWorkspaceLayoutMutationVariables = Exact<{
   workspaceId: string;
@@ -3357,6 +3359,8 @@ export const LayoutFieldsFragmentDoc = new TypedDocumentString(`
       fields
       categories
       chart
+      assigneeIds
+      followContext
     }
   }
 }
@@ -3390,6 +3394,8 @@ export const NamedDashboardFieldsFragmentDoc = new TypedDocumentString(`
       fields
       categories
       chart
+      assigneeIds
+      followContext
     }
   }
 }
@@ -5452,6 +5458,8 @@ export const MyLayoutDocument = new TypedDocumentString(`
       fields
       categories
       chart
+      assigneeIds
+      followContext
     }
   }
 }`) as unknown as TypedDocumentString<MyLayoutQuery, MyLayoutQueryVariables>;
@@ -5484,6 +5492,8 @@ export const SaveLayoutDocument = new TypedDocumentString(`
       fields
       categories
       chart
+      assigneeIds
+      followContext
     }
   }
 }`) as unknown as TypedDocumentString<SaveLayoutMutation, SaveLayoutMutationVariables>;
@@ -5526,6 +5536,8 @@ export const DashboardsDocument = new TypedDocumentString(`
       fields
       categories
       chart
+      assigneeIds
+      followContext
     }
   }
 }`) as unknown as TypedDocumentString<DashboardsQuery, DashboardsQueryVariables>;
@@ -5563,6 +5575,8 @@ export const CreateDashboardDocument = new TypedDocumentString(`
       fields
       categories
       chart
+      assigneeIds
+      followContext
     }
   }
 }`) as unknown as TypedDocumentString<CreateDashboardMutation, CreateDashboardMutationVariables>;
@@ -5604,6 +5618,8 @@ export const UpdateDashboardDocument = new TypedDocumentString(`
       fields
       categories
       chart
+      assigneeIds
+      followContext
     }
   }
 }`) as unknown as TypedDocumentString<UpdateDashboardMutation, UpdateDashboardMutationVariables>;
@@ -5645,6 +5661,8 @@ export const SaveDashboardLayoutDocument = new TypedDocumentString(`
       fields
       categories
       chart
+      assigneeIds
+      followContext
     }
   }
 }`) as unknown as TypedDocumentString<SaveDashboardLayoutMutation, SaveDashboardLayoutMutationVariables>;
@@ -5677,6 +5695,8 @@ export const MyLayoutVersionsDocument = new TypedDocumentString(`
         fields
         categories
         chart
+        assigneeIds
+        followContext
       }
     }
   }
@@ -5708,6 +5728,8 @@ export const WorkspaceLayoutDocument = new TypedDocumentString(`
         fields
         categories
         chart
+        assigneeIds
+        followContext
       }
     }
   }
