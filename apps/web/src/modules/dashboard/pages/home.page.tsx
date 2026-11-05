@@ -97,7 +97,7 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
   const state = blockStateOf(dashboard, { what: 'the dashboard' });
   const nameOf = (userId: string) => memberName(userId) ?? 'a teammate';
   // A block with its own data settings asks for the same period and people, narrowed as it says.
-  const scope: BlockScope = { workspaceId, inputFor: ({ spaceId, mine, priorities }) => dashboardInput(period, weekStart, { userIds, spaceId, mine, priorities }) };
+  const scope: BlockScope = { workspaceId, inputFor: ({ spaceId, mine, priorities, categories }) => dashboardInput(period, weekStart, { userIds, spaceId, mine, priorities, categories }) };
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">

@@ -265,6 +265,12 @@ One block's settings: data (spaceId, mine, priorities) kept apart from view (tit
 type BlockConfig {
   accent: String
 
+  """Data: only these status meanings"""
+  categories: [StatusCategory!]
+
+  """View: bar or line"""
+  chart: String
+
   """View: task-list columns, in order"""
   fields: [String!]
   includeClosed: Boolean
@@ -283,6 +289,8 @@ type BlockConfig {
 
 input BlockConfigInput {
   accent: String
+  categories: [StatusCategory!]
+  chart: String
   fields: [String!]
   includeClosed: Boolean
   limit: Int
@@ -678,6 +686,8 @@ type DashboardForecastBucket {
 }
 
 input DashboardInput {
+  """Narrows the task lists to these status meanings"""
+  categories: [StatusCategory!]
   from: String!
 
   """Only your own tasks and hours (from your session); overrides userIds"""

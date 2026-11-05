@@ -101,7 +101,7 @@ function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectCont
       category: 'Time',
       skeleton: 'chart',
       size: { w: 6, h: 6 },
-      render: (data) => <HoursPerDay data={data} height={200} />,
+      render: (data, config) => <HoursPerDay data={data} height={200} chart={config.chart} />,
     },
     'hours-by-task': {
       title: 'Where the time went',
@@ -218,7 +218,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   const state = blockStateOf(dashboard, { what: 'this project' });
   const layout = useLayout(workspaceId, 'project');
   // A task list set to "mine" or some priorities asks for the same period and project, narrowed.
-  const scope: BlockScope = { workspaceId, inputFor: ({ mine, priorities }) => dashboardInput(period, weekStart, { spaceId: space.id, mine, priorities }) };
+  const scope: BlockScope = { workspaceId, inputFor: ({ mine, priorities, categories }) => dashboardInput(period, weekStart, { spaceId: space.id, mine, priorities, categories }) };
   const { data: fields = [] } = useCustomFields(workspaceId, 'space');
 
   const registry = useMemo(() => {

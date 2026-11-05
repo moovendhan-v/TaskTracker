@@ -97,7 +97,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     skeleton: 'chart',
     size: { w: 6, h: 6 },
     aside: 'last 8 weeks',
-    render: (data) => <CreatedVsClosed data={data} />,
+    render: (data, config) => <CreatedVsClosed data={data} chart={config.chart} />,
   },
   'hours-per-day': {
     title: 'Hours per day',
@@ -106,7 +106,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Time',
     skeleton: 'chart',
     size: { w: 4, h: 5 },
-    render: (data) => <HoursPerDay data={data} />,
+    render: (data, config) => <HoursPerDay data={data} chart={config.chart} />,
   },
   'hours-by-person': {
     title: 'Hours by person',

@@ -14,6 +14,7 @@ interface ResolvedScope {
   assigneeIds: string[] | null;
   timeUserIds: string[] | null;
   priorities: string[] | null;
+  categories: string[] | null;
   from: string;
   to: string;
   timeZone: string;
@@ -43,6 +44,7 @@ export class AnalyticsService {
       assigneeIds: people,
       timeUserIds: hoursOnlyMine ? [userId] : people,
       priorities: request.priorities?.length ? [...new Set(request.priorities)].sort() : null,
+      categories: request.categories?.length ? [...new Set(request.categories)].sort() : null,
       from: new Date(request.from).toISOString(),
       to: new Date(request.to).toISOString(),
       timeZone: request.timeZone,

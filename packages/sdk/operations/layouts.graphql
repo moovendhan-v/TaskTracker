@@ -2,7 +2,7 @@ fragment LayoutFields on DashboardLayout {
   pageKey
   version
   updatedAt
-  items { id type x y w h tabs config { title accent spaceId limit includeClosed mine priorities fields } }
+  items { id type x y w h tabs config { title accent spaceId limit includeClosed mine priorities fields categories chart } }
 }
 
 query MyLayout($workspaceId: ID!, $pageKey: String!) { myLayout(workspaceId: $workspaceId, pageKey: $pageKey) { ...LayoutFields } }
@@ -20,7 +20,7 @@ fragment NamedDashboardFields on NamedDashboard {
   version
   period
   updatedAt
-  items { id type x y w h tabs config { title accent spaceId limit includeClosed mine priorities fields } }
+  items { id type x y w h tabs config { title accent spaceId limit includeClosed mine priorities fields categories chart } }
 }
 
 query Dashboards($workspaceId: ID!) { dashboards(workspaceId: $workspaceId) { ...NamedDashboardFields } }
@@ -38,11 +38,11 @@ mutation SaveDashboardLayout($workspaceId: ID!, $dashboardId: ID!, $input: SaveD
 mutation DeleteDashboard($workspaceId: ID!, $dashboardId: ID!) { deleteDashboard(workspaceId: $workspaceId, dashboardId: $dashboardId) }
 
 query MyLayoutVersions($workspaceId: ID!, $pageKey: String!) {
-  myLayoutVersions(workspaceId: $workspaceId, pageKey: $pageKey) { version savedAt items { id type x y w h tabs config { title accent spaceId limit includeClosed mine priorities fields } } }
+  myLayoutVersions(workspaceId: $workspaceId, pageKey: $pageKey) { version savedAt items { id type x y w h tabs config { title accent spaceId limit includeClosed mine priorities fields categories chart } } }
 }
 
 query WorkspaceLayout($workspaceId: ID!, $pageKey: String!) {
-  workspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey) { pageKey updatedAt updatedByName locked items { id type x y w h tabs config { title accent spaceId limit includeClosed mine priorities fields } } }
+  workspaceLayout(workspaceId: $workspaceId, pageKey: $pageKey) { pageKey updatedAt updatedByName locked items { id type x y w h tabs config { title accent spaceId limit includeClosed mine priorities fields categories chart } } }
 }
 
 mutation SetWorkspaceLayout($workspaceId: ID!, $input: SetWorkspaceLayoutInput!) {

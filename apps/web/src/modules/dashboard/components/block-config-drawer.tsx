@@ -1,6 +1,8 @@
 import {
   BLOCK_ACCENTS,
+  BLOCK_CHARTS,
   BLOCK_LIMITS,
+  OPEN_STATUS_CATEGORIES,
   BLOCK_TITLE_MAX,
   TASK_LIST_FIELDS,
   TASK_PRIORITIES,
@@ -8,6 +10,8 @@ import {
   type BlockConfig,
   type LayoutItem,
   type LayoutPage,
+  type BlockChart,
+  type StatusCategory,
   type TaskListField,
   type TaskPriority,
 } from '@taskflow/shared-types';
@@ -32,6 +36,9 @@ const SWATCH: Record<(typeof BLOCK_ACCENTS)[number], string> = {
 };
 
 const PRIORITY_LABEL: Record<TaskPriority, string> = { urgent: 'Urgent', high: 'High', normal: 'Normal', low: 'Low', none: 'No priority' };
+const CATEGORY_LABEL: Record<StatusCategory, string> = { unstarted: 'To do', started: 'In progress', review: 'In review', blocked: 'Blocked', done: 'Done', cancelled: 'Cancelled' };
+const CHART_LABEL: Record<BlockChart, string> = { bar: 'Bars', line: 'Line' };
+
 const FIELD_LABEL: Record<TaskListField, string> = { number: 'Number', status: 'Status', priority: 'Priority', date: 'Date', assignee: 'Assignee', project: 'Project' };
 
 /** What a task list shows when its columns were never picked: the same as the default look. */
@@ -125,6 +132,30 @@ export function BlockConfigDrawer({ workspaceId, pageKey, item, block, onOpenCha
                 <p className="text-xs text-muted-foreground">None picked shows every priority.</p>
               </div>
             ) : null}
+            {keys.includes('categories') ? (
+              <div className="grid gap-1.5">
+                <span className="text-sm font-medium">Status</span>
+                <div role="group" aria-label="Status" className="flex flex-wrap gap-1.5">
+                  {OPEN_STATUS_CATEGORIES.map((category) => {
+                    const on = config.categories?.includes(category) ?? false;
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => {
+                          const next = on ? (config.categories ?? []).filter((item) => item !== category) : [...(config.categories ?? []), category];
+                          set({ categories: next.length ? OPEN_STATUS_CATEGORIES.filter((item) => next.includes(item)) : undefined });
+                        }}
+                        className={cn('rounded-full border px-2.5 py-1 text-xs', on ? 'border-ring bg-primary-soft text-ring' : 'text-muted-foreground hover:bg-muted')}
+                      >
+                        {CATEGORY_LABEL[category]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
             <p className="text-xs text-muted-foreground">Everyone who sees this block sees it with their own access.</p>
           </section>
         ) : null}
@@ -171,6 +202,14 @@ export function BlockConfigDrawer({ workspaceId, pageKey, item, block, onOpenCha
               value={String(config.limit ?? 'all')}
               onChange={(value) => set({ limit: value === 'all' ? undefined : (Number(value) as BlockConfig['limit']) })}
               options={[...BLOCK_LIMITS.map((limit) => ({ value: String(limit), label: `${limit}` })), { value: 'all', label: 'All' }]}
+            />
+          ) : null}
+          {keys.includes('chart') ? (
+            <Segmented
+              label="Chart"
+              value={config.chart ?? 'bar'}
+              onChange={(value) => set({ chart: value === 'bar' ? undefined : (value as BlockChart) })}
+              options={BLOCK_CHARTS.map((chart) => ({ value: chart, label: CHART_LABEL[chart] }))}
             />
           ) : null}
           {keys.includes('fields') ? <FieldPicker value={config.fields ?? defaultFields(pageKey)} onChange={(fields) => set({ fields })} /> : null}
