@@ -519,6 +519,33 @@ test('a named dashboard remembers its date range, and tiles show trends', async 
   await expect(period.getByRole('radio', { name: 'This week' })).toHaveAttribute('aria-checked', 'true');
   await page.getByRole('navigation', { name: 'Dashboards' }).getByText('Monthly review').click();
   await expect(period.getByRole('radio', { name: 'Last month' })).toHaveAttribute('aria-checked', 'true');
+
+  // A custom range: any days, both ends included; it's saved with the dashboard too.
+  await page.getByRole('button', { name: 'Custom…' }).click();
+  const range = page.getByRole('dialog').filter({ hasText: 'Custom range' });
+  await range.getByLabel('From', { exact: true }).fill('2026-03-10');
+  await range.getByLabel('To', { exact: true }).fill('2026-03-01');
+  await expect(range.getByText('The range must end on or after its first day.')).toBeVisible();
+  await expect(range.getByRole('button', { name: 'Apply' })).toBeDisabled();
+  await range.getByLabel('To', { exact: true }).fill('2026-03-16');
+  await expect(range.getByText('7 days, both ends included.')).toBeVisible();
+  await range.getByRole('button', { name: 'Apply' }).click();
+  const custom = page.getByRole('button', { name: /^Mar 10 – Mar 16$/ });
+  await expect(custom).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('03/10/26 – 03/16/26')).toBeVisible();
+  await expect(period.getByRole('radio', { name: 'Last month' })).toHaveAttribute('aria-checked', 'false');
+
+  // Share it with Dana's team (her department), not the whole workspace.
+  await page.getByRole('button', { name: 'Monthly review options' }).click();
+  await page.getByRole('menuitemradio', { name: 'Team: Product' }).click();
+  await expect(page.getByRole('navigation', { name: 'Dashboards' }).getByRole('button', { name: /Monthly review/ })).toHaveAttribute('title', 'Shared with Product');
+  await page.waitForTimeout(500);
+  await page.reload();
+  await page.getByRole('navigation', { name: 'Dashboards' }).getByText('Monthly review').click();
+  await expect(page.getByRole('button', { name: /^Mar 10 – Mar 16$/ })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Monthly review options' }).click();
+  await expect(page.getByRole('menuitemradio', { name: 'Team: Product' })).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Escape');
   await page.getByRole('navigation', { name: 'Dashboards' }).getByText('Overview').click();
 });
 

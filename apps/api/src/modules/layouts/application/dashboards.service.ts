@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { cleanLayoutItem, DASHBOARD_LIMITS, DEFAULT_LAYOUTS, validateLayoutItems, type NamedDashboardResponse, type DashboardPeriod, type DashboardVisibility, type LayoutItem } from '@taskflow/shared-types';
+import { cleanLayoutItem, CUSTOM_PERIOD_DAYS_MAX, DASHBOARD_LIMITS, isDashboardPeriod, DEFAULT_LAYOUTS, validateLayoutItems, type NamedDashboardResponse, type DashboardPeriod, type DashboardTeam, type DashboardVisibility, type LayoutItem } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { DashboardRepository, type DashboardRecord } from '../domain/dashboard.repository.js';
 
@@ -15,6 +15,8 @@ function toResponse(record: DashboardRecord, userId: string): NamedDashboardResp
     version: record.version,
     items: record.items,
     period: record.period ?? null,
+    departmentId: record.departmentId,
+    departmentName: record.departmentName,
     updatedAt: record.updatedAt.toISOString(),
   };
 }
@@ -33,6 +35,8 @@ export class DashboardsService {
   }
 
   async create(workspaceId: string, userId: string, input: { name: string; visibility: DashboardVisibility; items?: LayoutItem[] | null }): Promise<NamedDashboardResponse> {
+    // A team share needs a department; it's set afterwards, with updateDashboard.
+    if (input.visibility === 'department') throw DomainError.invalid('Create the dashboard first, then share it with a team');
     if ((await this.dashboards.countOwned(workspaceId, userId)) >= DASHBOARD_LIMITS.perOwner) {
       throw DomainError.invalid(`You can have at most ${DASHBOARD_LIMITS.perOwner} dashboards`);
     }
@@ -41,9 +45,31 @@ export class DashboardsService {
     return toResponse(await this.dashboards.create({ workspaceId, ownerId: userId, name: input.name.trim(), visibility: input.visibility, items }), userId);
   }
 
-  async update(workspaceId: string, userId: string, id: string, changes: { name?: string | null; visibility?: DashboardVisibility | null; period?: DashboardPeriod | null }): Promise<NamedDashboardResponse> {
+  /** Teams the user can share a dashboard with: the departments they're in or head. */
+  async teams(workspaceId: string, userId: string): Promise<DashboardTeam[]> {
+    return this.dashboards.teamsOf(workspaceId, userId);
+  }
+
+  async update(
+    workspaceId: string,
+    userId: string,
+    id: string,
+    changes: { name?: string | null; visibility?: DashboardVisibility | null; departmentId?: string | null; period?: DashboardPeriod | null },
+  ): Promise<NamedDashboardResponse> {
+    if (changes.period && !isDashboardPeriod(changes.period)) throw DomainError.invalid(`Pick a range, or days that exist, in order and at most ${CUSTOM_PERIOD_DAYS_MAX} days apart`);
+    if (changes.departmentId && changes.visibility !== 'department') throw DomainError.invalid('A department goes with sharing to that team');
     await this.assertOwner(workspaceId, userId, id);
-    const saved = await this.dashboards.rename(workspaceId, userId, id, { name: changes.name?.trim() || undefined, visibility: changes.visibility ?? undefined, period: changes.period ?? undefined });
+    if (changes.visibility === 'department') {
+      // Only a team you're in: you can't post a dashboard into another team's view.
+      const teams = await this.dashboards.teamsOf(workspaceId, userId);
+      if (!changes.departmentId || !teams.some((team) => team.id === changes.departmentId)) throw DomainError.invalid('Share with a department you belong to or lead');
+    }
+    const saved = await this.dashboards.rename(workspaceId, userId, id, {
+      name: changes.name?.trim() || undefined,
+      visibility: changes.visibility ?? undefined,
+      departmentId: changes.visibility === 'department' ? changes.departmentId : null,
+      period: changes.period ?? undefined,
+    });
     if (!saved) throw DomainError.notFound('Dashboard');
     return toResponse(saved, userId);
   }

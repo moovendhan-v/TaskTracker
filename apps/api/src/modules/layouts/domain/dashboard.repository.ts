@@ -1,4 +1,4 @@
-import type { DashboardPeriod, DashboardVisibility, LayoutItem } from '@taskflow/shared-types';
+import type { DashboardPeriod, DashboardTeam, DashboardVisibility, LayoutItem } from '@taskflow/shared-types';
 
 export interface DashboardRecord {
   id: string;
@@ -9,6 +9,8 @@ export interface DashboardRecord {
   items: LayoutItem[];
   version: number;
   period: DashboardPeriod | null;
+  departmentId: string | null;
+  departmentName: string | null;
   updatedAt: Date;
 }
 
@@ -18,8 +20,10 @@ export abstract class DashboardRepository {
   abstract findVisible(workspaceId: string, userId: string, id: string): Promise<DashboardRecord | null>;
   abstract countOwned(workspaceId: string, ownerId: string): Promise<number>;
   abstract create(record: Pick<DashboardRecord, 'workspaceId' | 'ownerId' | 'name' | 'visibility' | 'items'>): Promise<DashboardRecord>;
-  abstract rename(workspaceId: string, ownerId: string, id: string, changes: { name?: string; visibility?: DashboardVisibility; period?: DashboardPeriod }): Promise<DashboardRecord | null>;
+  abstract rename(workspaceId: string, ownerId: string, id: string, changes: { name?: string; visibility?: DashboardVisibility; departmentId?: string | null; period?: DashboardPeriod }): Promise<DashboardRecord | null>;
   /** Saves items only if the stored version is still `baseVersion`; null when it changed (or isn't theirs). */
   abstract saveItemsIfVersion(workspaceId: string, ownerId: string, id: string, baseVersion: number, items: LayoutItem[]): Promise<DashboardRecord | null>;
   abstract remove(workspaceId: string, ownerId: string, id: string): Promise<boolean>;
+  /** Departments the user belongs to (HR profile) or heads: the teams they may share with. */
+  abstract teamsOf(workspaceId: string, userId: string): Promise<DashboardTeam[]>;
 }

@@ -295,15 +295,49 @@ export function validateLayoutItems(pageKey: LayoutPage, items: readonly LayoutI
 
 /* Named dashboards: extra tabs on Home, each with its own block layout. */
 
-/** Who can see a dashboard. Only its owner can change it either way. */
-export const DASHBOARD_VISIBILITIES = ['private', 'workspace'] as const;
+/** Who can see a dashboard: its owner, one department (a team) or the workspace. Only its owner can change it. */
+export const DASHBOARD_VISIBILITIES = ['private', 'department', 'workspace'] as const;
 export type DashboardVisibility = (typeof DASHBOARD_VISIBILITIES)[number];
 
 export const DASHBOARD_LIMITS = { perOwner: 20, nameMax: 60 } as const;
 
-/** Date ranges a dashboard can show its hours for; a named dashboard remembers one. */
+/** Ready-made date ranges a dashboard can show its hours for; a named dashboard remembers one. */
 export const DASHBOARD_PERIODS = ['this_week', 'last_week', 'this_month', 'last_month', 'last_30', 'this_year'] as const;
-export type DashboardPeriod = (typeof DASHBOARD_PERIODS)[number];
+export type PresetPeriod = (typeof DASHBOARD_PERIODS)[number];
+/** A range of whole days picked by hand, both ends included: `custom:2026-10-01..2026-10-31`. */
+export type CustomPeriod = `custom:${string}..${string}`;
+export type DashboardPeriod = PresetPeriod | CustomPeriod;
+
+/** The longest custom range, in days: a year, well inside the dashboard query's own cap. */
+export const CUSTOM_PERIOD_DAYS_MAX = 366;
+const CUSTOM_PERIOD = /^custom:(\d{4}-\d{2}-\d{2})\.\.(\d{4}-\d{2}-\d{2})$/;
+
+/** A calendar day as written, or null if it isn't one (2026-02-30 isn't). */
+function dayNumber(day: string): number | null {
+  const [year, month, date] = day.split('-').map(Number) as [number, number, number];
+  const value = Date.UTC(year, month - 1, date);
+  const back = new Date(value);
+  return back.getUTCFullYear() === year && back.getUTCMonth() === month - 1 && back.getUTCDate() === date ? value / 86_400_000 : null;
+}
+
+export function customPeriod(from: string, to: string): CustomPeriod {
+  return `custom:${from}..${to}`;
+}
+
+/** The days of a custom range, or null when it isn't one, its days aren't real, it runs backwards or it's too long. */
+export function parseCustomPeriod(period: string): { from: string; to: string; days: number } | null {
+  const match = CUSTOM_PERIOD.exec(period);
+  if (!match) return null;
+  const [, from, to] = match as unknown as [string, string, string];
+  const start = dayNumber(from);
+  const end = dayNumber(to);
+  if (start === null || end === null || end < start || end - start + 1 > CUSTOM_PERIOD_DAYS_MAX) return null;
+  return { from, to, days: end - start + 1 };
+}
+
+export function isDashboardPeriod(value: unknown): value is DashboardPeriod {
+  return typeof value === 'string' && ((DASHBOARD_PERIODS as readonly string[]).includes(value) || parseCustomPeriod(value) !== null);
+}
 
 export interface NamedDashboardResponse {
   id: string;
@@ -316,7 +350,16 @@ export interface NamedDashboardResponse {
   items: LayoutItem[];
   /** The date range it opens with, set by the owner; null means the page's own. */
   period: DashboardPeriod | null;
+  /** The team it's shared with, when visibility is "department"; null if that department was deleted. */
+  departmentId: string | null;
+  departmentName: string | null;
   updatedAt: string;
+}
+
+/** A department the signed-in user belongs to or heads: a team they can share a dashboard with. */
+export interface DashboardTeam {
+  id: string;
+  name: string;
 }
 
 /** Just the stored fields of an item: position, size and any non-empty settings. */

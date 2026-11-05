@@ -5,9 +5,14 @@ import { getErrorMessage } from '@/lib/errors';
 import { queryKeys } from '@/lib/query-keys';
 import { dashboardsApi } from '../api/layouts.api';
 
-/** Your dashboards and the ones shared with the workspace. */
+/** Your dashboards, and the ones shared with the workspace or a team you're in. */
 export function useNamedDashboards(workspaceId: string) {
   return useQuery({ queryKey: queryKeys.dashboards(workspaceId), queryFn: () => dashboardsApi.list(workspaceId), staleTime: 60_000 });
+}
+
+/** Teams (departments you're in or lead) you can share a dashboard with. */
+export function useDashboardTeams(workspaceId: string, enabled = true) {
+  return useQuery({ queryKey: [...queryKeys.dashboards(workspaceId), 'teams'], queryFn: () => dashboardsApi.teams(workspaceId), staleTime: 5 * 60_000, enabled });
 }
 
 export function useNamedDashboardMutations(workspaceId: string) {
@@ -25,7 +30,7 @@ export function useNamedDashboardMutations(workspaceId: string) {
       onError,
     }),
     update: useMutation({
-      mutationFn: ({ id, ...input }: { id: string; name?: string; visibility?: DashboardVisibility; period?: DashboardPeriod }) => dashboardsApi.update(workspaceId, id, input),
+      mutationFn: ({ id, ...input }: { id: string; name?: string; visibility?: DashboardVisibility; departmentId?: string; period?: DashboardPeriod }) => dashboardsApi.update(workspaceId, id, input),
       onSuccess: refresh,
       onError,
     }),

@@ -4,8 +4,8 @@ import { ArrayMaxSize, ArrayUnique, IsArray, IsBoolean, IsIn, IsInt, IsString, I
 import { StatusCategoryEnum, TaskPriorityEnum } from '../../../../core/graphql/enums.js';
 import {
   DASHBOARD_LIMITS,
-  DASHBOARD_PERIODS,
   type DashboardPeriod,
+  type DashboardTeam,
   DASHBOARD_VISIBILITIES,
   GRID_COLUMNS,
   LAYOUT_LIMITS,
@@ -116,7 +116,7 @@ export class SaveLayoutInput {
   items: LayoutItemInput[];
 }
 
-@ObjectType('NamedDashboard', { description: 'A Home dashboard tab: private to its owner or shared with the workspace' })
+@ObjectType('NamedDashboard', { description: 'A Home dashboard tab: private to its owner, shared with one department (a team) or with the workspace' })
 export class NamedDashboardGql implements NamedDashboardResponse {
   @Field(() => ID) id: string;
   @Field() name: string;
@@ -126,7 +126,15 @@ export class NamedDashboardGql implements NamedDashboardResponse {
   @Field(() => Int) version: number;
   @Field(() => [LayoutItemGql]) items: LayoutItemGql[];
   @Field(() => String, { nullable: true, description: 'The date range it opens with (this_week, last_30, …); null for the page’s own' }) period: DashboardPeriod | null;
+  @Field(() => ID, { nullable: true, description: 'The team it is shared with (visibility "department"); null if that department was deleted' }) departmentId: string | null;
+  @Field(() => String, { nullable: true }) departmentName: string | null;
   @Field() updatedAt: string;
+}
+
+@ObjectType('DashboardTeam', { description: 'A department you belong to or lead: a team you can share a dashboard with' })
+export class DashboardTeamGql implements DashboardTeam {
+  @Field(() => ID) id: string;
+  @Field() name: string;
 }
 
 @InputType('CreateDashboardInput')
@@ -147,7 +155,8 @@ export class CreateDashboardInput {
 export class UpdateDashboardInput {
   @Field({ nullable: true }) @IsOmittable() @IsString() @IsNotBlank() @MaxLength(DASHBOARD_LIMITS.nameMax) name?: string;
   @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(DASHBOARD_VISIBILITIES) visibility?: DashboardVisibility;
-  @Field(() => String, { nullable: true, description: 'The date range it opens with' }) @IsOmittable() @IsIn(DASHBOARD_PERIODS) period?: DashboardPeriod;
+  @Field(() => ID, { nullable: true, description: 'With visibility "department": the team to share with; it must be one of yours' }) @IsOmittable() @IsUUID() departmentId?: string;
+  @Field(() => String, { nullable: true, description: 'The date range it opens with: a preset (this_week, last_30, …) or custom:YYYY-MM-DD..YYYY-MM-DD' }) @IsOmittable() @IsString() @MaxLength(40) period?: DashboardPeriod;
 }
 
 @InputType('SaveDashboardLayoutInput')

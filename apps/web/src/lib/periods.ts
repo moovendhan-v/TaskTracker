@@ -1,10 +1,12 @@
 /** Date windows the dashboards and time views offer. Every window is [from, to): `to` is exclusive. */
-import { DASHBOARD_PERIODS, type DashboardPeriod } from '@taskflow/shared-types';
+import { DASHBOARD_PERIODS, parseCustomPeriod, type DashboardPeriod, type PresetPeriod } from '@taskflow/shared-types';
 
+/** The ready-made ranges, in the order the pickers show them. */
 export const PERIODS = DASHBOARD_PERIODS;
+/** A preset, or a custom range of days (`custom:2026-10-01..2026-10-31`). */
 export type Period = DashboardPeriod;
 
-export const PERIOD_LABELS: Record<Period, string> = {
+export const PERIOD_LABELS: Record<PresetPeriod, string> = {
   this_week: 'This week',
   last_week: 'Last week',
   this_month: 'This month',
@@ -36,9 +38,28 @@ export function startOfWeek(date: Date, weekStart: number): Date {
   return addDays(day, -((day.getDay() - weekStart + 7) % 7));
 }
 
+/** A yyyy-mm-dd day as local midnight. */
+export function parseLocalDay(day: string): Date {
+  const [year, month, date] = day.split('-').map(Number) as [number, number, number];
+  return new Date(year, month - 1, date);
+}
+
+/** How a period reads: "This week", or "Oct 1 – Oct 31" for a custom range. */
+export function periodLabel(period: Period): string {
+  const custom = parseCustomPeriod(period);
+  if (!custom) return PERIOD_LABELS[period as PresetPeriod];
+  const from = parseLocalDay(custom.from);
+  const to = parseLocalDay(custom.to);
+  const format = new Intl.DateTimeFormat(undefined, from.getFullYear() === to.getFullYear() ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
+  return custom.from === custom.to ? format.format(from) : `${format.format(from)} – ${format.format(to)}`;
+}
+
 export function periodWindow(period: Period, weekStart: number, now = new Date()): DateWindow {
   const today = startOfDay(now);
-  switch (period) {
+  const custom = parseCustomPeriod(period);
+  // Whole local days, both ends included, so the window ends at midnight after the last one.
+  if (custom) return { from: parseLocalDay(custom.from), to: addDays(parseLocalDay(custom.to), 1) };
+  switch (period as PresetPeriod) {
     case 'this_week': {
       const from = startOfWeek(today, weekStart);
       return { from, to: addDays(from, 7) };
@@ -83,4 +104,9 @@ export function formatMonthDay(date: Date | string): string {
 
 export function formatNumericDate(date: Date | string): string {
   return numeric.format(typeof date === 'string' ? new Date(date.length === 10 ? `${date}T12:00:00` : date) : date);
+}
+
+/** The period inside a sentence: "this week", but "Oct 1 – Oct 31" keeps its capitals. */
+export function periodPhrase(period: Period): string {
+  return parseCustomPeriod(period) ? periodLabel(period) : periodLabel(period).toLowerCase();
 }

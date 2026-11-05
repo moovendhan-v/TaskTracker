@@ -1,4 +1,4 @@
-import { blockConfigKeys, cleanLayoutItem, DEFAULT_LAYOUTS, validateLayoutItems, type LayoutItem } from '@taskflow/shared-types';
+import { blockConfigKeys, cleanLayoutItem, DEFAULT_LAYOUTS, isDashboardPeriod, parseCustomPeriod, validateLayoutItems, type LayoutItem } from '@taskflow/shared-types';
 import { describe, expect, it } from 'vitest';
 
 const item = (patch: Partial<LayoutItem> = {}): LayoutItem => ({ id: 'a', type: 'status', x: 0, y: 0, w: 4, h: 4, ...patch });
@@ -101,5 +101,21 @@ describe('sections and stacked tabs', () => {
     expect(validateLayoutItems('home', [at({ tabs: ['priority', 'workload', 'due-forecast', 'created-closed', 'hours-per-day'] })])).toEqual(['Block 1: at most 4 stacked tabs']);
     expect(cleanLayoutItem(at({ tabs: ['priority'] })).tabs).toEqual(['priority']);
     expect(cleanLayoutItem(at({ tabs: [] }))).not.toHaveProperty('tabs');
+  });
+});
+
+describe('custom dashboard ranges', () => {
+  it('accepts real days in order, up to a year, both ends included', () => {
+    expect(parseCustomPeriod('custom:2026-10-01..2026-10-31')).toEqual({ from: '2026-10-01', to: '2026-10-31', days: 31 });
+    expect(parseCustomPeriod('custom:2026-10-01..2026-10-01')?.days).toBe(1);
+    expect(parseCustomPeriod('custom:2028-01-01..2028-12-31')?.days).toBe(366);
+    expect(isDashboardPeriod('last_30')).toBe(true);
+    expect(isDashboardPeriod('custom:2026-10-01..2026-10-31')).toBe(true);
+  });
+
+  it('refuses backwards, impossible, too long and malformed ranges', () => {
+    for (const bad of ['custom:2026-10-31..2026-10-01', 'custom:2026-02-30..2026-03-01', 'custom:2026-01-01..2027-01-02', 'custom:2026-1-01..2026-01-02', 'custom:2026-01-01..2026-01-02x', 'forever']) {
+      expect(isDashboardPeriod(bad)).toBe(false);
+    }
   });
 });

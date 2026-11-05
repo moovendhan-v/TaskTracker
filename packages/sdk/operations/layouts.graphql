@@ -19,11 +19,15 @@ fragment NamedDashboardFields on NamedDashboard {
   mine
   version
   period
+  departmentId
+  departmentName
   updatedAt
   items { id type x y w h tabs config { title accent spaceId limit includeClosed mine priorities fields categories chart assigneeIds followContext } }
 }
 
 query Dashboards($workspaceId: ID!) { dashboards(workspaceId: $workspaceId) { ...NamedDashboardFields } }
+
+query DashboardTeams($workspaceId: ID!) { dashboardTeams(workspaceId: $workspaceId) { id name } }
 
 mutation CreateDashboard($workspaceId: ID!, $input: CreateDashboardInput!) { createDashboard(workspaceId: $workspaceId, input: $input) { ...NamedDashboardFields } }
 
