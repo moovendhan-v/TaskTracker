@@ -1,10 +1,10 @@
-import { DASHBOARD_LIMITS, type NamedDashboardResponse } from '@taskflow/shared-types';
-import { CopyIcon, GlobeIcon, LayoutGridIcon, ListTodoIcon, LockIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, Trash2Icon, UsersIcon } from 'lucide-react';
+import { DASHBOARD_LIMITS, type DashboardTeam, type DashboardVisibility, type NamedDashboardResponse } from '@taskflow/shared-types';
+import { CheckIcon, CopyIcon, GlobeIcon, LayoutGridIcon, ListTodoIcon, LockIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, Trash2Icon, UsersIcon, UsersRoundIcon } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 
@@ -68,14 +68,16 @@ interface DashboardTabsProps {
   ownerName: (userId: string) => string;
   onCreate: (name: string) => Promise<NamedDashboardResponse>;
   onRename: (dashboard: NamedDashboardResponse, name: string) => Promise<unknown>;
-  onShare: (dashboard: NamedDashboardResponse, shared: boolean) => void;
+  /** Teams you can share with: the departments you're in or lead. */
+  teams: readonly DashboardTeam[];
+  onShare: (dashboard: NamedDashboardResponse, to: { visibility: DashboardVisibility; departmentId?: string }) => void;
   onDuplicate: (dashboard: NamedDashboardResponse) => void;
   onDelete: (dashboard: NamedDashboardResponse) => Promise<unknown>;
   aside?: ReactNode;
 }
 
 /** Overview, My work and the named dashboards (v2 Features #13b), each marked Private or Workspace. */
-export function DashboardTabs({ tab, onTab, dashboards, ownerName, onCreate, onRename, onShare, onDuplicate, onDelete, aside }: DashboardTabsProps) {
+export function DashboardTabs({ tab, onTab, dashboards, ownerName, teams, onCreate, onRename, onShare, onDuplicate, onDelete, aside }: DashboardTabsProps) {
   const [creating, setCreating] = useState(false);
   const [renaming, setRenaming] = useState<NamedDashboardResponse | null>(null);
   const active = dashboards.find((dashboard) => `dashboard:${dashboard.id}` === tab);
@@ -93,17 +95,17 @@ export function DashboardTabs({ tab, onTab, dashboards, ownerName, onCreate, onR
         {dashboards.length ? <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-border-strong" /> : null}
         {dashboards.map((dashboard) => {
           const selected = `dashboard:${dashboard.id}` === tab;
-          const shared = dashboard.visibility === 'workspace';
+          const audience = audienceOf(dashboard);
           return (
             <button
               key={dashboard.id}
               type="button"
               aria-current={selected ? 'page' : undefined}
-              title={shared ? (dashboard.mine ? 'Shared with the workspace' : `Shared by ${ownerName(dashboard.ownerId)}`) : 'Private: only you can see it'}
+              title={dashboard.mine || audience.kind === 'private' ? audience.title : `${audience.title}, by ${ownerName(dashboard.ownerId)}`}
               className={tabClass(selected)}
               onClick={() => onTab(`dashboard:${dashboard.id}`)}
             >
-              {shared ? <UsersIcon aria-label="Workspace" /> : <LockIcon aria-label="Private" />}
+              {audience.kind === 'workspace' ? <UsersIcon aria-label="Workspace" /> : audience.kind === 'team' ? <UsersRoundIcon aria-label={`Team: ${dashboard.departmentName ?? 'removed'}`} /> : <LockIcon aria-label="Private" />}
               {dashboard.name}
               {!dashboard.mine ? <span className="text-[11px] font-normal text-subtle-foreground">· {ownerName(dashboard.ownerId).split(' ')[0]}</span> : null}
             </button>
@@ -132,10 +134,27 @@ export function DashboardTabs({ tab, onTab, dashboards, ownerName, onCreate, onR
                 <DropdownMenuItem onSelect={() => setRenaming(active)}>
                   <PencilIcon /> Rename
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => onShare(active, active.visibility !== 'workspace')}>
-                  {active.visibility === 'workspace' ? <LockIcon /> : <GlobeIcon />}
-                  {active.visibility === 'workspace' ? 'Make private' : 'Share with workspace'}
-                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">Who can see it</DropdownMenuLabel>
+                <ShareItem checked={active.visibility === 'private'} onSelect={() => onShare(active, { visibility: 'private' })}>
+                  <LockIcon /> Only me
+                </ShareItem>
+                {teams.map((team) => (
+                  <ShareItem key={team.id} checked={active.visibility === 'department' && active.departmentId === team.id} onSelect={() => onShare(active, { visibility: 'department', departmentId: team.id })}>
+                    <UsersRoundIcon /> Team: {team.name}
+                  </ShareItem>
+                ))}
+                {active.visibility === 'department' && !teams.some((team) => team.id === active.departmentId) ? (
+                  // Shared with a team you've since left, or whose department was deleted.
+                  <ShareItem checked disabled onSelect={() => undefined}>
+                    <UsersRoundIcon /> Team: {active.departmentName ?? 'removed'}
+                  </ShareItem>
+                ) : null}
+                <ShareItem checked={active.visibility === 'workspace'} onSelect={() => onShare(active, { visibility: 'workspace' })}>
+                  <GlobeIcon /> Everyone in the workspace
+                </ShareItem>
+                {teams.length === 0 ? <p className="px-2 pb-1 text-[11px] text-muted-foreground">Join a department in People to share with a team.</p> : null}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => onDuplicate(active)}>
                   <CopyIcon /> Duplicate
                 </DropdownMenuItem>
@@ -147,7 +166,7 @@ export function DashboardTabs({ tab, onTab, dashboards, ownerName, onCreate, onR
                     </DropdownMenuItem>
                   }
                   title={`Delete “${active.name}”?`}
-                  description={active.visibility === 'workspace' ? 'It disappears for everyone in the workspace.' : 'Only the dashboard goes; your data stays.'}
+                  description={active.visibility === 'workspace' ? 'It disappears for everyone in the workspace.' : active.visibility === 'department' ? `It disappears for everyone in ${active.departmentName ?? 'the team'}.` : 'Only the dashboard goes; your data stays.'}
                   confirmLabel="Delete dashboard"
                   onConfirm={() => onDelete(active)}
                 />
@@ -166,7 +185,7 @@ export function DashboardTabs({ tab, onTab, dashboards, ownerName, onCreate, onR
           open
           onOpenChange={setCreating}
           title="New dashboard"
-          description="It starts private with the default blocks. Arrange it, then share it with the workspace if you like."
+          description="It starts private with the default blocks. Arrange it, then share it with your team or the workspace if you like."
           initial=""
           submitLabel="Create"
           onSubmit={async (name) => onTab(`dashboard:${(await onCreate(name)).id}`)}
@@ -184,5 +203,21 @@ export function DashboardTabs({ tab, onTab, dashboards, ownerName, onCreate, onR
         />
       ) : null}
     </div>
+  );
+}
+
+/** Who a dashboard is for, for its tab's icon and tooltip. */
+function audienceOf(dashboard: NamedDashboardResponse): { kind: 'private' | 'team' | 'workspace'; title: string } {
+  if (dashboard.visibility === 'workspace') return { kind: 'workspace', title: 'Shared with the workspace' };
+  if (dashboard.visibility === 'department') return { kind: 'team', title: dashboard.departmentName ? `Shared with ${dashboard.departmentName}` : 'Its team was removed: only the owner sees it' };
+  return { kind: 'private', title: 'Private: only you can see it' };
+}
+
+function ShareItem({ checked, disabled, onSelect, children }: { checked: boolean; disabled?: boolean; onSelect: () => void; children: ReactNode }) {
+  return (
+    <DropdownMenuItem role="menuitemradio" aria-checked={checked} disabled={disabled} onSelect={checked ? undefined : onSelect}>
+      {children}
+      {checked ? <CheckIcon className="ml-auto" /> : null}
+    </DropdownMenuItem>
   );
 }

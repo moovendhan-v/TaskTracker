@@ -1,7 +1,8 @@
-import { cleanLayoutItem, DASHBOARD_PERIODS, type BlockConfig, type DashboardPeriod, type DashboardVisibility, type LayoutItem, type LayoutPage, type NamedDashboardResponse } from '@taskflow/shared-types';
+import { cleanLayoutItem, isDashboardPeriod, type BlockConfig, type DashboardPeriod, type DashboardTeam, type DashboardVisibility, type LayoutItem, type LayoutPage, type NamedDashboardResponse } from '@taskflow/shared-types';
 import {
   CreateDashboardDocument,
   DashboardsDocument,
+  DashboardTeamsDocument,
   DeleteDashboardDocument,
   MyLayoutDocument,
   ResetLayoutDocument,
@@ -50,18 +51,20 @@ const asDashboard = (fields: { visibility: string; period?: string | null; items
   ...fields,
   visibility: fields.visibility as DashboardVisibility,
   // Only ranges this app knows; anything else falls back to the page's own.
-  period: (DASHBOARD_PERIODS as readonly string[]).includes(fields.period ?? '') ? (fields.period as DashboardPeriod) : null,
+  period: isDashboardPeriod(fields.period) ? fields.period : null,
   items: fromApiItems(fields.items),
 });
 
-/** Named Home dashboards (tabs): yours plus the ones shared with the workspace. */
+/** Named Home dashboards (tabs): yours plus the ones shared with the workspace or a team you're in. */
 export const dashboardsApi = {
   list: async (workspaceId: string) => (await graphql(DashboardsDocument, { workspaceId })).dashboards.map(asDashboard),
   create: async (workspaceId: string, input: { name: string; visibility: DashboardVisibility; items?: LayoutItem[] }) =>
     asDashboard((await graphql(CreateDashboardDocument, { workspaceId, input: { ...input, items: input.items ? itemsOnly(input.items) : null } })).createDashboard),
-  update: async (workspaceId: string, dashboardId: string, input: { name?: string; visibility?: DashboardVisibility; period?: DashboardPeriod }) =>
+  update: async (workspaceId: string, dashboardId: string, input: { name?: string; visibility?: DashboardVisibility; departmentId?: string; period?: DashboardPeriod }) =>
     asDashboard((await graphql(UpdateDashboardDocument, { workspaceId, dashboardId, input })).updateDashboard),
   saveLayout: async (workspaceId: string, dashboardId: string, baseVersion: number, items: LayoutItem[]) =>
     asDashboard((await graphql(SaveDashboardLayoutDocument, { workspaceId, dashboardId, input: { baseVersion, items: itemsOnly(items) } })).saveDashboardLayout),
   remove: async (workspaceId: string, dashboardId: string) => (await graphql(DeleteDashboardDocument, { workspaceId, dashboardId })).deleteDashboard,
+  /** Departments you're in or lead: the teams you can share with. */
+  teams: async (workspaceId: string): Promise<DashboardTeam[]> => (await graphql(DashboardTeamsDocument, { workspaceId })).dashboardTeams,
 };

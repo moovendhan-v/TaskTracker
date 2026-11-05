@@ -5,17 +5,23 @@ import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { DashboardsService } from '../../application/dashboards.service.js';
-import { CreateDashboardInput, NamedDashboardGql, SaveDashboardLayoutInput, UpdateDashboardInput } from './layout.types.js';
+import { CreateDashboardInput, DashboardTeamGql, NamedDashboardGql, SaveDashboardLayoutInput, UpdateDashboardInput } from './layout.types.js';
 
 /** Home dashboard tabs. Same access as the dashboard itself; ownership is checked per dashboard. */
 @Resolver(() => NamedDashboardGql)
 export class DashboardsResolver {
   constructor(private readonly service: DashboardsService) {}
 
-  @Query(() => [NamedDashboardGql], { description: 'Your dashboards and the ones shared with the workspace' })
+  @Query(() => [NamedDashboardGql], { description: 'Your dashboards, and the ones shared with the workspace or with a team you are in' })
   @RequirePermissions('task.view')
   dashboards(@WorkspaceIdArg() _workspaceId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<NamedDashboardGql[]> {
     return this.service.list(access.workspaceId, actor.userId);
+  }
+
+  @Query(() => [DashboardTeamGql], { description: 'Departments you belong to or lead: the teams you can share a dashboard with' })
+  @RequirePermissions('task.view')
+  dashboardTeams(@WorkspaceIdArg() _workspaceId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<DashboardTeamGql[]> {
+    return this.service.teams(access.workspaceId, actor.userId);
   }
 
   @Mutation(() => NamedDashboardGql)

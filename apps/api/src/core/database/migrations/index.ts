@@ -32,6 +32,8 @@ import { Attendance1729870000000 } from './1729870000000-attendance.js';
 import { AutomationWebhooks1729880000000 } from './1729880000000-automation-webhooks.js';
 import { AccessRequests1729890000000 } from './1729890000000-access-requests.js';
 import { GithubSyncLog1729900000000 } from './1729900000000-github-sync-log.js';
+import { DashboardTeams1729930000000 } from './1729930000000-dashboard-teams.js';
+import { DashboardCustomPeriod1729920000000 } from './1729920000000-dashboard-custom-period.js';
 import { LayoutLocks1729910000000 } from './1729910000000-layout-locks.js';
 import { SprintCommittedTasks1729750000000 } from './1729750000000-sprint-committed-tasks.js';
 import { DashboardLayouts1729740000000 } from './1729740000000-dashboard-layouts.js';
@@ -77,4 +79,6 @@ export const MIGRATIONS = [
   AccessRequests1729890000000,
   GithubSyncLog1729900000000,
   LayoutLocks1729910000000,
+  DashboardCustomPeriod1729920000000,
+  DashboardTeams1729930000000,
 ];

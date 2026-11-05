@@ -822,6 +822,14 @@ type DashboardTaskMinutes {
   title: String!
 }
 
+"""
+A department you belong to or lead: a team you can share a dashboard with
+"""
+type DashboardTeam {
+  id: ID!
+  name: String!
+}
+
 type DashboardWeekFlow {
   closed: Int!
   created: Int!
@@ -1643,9 +1651,14 @@ type MyAttendance {
 }
 
 """
-A Home dashboard tab: private to its owner or shared with the workspace
+A Home dashboard tab: private to its owner, shared with one department (a team) or with the workspace
 """
 type NamedDashboard {
+  """
+  The team it is shared with (visibility "department"); null if that department was deleted
+  """
+  departmentId: ID
+  departmentName: String
   id: ID!
   items: [LayoutItem!]!
 
@@ -1873,7 +1886,14 @@ type Query {
   """
   dashboard(input: DashboardInput!, workspaceId: ID!): Dashboard!
 
-  """Your dashboards and the ones shared with the workspace"""
+  """
+  Departments you belong to or lead: the teams you can share a dashboard with
+  """
+  dashboardTeams(workspaceId: ID!): [DashboardTeam!]!
+
+  """
+  Your dashboards, and the ones shared with the workspace or with a team you are in
+  """
   dashboards(workspaceId: ID!): [NamedDashboard!]!
   departments(workspaceId: ID!): [Department!]!
   document(documentId: ID!, workspaceId: ID!): Document!
@@ -2702,9 +2722,15 @@ input UpdateCustomFieldInput {
 }
 
 input UpdateDashboardInput {
+  """
+  With visibility "department": the team to share with; it must be one of yours
+  """
+  departmentId: ID
   name: String
 
-  """The date range it opens with"""
+  """
+  The date range it opens with: a preset (this_week, last_30, …) or custom:YYYY-MM-DD..YYYY-MM-DD
+  """
   period: String
   visibility: String
 }

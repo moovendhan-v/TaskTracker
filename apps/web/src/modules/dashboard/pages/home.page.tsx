@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/core/auth/use-current-user';
 import { usePreferences } from '@/core/preferences/use-preferences';
 import { queryKeys } from '@/lib/query-keys';
-import { PERIOD_LABELS, type Period } from '@/lib/periods';
+import { periodPhrase, type Period } from '@/lib/periods';
 import { useMemberName } from '@/modules/members';
 import { NewTaskDialog, useOpenTask } from '@/modules/tasks';
 import { ArrangeableGrid } from '../components/arrangeable-grid';
@@ -24,7 +24,7 @@ import { useDashboard } from '../hooks/use-dashboard';
 import { HOME_SELECTION_KINDS, PageSelectionProvider } from '../lib/page-selection';
 import { PageSelectionBar } from '../components/page-selection-bar';
 import { useDashboardLayout, useLayout } from '../hooks/use-layout';
-import { useNamedDashboardMutations, useNamedDashboards } from '../hooks/use-named-dashboards';
+import { useDashboardTeams, useNamedDashboardMutations, useNamedDashboards } from '../hooks/use-named-dashboards';
 import { dashboardInput } from '../lib/dashboard-input';
 
 function greeting(hour: number): string {
@@ -72,6 +72,7 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
   const [people, setPeople] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const named = useNamedDashboards(workspaceId);
+  const { data: teams = [] } = useDashboardTeams(workspaceId);
   const dashboards = named.data ?? [];
   const mutations = useNamedDashboardMutations(workspaceId);
   const active = dashboards.find((dashboard) => `dashboard:${dashboard.id}` === tab);
@@ -88,7 +89,7 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
   const periodNote = active
     ? active.mine
       ? 'hours are for this period (saved with this dashboard), task counts are live'
-      : `hours are for this period (this dashboard opens with ${PERIOD_LABELS[active.period ?? 'this_week'].toLowerCase()}), task counts are live`
+      : `hours are for this period (this dashboard opens with ${periodPhrase(active.period ?? 'this_week')}), task counts are live`
     : 'hours are for this period, task counts are live';
 
   const userIds = current === 'mine' && me ? [me.id] : people;
@@ -126,7 +127,8 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
           ownerName={nameOf}
           onCreate={(name) => mutations.create.mutateAsync({ name, visibility: 'private' })}
           onRename={(target, name) => mutations.update.mutateAsync({ id: target.id, name })}
-          onShare={(target, shared) => mutations.update.mutate({ id: target.id, visibility: shared ? 'workspace' : 'private' })}
+          teams={teams}
+          onShare={(target, to) => mutations.update.mutate({ id: target.id, ...to })}
           onDuplicate={(target) =>
             void mutations.create
               .mutateAsync({ name: `${target.name} (copy)`.slice(0, 60), visibility: 'private', items: target.items })

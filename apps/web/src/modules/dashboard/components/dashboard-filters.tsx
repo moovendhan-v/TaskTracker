@@ -1,10 +1,15 @@
-import { RefreshCwIcon, UsersIcon, XIcon } from 'lucide-react';
+import { CUSTOM_PERIOD_DAYS_MAX, customPeriod, parseCustomPeriod } from '@taskflow/shared-types';
+import { CalendarRangeIcon, RefreshCwIcon, UsersIcon, XIcon } from 'lucide-react';
+import { useState } from 'react';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Segmented } from '@/components/kit/segmented';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { formatWindow, PERIOD_LABELS, PERIODS, periodWindow, type Period } from '@/lib/periods';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/cn';
+import { addDays, formatWindow, localDay, PERIOD_LABELS, periodLabel, PERIODS, periodWindow, type Period } from '@/lib/periods';
 import { useMembers } from '@/modules/members';
 
 interface DashboardFiltersProps {
@@ -24,6 +29,7 @@ export function DashboardFilters({ period, onPeriod, weekStart, onRefresh, refre
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <Segmented variant="pills" size="md" label="Period" value={period} onChange={onPeriod} options={PERIODS.map((value) => ({ value, label: PERIOD_LABELS[value] }))} />
+        <CustomRange period={period} weekStart={weekStart} onPeriod={onPeriod} />
         <span className="text-xs text-muted-foreground">
           {formatWindow(periodWindow(period, weekStart))} · {note}
         </span>
@@ -72,5 +78,63 @@ function PeopleFilter({ workspaceId, selected, onChange, meId }: NonNullable<Das
         </span>
       ))}
     </div>
+  );
+}
+
+/** Pick any range of days, both ends included; it shows as the active pill while it's in use. */
+function CustomRange({ period, weekStart, onPeriod }: { period: Period; weekStart: number; onPeriod: (period: Period) => void }) {
+  const active = parseCustomPeriod(period);
+  const [open, setOpen] = useState(false);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const start = (next: boolean) => {
+    if (next) {
+      // Opens on what's showing now, so tweaking a range starts from it.
+      const window = periodWindow(period, weekStart);
+      setFrom(localDay(window.from));
+      setTo(localDay(addDays(window.to, -1)));
+    }
+    setOpen(next);
+  };
+  const picked = from && to ? customPeriod(from, to) : null;
+  const valid = picked ? parseCustomPeriod(picked) : null;
+  const problem = !from || !to ? 'Pick both days.' : to < from ? 'The range must end on or after its first day.' : !valid ? `A range can cover at most ${CUSTOM_PERIOD_DAYS_MAX} days.` : null;
+  return (
+    <Popover open={open} onOpenChange={start}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" aria-pressed={Boolean(active)} className={cn('rounded-full', active && 'border-primary/60 bg-primary/10 text-foreground')}>
+          <CalendarRangeIcon /> {active ? periodLabel(period) : 'Custom…'}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="grid w-72 gap-3 p-3">
+        <p className="text-sm font-medium">Custom range</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-1">
+            <Label htmlFor="range-from" className="text-xs">
+              From
+            </Label>
+            <Input id="range-from" type="date" value={from} max={to || undefined} onChange={(event) => setFrom(event.target.value)} className="h-8" />
+          </div>
+          <div className="grid gap-1">
+            <Label htmlFor="range-to" className="text-xs">
+              To
+            </Label>
+            <Input id="range-to" type="date" value={to} min={from || undefined} onChange={(event) => setTo(event.target.value)} className="h-8" />
+          </div>
+        </div>
+        {problem ? <p className="text-xs text-critical">{problem}</p> : <p className="text-xs text-muted-foreground">{valid!.days} {valid!.days === 1 ? 'day' : 'days'}, both ends included.</p>}
+        <Button
+          size="sm"
+          className="justify-self-end"
+          disabled={Boolean(problem)}
+          onClick={() => {
+            onPeriod(picked!);
+            setOpen(false);
+          }}
+        >
+          Apply
+        </Button>
+      </PopoverContent>
+    </Popover>
   );
 }
