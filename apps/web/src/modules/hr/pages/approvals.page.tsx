@@ -22,7 +22,7 @@ export function ApprovalsPage({ workspaceId }: { workspaceId: string }) {
         description={`${data?.total ?? 0} waiting, oldest first`}
         icon={<InboxIcon className="size-5 text-muted-foreground" />}
       />
-      <div className="mx-auto grid max-w-3xl gap-3 p-6">
+      <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-3 p-4 md:p-6">
         {pending.length === 0 ? <EmptyState icon={<InboxIcon />} title="All caught up" description="New requests appear here." /> : null}
         {pending.map((request) => (
           <ApprovalCard key={request.id} workspaceId={workspaceId} request={request} />

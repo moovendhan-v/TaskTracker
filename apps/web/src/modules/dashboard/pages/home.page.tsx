@@ -101,16 +101,17 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto grid max-w-[96rem] gap-5 px-6 py-6">
-        <header className="flex flex-wrap items-center gap-4">
-          {me ? <UserAvatar name={me.name} className="size-12 text-base" /> : null}
+      <div className="mx-auto grid max-w-[96rem] grid-cols-[minmax(0,1fr)] gap-5 px-4 py-4 md:px-6 md:py-6">
+        <header className="flex flex-wrap items-center gap-3 md:gap-4">
+          {me ? <UserAvatar name={me.name} className="size-10 text-sm md:size-12 md:text-base" /> : null}
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight md:text-2xl">
               {greeting(new Date().getHours())}, {firstName}
             </h1>
             <p className="text-sm text-muted-foreground">Everything across your projects</p>
           </div>
-          <Button onClick={() => setCreating(true)}>
+          {/* On a phone the bottom bar's + button does this. */}
+          <Button className="hidden sm:inline-flex" onClick={() => setCreating(true)}>
             <PlusIcon /> New task
           </Button>
         </header>

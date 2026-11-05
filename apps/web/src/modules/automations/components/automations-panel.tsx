@@ -51,7 +51,7 @@ export function AutomationsPanel({ workspaceId, spaceId, onOpenTask }: Automatio
   const summary = (rule: AutomationRuleResponse) => (rule.flow ? describeFlow(rule.trigger, rule.flow, names) : describeRule(rule, names));
 
   return (
-    <div className="mx-auto grid max-w-4xl gap-4 pb-10">
+    <div className="mx-auto grid max-w-4xl grid-cols-[minmax(0,1fr)] gap-4 pb-10">
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-2 text-base font-semibold">

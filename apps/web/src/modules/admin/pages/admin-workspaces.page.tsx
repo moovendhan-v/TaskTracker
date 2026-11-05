@@ -31,7 +31,7 @@ export function AdminWorkspacesPage() {
           />
         }
       />
-      <div className="mx-auto grid max-w-6xl gap-3 p-6">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-3 p-4 md:p-6">
         <div className="overflow-hidden rounded-xl border bg-card">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs text-muted-foreground">

@@ -39,7 +39,7 @@ export function AdminUsersPage() {
           />
         }
       />
-      <div className="mx-auto grid max-w-6xl gap-3 p-6">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-3 p-4 md:p-6">
         <ul className="divide-y rounded-xl border bg-card">
           {data?.items.map((user) => {
             const isMe = user.id === me?.id;

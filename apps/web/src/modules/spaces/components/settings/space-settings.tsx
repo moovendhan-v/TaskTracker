@@ -26,7 +26,7 @@ export function SpaceSettings({ workspaceId, space }: SpaceSettingsProps) {
   const canManage = canIn(space.id, 'space.manage');
 
   return (
-    <div className="mx-auto grid max-w-3xl gap-6 pb-10">
+    <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-6 pb-10">
       <Card>
         <CardHeader>
           <CardTitle>Appearance</CardTitle>

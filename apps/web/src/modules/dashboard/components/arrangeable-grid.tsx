@@ -105,7 +105,7 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
   }, [arranging, canArrange, layout]);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
           {leading}

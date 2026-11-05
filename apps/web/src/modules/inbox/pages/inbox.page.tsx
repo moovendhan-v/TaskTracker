@@ -40,7 +40,7 @@ export function InboxPage({ workspaceId }: { workspaceId: string }) {
           </div>
         }
       />
-      <div className="mx-auto max-w-3xl p-6">
+      <div className="mx-auto max-w-3xl p-4 md:p-6">
         {!isLoading && items.length === 0 ? (
           <EmptyState
             icon={<InboxIcon />}
@@ -48,7 +48,7 @@ export function InboxPage({ workspaceId }: { workspaceId: string }) {
             description="When someone assigns you a task, comments on yours or decides on your time off, it shows up here."
           />
         ) : (
-          <ul aria-label="Notifications" className="grid gap-1">
+          <ul aria-label="Notifications" className="grid grid-cols-[minmax(0,1fr)] gap-1">
             {items.map((notification) => (
               <li key={notification.id}>
                 <NotificationItem workspaceId={workspaceId} notification={notification} onOpen={open} />

@@ -1,3 +1,4 @@
+import { cn } from '@/lib/cn';
 import { useRouterState } from '@tanstack/react-router';
 import {
   Building2Icon,
@@ -42,7 +43,8 @@ const TITLES: [RegExp, string][] = [
 ];
 
 /** The context column: navigation, projects with live counts, workspace and people pages. Drag its edge to resize. */
-export function WorkspaceSidebar({ workspaceId, unread }: { workspaceId: string; unread: number }) {
+export function WorkspaceSidebar({ workspaceId, unread, variant = 'docked' }: { workspaceId: string; unread: number; variant?: 'docked' | 'drawer' }) {
+  const drawer = variant === 'drawer';
   const params = { workspaceId };
   const { can } = usePermissions(workspaceId);
   const chatUnread = useChatUnread(workspaceId, can('chat.use'));
@@ -73,10 +75,14 @@ export function WorkspaceSidebar({ workspaceId, unread }: { workspaceId: string;
     window.addEventListener('pointerup', onUp);
   };
 
-  if (preferences.sidebarCollapsed) return null;
+  if (preferences.sidebarCollapsed && !drawer) return null;
 
   return (
-    <aside aria-label="Workspace navigation" className="relative flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground" style={{ width }}>
+    <aside
+      aria-label="Workspace navigation"
+      className={cn('relative flex h-full shrink-0 flex-col bg-sidebar text-sidebar-foreground', !drawer && 'border-r border-sidebar-border')}
+      style={{ width: drawer ? '100%' : width }}
+    >
       <div className="flex h-12 items-center gap-2.5 px-4">
         <h2 className="truncate text-base font-semibold">{title}</h2>
       </div>
@@ -171,7 +177,7 @@ export function WorkspaceSidebar({ workspaceId, unread }: { workspaceId: string;
           ) : null}
         </SidebarSection>
       </nav>
-      <span role="separator" aria-orientation="vertical" aria-label="Resize sidebar" onPointerDown={resize} className="absolute top-0 -right-1 bottom-0 w-2 cursor-col-resize hover:bg-primary/30" />
+      {drawer ? null : <span role="separator" aria-orientation="vertical" aria-label="Resize sidebar" onPointerDown={resize} className="absolute top-0 -right-1 bottom-0 w-2 cursor-col-resize hover:bg-primary/30" />}
     </aside>
   );
 }

@@ -90,7 +90,7 @@ export function DailyLogPage({ workspaceId }: { workspaceId: string }) {
     );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 md:px-6 md:py-5">
       <header className="flex flex-wrap items-center gap-3">
         <h1 className="flex items-center gap-2 text-xl font-semibold">
           <CalendarCheckIcon className="size-5 text-primary" /> Daily log
@@ -115,7 +115,7 @@ export function DailyLogPage({ workspaceId }: { workspaceId: string }) {
         </Button>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(22rem,30rem)_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(22rem,30rem)_minmax(0,1fr)]">
         <section className="flex min-h-[28rem] flex-col rounded-xl border bg-card" aria-label="Tasks">
           <h2 className="flex items-center gap-2 border-b px-4 py-3 font-semibold">
             1. Tasks <span className="text-xs font-normal text-muted-foreground tabular-nums">{rows.length}/{tasks.length}</span>

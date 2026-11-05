@@ -752,6 +752,37 @@ test('chats in a channel, replies in a thread and turns a message into a task', 
   await expect(page.getByText('· Ship notes every Friday')).toBeVisible();
 });
 
+test('fits a phone: bottom tabs, a menu drawer and a bottom-sheet new task', async () => {
+  const desktop = page.viewportSize()!;
+  await page.setViewportSize({ width: 390, height: 844 });
+  try {
+    const tabs = page.getByRole('navigation', { name: 'Main sections' });
+    await tabs.getByRole('link', { name: 'My tasks' }).click();
+    await expect(page.getByRole('heading', { name: 'My tasks', level: 1 })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+
+    // The sidebar slides in from the menu button, and closes when you go somewhere.
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Menu' });
+    await expect(drawer).toBeVisible();
+    await drawer.getByRole('link', { name: 'Docs' }).first().click();
+    await expect(drawer).toBeHidden();
+    await expect(page).toHaveURL(/\/docs/);
+
+    // New task opens as a sheet along the bottom edge.
+    await tabs.getByRole('button', { name: 'New task' }).click();
+    const sheet = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: 'Create Task' }) });
+    await expect(sheet).toBeVisible();
+    // Polled: the sheet slides up into place.
+    await expect.poll(async () => sheet.boundingBox().then((box) => box && [Math.round(box.y + box.height), Math.round(box.width)])).toEqual([844, 390]);
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+  } finally {
+    await page.setViewportSize(desktop);
+  }
+  await expect(page.getByRole('navigation', { name: 'Main sections' })).toBeHidden();
+});
+
 test('signs out', async () => {
   await page.getByRole('button', { name: /Dana Reyes/ }).click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();

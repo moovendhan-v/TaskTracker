@@ -179,10 +179,10 @@ function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectCont
 function Phases({ data, openTask }: { data: DashboardResponse; openTask: (taskId: string) => void }) {
   if (data.phases.length === 0) return <p className="py-4 text-center text-sm text-muted-foreground">No tasks with subtasks yet.</p>;
   return (
-    <ul className="divide-y">
+    <ul className="divide-y @container">
       {data.phases.map((phase) => (
         <li key={phase.id}>
-          <button type="button" onClick={() => openTask(phase.id)} className="grid w-full grid-cols-[minmax(0,1fr)_8rem_5rem_6rem_6rem] items-center gap-4 py-3 text-left hover:bg-muted/40">
+          <button type="button" onClick={() => openTask(phase.id)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3 text-left hover:bg-muted/40 @xl:grid-cols-[minmax(0,1fr)_8rem_5rem_6rem_6rem]">
             <span className="min-w-0">
               <span className="block truncate font-medium">{phase.title}</span>
               <span className="block truncate text-xs text-muted-foreground">
@@ -191,12 +191,12 @@ function Phases({ data, openTask }: { data: DashboardResponse; openTask: (taskId
                 {phase.dueDate ? ` · due ${formatNumericDate(phase.dueDate)}` : ''}
               </span>
             </span>
-            <Meter value={phase.total ? (phase.done / phase.total) * 100 : 0} label={`${phase.title} progress`} />
+            <Meter value={phase.total ? (phase.done / phase.total) * 100 : 0} label={`${phase.title} progress`} className="hidden @xl:block" />
             <span className="text-sm tabular-nums text-muted-foreground">
               {phase.done}/{phase.total} done
             </span>
-            <span className="text-right text-sm tabular-nums">{phase.minutes ? formatMinutes(phase.minutes) : '–'}</span>
-            <span className="text-right text-sm text-muted-foreground">{phase.status.name}</span>
+            <span className="hidden text-right text-sm tabular-nums @xl:inline">{phase.minutes ? formatMinutes(phase.minutes) : '–'}</span>
+            <span className="hidden text-right text-sm text-muted-foreground @xl:inline">{phase.status.name}</span>
           </button>
         </li>
       ))}
@@ -233,7 +233,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   }, [fields, space, openTask, weekAhead]);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <DashboardFilters
         period={period}
         onPeriod={setPeriod}

@@ -46,7 +46,7 @@ export function AppearancePage() {
           </Button>
         }
       />
-      <div className="mx-auto grid max-w-6xl gap-10 p-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-10 p-4 md:p-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-8">
           <Setting id="appearance-theme" label="Theme" hint="System follows your device's light or dark setting.">
             <div role="radiogroup" aria-labelledby="appearance-theme" className="grid grid-cols-3 gap-3">

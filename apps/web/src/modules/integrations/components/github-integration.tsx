@@ -54,10 +54,10 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
   return (
     <div className="grid gap-3">
       {connections.data?.length === 0 ? <p className="text-sm text-muted-foreground">No repositories connected.</p> : null}
-      <ul className="grid gap-2">
+      <ul className="grid grid-cols-[minmax(0,1fr)] gap-2">
         {connections.data?.map((connection) => (
-          <li key={connection.id} className="grid gap-3 rounded-lg border p-3">
-            <div className="flex items-start gap-3">
+          <li key={connection.id} className="grid grid-cols-[minmax(0,1fr)] gap-3 rounded-lg border p-3">
+            <div className="flex flex-wrap items-start gap-3">
               <GitPullRequestIcon className="mt-0.5 size-4 text-muted-foreground" />
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{connection.repo}</p>
@@ -151,7 +151,7 @@ function PullRequestInbox({ workspaceId }: { workspaceId: string }) {
         {items.length ? <span className="rounded-full bg-muted px-1.5 text-xs font-normal">{items.length}</span> : null}
       </h3>
       {items.length === 0 ? <p className="text-sm text-muted-foreground">Every pull request mentions a task. Ones that don’t show up here to link by hand.</p> : null}
-      <ul className="grid gap-2">
+      <ul className="grid grid-cols-[minmax(0,1fr)] gap-2">
         {items.map((item) => {
           const value = numbers[item.id] ?? '';
           const number = Number(value.replace(/^#/, ''));
@@ -204,7 +204,8 @@ function SyncSettings({ sync, onChange }: { sync: GithubSyncSettings; onChange: 
     { key: 'onClosed', label: 'Closed without merging' },
   ];
   return (
-    <table className="ml-7 w-auto text-sm" aria-label="Status mapping">
+    <div className="overflow-x-auto">
+      <table className="ml-7 w-auto text-sm" aria-label="Status mapping">
       <thead>
         <tr className="text-left font-mono text-[10.5px] tracking-[0.06em] text-subtle-foreground uppercase">
           <th className="py-1 pr-3 font-semibold">GitHub</th>
@@ -244,7 +245,8 @@ function SyncSettings({ sync, onChange }: { sync: GithubSyncSettings; onChange: 
           </td>
         </tr>
       </tfoot>
-    </table>
+      </table>
+    </div>
   );
 }
 
