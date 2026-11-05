@@ -19,7 +19,7 @@ import { DashboardFilters } from './dashboard-filters';
 import { HoursByTask, HoursPerDay, KpiRow, StatusBreakdown, Workload } from './dashboard-panels';
 import { DashboardTaskList } from './dashboard-task-list';
 import type { BlockScope } from './configured-block';
-import { limited, type BlockDefinition, type BlockRegistry } from './home-blocks';
+import { limited, SECTION_DEFINITION, type BlockDefinition, type BlockRegistry } from './home-blocks';
 import { SpaceStatusChip } from './space-status-chip';
 
 interface Attribute {
@@ -171,6 +171,7 @@ function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectCont
       size: { w: 12, h: 6 },
       render: (data, config) => <DashboardTaskList tasks={limited(data.recentlyUpdated, config)} fields={config.fields} variant="number" date="updated" />,
     },
+    section: SECTION_DEFINITION,
   };
   return { order: PROJECT_BLOCK_TYPES, blocks };
 }

@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/
 import { cn } from '@/lib/cn';
 import type { BlockCategory, BlockRegistry } from './home-blocks';
 
-const CATEGORIES: BlockCategory[] = ['Project', 'Tasks', 'Insights', 'Time', 'People'];
+const CATEGORIES: BlockCategory[] = ['Project', 'Tasks', 'Insights', 'Time', 'People', 'Layout'];
 
 interface BlockLibraryProps {
   open: boolean;
@@ -13,10 +13,12 @@ interface BlockLibraryProps {
   placed: ReadonlySet<string>;
   onAdd: (type: string) => void;
   registry: BlockRegistry;
+  /** Replaces the heading, e.g. when stacking a block into a slot. */
+  title?: string;
 }
 
 /** The block library drawer (design: Platform #6a): search, category chips, and a card per block. */
-export function BlockLibrary({ open, onOpenChange, placed, onAdd, registry }: BlockLibraryProps) {
+export function BlockLibrary({ open, onOpenChange, placed, onAdd, registry, title }: BlockLibraryProps) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<BlockCategory | 'All'>('All');
   const term = search.trim().toLowerCase();
@@ -29,7 +31,7 @@ export function BlockLibrary({ open, onOpenChange, placed, onAdd, registry }: Bl
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-[380px] flex-col gap-4 p-5 sm:max-w-[380px]">
         <div>
-          <SheetTitle>Add a block</SheetTitle>
+          <SheetTitle>{title ?? 'Add a block'}</SheetTitle>
           <SheetDescription>Blocks show one view of your workspace. Each can be on the page once.</SheetDescription>
         </div>
         <div className="relative">

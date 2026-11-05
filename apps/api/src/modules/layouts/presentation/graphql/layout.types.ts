@@ -62,6 +62,7 @@ export class LayoutItemGql implements LayoutItem {
   @Field(() => Int) w: number;
   @Field(() => Int) h: number;
   @Field(() => BlockConfigGql, { nullable: true }) config?: BlockConfigGql | null;
+  @Field(() => [String], { nullable: true, description: 'Other blocks stacked in this slot, as tabs' }) tabs?: string[] | null;
 }
 
 @ObjectType('DashboardLayout', { description: "The signed-in user's arrangement of a page's blocks" })
@@ -79,8 +80,9 @@ export class LayoutItemInput implements LayoutItem {
   @Field(() => Int) @IsInt() @Min(0) @Max(GRID_COLUMNS - 1) x: number;
   @Field(() => Int) @IsInt() @Min(0) @Max(LAYOUT_LIMITS.maxRow) y: number;
   @Field(() => Int) @IsInt() @Min(LAYOUT_LIMITS.minW) @Max(GRID_COLUMNS) w: number;
-  @Field(() => Int) @IsInt() @Min(LAYOUT_LIMITS.minH) @Max(LAYOUT_LIMITS.maxH) h: number;
+  @Field(() => Int, { description: 'Rows; sections may be 1, other blocks at least 2 (checked by the layout rules)' }) @IsInt() @Min(1) @Max(LAYOUT_LIMITS.maxH) h: number;
   @Field(() => BlockConfigInput, { nullable: true }) @IsClearable() @ValidateNested() @Type(() => BlockConfigInput) config?: BlockConfigInput | null;
+  @Field(() => [String], { nullable: true }) @IsClearable() @IsArray() @ArrayMaxSize(LAYOUT_LIMITS.tabsMax) @IsString({ each: true }) @MaxLength(60, { each: true }) tabs?: string[] | null;
 }
 
 @InputType('SaveLayoutInput')

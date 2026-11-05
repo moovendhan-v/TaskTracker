@@ -1152,6 +1152,9 @@ type LayoutItem {
   config: BlockConfig
   h: Int!
   id: String!
+
+  """Other blocks stacked in this slot, as tabs"""
+  tabs: [String!]
   type: String!
   w: Int!
   x: Int!
@@ -1160,8 +1163,13 @@ type LayoutItem {
 
 input LayoutItemInput {
   config: BlockConfigInput
+
+  """
+  Rows; sections may be 1, other blocks at least 2 (checked by the layout rules)
+  """
   h: Int!
   id: String!
+  tabs: [String!]
   type: String!
   w: Int!
   x: Int!

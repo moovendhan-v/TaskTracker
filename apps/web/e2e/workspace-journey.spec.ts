@@ -538,6 +538,32 @@ test('locks the workspace layout and previews what Reset brings back', async () 
   await page.getByRole('button', { name: /^Done/ }).click();
 });
 
+test('adds a section heading and stacks two blocks as tabs in one slot', async () => {
+  await page.getByRole('button', { name: /Arrange/ }).click();
+  await page.getByRole('button', { name: /Add block/ }).click();
+  await page.getByRole('button', { name: 'Add Section' }).click();
+  await expect(page.getByRole('heading', { name: 'Section', level: 2 })).toBeVisible();
+  await page.getByRole('button', { name: /^Done/ }).click();
+
+  // Take Team workload off the page, then stack it with Priority (from the block menus).
+  const workload = page.locator('section', { has: page.getByRole('heading', { name: 'Team workload', exact: true }) }).last();
+  await workload.hover();
+  await workload.getByRole('button', { name: 'Block options' }).click();
+  await page.getByRole('menuitem', { name: 'Remove' }).click();
+  const priority = page.locator('section', { has: page.getByRole('heading', { name: 'Priority', exact: true }) }).last();
+  await priority.hover();
+  await priority.getByRole('button', { name: 'Block options' }).click();
+  await page.getByRole('menuitem', { name: 'Stack another block here…' }).click();
+  const library = page.getByRole('dialog', { name: 'Stack a block with Priority' });
+  await library.getByRole('button', { name: 'Add Team workload' }).click();
+
+  const tabs = page.getByRole('tablist', { name: 'Stacked blocks' });
+  await expect(tabs.getByRole('tab')).toHaveCount(2);
+  await tabs.getByRole('tab', { name: 'Team workload' }).click();
+  await expect(page.getByRole('heading', { name: 'Team workload', exact: true })).toBeVisible();
+  await expect(tabs.getByRole('tab', { name: 'Team workload' })).toHaveAttribute('aria-selected', 'true');
+});
+
 test('builds an automation flow with an if / else branch and gets it back', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByText('Ops', { exact: true }).click();
   await page.goto(page.url().replace(/\/p\/([^/?]+).*/, '/p/$1/automations'));

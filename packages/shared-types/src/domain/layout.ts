@@ -14,7 +14,25 @@ export const LAYOUT_LIMITS = {
   maxH: 16,
   minH: 2,
   idMax: 40,
+  /** Other blocks stacked in one slot as tabs. */
+  tabsMax: 4,
 } as const;
+
+/**
+ * A full-width heading that splits a page into regions. It has no data, only a
+ * title (and colour), and is the one block that may be a single row high.
+ */
+export const SECTION_BLOCK = 'section';
+
+/** The shortest a block of this type may be. */
+export function minHeightOf(type: string): number {
+  return type === SECTION_BLOCK ? 1 : LAYOUT_LIMITS.minH;
+}
+
+/** Block types that can sit in a stack of tabs (anything with data; not sections). */
+export function canStack(type: string): boolean {
+  return type !== SECTION_BLOCK;
+}
 
 /** Pages that can be arranged, and the blocks each one can hold. */
 export const LAYOUT_PAGES = ['home', 'project'] as const;
@@ -33,6 +51,7 @@ export const HOME_BLOCK_TYPES = [
   'due-soon-tasks',
   'workload',
   'recent-tasks',
+  'section',
 ] as const;
 export type HomeBlockType = (typeof HOME_BLOCK_TYPES)[number];
 
@@ -48,6 +67,7 @@ export const PROJECT_BLOCK_TYPES = [
   'overdue-tasks',
   'due-soon-tasks',
   'recent-tasks',
+  'section',
 ] as const;
 export type ProjectBlockType = (typeof PROJECT_BLOCK_TYPES)[number];
 
@@ -63,6 +83,8 @@ export interface LayoutItem {
   h: number;
   /** How this block is set up (B3); absent means the block's defaults. */
   config?: BlockConfig | null;
+  /** Other block types stacked in this slot, shown as tabs after this one (B2). */
+  tabs?: string[] | null;
 }
 
 /** Accent colours a block can wear, from the theme's palette. */
@@ -107,6 +129,7 @@ const TASK_LISTS = ['overdue-tasks', 'due-soon-tasks', 'recent-tasks'];
 /** Which settings a block offers. Home blocks can also pick their data source. */
 export function blockConfigKeys(pageKey: LayoutPage, type: string): BlockConfigKey[] {
   const keys: BlockConfigKey[] = [...VIEW_KEYS];
+  if (type === SECTION_BLOCK) return keys;
   if (pageKey === 'home' && !['hours-by-project'].includes(type)) keys.push('spaceId');
   if (TASK_LISTS.includes(type)) keys.push('limit', 'mine', 'priorities', 'fields');
   if (type === 'status' || type === 'status-breakdown') keys.push('includeClosed');
@@ -210,7 +233,14 @@ export function validateLayoutItems(pageKey: LayoutPage, items: readonly LayoutI
       problems.push(`${at}: position and size must be whole numbers`);
       return;
     }
-    if (item.w < LAYOUT_LIMITS.minW || item.w > GRID_COLUMNS || item.h < LAYOUT_LIMITS.minH || item.h > LAYOUT_LIMITS.maxH) problems.push(`${at}: size out of range`);
+    if (item.w < LAYOUT_LIMITS.minW || item.w > GRID_COLUMNS || item.h < minHeightOf(item.type) || item.h > LAYOUT_LIMITS.maxH) problems.push(`${at}: size out of range`);
+    if (item.tabs !== undefined && item.tabs !== null) {
+      const tabs = item.tabs;
+      if (!Array.isArray(tabs) || tabs.length > LAYOUT_LIMITS.tabsMax) problems.push(`${at}: at most ${LAYOUT_LIMITS.tabsMax} stacked tabs`);
+      else if (!canStack(item.type) || tabs.some((tab) => typeof tab !== 'string' || !types.includes(tab) || !canStack(tab) || tab === item.type) || new Set(tabs).size !== tabs.length) {
+        problems.push(`${at}: stacked tabs must be other blocks of this page, each once`);
+      }
+    }
     if (item.x < 0 || item.y < 0 || item.x + item.w > GRID_COLUMNS || item.y > LAYOUT_LIMITS.maxRow) problems.push(`${at}: outside the grid`);
     if (item.config !== undefined && item.config !== null) {
       if (typeof item.config !== 'object' || Array.isArray(item.config)) problems.push(`${at}: settings must be an object`);
@@ -256,9 +286,9 @@ export interface NamedDashboardResponse {
 }
 
 /** Just the stored fields of an item: position, size and any non-empty settings. */
-export function cleanLayoutItem({ id, type, x, y, w, h, config }: LayoutItem): LayoutItem {
+export function cleanLayoutItem({ id, type, x, y, w, h, config, tabs }: LayoutItem): LayoutItem {
   const settings = cleanBlockConfig(config);
-  return settings ? { id, type, x, y, w, h, config: settings } : { id, type, x, y, w, h };
+  return { id, type, x, y, w, h, ...(settings ? { config: settings } : {}), ...(tabs?.length ? { tabs: [...tabs] } : {}) };
 }
 
 /** How many past saves of a page a person can go back to. */

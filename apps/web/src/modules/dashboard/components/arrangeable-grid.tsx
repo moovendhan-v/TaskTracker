@@ -1,4 +1,4 @@
-import { cleanLayoutItem, type DashboardResponse, type LayoutItem } from '@taskflow/shared-types';
+import { canStack, cleanLayoutItem, LAYOUT_LIMITS, SECTION_BLOCK, type DashboardResponse, type LayoutItem } from '@taskflow/shared-types';
 import { LayoutDashboardIcon, LockIcon, PlusIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
@@ -57,12 +57,30 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
     layout.setItems(removeItem(layout.items, item.id));
     toast(`Removed ${blockOf(item)?.title ?? 'block'}`, { duration: 10_000, action: { label: 'Undo', onClick: () => layout.undo() } });
   };
+  // Stacking: the library opens for one slot and adds the picked block as a tab there.
+  const [stackOn, setStackOn] = useState<string | null>(null);
   const add = (type: string) => {
     const block = registry.blocks[type];
     if (!layout.items || !block) return;
-    layout.setItems(addItem(layout.items, { id: type, type, ...block.size }));
+    if (stackOn) {
+      layout.setItems(layout.items.map((item) => (item.id === stackOn ? cleanLayoutItem({ ...item, tabs: [...(item.tabs ?? []), type] }) : item)));
+      setStackOn(null);
+      setLibrary(false);
+      return;
+    }
+    // Sections can repeat, so they get the next free id.
+    let id = type;
+    for (let n = 1; type === SECTION_BLOCK && layout.items.some((item) => item.id === id); n++) id = `${type}-${n}`;
+    layout.setItems(addItem(layout.items, { id, type, ...block.size }));
     setLibrary(false);
   };
+  const unstack = (item: LayoutItem, type: string) => {
+    if (!layout.items) return;
+    layout.setItems(layout.items.map((other) => (other.id === item.id ? cleanLayoutItem({ ...other, tabs: (other.tabs ?? []).filter((tab) => tab !== type) }) : other)));
+  };
+  // Every block on the page, stacked ones included, can be placed once; sections any number of times.
+  const placed = new Set((layout.items ?? []).flatMap((item) => [item.type, ...(item.tabs ?? [])]).filter((type) => type !== SECTION_BLOCK));
+  const stackTarget = layout.items?.find((item) => item.id === stackOn) ?? null;
 
   useEffect(() => {
     if (!canArrange) return;
@@ -169,6 +187,12 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
                   scope={scope}
                   onConfigure={() => setConfiguring(item.id)}
                   onRemove={() => remove(item)}
+                  registry={registry}
+                  onStack={canArrange && canStack(item.type) && (item.tabs?.length ?? 0) < LAYOUT_LIMITS.tabsMax ? () => {
+                    setStackOn(item.id);
+                    setLibrary(true);
+                  } : undefined}
+                  onUnstack={(type) => unstack(item, type)}
                 />
               );
             }}
@@ -185,7 +209,19 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
           onChange={(config) => layout.items && layout.setItems(layout.items.map((item) => (item.id === configuringItem.id ? cleanLayoutItem({ ...item, config }) : item)))}
         />
       ) : null}
-      {canArrange ? <BlockLibrary registry={registry} open={library} onOpenChange={setLibrary} placed={new Set((layout.items ?? []).map((item) => item.type))} onAdd={add} /> : null}
+      {canArrange ? (
+        <BlockLibrary
+          registry={registry}
+          open={library}
+          onOpenChange={(open) => {
+            setLibrary(open);
+            if (!open) setStackOn(null);
+          }}
+          placed={stackTarget ? new Set([...placed, SECTION_BLOCK]) : placed}
+          onAdd={add}
+          title={stackTarget ? `Stack a block with ${blockOf(stackTarget)?.title ?? 'this block'}` : undefined}
+        />
+      ) : null}
     </div>
   );
 }
