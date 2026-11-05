@@ -30,8 +30,9 @@ describe('validateLayoutItems', () => {
 describe('block settings', () => {
   const at = { x: 0, y: 0, w: 4, h: 5 };
   it('offers each block only its own settings', () => {
-    expect(blockConfigKeys('home', 'overdue-tasks')).toEqual(['title', 'accent', 'spaceId', 'limit', 'mine', 'priorities', 'fields']);
-    expect(blockConfigKeys('project', 'recent-tasks')).toEqual(['title', 'accent', 'limit', 'mine', 'priorities', 'fields']);
+    expect(blockConfigKeys('home', 'overdue-tasks')).toEqual(['title', 'accent', 'spaceId', 'limit', 'mine', 'priorities', 'categories', 'fields']);
+    expect(blockConfigKeys('home', 'hours-per-day')).toEqual(['title', 'accent', 'spaceId', 'chart']);
+    expect(blockConfigKeys('project', 'recent-tasks')).toEqual(['title', 'accent', 'limit', 'mine', 'priorities', 'categories', 'fields']);
     expect(blockConfigKeys('home', 'status')).toEqual(['title', 'accent', 'spaceId', 'includeClosed']);
     expect(blockConfigKeys('home', 'hours-by-project')).toEqual(['title', 'accent']);
     expect(blockConfigKeys('project', 'kpis')).toEqual(['title', 'accent']);

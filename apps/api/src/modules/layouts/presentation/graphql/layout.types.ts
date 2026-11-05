@@ -1,7 +1,7 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import { ArrayMaxSize, ArrayUnique, IsArray, IsBoolean, IsIn, IsInt, IsString, IsUUID, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
-import { TaskPriorityEnum } from '../../../../core/graphql/enums.js';
+import { StatusCategoryEnum, TaskPriorityEnum } from '../../../../core/graphql/enums.js';
 import {
   DASHBOARD_LIMITS,
   DASHBOARD_PERIODS,
@@ -22,6 +22,10 @@ import {
   BLOCK_LIMITS,
   BLOCK_TITLE_MAX,
   TASK_LIST_FIELDS,
+  OPEN_STATUS_CATEGORIES,
+  BLOCK_CHARTS,
+  type BlockChart,
+  type StatusCategory,
   TASK_PRIORITIES,
   type TaskListField,
   type TaskPriority,
@@ -39,6 +43,8 @@ export class BlockConfigGql implements BlockConfig {
   @Field({ nullable: true, description: 'Data: only the viewer\'s own tasks' }) mine?: boolean;
   @Field(() => [TaskPriorityEnum], { nullable: true, description: 'Data: only these priorities' }) priorities?: TaskPriority[];
   @Field(() => [String], { nullable: true, description: 'View: task-list columns, in order' }) fields?: TaskListField[];
+  @Field(() => [StatusCategoryEnum], { nullable: true, description: 'Data: only these status meanings' }) categories?: StatusCategory[];
+  @Field(() => String, { nullable: true, description: 'View: bar or line' }) chart?: BlockChart;
 }
 
 @InputType('BlockConfigInput')
@@ -51,6 +57,8 @@ export class BlockConfigInput implements BlockConfig {
   @Field({ nullable: true }) @IsOmittable() @IsBoolean() mine?: boolean;
   @Field(() => [TaskPriorityEnum], { nullable: true }) @IsOmittable() @IsArray() @ArrayMaxSize(TASK_PRIORITIES.length) @ArrayUnique() @IsIn(TASK_PRIORITIES, { each: true }) priorities?: TaskPriority[];
   @Field(() => [String], { nullable: true }) @IsOmittable() @IsArray() @ArrayMaxSize(TASK_LIST_FIELDS.length) @ArrayUnique() @IsIn(TASK_LIST_FIELDS, { each: true }) fields?: TaskListField[];
+  @Field(() => [StatusCategoryEnum], { nullable: true }) @IsOmittable() @IsArray() @ArrayMaxSize(OPEN_STATUS_CATEGORIES.length) @ArrayUnique() @IsIn(OPEN_STATUS_CATEGORIES, { each: true }) categories?: StatusCategory[];
+  @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(BLOCK_CHARTS) chart?: BlockChart;
 }
 
 @ObjectType('LayoutItem')

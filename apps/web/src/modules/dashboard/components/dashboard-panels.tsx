@@ -1,7 +1,7 @@
 import { ClipboardListIcon, ClockIcon, FolderIcon, ListChecksIcon, TriangleAlertIcon, CalendarClockIcon, UserXIcon } from 'lucide-react';
-import type { DashboardResponse } from '@taskflow/shared-types';
+import type { BlockChart, DashboardResponse } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
-import { BarList, ColumnChart, GroupedColumnChart, Legend, Sparkline, StackedBar } from '@/components/kit/charts';
+import { BarList, ColumnChart, GroupedColumnChart, Legend, LineChart, Sparkline, StackedBar } from '@/components/kit/charts';
 import { StatCard } from '@/components/kit/stat-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatMonthDay, formatNumericDate } from '@/lib/periods';
@@ -134,10 +134,24 @@ export function DueForecast({ data }: { data: Dashboard }) {
   );
 }
 
-export function CreatedVsClosed({ data }: { data: Dashboard }) {
+export function CreatedVsClosed({ data, chart = 'bar' }: { data: Dashboard; chart?: BlockChart }) {
   const created = data.createdVsClosed.reduce((sum, week) => sum + week.created, 0);
   const closed = data.createdVsClosed.reduce((sum, week) => sum + week.closed, 0);
   const growth = created - closed;
+  const note = growth === 0 ? 'Backlog held steady' : growth > 0 ? <span className="text-warning">Backlog grew by {growth} in 8 weeks</span> : <span className="text-good">Backlog shrank by {-growth} in 8 weeks</span>;
+  if (chart === 'line') {
+    return (
+      <LineChart
+        label="Tasks created and closed per week"
+        labels={data.createdVsClosed.map((week) => formatMonthDay(week.weekStart))}
+        series={[
+          { key: 'created', label: 'Created', color: 'var(--chart-1)', values: data.createdVsClosed.map((week) => week.created) },
+          { key: 'closed', label: 'Closed', color: 'var(--chart-2)', values: data.createdVsClosed.map((week) => week.closed) },
+        ]}
+        note={note}
+      />
+    );
+  }
   return (
     <GroupedColumnChart
       label="Tasks created and closed per week"
@@ -151,8 +165,22 @@ export function CreatedVsClosed({ data }: { data: Dashboard }) {
   );
 }
 
-export function HoursPerDay({ data, height = 160 }: { data: Dashboard; height?: number }) {
+export function HoursPerDay({ data, height = 160, chart = 'bar' }: { data: Dashboard; height?: number; chart?: BlockChart }) {
   const days = data.minutesPerDay;
+  if (chart === 'line') {
+    return (
+      <LineChart
+        label="Hours logged per day"
+        height={height}
+        labels={days.map((day) => (days.length > 10 ? formatNumericDate(day.day) : formatMonthDay(day.day)))}
+        formatValue={(value) => formatMinutes(Math.round(value * 60))}
+        series={[
+          { key: 'hours', label: 'Hours', color: 'var(--primary)', values: days.map((day) => day.minutes / 60) },
+          { key: 'day', label: '8 h day', color: 'var(--muted-foreground)', values: days.map(() => 8), reference: true },
+        ]}
+      />
+    );
+  }
   return (
     <ColumnChart
       label="Hours logged per day"

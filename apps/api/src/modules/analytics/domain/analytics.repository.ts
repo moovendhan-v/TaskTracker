@@ -10,6 +10,8 @@ export interface DashboardScope {
   timeUserIds: readonly string[] | null;
   /** Priorities the task lists keep; null for all. */
   priorities: readonly string[] | null;
+  /** Status meanings the task lists keep; null for all. */
+  categories: readonly string[] | null;
   from: Date;
   to: Date;
   timeZone: string;

@@ -18,6 +18,8 @@ export interface DashboardRequest {
   mine?: boolean | null;
   /** Narrows the task lists (overdue, due soon, recent) to these priorities. */
   priorities?: TaskPriority[] | null;
+  /** Narrows the task lists to tasks whose status means one of these. */
+  categories?: StatusCategory[] | null;
 }
 
 export interface DashboardTask {

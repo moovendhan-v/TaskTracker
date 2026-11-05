@@ -1,6 +1,6 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsISO8601, IsString, IsUUID, MaxLength } from 'class-validator';
-import { TASK_PRIORITIES } from '@taskflow/shared-types';
+import { STATUS_CATEGORIES, TASK_PRIORITIES } from '@taskflow/shared-types';
 import type { DashboardRequest, DashboardResponse, ForecastKind, SpaceStatus, StatusCategory, TaskPriority } from '@taskflow/shared-types';
 import { ForecastKindEnum, SpaceStatusEnum, StatusCategoryEnum, TaskPriorityEnum } from '../../../../core/graphql/enums.js';
 import { IsClearable } from '../../../../core/graphql/validation.js';
@@ -21,6 +21,12 @@ export class DashboardInput implements DashboardRequest {
   @ArrayMaxSize(TASK_PRIORITIES.length)
   @IsIn(TASK_PRIORITIES, { each: true })
   priorities?: TaskPriority[] | null;
+  @Field(() => [StatusCategoryEnum], { nullable: true, description: 'Narrows the task lists to these status meanings' })
+  @IsClearable()
+  @IsArray()
+  @ArrayMaxSize(STATUS_CATEGORIES.length)
+  @IsIn(STATUS_CATEGORIES, { each: true })
+  categories?: StatusCategory[] | null;
 }
 
 @ObjectType('DashboardStatusRef')

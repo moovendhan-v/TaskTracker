@@ -1,4 +1,4 @@
-import type { BlockConfig, DashboardRequest, DashboardResponse, LayoutItem, TaskPriority } from '@taskflow/shared-types';
+import type { BlockConfig, DashboardRequest, DashboardResponse, LayoutItem, StatusCategory, TaskPriority } from '@taskflow/shared-types';
 import { FilterIcon, FolderKanbanIcon, Layers2Icon, SlidersHorizontalIcon, Trash2Icon, XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
@@ -13,6 +13,7 @@ export interface BlockNarrowing {
   spaceId?: string;
   mine?: boolean;
   priorities?: TaskPriority[];
+  categories?: StatusCategory[];
 }
 
 /** Where a block with its own data source gets its numbers. */
@@ -22,12 +23,14 @@ export interface BlockScope {
   inputFor: (narrowing: BlockNarrowing) => DashboardRequest;
 }
 
+const CATEGORY_SHORT: Record<StatusCategory, string> = { unstarted: 'To do', started: 'In progress', review: 'In review', blocked: 'Blocked', done: 'Done', cancelled: 'Cancelled' };
+
 const PRIORITY_SHORT: Record<TaskPriority, string> = { urgent: 'Urgent', high: 'High', normal: 'Normal', low: 'Low', none: 'No priority' };
 
 /** The block's own data settings, or null when it reads the page's data as is. */
 export function narrowingOf(config: BlockConfig | null | undefined): BlockNarrowing | null {
-  if (!config?.spaceId && !config?.mine && !config?.priorities?.length) return null;
-  return { spaceId: config.spaceId, mine: config.mine, priorities: config.priorities };
+  if (!config?.spaceId && !config?.mine && !config?.priorities?.length && !config?.categories?.length) return null;
+  return { spaceId: config.spaceId, mine: config.mine, priorities: config.priorities, categories: config.categories };
 }
 
 interface ConfiguredBlockProps {
@@ -62,9 +65,10 @@ function ScopedBlock({ scope, narrowing, ...props }: Omit<ConfiguredBlockProps, 
     narrowing.spaceId ? (spaces.find((space) => space.id === narrowing.spaceId)?.name ?? 'A project') : null,
     narrowing.mine ? 'Mine' : null,
     narrowing.priorities?.length ? narrowing.priorities.map((priority) => PRIORITY_SHORT[priority]).join(', ') : null,
+    narrowing.categories?.length ? narrowing.categories.map((category) => CATEGORY_SHORT[category]).join(', ') : null,
   ].filter((part): part is string => part !== null);
   // Counts in the chip come from the page's totals, which a priority filter doesn't narrow, so they're left out then.
-  const source = { label: parts.join(' · '), project: Boolean(narrowing.spaceId), counts: !narrowing.priorities?.length };
+  const source = { label: parts.join(' · '), project: Boolean(narrowing.spaceId), counts: !narrowing.priorities?.length && !narrowing.categories?.length };
   return <BlockView {...props} data={scoped.data} state={blockStateOf(scoped, { what: narrowing.spaceId ? 'this project' : 'this block' })} source={source} />;
 }
 

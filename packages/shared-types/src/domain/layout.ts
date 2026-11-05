@@ -1,4 +1,4 @@
-import { TASK_PRIORITIES, type TaskPriority } from './task.js';
+import { TASK_PRIORITIES, type StatusCategory, type TaskPriority } from './task.js';
 
 /**
  * Arrangeable dashboard layouts (v2 "lego" grid). Shared so the server
@@ -118,7 +118,19 @@ export interface BlockConfig {
   priorities?: TaskPriority[];
   /** View: which columns a task list shows, in order. */
   fields?: TaskListField[];
+  /** Data: only open tasks whose status means one of these (task lists). */
+  categories?: StatusCategory[];
+  /** View: bars or a line, for blocks that chart over time. */
+  chart?: BlockChart;
 }
+
+/** How a time-series block draws. */
+export const BLOCK_CHARTS = ['bar', 'line'] as const;
+export type BlockChart = (typeof BLOCK_CHARTS)[number];
+/** Blocks that chart something over time, and so offer bars or a line. */
+const CHART_BLOCKS = ['hours-per-day', 'created-closed'];
+/** Status meanings a task list can narrow to (closed ones aren't in these lists). */
+export const OPEN_STATUS_CATEGORIES = ['unstarted', 'started', 'review', 'blocked'] as const satisfies readonly StatusCategory[];
 
 export type BlockConfigKey = keyof BlockConfig;
 
@@ -131,7 +143,8 @@ export function blockConfigKeys(pageKey: LayoutPage, type: string): BlockConfigK
   const keys: BlockConfigKey[] = [...VIEW_KEYS];
   if (type === SECTION_BLOCK) return keys;
   if (pageKey === 'home' && !['hours-by-project'].includes(type)) keys.push('spaceId');
-  if (TASK_LISTS.includes(type)) keys.push('limit', 'mine', 'priorities', 'fields');
+  if (TASK_LISTS.includes(type)) keys.push('limit', 'mine', 'priorities', 'categories', 'fields');
+  if (CHART_BLOCKS.includes(type)) keys.push('chart');
   if (type === 'status' || type === 'status-breakdown') keys.push('includeClosed');
   return keys;
 }
@@ -159,13 +172,15 @@ export function validateBlockConfig(pageKey: LayoutPage, type: string, config: B
   if (config.mine !== undefined && typeof config.mine !== 'boolean') problems.push('mine must be true or false');
   if (config.priorities !== undefined && !isSubsetOf(config.priorities, TASK_PRIORITIES)) problems.push('priorities: pick from the list, each once');
   if (config.fields !== undefined && !isSubsetOf(config.fields, TASK_LIST_FIELDS)) problems.push('fields: pick from the list, each once');
+  if (config.categories !== undefined && !isSubsetOf(config.categories, OPEN_STATUS_CATEGORIES)) problems.push('categories: pick from the list, each once');
+  if (config.chart !== undefined && !(BLOCK_CHARTS as readonly string[]).includes(config.chart)) problems.push('chart must be bar or line');
   return problems;
 }
 
 /** Drops empty values, so "no setting" is stored as nothing. */
 export function cleanBlockConfig(config: BlockConfig | null | undefined): BlockConfig | undefined {
   if (!config) return undefined;
-  const entries = Object.entries(config).filter(([key, value]) => value !== undefined && value !== null && value !== '' && !(key === 'priorities' && Array.isArray(value) && value.length === 0) && !(key === 'mine' && value === false));
+  const entries = Object.entries(config).filter(([key, value]) => value !== undefined && value !== null && value !== '' && !((key === 'priorities' || key === 'categories') && Array.isArray(value) && value.length === 0) && !(key === 'mine' && value === false));
   return entries.length ? (Object.fromEntries(entries) as BlockConfig) : undefined;
 }
 

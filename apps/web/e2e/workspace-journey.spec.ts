@@ -464,6 +464,17 @@ test('narrows a task list block to my urgent work and picks its columns', async 
   await expect(page.locator('section', { has: page.getByRole('heading', { name: 'Overdue', exact: true }) }).last().getByText('Mine · Urgent')).toBeVisible();
 });
 
+test('draws Hours per day as a line instead of bars', async () => {
+  const block = page.locator('section', { has: page.getByRole('heading', { name: 'Hours per day', exact: true }) }).last();
+  await block.hover();
+  await block.getByRole('button', { name: 'Block options' }).click();
+  await page.getByRole('menuitem', { name: 'Configure…' }).click();
+  const drawer = page.getByRole('dialog', { name: /Configure/ });
+  await drawer.getByRole('radiogroup', { name: 'Chart' }).getByRole('radio', { name: 'Line' }).click();
+  await drawer.getByRole('button', { name: 'Done' }).click();
+  await expect(block.getByText('8 h day')).toBeVisible();
+});
+
 test('a named dashboard remembers its date range, and tiles show trends', async () => {
   await expect(page.getByRole('img', { name: /^Tasks created per week, last 8 weeks: Week of/ })).toBeVisible();
   await page.getByRole('button', { name: 'New dashboard' }).click();
