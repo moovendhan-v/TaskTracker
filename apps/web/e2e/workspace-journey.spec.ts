@@ -644,6 +644,23 @@ test('adds a section heading and stacks two blocks as tabs in one slot', async (
   await tabs.getByRole('tab', { name: 'Team workload' }).click();
   await expect(page.getByRole('heading', { name: 'Team workload', exact: true })).toBeVisible();
   await expect(tabs.getByRole('tab', { name: 'Team workload' })).toHaveAttribute('aria-selected', 'true');
+
+  // Move the section to the top (from the keyboard), then fold everything under it.
+  await page.getByRole('button', { name: /Arrange/ }).click();
+  const sectionBlock = page.getByRole('group', { name: /^Section block/ });
+  await sectionBlock.focus();
+  for (let row = 0; row < 60; row++) await sectionBlock.press('Alt+ArrowUp');
+  await expect(sectionBlock).toHaveAttribute('aria-label', /row 1,/);
+  await page.getByRole('button', { name: /^Done/ }).click();
+  await page.getByRole('button', { name: 'Collapse Section' }).click();
+  await expect(page.getByRole('button', { name: 'Show Section' })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByText(/\d+ blocks hidden/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Created vs closed', exact: true })).toHaveCount(0);
+  // Remembered in this browser, and never part of the saved layout.
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Show Section' })).toBeVisible();
+  await page.getByRole('button', { name: 'Show Section' }).click();
+  await expect(page.getByRole('heading', { name: 'Created vs closed', exact: true })).toBeVisible();
 });
 
 test('builds an automation flow with an if / else branch and gets it back', async () => {

@@ -1,5 +1,5 @@
 import type { BlockConfig, DashboardRequest, DashboardResponse, LayoutItem, StatusCategory, TaskPriority } from '@taskflow/shared-types';
-import { FilterIcon, FolderKanbanIcon, LinkIcon, PinIcon, PinOffIcon, Layers2Icon, SlidersHorizontalIcon, Trash2Icon, XIcon } from 'lucide-react';
+import { ChevronDownIcon, FilterIcon, FolderKanbanIcon, LinkIcon, PinIcon, PinOffIcon, Layers2Icon, SlidersHorizontalIcon, Trash2Icon, XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Block } from '@/components/kit/block';
@@ -65,11 +65,13 @@ interface ConfiguredBlockProps {
   pinnedNote?: string;
   /** Layout managers pin or unpin a block for everyone (applies when they publish the workspace default). */
   onTogglePin?: () => void;
+  /** For a section: fold away the blocks under it (per viewer, not saved). */
+  fold?: { collapsed: boolean; hidden: number; onToggle: () => void };
 }
 
 /** A block drawn with its own settings: title and accent (view), and its own project (data) when it has one. */
 export function ConfiguredBlock({ item, scope, ...props }: ConfiguredBlockProps) {
-  if (item.type === 'section') return <SectionHeading item={item} arranging={props.arranging} canArrange={props.canArrange} onConfigure={props.onConfigure} onRemove={props.onRemove} />;
+  if (item.type === 'section') return <SectionHeading item={item} arranging={props.arranging} canArrange={props.canArrange} onConfigure={props.onConfigure} onRemove={props.onRemove} fold={props.fold} />;
   return <BlockWithData item={item} scope={scope} {...props} />;
 }
 
@@ -188,11 +190,25 @@ function BlockView({
 }
 
 /** A section divider: a full-width heading between regions of the page. */
-function SectionHeading({ item, arranging, canArrange, onConfigure, onRemove }: Pick<ConfiguredBlockProps, 'item' | 'arranging' | 'canArrange' | 'onConfigure' | 'onRemove'>) {
+function SectionHeading({ item, arranging, canArrange, onConfigure, onRemove, fold }: Pick<ConfiguredBlockProps, 'item' | 'arranging' | 'canArrange' | 'onConfigure' | 'onRemove' | 'fold'>) {
   const title = item.config?.title || 'Section';
   return (
     <div className={cn('group/section flex h-full items-end gap-2 border-b-2 pb-1', item.config?.accent ? ACCENT_BORDER[item.config.accent] : 'border-border', arranging && 'rounded-md border-dashed px-2')}>
-      <h2 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight">{title}</h2>
+      {fold && !arranging ? (
+        <button
+          type="button"
+          aria-expanded={!fold.collapsed}
+          aria-label={fold.collapsed ? `Show ${title}` : `Collapse ${title}`}
+          onClick={fold.onToggle}
+          className="-ml-1 flex min-w-0 flex-1 items-center gap-1.5 rounded text-left hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          <ChevronDownIcon aria-hidden className={cn('size-4 shrink-0 text-muted-foreground transition-transform', fold.collapsed && '-rotate-90')} />
+          <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight">{title}</h2>
+          {fold.collapsed && fold.hidden ? <span className="shrink-0 text-xs font-normal text-muted-foreground">{fold.hidden} {fold.hidden === 1 ? 'block' : 'blocks'} hidden</span> : null}
+        </button>
+      ) : (
+        <h2 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight">{title}</h2>
+      )}
       {canArrange && arranging ? (
         <>
           <button type="button" aria-label={`Configure section ${title}`} onClick={onConfigure} className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-muted">

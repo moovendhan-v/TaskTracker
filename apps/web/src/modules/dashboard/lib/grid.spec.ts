@@ -1,6 +1,6 @@
 import { DEFAULT_LAYOUTS, validateLayoutItems, type LayoutItem } from '@taskflow/shared-types';
 import { describe, expect, it } from 'vitest';
-import { addItem, arrange, moveItem, removeItem, resizeItem } from './grid';
+import { addItem, arrange, collapseSections, moveItem, removeItem, resizeItem } from './grid';
 
 const b = (id: string, x: number, y: number, w = 4, h = 2): LayoutItem => ({ id, type: 'status', x, y, w, h });
 const pos = (items: LayoutItem[]) => Object.fromEntries(items.map((item) => [item.id, [item.x, item.y, item.w, item.h]]));
@@ -57,5 +57,27 @@ describe('pinned (fixed) blocks', () => {
     const [stayed, pushed] = moveItem([pinned, other], 'priority', 0, 0, fixed);
     expect(stayed).toEqual(pinned);
     expect(pushed).toMatchObject({ id: 'priority', y: 4 });
+  });
+});
+
+describe('collapsed sections', () => {
+  const section = (id: string, y: number): LayoutItem => ({ id, type: 'section', x: 0, y, w: 12, h: 1 });
+  const layout = [section('top', 0), b('a', 0, 1, 6, 4), b('b', 6, 1, 6, 6), section('mid', 7), b('c', 0, 8, 12, 4), b('d', 0, 12, 4, 2)];
+
+  it('hides the blocks under a collapsed section and closes the gap', () => {
+    const { items, hidden } = collapseSections(layout, new Set(['top']));
+    expect(items.map((item) => `${item.id}@${item.y}`)).toEqual(['top@0', 'mid@1', 'c@2', 'd@6']);
+    expect(hidden.get('top')).toBe(2);
+  });
+
+  it('folds the last section down to the end, and several at once', () => {
+    expect(collapseSections(layout, new Set(['mid'])).items.map((item) => item.id)).toEqual(['top', 'a', 'b', 'mid']);
+    const both = collapseSections(layout, new Set(['top', 'mid']));
+    expect(both.items.map((item) => `${item.id}@${item.y}`)).toEqual(['top@0', 'mid@1']);
+    expect(validateLayoutItems('home', both.items)).toEqual([]);
+  });
+
+  it('changes nothing when nothing is collapsed', () => {
+    expect(collapseSections(layout, new Set()).items).toEqual(layout);
   });
 });

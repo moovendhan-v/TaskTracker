@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { usePermissions } from '@/modules/workspaces';
 import type { ArrangeableLayout } from '../hooks/use-layout';
-import { addItem, removeItem } from '../lib/grid';
+import { addItem, collapseSections, removeItem } from '../lib/grid';
 import { BlockConfigDrawer } from './block-config-drawer';
 import { BlockGrid } from './block-grid';
 import { ConfiguredBlock, type BlockScope } from './configured-block';
@@ -54,6 +54,10 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
   const [arrangingState, setArranging] = useState(false);
   const [library, setLibrary] = useState(false);
   const arranging = canArrange && arrangingState;
+  // Folded sections: per viewer and page, remembered in this browser; arranging always shows everything.
+  const [collapsed, toggleSection] = useCollapsedSections(`${layout.pageKey}:${scope?.workspaceId ?? workspaceId ?? ''}`);
+  const folded = useMemo(() => (layout.items && !arranging ? collapseSections(layout.items, collapsed) : null), [layout.items, arranging, collapsed]);
+  const shownItems = folded?.items ?? layout.items;
 
   const remove = (item: LayoutItem) => {
     if (!layout.items) return;
@@ -172,7 +176,7 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
           </div>
         ) : (
           <BlockGrid
-            items={layout.items}
+            items={shownItems ?? layout.items}
             arranging={arranging}
             onChange={(items) => layout.setItems(items)}
             onRemove={remove}
@@ -190,6 +194,7 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
                   arranging={arranging && !fixed.has(item.id)}
                   canArrange={canArrange && !fixed.has(item.id)}
                   pinnedNote={fixed.has(item.id) ? 'Pinned by your workspace' : item.pinned && managesLayouts && personal ? 'Pinned for everyone once published' : undefined}
+                  fold={item.type === SECTION_BLOCK ? { collapsed: collapsed.has(item.id), hidden: folded?.hidden.get(item.id) ?? 0, onToggle: () => toggleSection(item.id) } : undefined}
                   onTogglePin={personal && managesLayouts && canArrange ? () => layout.items && layout.setItems(layout.items.map((other) => (other.id === item.id ? cleanLayoutItem({ ...other, pinned: !other.pinned }) : other))) : undefined}
                   scope={scope}
                   onConfigure={() => setConfiguring(item.id)}
@@ -257,4 +262,31 @@ export function LayoutPreview({ items, titleOf, label }: { items: readonly Layou
       </div>
     </figure>
   );
+}
+
+/** Which sections this viewer folded on this page, kept in the browser (never in the layout). */
+function useCollapsedSections(key: string): [ReadonlySet<string>, (id: string) => void] {
+  const storageKey = `layout-collapsed:${key}`;
+  const [ids, setIds] = useState<ReadonlySet<string>>(() => {
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string').slice(0, 50) : []);
+    } catch {
+      return new Set();
+    }
+  });
+  const toggle = (id: string) =>
+    setIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify([...next]));
+      } catch {
+        // Private mode or full storage: folding still works for this visit.
+      }
+      return next;
+    });
+  return [ids, toggle];
 }
