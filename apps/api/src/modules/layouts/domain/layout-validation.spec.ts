@@ -67,3 +67,25 @@ describe('task-list block filters and fields', () => {
     expect(cleanLayoutItem({ id: 'overdue-tasks', type: 'overdue-tasks', x: 0, y: 0, w: 4, h: 7, config: { mine: false, priorities: [] } }).config).toBeUndefined();
   });
 });
+
+describe('sections and stacked tabs', () => {
+  const at = (patch: Partial<LayoutItem>): LayoutItem => ({ id: 'a', type: 'status', x: 0, y: 0, w: 6, h: 4, ...patch });
+
+  it('lets a section be one row high, but no other block', () => {
+    expect(validateLayoutItems('home', [at({ id: 'section-1', type: 'section', w: 12, h: 1, config: { title: 'This week' } })])).toEqual([]);
+    expect(validateLayoutItems('project', [at({ id: 'section-1', type: 'section', w: 12, h: 1 })])).toEqual([]);
+    expect(validateLayoutItems('home', [at({ h: 1 })])).toEqual(['Block 1: size out of range']);
+    expect(validateLayoutItems('home', [at({ id: 'section-1', type: 'section', config: { limit: 5 } as never })])).toEqual(["Block 1: limit isn't a setting of this block"]);
+  });
+
+  it('stacks other blocks of the page as tabs, each once, and keeps them when cleaned', () => {
+    expect(validateLayoutItems('home', [at({ tabs: ['priority', 'workload'] })])).toEqual([]);
+    expect(validateLayoutItems('home', [at({ tabs: ['status'] })])).toEqual(['Block 1: stacked tabs must be other blocks of this page, each once']);
+    expect(validateLayoutItems('home', [at({ tabs: ['priority', 'priority'] })])).toEqual(['Block 1: stacked tabs must be other blocks of this page, each once']);
+    expect(validateLayoutItems('home', [at({ tabs: ['phases'] })])).toEqual(['Block 1: stacked tabs must be other blocks of this page, each once']);
+    expect(validateLayoutItems('home', [at({ tabs: ['section'] })])).toEqual(['Block 1: stacked tabs must be other blocks of this page, each once']);
+    expect(validateLayoutItems('home', [at({ tabs: ['priority', 'workload', 'due-forecast', 'created-closed', 'hours-per-day'] })])).toEqual(['Block 1: at most 4 stacked tabs']);
+    expect(cleanLayoutItem(at({ tabs: ['priority'] })).tabs).toEqual(['priority']);
+    expect(cleanLayoutItem(at({ tabs: [] }))).not.toHaveProperty('tabs');
+  });
+});

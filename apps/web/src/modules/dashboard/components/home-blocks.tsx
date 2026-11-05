@@ -8,6 +8,7 @@ import {
   FolderKanbanIcon,
   HistoryIcon,
   HourglassIcon,
+  HeadingIcon,
   TrendingUpIcon,
   TriangleAlertIcon,
   UsersIcon,
@@ -18,7 +19,7 @@ import type { ReactNode } from 'react';
 import { CreatedVsClosed, DueForecast, HoursByPerson, HoursByProject, HoursPerDay, OverdueAging, PriorityPanel, StatusBreakdown, Workload } from './dashboard-panels';
 import { DashboardTaskList } from './dashboard-task-list';
 
-export type BlockCategory = 'Project' | 'Tasks' | 'Insights' | 'Time' | 'People';
+export type BlockCategory = 'Project' | 'Tasks' | 'Insights' | 'Time' | 'People' | 'Layout';
 
 export interface BlockDefinition {
   title: string;
@@ -33,6 +34,17 @@ export interface BlockDefinition {
   /** Draws the block from its data; `config` is the block's own settings (view and data source). */
   render: (data: DashboardResponse, config: BlockConfig) => ReactNode;
 }
+
+/** A full-width heading that splits a page into regions; it has a title and nothing to load. */
+export const SECTION_DEFINITION: BlockDefinition = {
+  title: 'Section',
+  description: 'A heading that splits the page into regions',
+  icon: HeadingIcon,
+  category: 'Layout',
+  skeleton: 'rows',
+  size: { w: 12, h: 1 },
+  render: () => null,
+};
 
 /** A task list cut to the block's limit, if it has one. */
 export const limited = <T,>(tasks: readonly T[], config: BlockConfig) => (config.limit ? tasks.slice(0, config.limit) : tasks);
@@ -151,6 +163,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     size: { w: 12, h: 6 },
     render: (data, config) => <DashboardTaskList tasks={limited(data.recentlyUpdated, config)} fields={config.fields} date="updated" columns={2} />,
   },
+  section: SECTION_DEFINITION,
 };
 
 /** The blocks a page can hold, in library order. */

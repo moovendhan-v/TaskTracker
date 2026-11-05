@@ -1,4 +1,4 @@
-import { GRID_COLUMNS, LAYOUT_LIMITS, overlaps, type LayoutItem } from '@taskflow/shared-types';
+import { GRID_COLUMNS, LAYOUT_LIMITS, minHeightOf, overlaps, type LayoutItem } from '@taskflow/shared-types';
 
 /**
  * Grid rules for arrangeable blocks. One rule does all the work: `arrange`
@@ -36,7 +36,7 @@ export function moveItem(items: readonly LayoutItem[], id: string, x: number, y:
 export function resizeItem(items: readonly LayoutItem[], id: string, w: number, h: number): LayoutItem[] {
   return arrange(
     items.map((item) =>
-      item.id === id ? { ...item, w: clamp(w, LAYOUT_LIMITS.minW, GRID_COLUMNS - item.x), h: clamp(h, LAYOUT_LIMITS.minH, LAYOUT_LIMITS.maxH) } : item,
+      item.id === id ? { ...item, w: clamp(w, LAYOUT_LIMITS.minW, GRID_COLUMNS - item.x), h: clamp(h, minHeightOf(item.type), LAYOUT_LIMITS.maxH) } : item,
     ),
     id,
   );

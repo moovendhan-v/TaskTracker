@@ -181,4 +181,23 @@ describe('dashboard layouts', () => {
     await ws.owner.data(LOCK, { w, p: 'home', l: false });
     expect((await member.data<{ myLayout: { items: unknown[] } }>(GET, { w, p: 'home' })).myLayout.items).toHaveLength(1);
   });
+
+  it('stores sections and stacked tabs, checked by the layout rules', async () => {
+    const ws = await createWorkspace('Layout stacks');
+    const w = ws.workspaceId;
+    const READ = 'query($w: ID!, $p: String!) { myLayout(workspaceId: $w, pageKey: $p) { items { id type h tabs config { title } } } }';
+    const layout = [
+      { id: 'section-1', type: 'section', x: 0, y: 0, w: 12, h: 1, config: { title: 'This week' } },
+      { id: 'priority', type: 'priority', x: 0, y: 1, w: 6, h: 4, tabs: ['workload', 'due-forecast'] },
+    ];
+    await ws.owner.data(SAVE, { w, input: { pageKey: 'home', baseVersion: null, items: layout } });
+    const stored = (await ws.owner.data<{ myLayout: { items: { id: string; type: string; h: number; tabs: string[] | null; config: { title: string } | null }[] } }>(READ, { w, p: 'home' })).myLayout.items;
+    expect(stored).toEqual([
+      { id: 'section-1', type: 'section', h: 1, tabs: null, config: { title: 'This week' } },
+      { id: 'priority', type: 'priority', h: 4, tabs: ['workload', 'due-forecast'], config: null },
+    ]);
+    const bad = (items: unknown[]) => ws.owner.error(SAVE, { w, input: { pageKey: 'home', baseVersion: 1, items } });
+    expect((await bad([{ ...layout[1], tabs: ['phases'] }])).message).toMatch(/stacked tabs must be other blocks of this page/);
+    expect((await bad([{ id: 'status', type: 'status', x: 0, y: 0, w: 6, h: 1 }])).message).toMatch(/size out of range/);
+  });
 });
