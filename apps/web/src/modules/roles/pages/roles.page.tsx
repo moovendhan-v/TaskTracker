@@ -30,7 +30,7 @@ export function RolesPage({ workspaceId }: { workspaceId: string }) {
         description="Roles get their rights from policies. Policies allow or deny permissions and fields, and a deny can be limited to some spaces."
         icon={<ShieldIcon className="size-5 text-muted-foreground" />}
       />
-      <Tabs value={tab} onValueChange={setTab} className="mx-auto grid max-w-4xl gap-4 p-6">
+      <Tabs value={tab} onValueChange={setTab} className="mx-auto grid max-w-4xl grid-cols-[minmax(0,1fr)] gap-4 p-4 md:p-6">
         <TabsList className="justify-self-start">
           <TabsTrigger value="roles">
             <ShieldIcon /> Roles

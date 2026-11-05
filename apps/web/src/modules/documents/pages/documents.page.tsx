@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 import { DocTasksProvider } from '../components/task-embeds';
 import { useCurrentUser } from '@/core/auth/use-current-user';
+import { useViewport } from '@/core/layout/use-viewport';
 import { useSpaces } from '@/modules/spaces';
 import { usePermissions } from '@/modules/workspaces';
 import { DocEditor } from '../components/doc-editor';
@@ -27,6 +28,8 @@ interface DocumentsPageProps {
 export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
   const navigate = useNavigate();
   const [treeOpen, setTreeOpen] = useState(true);
+  // On a phone the tree and the page take turns: the tree until a page is open.
+  const phone = useViewport() === 'phone';
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search.trim());
   const tree = useDocumentTree(workspaceId, deferredSearch);
@@ -56,7 +59,7 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
       <aside
         className={cn(
           'flex w-72 shrink-0 flex-col border-r bg-card/50 transition-all duration-200',
-          !treeOpen && 'hidden'
+          phone ? (documentId ? 'hidden' : 'w-full border-r-0') : !treeOpen && 'hidden'
         )}
         aria-label="Page tree"
       >
@@ -106,7 +109,7 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
           />
         </div>
       </aside>
-      <section className="min-w-0 flex-1 overflow-y-auto">
+      <section className={cn('min-w-0 flex-1 overflow-y-auto', phone && !documentId && 'hidden')}>
         {!documentId ? (
           <div className="p-10">
             {!treeOpen ? (
@@ -141,6 +144,11 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
           <ErrorState error={document.error} />
         ) : (
           <>
+            {phone ? (
+              <Link to="/w/$workspaceId/docs" params={{ workspaceId }} className="flex items-center gap-1 px-4 pt-3 text-xs text-muted-foreground hover:text-foreground">
+                <ChevronRightIcon className="size-3 rotate-180" /> All pages
+              </Link>
+            ) : null}
             {expandedPath.length > 1 || (!treeOpen && document.data.kind === 'folder') ? (
               <nav aria-label="Breadcrumb" className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-1.5 px-6 pt-4 text-xs text-muted-foreground">
                 {!treeOpen ? (
@@ -182,7 +190,7 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
                 document={document.data}
                 canEdit={canEdit(document.data)}
                 treeOpen={treeOpen}
-                onToggleTree={() => setTreeOpen((prev) => !prev)}
+                onToggleTree={() => (phone ? void navigate({ to: '/w/$workspaceId/docs', params: { workspaceId } }) : setTreeOpen((prev) => !prev))}
               />
             )}
           </>

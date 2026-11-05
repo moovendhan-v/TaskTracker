@@ -26,7 +26,7 @@ export function WorkspaceSettingsPage({ workspaceId }: { workspaceId: string }) 
   return (
     <div className="flex-1 overflow-y-auto">
       <PageHeader title="Workspace settings" icon={<SettingsIcon className="size-5 text-muted-foreground" />} />
-      <div className="mx-auto grid max-w-2xl gap-6 p-6">
+      <div className="mx-auto grid max-w-2xl grid-cols-[minmax(0,1fr)] gap-6 p-4 md:p-6">
         <Card>
           <CardHeader>
             <CardTitle>General</CardTitle>

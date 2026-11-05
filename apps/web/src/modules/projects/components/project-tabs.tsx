@@ -36,7 +36,7 @@ export function ProjectTabs({
   const visibleTabs: ProjectView[] = isMoreView ? [...CORE_VIEWS, current] : [...CORE_VIEWS];
 
   return (
-    <nav aria-label="Project views" className={cn('flex items-center gap-1', className)}>
+    <nav aria-label="Project views" className={cn('flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]', className)}>
       {visibleTabs.map((view) => {
         const meta = VIEW_META[view];
         const Icon = meta.icon;

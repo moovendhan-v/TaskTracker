@@ -117,7 +117,7 @@ export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initial
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          className="fixed top-[10vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-[720px] -translate-x-1/2 rounded-xl border bg-popover text-popover-foreground shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          className="fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] overflow-y-auto rounded-t-2xl border-t bg-popover pb-[env(safe-area-inset-bottom)] text-popover-foreground shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-8 sm:inset-x-auto sm:top-[10vh] sm:bottom-auto sm:left-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-[720px] sm:-translate-x-1/2 sm:overflow-visible sm:rounded-xl sm:border sm:pb-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=open]:zoom-in-95"
         >
           <DialogPrimitive.Title className="sr-only">New task</DialogPrimitive.Title>
           <form

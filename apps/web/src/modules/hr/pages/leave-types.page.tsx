@@ -27,7 +27,7 @@ export function LeaveTypesPage({ workspaceId }: { workspaceId: string }) {
           />
         }
       />
-      <ul className="mx-auto grid max-w-3xl gap-2 p-6">
+      <ul className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-2 p-4 md:p-6">
         {leaveTypes.map((type) => (
           <li key={type.id} className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3">
             <span className="size-3 rounded-full" style={{ backgroundColor: type.color }} aria-hidden />

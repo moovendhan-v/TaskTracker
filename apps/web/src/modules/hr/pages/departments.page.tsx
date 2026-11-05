@@ -39,7 +39,7 @@ export function DepartmentsPage({ workspaceId }: { workspaceId: string }) {
           ) : null
         }
       />
-      <div className="mx-auto grid max-w-5xl gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)] gap-4 p-4 md:p-6 sm:grid-cols-2 lg:grid-cols-3">
         {departments.length === 0 ? (
           <EmptyState className="col-span-full" icon={<Building2Icon />} title="No departments yet" />
         ) : null}

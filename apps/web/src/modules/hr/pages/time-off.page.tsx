@@ -28,7 +28,7 @@ export function TimeOffPage({ workspaceId }: { workspaceId: string }) {
         icon={<PalmtreeIcon className="size-5 text-muted-foreground" />}
         actions={can('leave.request') ? <LeaveRequestDialog leaveTypes={leaveTypes} onSubmit={(values) => mutations.request.mutateAsync(values)} /> : null}
       />
-      <div className="mx-auto grid max-w-5xl gap-8 p-6">
+      <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)] gap-8 p-4 md:p-6">
         {leaveTypes.length === 0 ? (
           <EmptyState icon={<PalmtreeIcon />} title="No leave types yet" description="An HR manager needs to set up leave types first." />
         ) : (

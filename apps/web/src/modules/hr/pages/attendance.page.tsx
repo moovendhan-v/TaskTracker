@@ -29,7 +29,7 @@ export function AttendancePage({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="flex-1 overflow-y-auto">
       <PageHeader title="Attendance" description="Clock in and out of your working day" icon={<TimerIcon className="size-5 text-muted-foreground" />} />
-      <div className="mx-auto grid max-w-5xl gap-8 p-6">
+      <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)] gap-8 p-4 md:p-6">
         <MyClock workspaceId={workspaceId} />
         {can('hr.manage') ? <TeamWeek workspaceId={workspaceId} /> : null}
       </div>

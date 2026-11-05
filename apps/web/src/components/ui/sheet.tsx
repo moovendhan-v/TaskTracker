@@ -6,14 +6,16 @@ import { cn } from '@/lib/cn';
 export const Sheet = SheetPrimitive.Root;
 export const SheetClose = SheetPrimitive.Close;
 
-/** Right-hand side panel, used for task details. */
-export function SheetContent({ className, children, ...props }: ComponentProps<typeof SheetPrimitive.Content>) {
+/** A side panel: on the right for task details, on the left for the phone and tablet navigation. */
+export function SheetContent({ className, children, side = 'right', ...props }: ComponentProps<typeof SheetPrimitive.Content> & { side?: 'left' | 'right' }) {
   return (
     <SheetPrimitive.Portal>
       <SheetPrimitive.Overlay className="fixed inset-0 z-50 bg-black/30 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
       <SheetPrimitive.Content
         className={cn(
-          'fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col border-l bg-background shadow-xl sm:max-w-xl data-[state=open]:animate-in data-[state=open]:slide-in-from-right',
+          side === 'left'
+            ? 'fixed inset-y-0 left-0 z-50 flex h-full w-full flex-col border-r bg-background shadow-xl data-[state=open]:animate-in data-[state=open]:slide-in-from-left'
+            : 'fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col border-l bg-background shadow-xl sm:max-w-xl data-[state=open]:animate-in data-[state=open]:slide-in-from-right',
           className,
         )}
         {...props}

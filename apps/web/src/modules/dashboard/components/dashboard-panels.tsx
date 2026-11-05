@@ -70,7 +70,7 @@ export function StatusBreakdown({ data, openOnly }: { data: Dashboard; openOnly:
 export function PriorityPanel({ data }: { data: Dashboard }) {
   const max = Math.max(1, ...data.byPriority.map((row) => row.open));
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
       <Legend
         items={[
           { key: 'ontime', label: 'On time', color: 'var(--chart-1)' },
@@ -111,7 +111,7 @@ export function OverdueAging({ data }: { data: Dashboard }) {
 export function DueForecast({ data }: { data: Dashboard }) {
   const color = { overdue: 'var(--critical)', week: 'var(--chart-1)', later: 'var(--muted-foreground)', none: 'var(--muted-foreground)' } as const;
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
       <Legend
         items={[
           { key: 'overdue', label: 'Overdue', color: color.overdue },

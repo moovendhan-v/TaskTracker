@@ -46,7 +46,7 @@ export function SearchDialog({ workspaceId, open, onOpenChange }: { workspaceId:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="top-24 translate-y-0 gap-0 p-0 sm:max-w-xl">
+      <DialogContent className="gap-0 p-0 sm:top-24 sm:max-w-xl sm:translate-y-0">
         <DialogTitle className="sr-only">Search messages</DialogTitle>
         <DialogDescription className="sr-only">Messages in the channels and direct messages you can read.</DialogDescription>
         <div className="flex items-center gap-2 border-b px-4">

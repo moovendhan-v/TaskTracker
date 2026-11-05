@@ -46,12 +46,12 @@ export function MyTasksPage({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto grid max-w-6xl gap-5 px-6 py-6">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-5 px-4 py-4 md:px-6 md:py-6">
         <header className="flex items-center gap-3">
           <CheckSquareIcon className="size-5 text-primary" />
           <h1 className="flex-1 text-xl font-semibold">My tasks</h1>
           <span className="text-sm text-muted-foreground">{tasks.data?.total ?? 0} open</span>
-          <Button size="sm" onClick={() => setCreating(true)}>
+          <Button size="sm" className="hidden sm:inline-flex" onClick={() => setCreating(true)}>
             <PlusIcon /> Task
           </Button>
         </header>
@@ -65,18 +65,24 @@ export function MyTasksPage({ workspaceId }: { workspaceId: string }) {
               <ul className="divide-y border-t">
                 {rows.map((task) => (
                   <li key={task.id}>
-                    <button type="button" onClick={() => openTask(task.id)} className="grid w-full grid-cols-[3.5rem_5.5rem_minmax(0,1fr)_10rem_auto_6rem] items-center gap-3 px-4 py-2 text-left text-sm hover:bg-muted/50">
-                      <span className="text-xs text-muted-foreground tabular-nums">#{task.number}</span>
-                      <TypeBadge type={task.type} className="justify-self-start" />
+                    <button type="button" onClick={() => openTask(task.id)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2 text-left text-sm hover:bg-muted/50 md:grid-cols-[3.5rem_5.5rem_minmax(0,1fr)_10rem_auto_6rem]">
+                      <span className="hidden text-xs text-muted-foreground tabular-nums md:inline">#{task.number}</span>
+                      <TypeBadge type={task.type} className="hidden justify-self-start md:inline-flex" />
                       <span className="min-w-0">
                         <span className={cn('block truncate font-medium', isClosedCategory(task.status.category) && 'line-through')}>{task.title}</span>
+                        {/* On a phone the number, project and due date sit under the title. */}
+                        <span className="flex min-w-0 gap-1.5 text-xs text-muted-foreground md:hidden">
+                          <span className="tabular-nums">#{task.number}</span>
+                          <span className="truncate">{spaces.find((space) => space.id === task.spaceId)?.name}</span>
+                          {task.dueDate ? <span className={cn('ml-auto shrink-0 tabular-nums', bucket.key === 'overdue' && 'text-critical')}>{formatNumericDate(task.dueDate)}</span> : null}
+                        </span>
                       </span>
-                      <span className="truncate text-xs text-muted-foreground">{spaces.find((space) => space.id === task.spaceId)?.name}</span>
+                      <span className="hidden truncate text-xs text-muted-foreground md:inline">{spaces.find((space) => space.id === task.spaceId)?.name}</span>
                       <span className="flex items-center gap-2">
                         <PriorityIcon priority={task.priority} className="size-3.5" />
                         <StatusPill status={task.status} />
                       </span>
-                      <span className={cn('text-right tabular-nums', bucket.key === 'overdue' ? 'text-critical' : 'text-muted-foreground')}>{task.dueDate ? formatNumericDate(task.dueDate) : '–'}</span>
+                      <span className={cn('hidden text-right tabular-nums md:inline', bucket.key === 'overdue' ? 'text-critical' : 'text-muted-foreground')}>{task.dueDate ? formatNumericDate(task.dueDate) : '–'}</span>
                     </button>
                   </li>
                 ))}

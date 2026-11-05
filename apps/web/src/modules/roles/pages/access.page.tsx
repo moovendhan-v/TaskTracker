@@ -79,7 +79,7 @@ export function AccessPage({ workspaceId, initial = {} }: { workspaceId: string;
         description={manager ? 'Check what anyone in the workspace can do, and why' : 'Check what you can do here, and ask for what you need'}
         icon={<KeyRoundIcon className="size-5 text-muted-foreground" />}
       />
-      <div className="mx-auto grid max-w-3xl gap-6 p-6">
+      <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-6 p-4 md:p-6">
         <section aria-label="What to check" className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3">
           {manager ? (
             <div className="grid gap-1.5">

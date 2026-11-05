@@ -56,7 +56,7 @@ export function SprintsPage({ workspaceId, spaceId }: SprintsPageProps) {
   if (sprints.isError) return <ErrorState error={sprints.error} onRetry={() => void sprints.refetch()} />;
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-6 pb-10">
+    <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] gap-6 pb-10">
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-semibold">Sprints</h2>
