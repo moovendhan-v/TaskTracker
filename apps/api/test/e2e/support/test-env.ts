@@ -42,6 +42,7 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     TRUST_PROXY: '1',
     // Check waits and due-soon / overdue triggers every second, so tests don't wait a minute.
     AUTOMATION_TICK_SECONDS: '1',
+    CHAT_RETENTION_SWEEP_SECONDS: '1',
     // Webhook steps call a local receiver in tests; production refuses both settings below.
     AUTOMATION_WEBHOOK_HOSTS: 'localhost,127.0.0.1',
     AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS: 'true',

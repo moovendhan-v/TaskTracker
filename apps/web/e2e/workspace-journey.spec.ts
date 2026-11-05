@@ -750,6 +750,9 @@ test('chats in a channel, replies in a thread and turns a message into a task', 
   const dialog = page.getByRole('dialog', { name: 'Create task from message' });
   await dialog.getByRole('button', { name: 'Create task' }).click();
   await expect(page).toHaveURL(/[?&]task=[0-9a-f-]{36}/);
+  // The new task says where it came up in chat: here, the "created" line in the thread.
+  await page.getByRole('tab', { name: /^Chat/ }).click();
+  await expect(page.getByRole('list', { name: 'Chat messages about this task' }).getByRole('listitem')).toContainText(['release-train']);
   await page.keyboard.press('Escape');
   await expect(thread.getByText(/created/)).toBeVisible();
   await thread.getByRole('button', { name: 'Close thread' }).click();
@@ -806,6 +809,18 @@ test('chats in a channel, replies in a thread and turns a message into a task', 
   await expect(edit).toBeHidden();
   await expect(page.getByRole('heading', { name: 'release-crew', level: 2 })).toBeVisible();
   await expect(page.getByText('· Ship notes every Friday')).toBeVisible();
+});
+
+test('sets how long chat is kept, and chat says so', async () => {
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Settings' }).click();
+  await page.getByLabel('Keep chat for').selectOption('365');
+  await page.getByRole('button', { name: 'Save' }).last().click();
+  const confirm = page.getByRole('dialog', { name: 'Keep chat for 1 year?' });
+  await expect(confirm).toContainText('deleted for everyone');
+  await confirm.getByRole('button', { name: 'Delete older chat' }).click();
+  await expect(page.getByText('Chat is kept for 1 year')).toBeVisible();
+  await page.getByRole('navigation', { name: 'Apps' }).getByRole('link', { name: /^Chat/ }).click();
+  await expect(page.getByText('Chat is kept for 1 year, then removed.')).toBeVisible();
 });
 
 test('fits a phone: bottom tabs, a menu drawer and a bottom-sheet new task', async () => {

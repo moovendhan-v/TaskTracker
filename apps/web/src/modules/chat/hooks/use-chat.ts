@@ -15,6 +15,7 @@ export const chatKeys = {
   messages: (workspaceId: string, channelId: string) => [...queryKeys.chatRoot(workspaceId), 'messages', channelId] as const,
   message: (workspaceId: string, messageId: string) => [...queryKeys.chatRoot(workspaceId), 'message', messageId] as const,
   thread: (workspaceId: string, messageId: string) => [...queryKeys.chatRoot(workspaceId), 'thread', messageId] as const,
+  retention: (workspaceId: string) => [...queryKeys.chatRoot(workspaceId), 'retention'] as const,
 };
 
 export function useChatChannels(workspaceId: string, enabled = true) {
@@ -154,4 +155,9 @@ export function useChatSearch(workspaceId: string, query: string) {
     staleTime: 10_000,
     placeholderData: (previous) => previous,
   });
+}
+
+/** How long the workspace keeps chat, in days (null: forever). */
+export function useChatRetention(workspaceId: string, enabled = true) {
+  return useQuery({ queryKey: chatKeys.retention(workspaceId), queryFn: () => chatApi.retention(workspaceId), enabled, staleTime: 5 * 60_000 });
 }

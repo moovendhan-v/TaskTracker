@@ -20,7 +20,8 @@ import { Composer } from '../components/composer';
 import { MessageFeed } from '../components/message-feed';
 import { MessageItem } from '../components/message-item';
 import { SearchDialog } from '../components/search-dialog';
-import { useChatChannel, useChatChannels, useChatMessage, useChatMessages, useChatMutations, useChatThread, useTypingIn } from '../hooks/use-chat';
+import { useChatChannel, useChatChannels, useChatMessage, useChatMessages, useChatMutations, useChatRetention, useChatThread, useTypingIn } from '../hooks/use-chat';
+import { retentionLabel } from '../components/chat-retention-card';
 import { chatApi } from '../api/chat.api';
 import { useMemberName } from '@/modules/members';
 import { channelLabel } from '../lib/chat-display';
@@ -38,6 +39,7 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
   const allowed = can('chat.use');
   const { data: me } = useCurrentUser();
   const { data: channels } = useChatChannels(workspaceId, allowed);
+  const retention = useChatRetention(workspaceId, allowed);
   const [dialog, setDialog] = useState<'channel' | 'dm' | 'browse' | 'search' | null>(null);
 
   // "/" opens message search, unless you're typing somewhere.
@@ -72,7 +74,7 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
   return (
     <DocTasksProvider workspaceId={workspaceId}>
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <ChannelList channels={channels} activeId={channelId} onSelect={openChannel} onNewChannel={() => setDialog('channel')} onNewMessage={() => setDialog('dm')} onBrowse={() => setDialog('browse')} onSearch={() => setDialog('search')} />
+        <ChannelList channels={channels} activeId={channelId} onSelect={openChannel} onNewChannel={() => setDialog('channel')} onNewMessage={() => setDialog('dm')} onBrowse={() => setDialog('browse')} onSearch={() => setDialog('search')} keptFor={retention.data ? retentionLabel(retention.data).toLowerCase() : null} />
         {channelId && me ? (
           <Conversation key={channelId} workspaceId={workspaceId} channelId={channelId} threadId={threadId} me={me.id} onThread={(thread) => open(channelId, thread)} />
         ) : channels && channels.length === 0 ? (

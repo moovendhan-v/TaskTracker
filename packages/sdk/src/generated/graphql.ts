@@ -1308,6 +1308,29 @@ export type DiscardChatUploadMutationVariables = Exact<{
 
 export type DiscardChatUploadMutation = { discardChatUpload: boolean };
 
+export type TaskChatMessagesQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type TaskChatMessagesQuery = { taskChatMessages: Array<{ channelKind: string, channelName: string | null, message: { id: string, channelId: string, parentId: string | null, authorId: string | null, authorName: string | null, kind: string, body: string, taskId: string | null, replyCount: number, lastReplyAt: string | null, editedAt: string | null, deleted: boolean, createdAt: string, reactions: Array<{ emoji: string, count: number, mine: boolean, names: Array<string> }>, attachments: Array<{ id: string, fileName: string, contentType: string, size: number, isImage: boolean, url: string }> } }> };
+
+export type ChatRetentionQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ChatRetentionQuery = { chatRetention: { id: string, workspaceId: string, days: number | null } };
+
+export type SetChatRetentionMutationVariables = Exact<{
+  workspaceId: string;
+  days?: number | null | undefined;
+}>;
+
+
+export type SetChatRetentionMutation = { setChatRetention: { id: string, workspaceId: string, days: number | null } };
+
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
   taskId: string;
@@ -4594,6 +4617,63 @@ export const DiscardChatUploadDocument = new TypedDocumentString(`
   discardChatUpload(workspaceId: $workspaceId, attachmentId: $attachmentId)
 }
     `) as unknown as TypedDocumentString<DiscardChatUploadMutation, DiscardChatUploadMutationVariables>;
+export const TaskChatMessagesDocument = new TypedDocumentString(`
+    query TaskChatMessages($workspaceId: ID!, $taskId: ID!) {
+  taskChatMessages(workspaceId: $workspaceId, taskId: $taskId) {
+    channelKind
+    channelName
+    message {
+      ...ChatMessageFields
+    }
+  }
+}
+    fragment ChatMessageFields on ChatMessage {
+  id
+  channelId
+  parentId
+  authorId
+  authorName
+  kind
+  body
+  taskId
+  replyCount
+  lastReplyAt
+  editedAt
+  deleted
+  createdAt
+  reactions {
+    emoji
+    count
+    mine
+    names
+  }
+  attachments {
+    id
+    fileName
+    contentType
+    size
+    isImage
+    url
+  }
+}`) as unknown as TypedDocumentString<TaskChatMessagesQuery, TaskChatMessagesQueryVariables>;
+export const ChatRetentionDocument = new TypedDocumentString(`
+    query ChatRetention($workspaceId: ID!) {
+  chatRetention(workspaceId: $workspaceId) {
+    id
+    workspaceId
+    days
+  }
+}
+    `) as unknown as TypedDocumentString<ChatRetentionQuery, ChatRetentionQueryVariables>;
+export const SetChatRetentionDocument = new TypedDocumentString(`
+    mutation SetChatRetention($workspaceId: ID!, $days: Int) {
+  setChatRetention(workspaceId: $workspaceId, days: $days) {
+    id
+    workspaceId
+    days
+  }
+}
+    `) as unknown as TypedDocumentString<SetChatRetentionMutation, SetChatRetentionMutationVariables>;
 export const CommentsDocument = new TypedDocumentString(`
     query Comments($workspaceId: ID!, $taskId: ID!) {
   comments(workspaceId: $workspaceId, taskId: $taskId) {

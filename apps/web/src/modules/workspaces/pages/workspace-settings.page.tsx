@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { ChatRetentionCard } from '@/modules/chat';
 import { GithubIntegration } from '@/modules/integrations';
 import { WorkspaceForm } from '../components/workspace-form';
 import { usePermissions } from '../hooks/use-permissions';
@@ -60,6 +61,7 @@ export function WorkspaceSettingsPage({ workspaceId }: { workspaceId: string }) 
             <GithubIntegration workspaceId={workspaceId} canManage={can('integration.manage')} />
           </CardContent>
         </Card>
+        {canManage ? <ChatRetentionCard workspaceId={workspaceId} /> : null}
         {canManage ? (
           <Card className="border-destructive/40">
             <CardHeader>

@@ -24,6 +24,8 @@ import {
   ToggleChatReactionDocument,
   ChatTypingDocument,
   SearchChatMessagesDocument,
+  ChatRetentionDocument,
+  SetChatRetentionDocument,
   RequestChatUploadDocument,
   CompleteChatUploadDocument,
   DiscardChatUploadDocument,
@@ -69,6 +71,9 @@ export const chatApi = {
       channelKind: hit.channelKind as ChatChannelKind,
       channelName: hit.channelName ?? null,
     })),
+  /** How many days the workspace keeps chat; null keeps everything. */
+  retention: async (workspaceId: string) => (await graphql(ChatRetentionDocument, { workspaceId })).chatRetention.days ?? null,
+  setRetention: async (workspaceId: string, days: number | null) => (await graphql(SetChatRetentionDocument, { workspaceId, days })).setChatRetention.days ?? null,
   createTask: async (workspaceId: string, input: { messageId: string; listId: string; title?: string }) =>
     message((await graphql(CreateTaskFromChatMessageDocument, { workspaceId, input })).createTaskFromChatMessage),
 };

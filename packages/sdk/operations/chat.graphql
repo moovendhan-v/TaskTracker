@@ -118,3 +118,15 @@ mutation CompleteChatUpload($workspaceId: ID!, $attachmentId: ID!) {
 }
 
 mutation DiscardChatUpload($workspaceId: ID!, $attachmentId: ID!) { discardChatUpload(workspaceId: $workspaceId, attachmentId: $attachmentId) }
+
+query TaskChatMessages($workspaceId: ID!, $taskId: ID!) {
+  taskChatMessages(workspaceId: $workspaceId, taskId: $taskId) {
+    channelKind
+    channelName
+    message { ...ChatMessageFields }
+  }
+}
+
+query ChatRetention($workspaceId: ID!) { chatRetention(workspaceId: $workspaceId) { id workspaceId days } }
+
+mutation SetChatRetention($workspaceId: ID!, $days: Int) { setChatRetention(workspaceId: $workspaceId, days: $days) { id workspaceId days } }

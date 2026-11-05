@@ -338,6 +338,25 @@ export class TypeOrmChatRepository extends ChatRepository {
     return rows.map((row) => ({ record: toMessage(row), channelKind: row.channel_kind, channelName: row.channel_name }));
   }
 
+  async messagesAboutTask(workspaceId: string, taskId: string, number: number, limit: number): Promise<{ record: ChatMessageRecord; channelKind: ChatChannelKind; channelName: string | null }[]> {
+    if (!Number.isSafeInteger(number) || number < 1) return [];
+    // The search index finds the number; the pattern (a bound value built from an integer) checks it's #N or a task card.
+    const rows = await this.query<MessageRow & { channel_kind: ChatChannelKind; channel_name: string | null }>(
+      `SELECT found.*, c.kind AS channel_kind, c.name AS channel_name
+       FROM (
+         ${MESSAGE_SELECT}
+         WHERE m.workspace_id = $1 AND m.deleted_at IS NULL
+           AND (m.task_id = $2 OR (m.search @@ to_tsquery('simple', $3) AND m.body ~ $4))
+         ORDER BY m.created_at DESC, m.id DESC
+         LIMIT $5
+       ) found
+       JOIN chat_channel c ON c.id = found.channel_id
+       ORDER BY found.created_at DESC, found.id DESC`,
+      [workspaceId, taskId, String(number), `(^|[^A-Za-z0-9_&#])#${number}([^0-9]|$)|:::task ${number}([^0-9]|$)`, limit],
+    );
+    return rows.map((row) => ({ record: toMessage(row), channelKind: row.channel_kind, channelName: row.channel_name }));
+  }
+
   async insertAttachment(input: { workspaceId: string; channelId: string; uploaderId: string; fileName: string; declaredSize: number; storageKey: string }): Promise<string> {
     const [row] = await this.query<{ id: string }>(
       `INSERT INTO chat_attachment (workspace_id, channel_id, uploader_id, file_name, declared_size, storage_key) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,

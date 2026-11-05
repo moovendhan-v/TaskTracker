@@ -27,6 +27,7 @@ import { FormSchemaResolver } from './modules/forms/presentation/graphql/form-sc
 import { PreferencesResolver, SavedViewFieldsResolver } from './modules/preferences/presentation/graphql/preferences.resolver.js';
 import { DashboardsResolver } from './modules/layouts/presentation/graphql/dashboards.resolver.js';
 import { LayoutsResolver } from './modules/layouts/presentation/graphql/layouts.resolver.js';
+import { ChatRetentionResolver } from './modules/chat/presentation/graphql/chat-retention.resolver.js';
 import { ChatResolver } from './modules/chat/presentation/graphql/chat.resolver.js';
 import { TaskAttachmentsResolver } from './modules/attachments/presentation/graphql/task-attachments.resolver.js';
 import { ResourceSchemaResolver } from './modules/resources/presentation/graphql/resource-schema.resolver.js';
@@ -69,6 +70,7 @@ export const RESOLVERS = [
   LayoutsResolver,
   DashboardsResolver,
   ChatResolver,
+  ChatRetentionResolver,
   TaskAttachmentsResolver,
   SavedViewFieldsResolver,
   StatusesResolver,
