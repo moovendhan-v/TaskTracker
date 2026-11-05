@@ -35,12 +35,16 @@ Chat is a new product, not a gap, so this plan comes before any code (handoff §
 - **Cleanup:** deleting a message deletes its files. Files you never send are cleared after a day.
 - **`chat_attachment` RLS:** the uploader sees their own pending files; once a file is on a message, anyone who can read the channel sees it. Only the uploader updates or deletes it. A trigger keeps a file on one message, your own, in the same channel.
 
+**Retention:** `workspace.chat_retention_days` (null, 30, 90, 180, 365 or 730), set by `workspace.manage` and audited. `ChatRetentionService` sweeps every `CHAT_RETENTION_SWEEP_SECONDS` (default 3600) in the platform scope: it removes threads (a root and all its replies) whose newest message is older than the limit, at most 500 per workspace per run, then deletes their stored files after the commit. Messages gained a `chat_message_delete` policy that only the platform scope passes; people still soft-delete their own.
+
+**Chat about a task:** `taskChatMessages(taskId)` finds messages that mention task #N (`#N` or `:::task N`, found through the search index and checked with a pattern built from the integer) or record its creation (`task_id`). RLS keeps it to channels the reader can read. It shows as the Chat tab on a task. It's read-only: the conversation stays in chat.
+
 **Later:**
 
 - Reactions, typing indicator, pinned messages, file uploads and search.
 - "Every task has a thread": task comments already do this job. Bridging the two comes later; we won't keep two copies of the same conversation.
 - Huddles and calls (D2, needs an SFU).
-- Retention settings, export, and a chat-message automation trigger (E1).
+- Export, and a chat-message automation trigger (E1).
 
 ## Data
 
@@ -187,4 +191,4 @@ Today every workspace event goes to every member unless it has a `recipientId`. 
 - Guests can't use chat in phase 1.
 - Group DMs are capped at 8 people, private channels at 500.
 - Deleting a message keeps a "Message deleted" placeholder, so threads stay readable.
-- Messages are never hard-deleted in phase 1. Retention settings come later.
+- Messages are never hard-deleted by people; only the retention sweep removes them.

@@ -99,6 +99,8 @@ export abstract class ChatRepository {
   /** Adds your reaction, or removes it if you already reacted with that emoji. Returns whether it is on now. */
   abstract toggleReaction(input: { workspaceId: string; channelId: string; messageId: string; userId: string; emoji: string }): Promise<boolean>;
 
+  /** Messages that mention task #number (a chip or a card) or record its creation, newest first, in channels the caller can read. */
+  abstract messagesAboutTask(workspaceId: string, taskId: string, number: number, limit: number): Promise<{ record: ChatMessageRecord; channelKind: ChatChannelKind; channelName: string | null }[]>;
   /** Messages matching a tsquery (already built from safe terms), newest first, in channels the caller can read. */
   abstract searchMessages(workspaceId: string, tsquery: string, channelId: string | null, limit: number): Promise<{ record: ChatMessageRecord; channelKind: ChatChannelKind; channelName: string | null }[]>;
 

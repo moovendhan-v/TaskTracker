@@ -404,6 +404,16 @@ type ChatReaction {
   names: [String!]!
 }
 
+"""
+How long the workspace keeps chat; a thread is removed once its last message is older
+"""
+type ChatRetention {
+  """Days to keep chat (30, 90, 180, 365 or 730); null keeps everything"""
+  days: Int
+  id: ID!
+  workspaceId: ID!
+}
+
 type ChatSearchHit {
   channelKind: String!
   channelName: String
@@ -1566,6 +1576,7 @@ type Mutation {
 
   """Make someone an owner, or a plain member again"""
   setChatChannelMemberRole(channelId: ID!, role: String!, userId: ID!, workspaceId: ID!): [ChatMember!]!
+  setChatRetention(days: Int, workspaceId: ID!): ChatRetention!
 
   """
   Replaces a role's inline policy (statements that belong to that role only)
@@ -1875,6 +1886,7 @@ type Query {
 
   """Top-level messages, newest first"""
   chatMessages(before: String, channelId: ID!, first: Int, workspaceId: ID!): ChatMessagePage!
+  chatRetention(workspaceId: ID!): ChatRetention!
 
   """Replies to a message, oldest first"""
   chatThread(after: String, first: Int, messageId: ID!, workspaceId: ID!): ChatMessagePage!
@@ -2066,6 +2078,11 @@ type Query {
 
   """A task by its short number, e.g. 978 for #978"""
   taskByNumber(number: Int!, workspaceId: ID!): Task!
+
+  """
+  Messages you can read that mention this task (#N or a task card) or record its creation, newest first
+  """
+  taskChatMessages(taskId: ID!, workspaceId: ID!): [ChatSearchHit!]!
 
   """Pull requests that mention the task"""
   taskPullRequests(taskId: ID!, workspaceId: ID!): [PullRequestLink!]!

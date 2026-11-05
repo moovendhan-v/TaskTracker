@@ -43,6 +43,8 @@ const envSchema = z.object({
   STORAGE_LOCAL_DIR: z.string().min(1).default('.data/uploads'),
   /** How often the automation scheduler wakes (waits, due soon, overdue). 0 turns it off in this process. */
   AUTOMATION_TICK_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
+  /** How often the chat retention sweep runs; 0 turns it off. */
+  CHAT_RETENTION_SWEEP_SECONDS: z.coerce.number().int().min(0).max(86_400).default(3600),
   /** Hosts the automation webhook action may call, comma-separated ("hooks.example.com,*.acme.dev"). Empty turns the action off. */
   AUTOMATION_WEBHOOK_HOSTS: optionalString(z.string().trim().max(2000)),
   /** Tests only: let webhooks call http:// and private addresses (a local receiver). Refused in production. */

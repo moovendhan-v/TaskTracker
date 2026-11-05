@@ -15,6 +15,8 @@ interface ChannelListProps {
   onNewMessage: () => void;
   onBrowse: () => void;
   onSearch: () => void;
+  /** How long the workspace keeps chat, when it doesn't keep it forever (e.g. "90 days"). */
+  keptFor?: string | null;
 }
 
 function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
@@ -80,7 +82,7 @@ function Section({ title, action, children }: { title: string; action?: ReactNod
 }
 
 /** Channels and direct messages, with unread counts (v2 #2a). */
-export function ChannelList({ channels, activeId, onSelect, onNewChannel, onNewMessage, onBrowse, onSearch }: ChannelListProps) {
+export function ChannelList({ channels, activeId, onSelect, onNewChannel, onNewMessage, onBrowse, onSearch, keptFor }: ChannelListProps) {
   const rooms = (channels ?? []).filter((channel) => channel.kind !== 'dm');
   const dms = (channels ?? []).filter((channel) => channel.kind === 'dm').sort((a, b) => (b.lastMessageAt ?? b.createdAt).localeCompare(a.lastMessageAt ?? a.createdAt));
   return (
@@ -134,6 +136,7 @@ export function ChannelList({ channels, activeId, onSelect, onNewChannel, onNewM
           </>
         )}
       </div>
+      {keptFor ? <p className="shrink-0 border-t px-3 py-2 text-[11px] text-muted-foreground">Chat is kept for {keptFor}, then removed.</p> : null}
     </nav>
   );
 }

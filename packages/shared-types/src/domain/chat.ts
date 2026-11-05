@@ -87,3 +87,18 @@ export const CHAT_SEARCH_PAGE_MAX = 30;
 /** Uploads: at most this many bytes each, this many per message, and pending ones expire after a day. */
 export const CHAT_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 export const CHAT_ATTACHMENTS_PER_MESSAGE = 5;
+
+/** How long a workspace keeps chat, in days; null keeps everything. A thread goes once its last message is older. */
+export const CHAT_RETENTION_DAYS = [30, 90, 180, 365, 730] as const;
+export type ChatRetentionDays = (typeof CHAT_RETENTION_DAYS)[number];
+
+export interface ChatRetentionResponse {
+  /** The workspace's id (the setting belongs to the workspace). */
+  id: string;
+  workspaceId: string;
+  days: ChatRetentionDays | null;
+}
+
+export function isChatRetentionDays(value: unknown): value is ChatRetentionDays {
+  return (CHAT_RETENTION_DAYS as readonly unknown[]).includes(value);
+}

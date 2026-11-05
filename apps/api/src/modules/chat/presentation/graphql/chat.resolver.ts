@@ -119,6 +119,12 @@ export class ChatResolver {
     return this.service.search(access, actor, query, channelId, first);
   }
 
+  @Query(() => [ChatSearchHitGql], { description: 'Messages you can read that mention this task (#N or a task card) or record its creation, newest first' })
+  @RequirePermissions('task.view', 'chat.use')
+  taskChatMessages(@WorkspaceIdArg() _w: string, @UuidArg('taskId') taskId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<ChatSearchHitGql[]> {
+    return this.service.aboutTask(access, actor, taskId);
+  }
+
   @Mutation(() => ChatChannelGql)
   @RequirePermissions('chat.use')
   @Throttle(PER_MINUTE(10))

@@ -92,6 +92,9 @@ const PENDING_UPLOADS_MAX = 20;
 
 const clampPage = (first: number | null | undefined, max: number) => Math.min(Math.max(first ?? max, 1), max);
 
+/** At most this many messages under a task's "Discussed in chat". */
+const TASK_DISCUSSION_MAX = 20;
+
 /**
  * Chat: channels, direct messages and threads (docs/plan/D1_CHAT.md). Row-level
  * security already hides what the caller can't read; this service adds the rules
@@ -413,6 +416,18 @@ export class ChatService {
     if (!tsquery) return [];
     if (channelId) await this.readable(access, actor, channelId);
     const hits = await this.chat.searchMessages(access.workspaceId, tsquery, channelId ?? null, clampPage(first, CHAT_SEARCH_PAGE_MAX));
+    const messages = await this.decorate(access, actor, hits.map((hit) => hit.record));
+    return hits.map((hit, index) => ({ message: messages[index]!, channelKind: hit.channelKind, channelName: hit.channelName }));
+  }
+
+  /**
+   * Where a task was discussed in chat: messages that mention it (#N or a task card) or
+   * record its creation, newest first. Only for a task you can see, and only messages in
+   * channels you can read (RLS decides), so a private channel never shows up for outsiders.
+   */
+  async aboutTask(access: WorkspaceAccess, actor: Actor, taskId: string): Promise<ChatSearchHit[]> {
+    const task = await this.tasks.get(access.workspaceId, taskId);
+    const hits = await this.chat.messagesAboutTask(access.workspaceId, task.id, task.number, TASK_DISCUSSION_MAX);
     const messages = await this.decorate(access, actor, hits.map((hit) => hit.record));
     return hits.map((hit, index) => ({ message: messages[index]!, channelKind: hit.channelKind, channelName: hit.channelName }));
   }

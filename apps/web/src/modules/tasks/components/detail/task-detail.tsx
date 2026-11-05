@@ -7,6 +7,7 @@ import {
   HistoryIcon,
   LinkIcon,
   MessageSquareIcon,
+  MessagesSquareIcon,
   MoreHorizontalIcon,
   PlusIcon,
   TrashIcon,
@@ -47,6 +48,7 @@ import { useMemberName } from '@/modules/members';
 import { useSpaces } from '@/modules/spaces';
 import { TaskTimeControls } from '@/modules/time';
 import { usePermissions } from '@/modules/workspaces';
+import { TaskChat, useTaskChat } from './task-chat';
 import { useSubtasks, useTask, useTaskActivity, useTaskRelations, useTaskWatchers } from '../../hooks/use-tasks';
 import { useTaskMutations } from '../../hooks/use-task-mutations';
 import { TYPE_META } from '../../lib/task-meta';
@@ -377,10 +379,13 @@ function TaskMain({
   );
 }
 
-/** Comments and the change history, as tabs (design: Activity / Comments / History). */
+/** Comments, the change history and where it came up in chat, as tabs (design: Activity / Comments / History). */
 function ActivityTabs({ workspaceId, task }: { workspaceId: string; task: TaskResponse }) {
   const { data: activity = [] } = useTaskActivity(workspaceId, task.id);
   const { data: comments = [] } = useComments(workspaceId, task.id);
+  const { can } = usePermissions(workspaceId);
+  const chatAllowed = can('chat.use');
+  const { data: chat = [] } = useTaskChat(workspaceId, task.id, chatAllowed);
   return (
     <Tabs defaultValue="comments" className="grid gap-3 border-t pt-5">
       <TabsList className="h-auto w-fit justify-start gap-1 bg-transparent p-0">
@@ -390,6 +395,11 @@ function ActivityTabs({ workspaceId, task }: { workspaceId: string; task: TaskRe
         <TabsTrigger value="history" className="h-8 rounded-md px-2.5 data-[state=active]:bg-selected data-[state=active]:shadow-none">
           <HistoryIcon /> History <span className="font-mono text-[11px] text-subtle-foreground">{activity.length}</span>
         </TabsTrigger>
+        {chatAllowed ? (
+          <TabsTrigger value="chat" className="h-8 rounded-md px-2.5 data-[state=active]:bg-selected data-[state=active]:shadow-none">
+            <MessagesSquareIcon /> Chat <span className="font-mono text-[11px] text-subtle-foreground">{chat.length}</span>
+          </TabsTrigger>
+        ) : null}
       </TabsList>
       <TabsContent value="comments">
         <CommentThread heading={false} workspaceId={workspaceId} taskId={task.id} spaceId={task.spaceId} />
@@ -397,6 +407,11 @@ function ActivityTabs({ workspaceId, task }: { workspaceId: string; task: TaskRe
       <TabsContent value="history">
         <History activity={activity} />
       </TabsContent>
+      {chatAllowed ? (
+        <TabsContent value="chat">
+          <TaskChat workspaceId={workspaceId} taskId={task.id} number={task.number} />
+        </TabsContent>
+      ) : null}
     </Tabs>
   );
 }
