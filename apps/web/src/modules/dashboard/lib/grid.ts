@@ -1,4 +1,4 @@
-import { GRID_COLUMNS, LAYOUT_LIMITS, minHeightOf, overlaps, settleLayout, type LayoutItem } from '@taskflow/shared-types';
+import { GRID_COLUMNS, LAYOUT_LIMITS, minHeightOf, overlaps, SECTION_BLOCK, settleLayout, type LayoutItem } from '@taskflow/shared-types';
 
 /**
  * Grid rules for arrangeable blocks. One rule does all the work: `arrange`
@@ -58,4 +58,31 @@ export function addItem(items: readonly LayoutItem[], item: Omit<LayoutItem, 'x'
 /** Grid rows the layout uses, for sizing the container. */
 export function gridHeight(items: readonly LayoutItem[]): number {
   return Math.max(0, ...items.map((item) => item.y + item.h));
+}
+
+/**
+ * The layout as shown with some sections collapsed (B2): the blocks under a collapsed
+ * section, down to the next section, are hidden, and everything below moves up to close
+ * the gap. Display only: the stored layout never changes. Returns the shown blocks and
+ * how many each collapsed section hides.
+ */
+export function collapseSections(items: readonly LayoutItem[], collapsed: ReadonlySet<string>): { items: LayoutItem[]; hidden: Map<string, number> } {
+  const hidden = new Map<string, number>();
+  const sections = items.filter((item) => item.type === SECTION_BLOCK).sort((a, b) => a.y - b.y);
+  let shown = [...items];
+  // Bottom-up, so shifting one region never moves the rows of another still to fold.
+  for (const section of [...sections].reverse()) {
+    if (!collapsed.has(section.id)) continue;
+    const start = section.y + section.h;
+    const next = sections.find((other) => other.y >= start && other.id !== section.id);
+    const end = next ? next.y : Math.max(start, ...shown.map((item) => item.y + item.h));
+    const inside = shown.filter((item) => item.id !== section.id && item.type !== SECTION_BLOCK && item.y >= start && item.y < end);
+    hidden.set(section.id, inside.length);
+    const kept = shown.filter((item) => !inside.includes(item));
+    // A block beside the section reaching into the region keeps its rows.
+    const floor = Math.max(start, ...kept.filter((item) => item.y < start).map((item) => item.y + item.h));
+    const shift = Math.max(0, end - floor);
+    shown = kept.map((item) => (item.y >= end && shift ? { ...item, y: item.y - shift } : item));
+  }
+  return { items: shown, hidden };
 }
