@@ -41,3 +41,21 @@ describe('grid', () => {
     expect(validateLayoutItems('home', items)).toEqual([]);
   });
 });
+
+describe('pinned (fixed) blocks', () => {
+  const pinned = { id: 'status', type: 'status', x: 0, y: 0, w: 12, h: 4, pinned: true };
+  const other = { id: 'priority', type: 'priority', x: 0, y: 4, w: 6, h: 5 };
+  const fixed = new Set(['status']);
+
+  it("don't move, resize or go", () => {
+    expect(moveItem([pinned, other], 'status', 6, 8, fixed)).toEqual([pinned, other]);
+    expect(resizeItem([pinned, other], 'status', 6, 4, fixed)).toEqual([pinned, other]);
+    expect(removeItem([pinned, other], 'status', fixed)).toEqual([pinned, other]);
+  });
+
+  it('push the others out of their way instead', () => {
+    const [stayed, pushed] = moveItem([pinned, other], 'priority', 0, 0, fixed);
+    expect(stayed).toEqual(pinned);
+    expect(pushed).toMatchObject({ id: 'priority', y: 4 });
+  });
+});

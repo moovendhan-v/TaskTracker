@@ -76,6 +76,7 @@ export class LayoutItemGql implements LayoutItem {
   @Field(() => Int) h: number;
   @Field(() => BlockConfigGql, { nullable: true }) config?: BlockConfigGql | null;
   @Field(() => [String], { nullable: true, description: 'Other blocks stacked in this slot, as tabs' }) tabs?: string[] | null;
+  @Field(() => Boolean, { nullable: true, description: 'Pinned by the workspace default: it stays where it is for everyone' }) pinned?: boolean | null;
 }
 
 @ObjectType('DashboardLayout', { description: "The signed-in user's arrangement of a page's blocks" })
@@ -96,6 +97,7 @@ export class LayoutItemInput implements LayoutItem {
   @Field(() => Int, { description: 'Rows; sections may be 1, other blocks at least 2 (checked by the layout rules)' }) @IsInt() @Min(1) @Max(LAYOUT_LIMITS.maxH) h: number;
   @Field(() => BlockConfigInput, { nullable: true }) @IsClearable() @ValidateNested() @Type(() => BlockConfigInput) config?: BlockConfigInput | null;
   @Field(() => [String], { nullable: true }) @IsClearable() @IsArray() @ArrayMaxSize(LAYOUT_LIMITS.tabsMax) @IsString({ each: true }) @MaxLength(60, { each: true }) tabs?: string[] | null;
+  @Field(() => Boolean, { nullable: true, description: 'In a workspace default: pinned for everyone. Only layout managers set it; it is ignored in other people\'s saves' }) @IsClearable() @IsBoolean() pinned?: boolean | null;
 }
 
 @InputType('SaveLayoutInput')

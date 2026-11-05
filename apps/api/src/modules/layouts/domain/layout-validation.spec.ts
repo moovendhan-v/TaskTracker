@@ -1,4 +1,4 @@
-import { blockConfigKeys, cleanLayoutItem, DEFAULT_LAYOUTS, isDashboardPeriod, parseCustomPeriod, validateLayoutItems, type LayoutItem } from '@taskflow/shared-types';
+import { blockConfigKeys, cleanLayoutItem, DEFAULT_LAYOUTS, isDashboardPeriod, parseCustomPeriod, settleLayout, validateLayoutItems, withPinnedBlocks, type LayoutItem } from '@taskflow/shared-types';
 import { describe, expect, it } from 'vitest';
 
 const item = (patch: Partial<LayoutItem> = {}): LayoutItem => ({ id: 'a', type: 'status', x: 0, y: 0, w: 4, h: 4, ...patch });
@@ -117,5 +117,41 @@ describe('custom dashboard ranges', () => {
     for (const bad of ['custom:2026-10-31..2026-10-01', 'custom:2026-02-30..2026-03-01', 'custom:2026-01-01..2027-01-02', 'custom:2026-1-01..2026-01-02', 'custom:2026-01-01..2026-01-02x', 'forever']) {
       expect(isDashboardPeriod(bad)).toBe(false);
     }
+  });
+});
+
+describe('pinned blocks', () => {
+  const at = (id: string, type: string, x: number, y: number, w: number, h: number, extra: Partial<LayoutItem> = {}): LayoutItem => ({ id, type, x, y, w, h, ...extra });
+  const workspaceDefault = [at('status', 'status', 0, 0, 12, 4, { pinned: true }), at('priority', 'priority', 0, 4, 6, 5)];
+
+  it('puts the pinned blocks back exactly as set, and moves the person’s own blocks around them', () => {
+    // They moved the pinned block, resized it, and put another block on its spot.
+    const theirs = [at('status', 'status', 6, 8, 6, 4), at('workload', 'workload', 0, 0, 6, 6), at('overdue-tasks', 'overdue-tasks', 6, 0, 6, 6)];
+    const result = withPinnedBlocks(theirs, workspaceDefault);
+    expect(result[0]).toEqual(at('status', 'status', 0, 0, 12, 4, { pinned: true }));
+    expect(result.slice(1).map((item) => [item.id, item.y])).toEqual([
+      ['workload', 4],
+      ['overdue-tasks', 4],
+    ]);
+    expect(validateLayoutItems('home', result)).toEqual([]);
+  });
+
+  it('adds a pinned block they removed, drops their copies of it, and takes away pins of their own', () => {
+    const theirs = [at('workload', 'workload', 0, 0, 6, 6, { pinned: true }), at('stack', 'priority', 6, 0, 6, 6, { tabs: ['status', 'overdue-aging'] })];
+    const result = withPinnedBlocks(theirs, workspaceDefault);
+    expect(result.map((item) => item.id)).toEqual(['status', 'workload', 'stack']);
+    expect(result.find((item) => item.id === 'workload')!.pinned).toBeUndefined();
+    // A pinned block can't also sit in someone's stack of tabs.
+    expect(result.find((item) => item.id === 'stack')!.tabs).toEqual(['overdue-aging']);
+  });
+
+  it('changes nothing without a workspace default, apart from pins', () => {
+    const theirs = [at('workload', 'workload', 0, 0, 6, 6, { pinned: true })];
+    expect(withPinnedBlocks(theirs, null)).toEqual([at('workload', 'workload', 0, 0, 6, 6)]);
+  });
+
+  it('settles a moved block below a fixed one instead of on top of it', () => {
+    const items = [at('a', 'status', 0, 0, 12, 4), at('b', 'priority', 0, 1, 6, 5)];
+    expect(settleLayout(items, { movingId: 'b', fixedIds: new Set(['a']) })[1]).toMatchObject({ id: 'b', y: 4 });
   });
 });

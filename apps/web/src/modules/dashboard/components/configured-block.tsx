@@ -1,5 +1,5 @@
 import type { BlockConfig, DashboardRequest, DashboardResponse, LayoutItem, StatusCategory, TaskPriority } from '@taskflow/shared-types';
-import { FilterIcon, FolderKanbanIcon, LinkIcon, Layers2Icon, SlidersHorizontalIcon, Trash2Icon, XIcon } from 'lucide-react';
+import { FilterIcon, FolderKanbanIcon, LinkIcon, PinIcon, PinOffIcon, Layers2Icon, SlidersHorizontalIcon, Trash2Icon, XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Block } from '@/components/kit/block';
@@ -61,6 +61,10 @@ interface ConfiguredBlockProps {
   registry?: BlockRegistry;
   onStack?: () => void;
   onUnstack?: (type: string) => void;
+  /** Shown on a pinned block, e.g. "Pinned by your workspace". */
+  pinnedNote?: string;
+  /** Layout managers pin or unpin a block for everyone (applies when they publish the workspace default). */
+  onTogglePin?: () => void;
 }
 
 /** A block drawn with its own settings: title and accent (view), and its own project (data) when it has one. */
@@ -109,6 +113,8 @@ function BlockView({
   registry,
   onStack,
   onUnstack,
+  pinnedNote,
+  onTogglePin,
 }: Omit<ConfiguredBlockProps, 'scope'> & { source: { label: string; project: boolean; linked?: boolean; counts: boolean; onClear?: () => void } | undefined }) {
   const config: BlockConfig = item.config ?? {};
   // Stacked tabs: this block first, then the others; which one shows is per viewer and not saved.
@@ -128,7 +134,6 @@ function BlockView({
       title={stack.length > 1 ? (shownType === item.type ? config.title || block.title : shown.title) : config.title || block.title}
       icon={shown.icon}
       accent={config.accent}
-      aside={stack.length > 1 ? undefined : shown.aside}
       toolbar={
         stack.length > 1 ? (
           <div role="tablist" aria-label="Stacked blocks" className="flex items-center gap-0.5">
@@ -164,11 +169,13 @@ function BlockView({
       skeleton={shown.skeleton}
       arranging={arranging}
       maximisable
+      aside={pinnedNote ? <span className="flex items-center gap-1" title={pinnedNote}><PinIcon aria-hidden className="size-3" />{pinnedNote}</span> : stack.length > 1 ? undefined : shown.aside}
       actions={
         canArrange
           ? [
               { label: 'Configure…', icon: SlidersHorizontalIcon, onSelect: onConfigure },
               ...(onStack ? [{ label: 'Stack another block here…', icon: Layers2Icon, onSelect: onStack }] : []),
+              ...(onTogglePin ? [{ label: item.pinned ? 'Unpin for everyone' : 'Pin for everyone', icon: item.pinned ? PinOffIcon : PinIcon, onSelect: onTogglePin }] : []),
               { label: 'Remove', icon: Trash2Icon, destructive: true, onSelect: onRemove },
             ]
           : []
