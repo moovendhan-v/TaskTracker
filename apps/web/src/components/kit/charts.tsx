@@ -229,21 +229,50 @@ export interface BarRow {
   display: string;
 }
 
-/** Ranked horizontal bars: hours by person, project or task. */
-export function BarList({ rows, label, color = 'var(--chart-1)', empty = 'Nothing yet' }: { rows: readonly BarRow[]; label: string; color?: string; empty?: string }) {
+/** Ranked horizontal bars: hours by person, project or task. Rows can be pickable (a page selection). */
+export function BarList({
+  rows,
+  label,
+  color = 'var(--chart-1)',
+  empty = 'Nothing yet',
+  onPick,
+  isPicked,
+}: {
+  rows: readonly BarRow[];
+  label: string;
+  color?: string;
+  empty?: string;
+  /** Makes rows buttons; the caller ignores rows it can't pick (e.g. "no project"). */
+  onPick?: (row: BarRow) => void;
+  isPicked?: (row: BarRow) => boolean;
+}) {
   const max = Math.max(1, ...rows.map((row) => row.value));
   if (rows.length === 0) return <p className="py-6 text-center text-sm text-muted-foreground">{empty}</p>;
+  const grid = 'grid w-full grid-cols-[minmax(0,1fr)_minmax(4rem,8rem)_auto] items-center gap-3 text-sm';
   return (
     <ul aria-label={label} className="grid gap-2.5">
-      {rows.map((row) => (
-        <li key={row.key} className="grid grid-cols-[minmax(0,1fr)_minmax(4rem,8rem)_auto] items-center gap-3 text-sm">
-          <span className="truncate">{row.label}</span>
-          <span className="h-2 overflow-hidden rounded-full bg-muted">
-            <span className="block h-full rounded-full" style={{ width: `${(row.value / max) * 100}%`, background: color }} />
-          </span>
-          <span className="w-20 text-right font-medium whitespace-nowrap tabular-nums">{row.display}</span>
-        </li>
-      ))}
+      {rows.map((row) => {
+        const body = (
+          <>
+            <span className="truncate">{row.label}</span>
+            <span className="h-2 overflow-hidden rounded-full bg-muted">
+              <span className="block h-full rounded-full" style={{ width: `${(row.value / max) * 100}%`, background: color }} />
+            </span>
+            <span className="w-20 text-right font-medium whitespace-nowrap tabular-nums">{row.display}</span>
+          </>
+        );
+        return (
+          <li key={row.key}>
+            {onPick ? (
+              <button type="button" aria-pressed={isPicked?.(row) ?? false} onClick={() => onPick(row)} className={cn(grid, '-mx-1.5 rounded-md px-1.5 py-0.5 text-left hover:bg-muted/60 aria-pressed:bg-primary/10 aria-pressed:ring-1 aria-pressed:ring-primary/40')}>
+                {body}
+              </button>
+            ) : (
+              <div className={grid}>{body}</div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }

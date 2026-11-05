@@ -21,6 +21,8 @@ import { DashboardTabs, type HomeTab } from '../components/dashboard-tabs';
 import { KpiRow, KpiRowSkeleton } from '../components/dashboard-panels';
 import { ProjectsTable } from '../components/projects-table';
 import { useDashboard } from '../hooks/use-dashboard';
+import { HOME_SELECTION_KINDS, PageSelectionProvider } from '../lib/page-selection';
+import { PageSelectionBar } from '../components/page-selection-bar';
 import { useDashboardLayout, useLayout } from '../hooks/use-layout';
 import { useNamedDashboardMutations, useNamedDashboards } from '../hooks/use-named-dashboards';
 import { dashboardInput } from '../lib/dashboard-input';
@@ -97,9 +99,11 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
   const state = blockStateOf(dashboard, { what: 'the dashboard' });
   const nameOf = (userId: string) => memberName(userId) ?? 'a teammate';
   // A block with its own data settings asks for the same period and people, narrowed as it says.
-  const scope: BlockScope = { workspaceId, inputFor: ({ spaceId, mine, priorities, categories }) => dashboardInput(period, weekStart, { userIds, spaceId, mine, priorities, categories }) };
+  const scope: BlockScope = { workspaceId, inputFor: (narrowing) => dashboardInput(period, weekStart, { userIds: narrowing.userIds ?? userIds, spaceId: narrowing.spaceId, mine: narrowing.mine, priorities: narrowing.priorities, categories: narrowing.categories }) };
 
   return (
+    // Keyed by tab: a selection belongs to the dashboard it was made on.
+    <PageSelectionProvider key={current} kinds={HOME_SELECTION_KINDS}>
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto grid max-w-[96rem] grid-cols-[minmax(0,1fr)] gap-5 px-4 py-4 md:px-6 md:py-6">
         <header className="flex flex-wrap items-center gap-3 md:gap-4">
@@ -139,6 +143,7 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
           onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
           people={current === 'mine' ? undefined : { workspaceId, selected: people, onChange: setPeople, meId: me?.id }}
         />
+        <PageSelectionBar />
         {dashboard.isError ? <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} /> : null}
         {data && data.projects.length === 0 ? (
           <EmptyState title="Create your first space" description="Spaces hold your projects' lists and tasks. Use the + next to Spaces in the sidebar to add one." />
@@ -157,5 +162,6 @@ export function HomePage({ workspaceId }: { workspaceId: string }) {
       </div>
       {creating ? <NewTaskDialog workspaceId={workspaceId} open onOpenChange={setCreating} onCreated={openTask} /> : null}
     </div>
+    </PageSelectionProvider>
   );
 }

@@ -1,5 +1,6 @@
 import {
   BLOCK_ACCENTS,
+  BLOCK_ASSIGNEES_MAX,
   BLOCK_CHARTS,
   BLOCK_LIMITS,
   OPEN_STATUS_CATEGORIES,
@@ -23,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/cn';
+import { useMembers } from '@/modules/members';
 import { useSpaces } from '@/modules/spaces';
 import type { BlockDefinition } from './home-blocks';
 
@@ -62,6 +64,7 @@ interface BlockConfigDrawerProps {
  */
 export function BlockConfigDrawer({ workspaceId, pageKey, item, block, onOpenChange, onChange }: BlockConfigDrawerProps) {
   const { data: spaces = [] } = useSpaces(workspaceId ?? '');
+  const { data: members = [] } = useMembers(workspaceId ?? '');
   if (!item || !block) return null;
   const keys = blockConfigKeys(pageKey, item.type);
   const config: BlockConfig = item.config ?? {};
@@ -76,7 +79,7 @@ export function BlockConfigDrawer({ workspaceId, pageKey, item, block, onOpenCha
           <SheetDescription>{block.description}</SheetDescription>
         </div>
 
-        {(keys.includes('spaceId') && workspaceId) || keys.includes('mine') ? (
+        {(keys.includes('spaceId') && workspaceId) || keys.includes('mine') || keys.includes('followContext') ? (
           <section aria-labelledby="block-data" className="grid gap-3">
             <h3 id="block-data" className="font-mono text-[10.5px] font-semibold tracking-[0.06em] text-subtle-foreground uppercase">
               Data source
@@ -103,9 +106,50 @@ export function BlockConfigDrawer({ workspaceId, pageKey, item, block, onOpenCha
             ) : null}
             {keys.includes('mine') ? (
               <label className="flex items-center gap-2 text-sm">
-                <Checkbox checked={config.mine === true} onCheckedChange={(checked) => set({ mine: checked === true ? true : undefined })} />
+                {/* "Mine" and chosen people don't mix: picking one clears the other. */}
+                <Checkbox checked={config.mine === true} onCheckedChange={(checked) => set({ mine: checked === true ? true : undefined, assigneeIds: checked === true ? undefined : config.assigneeIds })} />
                 Only tasks assigned to me
               </label>
+            ) : null}
+            {keys.includes('assigneeIds') && workspaceId ? (
+              <div className="grid gap-1.5">
+                <span id="block-assignees" className="text-sm font-medium">
+                  Assigned to
+                </span>
+                <div role="group" aria-labelledby="block-assignees" className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto">
+                  {members.map((member) => {
+                    const on = config.assigneeIds?.includes(member.userId) ?? false;
+                    const full = !on && (config.assigneeIds?.length ?? 0) >= BLOCK_ASSIGNEES_MAX;
+                    return (
+                      <button
+                        key={member.userId}
+                        type="button"
+                        aria-pressed={on}
+                        disabled={full}
+                        onClick={() => {
+                          const next = on ? (config.assigneeIds ?? []).filter((id) => id !== member.userId) : [...(config.assigneeIds ?? []), member.userId];
+                          set({ assigneeIds: next.length ? next : undefined, mine: next.length ? undefined : config.mine });
+                        }}
+                        className={cn('rounded-full border px-2.5 py-1 text-xs disabled:opacity-50', on ? 'border-ring bg-primary-soft text-ring' : 'text-muted-foreground hover:bg-muted')}
+                      >
+                        {member.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">None picked shows everyone the page shows. Up to {BLOCK_ASSIGNEES_MAX} people.</p>
+              </div>
+            ) : null}
+            {keys.includes('followContext') ? (
+              <div className="grid gap-1">
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox checked={config.followContext === true} onCheckedChange={(checked) => set({ followContext: checked === true ? true : undefined })} />
+                  Follow the page's selection
+                </label>
+                <p className="pl-6 text-xs text-muted-foreground">
+                  {pageKey === 'home' ? 'Click a person or a project in People, Hours by person or Hours by project to narrow this block to them.' : 'Click a person in People to narrow this block to their work.'}
+                </p>
+              </div>
             ) : null}
             {keys.includes('priorities') ? (
               <div className="grid gap-1.5">

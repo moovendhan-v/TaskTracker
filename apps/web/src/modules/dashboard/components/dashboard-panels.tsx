@@ -6,6 +6,7 @@ import { StatCard } from '@/components/kit/stat-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatMonthDay, formatNumericDate } from '@/lib/periods';
 import { formatHours, formatMinutes } from '@/modules/time';
+import { useSelectable } from '../lib/page-selection';
 
 type Dashboard = DashboardResponse;
 
@@ -199,11 +200,32 @@ export function HoursPerDay({ data, height = 160, chart = 'bar' }: { data: Dashb
 }
 
 export function HoursByPerson({ data }: { data: Dashboard }) {
-  return <BarList label="Hours by person" rows={data.minutesByPerson.map((row) => ({ key: row.userId, label: row.name, value: row.minutes, display: formatMinutes(row.minutes) }))} empty="No time logged." />;
+  const pick = useSelectable('person');
+  return (
+    <BarList
+      label="Hours by person"
+      rows={data.minutesByPerson.map((row) => ({ key: row.userId, label: row.name, value: row.minutes, display: formatMinutes(row.minutes) }))}
+      onPick={pick ? (row) => pick.select(row.key, String(row.label)) : undefined}
+      isPicked={pick ? (row) => pick.isSelected(row.key) : undefined}
+      empty="No time logged."
+    />
+  );
 }
 
 export function HoursByProject({ data }: { data: Dashboard }) {
-  return <BarList label="Hours by project" color="var(--primary)" rows={data.minutesByProject.map((row) => ({ key: row.spaceId ?? 'none', label: row.name, value: row.minutes, display: formatMinutes(row.minutes) }))} empty="No time logged." />;
+  const pick = useSelectable('project');
+  // "No project" time isn't a project you can narrow to.
+  const pickable = (key: string) => key !== 'none';
+  return (
+    <BarList
+      label="Hours by project"
+      color="var(--primary)"
+      rows={data.minutesByProject.map((row) => ({ key: row.spaceId ?? 'none', label: row.name, value: row.minutes, display: formatMinutes(row.minutes) }))}
+      onPick={pick ? (row) => pickable(row.key) && pick.select(row.key, String(row.label)) : undefined}
+      isPicked={pick ? (row) => pick.isSelected(row.key) : undefined}
+      empty="No time logged."
+    />
+  );
 }
 
 export function HoursByTask({ data }: { data: Dashboard }) {
@@ -211,6 +233,7 @@ export function HoursByTask({ data }: { data: Dashboard }) {
 }
 
 export function Workload({ data }: { data: Dashboard }) {
+  const pick = useSelectable('person');
   return (
     <table className="w-full text-sm">
       <thead>
@@ -222,19 +245,31 @@ export function Workload({ data }: { data: Dashboard }) {
         </tr>
       </thead>
       <tbody>
-        {data.people.map((person) => (
-          <tr key={person.userId ?? 'unassigned'}>
-            <td className="py-1.5">
-              <span className="flex items-center gap-2">
-                {person.userId ? <UserAvatar name={person.name} className="size-6" /> : <UserXIcon className="size-5 text-muted-foreground" />}
-                <span className="truncate">{person.name}</span>
-              </span>
-            </td>
-            <td className="text-right tabular-nums">{person.open}</td>
-            <td className={person.overdue ? 'text-right text-critical tabular-nums' : 'text-right text-muted-foreground tabular-nums'}>{person.overdue}</td>
-            <td className="text-right tabular-nums">{person.minutes ? formatHours(person.minutes) : '–'}</td>
-          </tr>
-        ))}
+        {data.people.map((person) => {
+          const who = (
+            <span className="flex min-w-0 items-center gap-2">
+              {person.userId ? <UserAvatar name={person.name} className="size-6" /> : <UserXIcon className="size-5 text-muted-foreground" />}
+              <span className="truncate">{person.name}</span>
+            </span>
+          );
+          const picked = person.userId && pick ? pick.isSelected(person.userId) : false;
+          return (
+            <tr key={person.userId ?? 'unassigned'} className={picked ? 'bg-primary/10' : undefined}>
+              <td className="py-1.5">
+                {person.userId && pick ? (
+                  <button type="button" aria-pressed={picked} title={picked ? 'Clear the page selection' : `Narrow following blocks to ${person.name}`} onClick={() => pick.select(person.userId!, person.name)} className="-mx-1 flex max-w-full rounded px-1 text-left hover:bg-muted">
+                    {who}
+                  </button>
+                ) : (
+                  who
+                )}
+              </td>
+              <td className="text-right tabular-nums">{person.open}</td>
+              <td className={person.overdue ? 'text-right text-critical tabular-nums' : 'text-right text-muted-foreground tabular-nums'}>{person.overdue}</td>
+              <td className="text-right tabular-nums">{person.minutes ? formatHours(person.minutes) : '–'}</td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

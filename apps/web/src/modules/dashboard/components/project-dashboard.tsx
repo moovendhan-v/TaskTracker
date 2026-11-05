@@ -18,6 +18,8 @@ import { ArrangeableGrid } from './arrangeable-grid';
 import { DashboardFilters } from './dashboard-filters';
 import { HoursByTask, HoursPerDay, KpiRow, StatusBreakdown, Workload } from './dashboard-panels';
 import { DashboardTaskList } from './dashboard-task-list';
+import { PageSelectionBar } from './page-selection-bar';
+import { PageSelectionProvider, PROJECT_SELECTION_KINDS } from '../lib/page-selection';
 import type { BlockScope } from './configured-block';
 import { limited, SECTION_DEFINITION, type BlockDefinition, type BlockRegistry } from './home-blocks';
 import { SpaceStatusChip } from './space-status-chip';
@@ -218,7 +220,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   const state = blockStateOf(dashboard, { what: 'this project' });
   const layout = useLayout(workspaceId, 'project');
   // A task list set to "mine" or some priorities asks for the same period and project, narrowed.
-  const scope: BlockScope = { workspaceId, inputFor: ({ mine, priorities, categories }) => dashboardInput(period, weekStart, { spaceId: space.id, mine, priorities, categories }) };
+  const scope: BlockScope = { workspaceId, inputFor: ({ mine, userIds, priorities, categories }) => dashboardInput(period, weekStart, { spaceId: space.id, mine, userIds, priorities, categories }) };
   const { data: fields = [] } = useCustomFields(workspaceId, 'space');
 
   const registry = useMemo(() => {
@@ -233,6 +235,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   }, [fields, space, openTask, weekAhead]);
 
   return (
+    <PageSelectionProvider kinds={PROJECT_SELECTION_KINDS}>
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <DashboardFilters
         period={period}
@@ -243,7 +246,9 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
         onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
       />
       {dashboard.isError ? <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} /> : null}
+      <PageSelectionBar />
       {!dashboard.isError ? <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} scope={scope} workspaceId={workspaceId} personal /> : null}
     </div>
+    </PageSelectionProvider>
   );
 }
