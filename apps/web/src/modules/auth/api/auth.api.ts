@@ -103,6 +103,30 @@ export const authApi = {
     return (throwOnError(await authClient.listAccounts()).data ?? []).map((account) => ({ id: account.id, providerId: account.providerId }));
   },
 
+  /** Signs in with a passkey (A4): the browser asks which one, and the device checks it's you. */
+  async signInWithPasskey() {
+    const result = await authClient.signIn.passkey();
+    if (result.error) throw new AuthRequestError(result.error.message || 'Passkey sign-in did not work', null);
+    return result.data;
+  },
+
+  /** Passkeys on the signed-in account, newest first. */
+  async passkeys() {
+    const list = throwOnError(await authClient.passkey.listUserPasskeys()).data ?? [];
+    return list
+      .map((key) => ({ id: key.id, name: key.name ?? null, createdAt: new Date(key.createdAt).toISOString(), backedUp: key.backedUp }))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  async addPasskey(name: string) {
+    const result = await authClient.passkey.addPasskey({ name });
+    if (result?.error) throw new AuthRequestError(result.error.message || 'The passkey was not added', null);
+  },
+
+  async deletePasskey(id: string) {
+    return throwOnError(await authClient.passkey.deletePasskey({ id }));
+  },
+
   async signOut() {
     return throwOnError(await authClient.signOut());
   },

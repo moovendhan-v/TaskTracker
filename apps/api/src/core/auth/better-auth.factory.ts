@@ -1,11 +1,14 @@
 import { betterAuth } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { passkey } from '@better-auth/passkey';
 import { captcha, twoFactor } from 'better-auth/plugins';
 import type { Pool } from 'pg';
 import type { Env } from '../../config/env.schema.js';
 import { PASSWORD_MAX, PASSWORD_MIN, validateAuthBody } from './auth-forms.js';
 import type { Mailer } from './mailer/mailer.port.js';
 
+const PASSKEY_NAME_PATHS = new Set(['/passkey/verify-registration', '/passkey/update-passkey']);
+const PASSKEY_NAME_MAX = 60;
 const PUBLIC_AUTH_FORMS = ['/sign-up/email', '/sign-in/email', '/request-password-reset'];
 
 /**
@@ -64,6 +67,13 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer, { validateSchem
     // The same rules the web app gets from formSchemas('auth.*'), with the same per-field messages.
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        // Passkey names are free text the plugin doesn't bound; keep them short.
+        if (PASSKEY_NAME_PATHS.has(ctx.path)) {
+          const name = (ctx.body as { name?: unknown } | undefined)?.name;
+          if (name !== undefined && (typeof name !== 'string' || name.trim().length > PASSKEY_NAME_MAX)) {
+            throw new APIError('BAD_REQUEST', { code: 'VALIDATION_FAILED', message: `A passkey name is at most ${PASSKEY_NAME_MAX} characters` });
+          }
+        }
         const fields = await validateAuthBody(ctx.path, ctx.body);
         if (fields.length > 0) throw new APIError('BAD_REQUEST', { code: 'VALIDATION_FAILED', message: fields[0]?.message ?? 'Invalid input', fields });
       }),
@@ -83,6 +93,10 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer, { validateSchem
         '/two-factor/enable': { window: 60, max: 5 },
         '/two-factor/disable': { window: 60, max: 5 },
         '/sign-in/social': { window: 60, max: 10 },
+        '/passkey/generate-authenticate-options': { window: 60, max: 20 },
+        '/passkey/verify-authentication': { window: 60, max: 10 },
+        '/passkey/generate-register-options': { window: 60, max: 10 },
+        '/passkey/verify-registration': { window: 60, max: 10 },
         '/link-social': { window: 60, max: 5 },
         '/unlink-account': { window: 60, max: 5 },
       },
@@ -102,6 +116,14 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer, { validateSchem
       // it on or off needs the password, and signing in asks for a code only once the first
       // step has succeeded.
       twoFactor({ issuer: 'TaskFlow', skipVerificationOnEnable: false, backupCodeOptions: { amount: 10, length: 10 } }),
+      // A4: passkeys. Bound to the app's own host (the WebAuthn relying party), added only from a
+      // fresh session, and the authenticator must verify the person (PIN, fingerprint, face), so
+      // a passkey is two factors in one and signing in with it skips the authenticator code.
+      passkey({
+        rpID: new URL(env.BETTER_AUTH_URL).hostname,
+        rpName: 'TaskFlow',
+        authenticatorSelection: { residentKey: 'preferred', userVerification: 'required' },
+      }),
       ...(env.TURNSTILE_SECRET_KEY
         ? [
             captcha({

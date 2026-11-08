@@ -978,6 +978,18 @@ test('connects GitHub from the Security page by going to GitHub', async () => {
   await expect(page.getByRole('button', { name: 'Connect GitHub' })).toBeVisible();
 });
 
+test('adds a passkey on the Security page', async () => {
+  // Chromium's virtual authenticator stands in for a fingerprint reader; it says the person was verified.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('WebAuthn.enable');
+  await cdp.send('WebAuthn.addVirtualAuthenticator', {
+    options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
+  });
+  await page.getByLabel('Name', { exact: true }).fill('Test laptop');
+  await page.getByRole('button', { name: 'Add a passkey' }).click();
+  await expect(page.getByRole('list', { name: 'Your passkeys' }).getByText('Test laptop')).toBeVisible();
+});
+
 test('signs out', async () => {
   await page.getByRole('button', { name: /Dana Reyes/ }).click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
@@ -988,6 +1000,16 @@ test('signs out', async () => {
 test('explains a GitHub sign-in that could not join an existing account', async () => {
   await page.goto('/sign-in?error=account_not_linked');
   await expect(page.getByText('That email already has a TaskFlow account.')).toBeVisible();
+});
+
+test('signs back in with the passkey, without a password', async () => {
+  await page.goto('/sign-in');
+  await page.getByRole('button', { name: 'Sign in with a passkey' }).click();
+  await expect(page).toHaveURL(/\/w\/[0-9a-f-]+/);
+  const workspace = /\/w\/([0-9a-f-]+)/.exec(page.url())![1];
+  await page.goto(`/w/${workspace}/security`);
+  await page.getByRole('button', { name: 'Remove passkey Test laptop' }).click();
+  await expect(page.getByRole('list', { name: 'Your passkeys' })).toHaveCount(0);
 });
 
 test('logged no browser errors along the way', () => {

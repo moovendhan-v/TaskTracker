@@ -10,7 +10,8 @@ if (existsSync(LOCAL_E2E_ENV)) process.loadEnvFile(LOCAL_E2E_ENV);
 /** Ports for the stack Playwright starts: the built API and the Vite dev server in front of it. */
 export const API_PORT = 3100;
 export const WEB_PORT = 5174;
-export const WEB_URL = `http://127.0.0.1:${WEB_PORT}`;
+// localhost, not 127.0.0.1: passkeys (WebAuthn) need a domain name as the site id, never an IP.
+export const WEB_URL = `http://localhost:${WEB_PORT}`;
 export const API_DIR = resolve(import.meta.dirname, '../../../api');
 
 function testDatabaseUrl(name: 'E2E_DATABASE_URL' | 'E2E_MIGRATION_DATABASE_URL'): string | undefined {

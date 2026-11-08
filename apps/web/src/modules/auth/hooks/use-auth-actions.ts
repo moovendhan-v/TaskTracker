@@ -20,6 +20,19 @@ export function useSignIn() {
   });
 }
 
+/** Passkey sign-in (A4): a full sign-in on its own, so there's no second step. */
+export function useSignInWithPasskey() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => authApi.signInWithPasskey(),
+    onSuccess: async () => {
+      queryClient.clear();
+      await navigate({ to: '/' });
+    },
+  });
+}
+
 export function useSignUp() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();

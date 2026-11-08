@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2Icon, CopyIcon, DownloadIcon, KeyRoundIcon, ShieldCheckIcon, ShieldIcon } from 'lucide-react';
+import { CheckCircle2Icon, CopyIcon, DownloadIcon, FingerprintIcon, KeyRoundIcon, ShieldCheckIcon, ShieldIcon, Trash2Icon } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { encode } from 'uqr';
 import { PageHeader } from '@/components/common/page-header';
@@ -10,10 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GithubMark } from '@/components/common/github-mark';
 import { authApi } from '../api/auth.api';
-import { githubErrorMessage, signInOptionsQuery } from '../components/github-sign-in';
+import { githubErrorMessage, signInOptionsQuery } from '../components/other-sign-in';
 
 const KEY = ['auth', 'two-factor'] as const;
 const ACCOUNTS = ['auth', 'linked-providers'] as const;
+const PASSKEYS = ['auth', 'passkeys'] as const;
 
 /** A QR code as an SVG drawn from the encoder's modules: nothing leaves the browser. */
 function QrCode({ value, label }: { value: string; label: string }) {
@@ -61,6 +62,82 @@ function BackupCodes({ codes }: { codes: readonly string[] }) {
       </div>
       <p className="text-xs text-muted-foreground">Keep these somewhere safe. Each one signs you in once if you lose your device; they won't be shown again.</p>
     </div>
+  );
+}
+
+/**
+ * Passkeys (A4): sign in with your device's screen lock or a security key instead of a password
+ * and code. Adding one needs a recent sign-in (the server checks); removing one is immediate.
+ */
+function PasskeysCard() {
+  const queryClient = useQueryClient();
+  const passkeys = useQuery({ queryKey: PASSKEYS, queryFn: () => authApi.passkeys() });
+  const [name, setName] = useState('');
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: PASSKEYS });
+  const add = useMutation({
+    mutationFn: () => authApi.addPasskey(name.trim() || 'Passkey'),
+    onSuccess: () => {
+      notify.success('Passkey added');
+      setName('');
+      refresh();
+    },
+    onError: (error) => notify.error(error),
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => authApi.deletePasskey(id),
+    onSuccess: () => {
+      notify.success('Passkey removed');
+      refresh();
+    },
+    onError: (error) => notify.error(error),
+  });
+  if (typeof window.PublicKeyCredential !== 'function') return null;
+  const list = passkeys.data ?? [];
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FingerprintIcon className="size-4 text-muted-foreground" /> Passkeys
+        </CardTitle>
+        <CardDescription>Sign in with your fingerprint, face, screen lock or a security key. A passkey is both steps at once, so it doesn't ask for a code.</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        {list.length ? (
+          <ul aria-label="Your passkeys" className="divide-y rounded-lg border">
+            {list.map((key) => (
+              <li key={key.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                <KeyRoundIcon aria-hidden className="size-4 text-muted-foreground" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{key.name ?? 'Passkey'}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Added {new Date(key.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                    {key.backedUp ? ' · synced' : ' · this device only'}
+                  </span>
+                </span>
+                <Button size="icon-sm" variant="ghost" disabled={remove.isPending} onClick={() => remove.mutate(key.id)} aria-label={`Remove passkey ${key.name ?? ''}`.trim()}>
+                  <Trash2Icon />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            add.mutate();
+          }}
+        >
+          <div className="grid gap-1.5">
+            <Label htmlFor="passkey-name">Name</Label>
+            <Input id="passkey-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Work laptop" maxLength={60} className="w-56" />
+          </div>
+          <Button type="submit" variant="outline" disabled={add.isPending}>
+            <FingerprintIcon /> {add.isPending ? 'Waiting for your device…' : 'Add a passkey'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -264,6 +341,7 @@ export function SecurityPage() {
             ) : null}
           </CardContent>
         </Card>
+        <PasskeysCard />
         <GithubCard accounts={accounts.data ?? []} />
       </div>
     </div>

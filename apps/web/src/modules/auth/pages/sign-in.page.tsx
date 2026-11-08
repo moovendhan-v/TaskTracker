@@ -9,7 +9,7 @@ import { getErrorMessage } from '@/lib/errors';
 import { AuthLayout } from '../components/auth-layout';
 import type { SignInValues } from '../components/auth-schemas';
 import { FormError } from '../components/form-error';
-import { GithubSignIn, githubErrorMessage } from '../components/github-sign-in';
+import { githubErrorMessage, OtherSignIn } from '../components/other-sign-in';
 import { useSignIn } from '../hooks/use-auth-actions';
 
 export function SignInPage() {
@@ -35,7 +35,7 @@ export function SignInPage() {
         </>
       }
     >
-      <GithubSignIn />
+      <OtherSignIn passkey />
       <form onSubmit={onSubmit} className="grid gap-4" noValidate>
         <FormError message={signIn.error && !hasFieldErrors(signIn.error) ? getErrorMessage(signIn.error) : githubError} />
         <FormField id="email" label="Email" error={errors.email?.message}>
