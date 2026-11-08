@@ -11,6 +11,21 @@ type AccessExplanation {
   verdict: String!
 }
 
+"""
+One permission for one person, in one project or the whole workspace, until it ends
+"""
+type AccessGrant {
+  createdAt: String!
+  expiresAt: String!
+  grantedByName: String
+  id: ID!
+  permission: String!
+  spaceId: ID
+  spaceName: String
+  userId: ID!
+  userName: String!
+}
+
 type AccessReason {
   """allow or deny"""
   effect: String!
@@ -23,6 +38,21 @@ type AccessReason {
 
   """Where the statement lives: the role itself or an attached policy"""
   source: String!
+}
+
+"""Someone asking for access they don’t have"""
+type AccessRequest {
+  createdAt: String!
+  id: ID!
+  note: String!
+  permission: String!
+  requesterId: ID!
+  requesterName: String!
+  spaceId: ID
+  spaceName: String
+
+  """pending, approved or declined"""
+  status: String!
 }
 
 input AddMemberInput {
@@ -1454,6 +1484,11 @@ type Mutation {
   createTaskInSpace(input: CreateTaskInput!, spaceId: ID!, workspaceId: ID!): Task!
   createWorkspace(input: CreateWorkspaceInput!): Workspace!
 
+  """
+  Approves a request for 1, 7 or 30 days (as a grant that ends), or declines it. Only for access you have yourself
+  """
+  decideAccessRequest(approve: Boolean!, days: Int, requestId: ID!, workspaceId: ID!): AccessRequest!
+
   """Approvers cannot decide on their own requests"""
   decideLeaveRequest(input: DecideLeaveInput!, requestId: ID!, workspaceId: ID!): LeaveRequest!
   deleteAutomation(ruleId: ID!, workspaceId: ID!): Boolean!
@@ -1590,6 +1625,9 @@ type Mutation {
   The secret this automation signs webhook calls with. Audited; rotate makes a new one
   """
   revealAutomationWebhookSecret(rotate: Boolean! = false, ruleId: ID!, workspaceId: ID!): String!
+
+  """Ends a grant early"""
+  revokeAccessGrant(grantId: ID!, workspaceId: ID!): Boolean!
 
   """A new webhook secret; the old one stops working at once"""
   rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
@@ -1745,6 +1783,7 @@ type Notification {
 }
 
 enum NotificationKind {
+  access_decided
   access_requested
   automation
   chat_mention
@@ -1881,6 +1920,12 @@ enum PullRequestState {
 }
 
 type Query {
+  """Time-limited grants still running, soonest to end first"""
+  accessGrants(workspaceId: ID!): [AccessGrant!]!
+
+  """Requests waiting for someone who manages roles, newest first"""
+  accessRequests(workspaceId: ID!): [AccessRequest!]!
+
   """Platform-wide audit log with IP addresses"""
   adminAuditLog(
     action: String

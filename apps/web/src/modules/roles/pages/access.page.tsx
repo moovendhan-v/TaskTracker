@@ -13,6 +13,7 @@ import { useMembers } from '@/modules/members';
 import { useSpaces } from '@/modules/spaces';
 import { usePermissions } from '@/modules/workspaces';
 import { accessReviewApi } from '../api/access-review.api';
+import { AccessRequestsPanel } from '../components/access-requests-panel';
 import { PERMISSION_GROUPS } from '../lib/permission-groups';
 
 const VERDICT: Record<AccessVerdict, string> = {
@@ -35,8 +36,8 @@ export interface AccessCheck {
 /**
  * Access (E3): check what someone can do and why. Everyone can check
  * themselves and ask for what they're missing; people who manage roles can
- * check any member (the policy simulator). Opened from an access request in
- * the inbox, it starts on that request.
+ * check any member (the policy simulator), and approve requests in one click as
+ * grants that end. Opened from an access request in the inbox, it starts on that request.
  */
 export function AccessPage({ workspaceId, initial = {} }: { workspaceId: string; initial?: AccessCheck }) {
   const { can } = usePermissions(workspaceId);
@@ -80,6 +81,7 @@ export function AccessPage({ workspaceId, initial = {} }: { workspaceId: string;
         icon={<KeyRoundIcon className="size-5 text-muted-foreground" />}
       />
       <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-6 p-4 md:p-6">
+        {manager ? <AccessRequestsPanel workspaceId={workspaceId} /> : null}
         <section aria-label="What to check" className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3">
           {manager ? (
             <div className="grid gap-1.5">

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { EffectiveAccess, LabelledPolicy, Permission, SpaceRule } from '@taskflow/shared-types';
 import { Cached } from '../../../core/cache/cached.decorator.js';
-import { effectiveAccessForRole, findManagedPolicy, type CustomPolicy, type PolicyAttachment } from '../domain/policy.js';
+import { documentsForRole, effectiveAccessForRole, effectiveAccessWithGrants, findManagedPolicy, type ActiveGrant, type CustomPolicy, type PolicyAttachment } from '../domain/policy.js';
 import { PolicyDocumentPolicy } from '../domain/policy-document.policy.js';
 import { PolicyRepository } from '../domain/policy.repository.js';
 import type { WorkspaceRole } from '../domain/workspace-role.js';
@@ -34,6 +34,19 @@ export class RoleAccessService {
     if (!role) return null;
     const attachments = await this.policies.listAttachments(workspaceId, [roleId]);
     return toRoleAccess(await this.evaluate(workspaceId, role, attachments));
+  }
+
+  /**
+   * A role's access plus its holder's running grants (E3). Not cached itself: the
+   * membership lookup that calls it is, per person, and drops on any grant change.
+   */
+  async forRoleWithGrants(workspaceId: string, roleId: string, grants: readonly ActiveGrant[]): Promise<RoleAccess | null> {
+    if (grants.length === 0) return this.forRole(workspaceId, roleId);
+    const role = await this.roles.findInWorkspace(workspaceId, roleId);
+    if (!role) return null;
+    const attachments = await this.policies.listAttachments(workspaceId, [roleId]);
+    const custom = new Map((await this.policies.findMany(workspaceId, attachments.flatMap((item) => (item.policyId ? [item.policyId] : [])))).map((policy) => [policy.id, policy]));
+    return toRoleAccess(effectiveAccessWithGrants(documentsForRole(role, attachments, custom), grants));
   }
 
   /**
