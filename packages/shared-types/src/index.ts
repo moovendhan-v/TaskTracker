@@ -28,6 +28,7 @@ export * from './forms/form-schema.js';
 export * from './forms/validate-form.js';
 export * from './domain/iam.js';
 export * from './domain/access-grants.js';
+export * from './domain/two-step.js';
 export * from './contracts/policy.contract.js';
 export * from './domain/preferences.js';
 export * from './contracts/custom-field.contract.js';

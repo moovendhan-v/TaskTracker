@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PERMISSIONS, PROTECTED_FIELDS, type Permission } from '@taskflow/shared-types';
+import { PERMISSIONS, permissionsWithoutTwoStep, PROTECTED_FIELDS, type Permission } from '@taskflow/shared-types';
 import type { SessionUser, WorkspaceAccess } from '../http/types/authenticated-request.js';
 import { MembershipReader } from './membership-reader.port.js';
 
@@ -12,13 +12,19 @@ export class AccessService {
   async resolve(user: SessionUser, workspaceId: string): Promise<WorkspaceAccess | null> {
     const grant = await this.memberships.findGrant(workspaceId, user.id);
     if (grant) {
+      // A4 / E3: a workspace that requires two-step sign-in holds back what the requirement
+      // covers until the member sets it up. Checked on every request, so it counts at once.
+      const permissions = grant.twoStep !== 'off' && !(await this.memberships.hasTwoStep(user.id)) ? permissionsWithoutTwoStep(grant.twoStep, grant.permissions) : grant.permissions;
+      // Only when something is actually held back: "admins" changes nothing for a plain member.
+      const twoStepMissing = permissions.length < grant.permissions.length;
       return {
         workspaceId,
         roleId: grant.roleId,
-        permissions: new Set(grant.permissions),
+        permissions: new Set(permissions),
         readableFields: new Set(grant.readableFields),
         spaceRules: grant.spaceRules,
         viaPlatformRole: false,
+        twoStepMissing,
       };
     }
     if (user.platformRole === 'SUPER_ADMIN' && (await this.memberships.workspaceExists(workspaceId))) {
@@ -40,6 +46,11 @@ export class AccessService {
    */
   resolveMember(userId: string, workspaceId: string): Promise<WorkspaceAccess | null> {
     return this.resolve({ id: userId, email: '', name: '', image: null, platformRole: 'USER', emailVerified: true }, workspaceId);
+  }
+
+  /** Whether the user has two-step sign-in (an authenticator app or a passkey). */
+  hasTwoStep(userId: string): Promise<boolean> {
+    return this.memberships.hasTwoStep(userId);
   }
 
   static hasAll(access: WorkspaceAccess, required: readonly Permission[]): boolean {

@@ -33,6 +33,7 @@ import { AutomationWebhooks1729880000000 } from './1729880000000-automation-webh
 import { AccessRequests1729890000000 } from './1729890000000-access-requests.js';
 import { GithubSyncLog1729900000000 } from './1729900000000-github-sync-log.js';
 import { AccessGrants1729960000000 } from './1729960000000-access-grants.js';
+import { TwoStepRequirement1729970000000 } from './1729970000000-two-step-requirement.js';
 import { GithubConflicts1729950000000 } from './1729950000000-github-conflicts.js';
 import { ChatRetention1729940000000 } from './1729940000000-chat-retention.js';
 import { DashboardTeams1729930000000 } from './1729930000000-dashboard-teams.js';
@@ -87,4 +88,5 @@ export const MIGRATIONS = [
   ChatRetention1729940000000,
   GithubConflicts1729950000000,
   AccessGrants1729960000000,
+  TwoStepRequirement1729970000000,
 ];

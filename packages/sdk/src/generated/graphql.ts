@@ -1509,7 +1509,7 @@ export type SignInOptionsQuery = { signInOptions: { github: boolean } };
 
 export type CurrentUserFieldsFragment = { id: string, email: string, name: string, image: string | null, platformRole: PlatformRole, emailVerified: boolean };
 
-export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> };
+export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, twoStepMissing: boolean, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> };
 
 export type SpaceRuleFieldsFragment = { spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> };
 
@@ -2162,7 +2162,7 @@ export type MyAccessQueryVariables = Exact<{
 }>;
 
 
-export type MyAccessQuery = { myAccess: { permissions: Array<string>, readableFields: Array<string>, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
+export type MyAccessQuery = { myAccess: { permissions: Array<string>, readableFields: Array<string>, twoStepMissing: boolean, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type CreatePolicyMutationVariables = Exact<{
   workspaceId: string;
@@ -2743,21 +2743,21 @@ export type MeQuery = { me: { id: string, email: string, name: string, image: st
 export type WorkspacesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type WorkspacesQuery = { workspaces: Array<{ id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> }> };
+export type WorkspacesQuery = { workspaces: Array<{ id: string, name: string, color: string, roleName: string, permissions: Array<string>, twoStepMissing: boolean, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> }> };
 
 export type WorkspaceQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type WorkspaceQuery = { workspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
+export type WorkspaceQuery = { workspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, twoStepMissing: boolean, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type CreateWorkspaceMutationVariables = Exact<{
   input: CreateWorkspaceInput;
 }>;
 
 
-export type CreateWorkspaceMutation = { createWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
+export type CreateWorkspaceMutation = { createWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, twoStepMissing: boolean, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type UpdateWorkspaceMutationVariables = Exact<{
   workspaceId: string;
@@ -2765,7 +2765,7 @@ export type UpdateWorkspaceMutationVariables = Exact<{
 }>;
 
 
-export type UpdateWorkspaceMutation = { updateWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
+export type UpdateWorkspaceMutation = { updateWorkspace: { id: string, name: string, color: string, roleName: string, permissions: Array<string>, twoStepMissing: boolean, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> } };
 
 export type DeleteWorkspaceMutationVariables = Exact<{
   workspaceId: string;
@@ -2773,6 +2773,21 @@ export type DeleteWorkspaceMutationVariables = Exact<{
 
 
 export type DeleteWorkspaceMutation = { deleteWorkspace: boolean };
+
+export type TwoStepPolicyQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type TwoStepPolicyQuery = { twoStepPolicy: { id: string, workspaceId: string, require: string, callerHasTwoStep: boolean } };
+
+export type SetTwoStepRequirementMutationVariables = Exact<{
+  workspaceId: string;
+  require: string;
+}>;
+
+
+export type SetTwoStepRequirementMutation = { setTwoStepRequirement: { id: string, workspaceId: string, require: string, callerHasTwoStep: boolean } };
 
 export class TypedDocumentString<TResult, TVariables>
   extends String
@@ -2954,6 +2969,7 @@ export const WorkspaceFieldsFragmentDoc = new TypedDocumentString(`
   spaceRules {
     ...SpaceRuleFields
   }
+  twoStepMissing
   createdAt
 }
     fragment SpaceRuleFields on SpaceRule {
@@ -6307,6 +6323,7 @@ export const MyAccessDocument = new TypedDocumentString(`
     spaceRules {
       ...SpaceRuleFields
     }
+    twoStepMissing
   }
 }
     fragment SpaceRuleFields on SpaceRule {
@@ -8196,6 +8213,7 @@ export const WorkspacesDocument = new TypedDocumentString(`
   spaceRules {
     ...SpaceRuleFields
   }
+  twoStepMissing
   createdAt
 }
 fragment SpaceRuleFields on SpaceRule {
@@ -8218,6 +8236,7 @@ export const WorkspaceDocument = new TypedDocumentString(`
   spaceRules {
     ...SpaceRuleFields
   }
+  twoStepMissing
   createdAt
 }
 fragment SpaceRuleFields on SpaceRule {
@@ -8240,6 +8259,7 @@ export const CreateWorkspaceDocument = new TypedDocumentString(`
   spaceRules {
     ...SpaceRuleFields
   }
+  twoStepMissing
   createdAt
 }
 fragment SpaceRuleFields on SpaceRule {
@@ -8262,6 +8282,7 @@ export const UpdateWorkspaceDocument = new TypedDocumentString(`
   spaceRules {
     ...SpaceRuleFields
   }
+  twoStepMissing
   createdAt
 }
 fragment SpaceRuleFields on SpaceRule {
@@ -8274,3 +8295,23 @@ export const DeleteWorkspaceDocument = new TypedDocumentString(`
   deleteWorkspace(workspaceId: $workspaceId)
 }
     `) as unknown as TypedDocumentString<DeleteWorkspaceMutation, DeleteWorkspaceMutationVariables>;
+export const TwoStepPolicyDocument = new TypedDocumentString(`
+    query TwoStepPolicy($workspaceId: ID!) {
+  twoStepPolicy(workspaceId: $workspaceId) {
+    id
+    workspaceId
+    require
+    callerHasTwoStep
+  }
+}
+    `) as unknown as TypedDocumentString<TwoStepPolicyQuery, TwoStepPolicyQueryVariables>;
+export const SetTwoStepRequirementDocument = new TypedDocumentString(`
+    mutation SetTwoStepRequirement($workspaceId: ID!, $require: String!) {
+  setTwoStepRequirement(workspaceId: $workspaceId, require: $require) {
+    id
+    workspaceId
+    require
+    callerHasTwoStep
+  }
+}
+    `) as unknown as TypedDocumentString<SetTwoStepRequirementMutation, SetTwoStepRequirementMutationVariables>;

@@ -8,6 +8,7 @@ import { useWorkspaceEvents } from '@/core/realtime/use-workspace-events';
 import { toast } from '@/components/ui/sonner';
 import { describeNotification, InboxPanel, inboxApi, useInboxPanel, useUnreadCount } from '@/modules/inbox';
 import { TaskDetail, useOpenTask } from '@/modules/tasks';
+import { TwoStepBanner } from '@/modules/workspaces';
 import { AppRail } from './app-rail';
 import { AppTopbar } from './app-topbar';
 import { BottomTabBar } from './bottom-tab-bar';
@@ -48,6 +49,7 @@ export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: stri
         <AppTopbar workspaceId={workspaceId} compact={viewport === 'phone'} showMenu={!docked} />
         {viewport !== 'phone' ? <WorkbenchTabs workspaceId={workspaceId} /> : null}
         <VerifyEmailBanner />
+        <TwoStepBanner workspaceId={workspaceId} />
         <Outlet />
         {viewport === 'phone' ? <BottomTabBar workspaceId={workspaceId} unread={unread} /> : null}
       </main>

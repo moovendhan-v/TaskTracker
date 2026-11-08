@@ -1663,6 +1663,7 @@ type Mutation {
 
   """Replaces the open tabs of the multi-tab workspace"""
   setTabs(input: SetTabsInput!): Preferences!
+  setTwoStepRequirement(require: String!, workspaceId: ID!): TwoStepPolicy!
 
   """Makes a layout the workspace default for a page (audited)"""
   setWorkspaceLayout(input: SetWorkspaceLayoutInput!, workspaceId: ID!): WorkspaceLayout!
@@ -1729,6 +1730,11 @@ type MyAccess {
   permissions: [String!]!
   readableFields: [String!]!
   spaceRules: [SpaceRule!]!
+
+  """
+  Some permissions are held back until the caller sets up two-step sign-in
+  """
+  twoStepMissing: Boolean!
 }
 
 type MyAttendance {
@@ -2213,6 +2219,7 @@ type Query {
   Entries started in [from, to), oldest first, at most 1000. Without time.view_all, only your own.
   """
   timeEntries(query: TimeEntryQueryInput!, workspaceId: ID!): [TimeEntry!]!
+  twoStepPolicy(workspaceId: ID!): TwoStepPolicy!
   unreadNotificationCount(workspaceId: ID!): Int!
   workspace(workspaceId: ID!): Workspace!
 
@@ -2821,6 +2828,19 @@ type TimeEntryTask {
   title: String!
 }
 
+"""
+Whether the workspace requires two-step sign-in (an authenticator app or a passkey), and of whom
+"""
+type TwoStepPolicy {
+  """Whether the caller has two-step sign-in"""
+  callerHasTwoStep: Boolean!
+  id: ID!
+
+  """off, admins (people with admin rights) or everyone"""
+  require: String!
+  workspaceId: ID!
+}
+
 input UpdateAdminUserInput {
   platformRole: PlatformRole
   suspended: Boolean
@@ -2990,6 +3010,11 @@ type Workspace {
 
   """Spaces where some of those permissions are taken away"""
   spaceRules: [SpaceRule!]!
+
+  """
+  The workspace requires two-step sign-in and the caller has not set it up, so some permissions are held back
+  """
+  twoStepMissing: Boolean!
 }
 
 """Something changed. Ids only: refetch the affected views to see it."""

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { isTwoStepRequirement, type TwoStepRequirement } from '@taskflow/shared-types';
 import { In } from 'typeorm';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import type { NewWorkspace, Workspace } from '../domain/workspace.js';
@@ -34,5 +35,14 @@ export class TypeOrmWorkspaceRepository extends WorkspaceRepository {
 
   async delete(id: string): Promise<void> {
     await this.repository.delete({ id });
+  }
+
+  async getTwoStep(id: string): Promise<TwoStepRequirement> {
+    const [row] = (await this.transactional.manager.query(`SELECT two_step_required FROM workspace WHERE id = $1`, [id])) as { two_step_required: string }[];
+    return isTwoStepRequirement(row?.two_step_required) ? row.two_step_required : 'off';
+  }
+
+  async setTwoStep(id: string, requirement: TwoStepRequirement): Promise<void> {
+    await this.transactional.manager.query(`UPDATE workspace SET two_step_required = $2 WHERE id = $1`, [id, requirement]);
   }
 }

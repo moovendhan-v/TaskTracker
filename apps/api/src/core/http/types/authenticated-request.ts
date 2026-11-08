@@ -20,6 +20,8 @@ export interface WorkspaceAccess {
   spaceRules: readonly SpaceRule[];
   /** True when a super admin is acting in a workspace they are not a member of. */
   viaPlatformRole: boolean;
+  /** The workspace requires two-step sign-in and this member hasn't set it up: some permissions are held back. */
+  twoStepMissing?: boolean;
 }
 
 export interface AuthenticatedRequest extends Request {

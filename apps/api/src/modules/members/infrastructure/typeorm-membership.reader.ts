@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PERMISSIONS, type Permission } from '@taskflow/shared-types';
+import { isTwoStepRequirement, PERMISSIONS, type Permission } from '@taskflow/shared-types';
 import { MembershipReader, type MembershipGrant } from '../../../core/access/membership-reader.port.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
@@ -40,8 +40,25 @@ export class TypeOrmMembershipReader extends MembershipReader {
       const running = grants.filter((grant) => (PERMISSIONS as readonly string[]).includes(grant.permission)).map((grant) => ({ permission: grant.permission as Permission, spaceId: grant.space_id }));
       // Row-level security lets a user read the role and policies they hold, nothing else.
       const access = await this.roleAccess.forRoleWithGrants(workspaceId, membership.roleId, running);
-      return access ? { roleId: membership.roleId, permissions: access.permissions, readableFields: access.readableFields, spaceRules: access.spaceRules } : null;
+      if (!access) return null;
+      // Members can read their own workspace's row; the requirement is applied per request in AccessService.
+      const [workspace] = (await this.transactional.manager.query(`SELECT two_step_required FROM workspace WHERE id = $1`, [workspaceId])) as { two_step_required: string }[];
+      // An unreadable or unknown value fails closed to the strictest setting.
+      const twoStep = workspace && isTwoStepRequirement(workspace.two_step_required) ? workspace.two_step_required : 'everyone';
+      return { roleId: membership.roleId, permissions: access.permissions, readableFields: access.readableFields, spaceRules: access.spaceRules, twoStep };
     });
+  }
+
+  /**
+   * Better Auth's own tables (outside row-level security, no tenant data): the flag the
+   * two-factor plugin keeps, or any passkey. Only asked when a workspace requires it.
+   */
+  async hasTwoStep(userId: string): Promise<boolean> {
+    const [row] = (await this.transactional.manager.query(
+      `SELECT (u."twoFactorEnabled" IS TRUE OR EXISTS (SELECT 1 FROM passkey p WHERE p."userId" = u.id)) AS strong FROM "user" u WHERE u.id = $1`,
+      [userId],
+    )) as { strong: boolean }[];
+    return row?.strong === true;
   }
 
   /** Platform scope: AccessService only asks this for super admins, who may enter any workspace. */

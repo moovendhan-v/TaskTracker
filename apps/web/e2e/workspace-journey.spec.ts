@@ -965,6 +965,16 @@ test('turns two-step sign-in on with an authenticator code, and off again', asyn
   await expect(page.getByRole('button', { name: 'Set up' })).toBeVisible();
 });
 
+test("won't require two-step sign-in of others until you have it yourself", async () => {
+  const workspace = /\/w\/([0-9a-f-]+)/.exec(page.url())![1];
+  await page.goto(`/w/${workspace}/settings`);
+  await page.getByLabel('Require it of').selectOption({ label: 'People with admin rights' });
+  await expect(page.getByText('Set up two-step sign-in for yourself first')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save', exact: true }).first()).toBeDisabled();
+  await page.getByRole('link', { name: 'Open Security' }).click();
+  await expect(page.getByRole('heading', { name: 'Security' })).toBeVisible();
+});
+
 test('connects GitHub from the Security page by going to GitHub', async () => {
   // The tests never reach GitHub: answer its authorize page with a stub and check where we were sent.
   await page.route('https://github.com/**', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>GitHub</title>' }));

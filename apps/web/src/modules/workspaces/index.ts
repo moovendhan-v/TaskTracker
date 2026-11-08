@@ -6,3 +6,4 @@ export { Can } from './components/can';
 export { WorkspaceSwitcher } from './components/workspace-switcher';
 export { OnboardingPage } from './pages/onboarding.page';
 export { WorkspaceSettingsPage } from './pages/workspace-settings.page';
+export { TwoStepBanner } from './components/two-step-banner';

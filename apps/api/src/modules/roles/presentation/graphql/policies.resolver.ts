@@ -30,7 +30,7 @@ export class PoliciesResolver {
   @Query(() => MyAccessGql, { description: "The caller's effective permissions and readable fields in the workspace" })
   @RequirePermissions()
   myAccess(@WorkspaceIdArg() _workspaceId: string, @CurrentAccess() access: WorkspaceAccess): MyAccessGql {
-    return { permissions: [...access.permissions].sort(), readableFields: [...access.readableFields].sort(), spaceRules: [...access.spaceRules] };
+    return { permissions: [...access.permissions].sort(), readableFields: [...access.readableFields].sort(), spaceRules: [...access.spaceRules], twoStepMissing: access.twoStepMissing === true };
   }
 
   @Mutation(() => PolicyGql)
