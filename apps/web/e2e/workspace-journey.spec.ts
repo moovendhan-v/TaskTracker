@@ -965,10 +965,29 @@ test('turns two-step sign-in on with an authenticator code, and off again', asyn
   await expect(page.getByRole('button', { name: 'Set up' })).toBeVisible();
 });
 
+test('connects GitHub from the Security page by going to GitHub', async () => {
+  // The tests never reach GitHub: answer its authorize page with a stub and check where we were sent.
+  await page.route('https://github.com/**', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>GitHub</title>' }));
+  await page.getByRole('button', { name: 'Connect GitHub' }).click();
+  await page.waitForURL(/^https:\/\/github\.com\/login\/oauth\/authorize/);
+  const authorize = new URL(page.url());
+  expect(authorize.searchParams.get('client_id')).toBe('e2e-github-client');
+  expect(authorize.searchParams.get('state')).toBeTruthy();
+  await page.unroute('https://github.com/**');
+  await page.goBack();
+  await expect(page.getByRole('button', { name: 'Connect GitHub' })).toBeVisible();
+});
+
 test('signs out', async () => {
   await page.getByRole('button', { name: /Dana Reyes/ }).click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
+  await expect(page.getByRole('button', { name: 'Continue with GitHub' })).toBeVisible();
+});
+
+test('explains a GitHub sign-in that could not join an existing account', async () => {
+  await page.goto('/sign-in?error=account_not_linked');
+  await expect(page.getByText('That email already has a TaskFlow account.')).toBeVisible();
 });
 
 test('logged no browser errors along the way', () => {

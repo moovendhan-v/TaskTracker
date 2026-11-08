@@ -156,7 +156,9 @@ case "$cmd" in
     sync_db_roles
     # Bootstrap prints its progress; the API and web start once it succeeds.
     "${COMPOSE[@]}" run --rm bootstrap
-    "${COMPOSE[@]}" up -d --wait --no-deps api web
+    # Recreated every time: a running Vite or API keeps what it resolved at start, so packages the
+    # bootstrap step just installed (e.g. after a pull) would stay "Failed to resolve import".
+    "${COMPOSE[@]}" up -d --wait --no-deps --force-recreate api web
     urls
     "${COMPOSE[@]}" logs -f --tail 20 api web ;;
   bootstrap)

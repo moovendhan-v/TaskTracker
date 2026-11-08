@@ -43,6 +43,9 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     // Check waits and due-soon / overdue triggers every second, so tests don't wait a minute.
     AUTOMATION_TICK_SECONDS: '1',
     CHAT_RETENTION_SWEEP_SECONDS: '1',
+    // A placeholder GitHub OAuth app, so sign-in with GitHub is on; tests never reach GitHub itself.
+    GITHUB_CLIENT_ID: 'e2e-github-client',
+    GITHUB_CLIENT_SECRET: 'e2e-github-placeholder',
     // Webhook steps call a local receiver in tests; production refuses both settings below.
     AUTOMATION_WEBHOOK_HOSTS: 'localhost,127.0.0.1',
     AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS: 'true',

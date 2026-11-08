@@ -9,6 +9,7 @@ import { getErrorMessage } from '@/lib/errors';
 import { AuthLayout } from '../components/auth-layout';
 import type { SignInValues } from '../components/auth-schemas';
 import { FormError } from '../components/form-error';
+import { GithubSignIn, githubErrorMessage } from '../components/github-sign-in';
 import { useSignIn } from '../hooks/use-auth-actions';
 
 export function SignInPage() {
@@ -16,6 +17,8 @@ export function SignInPage() {
   const signIn = useSignIn();
   const { form, applyServerErrors } = useServerForm<SignInValues>('auth.signIn', { defaultValues: { email: '', password: '' } });
   const { errors } = form.formState;
+  // Set when GitHub sign-in came back with an error (A4).
+  const [githubError] = useState(() => githubErrorMessage(window.location.search));
 
   const onSubmit = form.handleSubmit((values) => signIn.mutate({ ...values, captcha }, { onError: applyServerErrors }));
 
@@ -32,8 +35,9 @@ export function SignInPage() {
         </>
       }
     >
+      <GithubSignIn />
       <form onSubmit={onSubmit} className="grid gap-4" noValidate>
-        <FormError message={signIn.error && !hasFieldErrors(signIn.error) ? getErrorMessage(signIn.error) : null} />
+        <FormError message={signIn.error && !hasFieldErrors(signIn.error) ? getErrorMessage(signIn.error) : githubError} />
         <FormField id="email" label="Email" error={errors.email?.message}>
           <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...form.register('email')} />
         </FormField>

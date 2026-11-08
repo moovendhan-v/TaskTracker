@@ -8,9 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { GithubMark } from '@/components/common/github-mark';
 import { authApi } from '../api/auth.api';
+import { githubErrorMessage, signInOptionsQuery } from '../components/github-sign-in';
 
 const KEY = ['auth', 'two-factor'] as const;
+const ACCOUNTS = ['auth', 'linked-providers'] as const;
 
 /** A QR code as an SVG drawn from the encoder's modules: nothing leaves the browser. */
 function QrCode({ value, label }: { value: string; label: string }) {
@@ -62,6 +65,65 @@ function BackupCodes({ codes }: { codes: readonly string[] }) {
 }
 
 /**
+ * Sign in with GitHub (A4): connect it while signed in, and only a GitHub account with the
+ * same email. Disconnecting needs another way in, so the server keeps your last one.
+ */
+function GithubCard({ accounts }: { accounts: readonly { id: string; providerId: string }[] }) {
+  const queryClient = useQueryClient();
+  const options = useQuery(signInOptionsQuery);
+  const [error] = useState(() => githubErrorMessage(window.location.search));
+  const github = accounts.find((account) => account.providerId === 'github');
+  const connected = github !== undefined;
+  const connect = useMutation({ mutationFn: () => authApi.connectGithub(window.location.pathname), onError: (e) => notify.error(e) });
+  const disconnect = useMutation({
+    mutationFn: () => authApi.unlinkAccount(github!.id),
+    onSuccess: () => {
+      notify.success('GitHub disconnected');
+      void queryClient.invalidateQueries({ queryKey: ACCOUNTS });
+    },
+    onError: (e) => notify.error(e),
+  });
+  if (!options.data?.github && !connected) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <GithubMark className="size-4" /> GitHub
+        </CardTitle>
+        <CardDescription>
+          {connected
+            ? 'Connected: you can sign in with GitHub. That uses GitHub’s own sign-in and two-step settings instead of your authenticator code.'
+            : 'Sign in with your GitHub account. It needs the same email address as your TaskFlow account.'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-2">
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+        <div>
+          {connected ? (
+            <Button
+              variant="outline"
+              disabled={disconnect.isPending || accounts.length < 2}
+              title={accounts.length < 2 ? 'Set a password first: GitHub is your only way to sign in' : undefined}
+              onClick={() => disconnect.mutate()}
+            >
+              Disconnect
+            </Button>
+          ) : (
+            <Button variant="outline" disabled={connect.isPending} onClick={() => connect.mutate()}>
+              <GithubMark /> {connect.isPending ? 'Opening GitHub…' : 'Connect GitHub'}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
  * Account security (A4): two-step sign-in with an authenticator app. Turning it on
  * asks for your password, shows a QR code and backup codes, and only takes effect
  * once you've entered a code from the app; turning it off asks for your password.
@@ -69,6 +131,9 @@ function BackupCodes({ codes }: { codes: readonly string[] }) {
 export function SecurityPage() {
   const queryClient = useQueryClient();
   const enabled = useQuery({ queryKey: KEY, queryFn: () => authApi.twoFactorEnabled() });
+  const accounts = useQuery({ queryKey: ACCOUNTS, queryFn: () => authApi.linkedAccounts() });
+  // Someone who only ever signed in with GitHub has no password to confirm two-step changes with.
+  const hasPassword = accounts.data ? accounts.data.some((account) => account.providerId === 'credential') : true;
   const [password, setPassword] = useState('');
   const [setup, setSetup] = useState<{ uri: string; codes: string[] } | null>(null);
   const [code, setCode] = useState('');
@@ -167,6 +232,8 @@ export function SecurityPage() {
                   </div>
                 </form>
               </div>
+            ) : !hasPassword ? (
+              <p className="text-sm text-muted-foreground">You sign in with GitHub, so two-step sign-in is set up on GitHub.</p>
             ) : (
               <form className="grid gap-2" onSubmit={submitPassword(() => (on ? turnOff.mutate() : start.mutate()))}>
                 <Label htmlFor="security-password">Your password</Label>
@@ -197,6 +264,7 @@ export function SecurityPage() {
             ) : null}
           </CardContent>
         </Card>
+        <GithubCard accounts={accounts.data ?? []} />
       </div>
     </div>
   );

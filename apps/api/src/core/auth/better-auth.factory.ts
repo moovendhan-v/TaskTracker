@@ -8,7 +8,11 @@ import type { Mailer } from './mailer/mailer.port.js';
 
 const PUBLIC_AUTH_FORMS = ['/sign-up/email', '/sign-in/email', '/request-password-reset'];
 
-export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
+/**
+ * `validateSchema: false` is for the migration command: Better Auth otherwise checks the tables at
+ * start-up and logs "schema mismatch" for exactly the tables that command is about to create.
+ */
+export function createAuth(env: Env, pool: Pool, mailer: Mailer, { validateSchema = true }: { validateSchema?: boolean } = {}) {
   const isProduction = env.NODE_ENV === 'production';
 
   return betterAuth({
@@ -32,6 +36,19 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
       autoSignInAfterVerification: true,
       expiresIn: 60 * 60 * 24,
       sendVerificationEmail: async ({ user, url }) => mailer.sendEmailVerification(user.email, url),
+    },
+    // "Sign in with GitHub" (A4), only when an OAuth app is configured. A first GitHub
+    // sign-in creates an account. It never merges into an existing account with the same email on
+    // its own (that sign-in is refused): you connect GitHub from the Security page while signed in,
+    // and only a GitHub account with the same email. No CAPTCHA here: /sign-in/social only hands
+    // back GitHub's URL, and GitHub's own sign-in page is the human check. A GitHub sign-in is a
+    // complete sign-in of its own, so it doesn't ask for the authenticator code (GitHub has its
+    // own two-step); the Security page says so.
+    ...(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
+      ? { socialProviders: { github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET } } }
+      : {}),
+    account: {
+      accountLinking: { enabled: true, trustedProviders: [], allowDifferentEmails: false, disableImplicitLinking: true },
     },
     user: {
       additionalFields: {
@@ -65,9 +82,16 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
         '/two-factor/verify-backup-code': { window: 60, max: 5 },
         '/two-factor/enable': { window: 60, max: 5 },
         '/two-factor/disable': { window: 60, max: 5 },
+        '/sign-in/social': { window: 60, max: 10 },
+        '/link-social': { window: 60, max: 5 },
+        '/unlink-account': { window: 60, max: 5 },
       },
     },
     advanced: {
+      // Better Auth skips its origin and callback-URL checks when NODE_ENV=test; keep them on so the
+      // e2e suite runs the same checks as production (no redirects to other sites).
+      disableOriginCheck: false,
+      database: { validateSchema },
       useSecureCookies: isProduction,
       defaultCookieAttributes: { httpOnly: true, sameSite: 'lax', secure: isProduction },
       ipAddress: { ipAddressHeaders: env.TRUST_PROXY > 0 ? ['x-forwarded-for'] : [] },

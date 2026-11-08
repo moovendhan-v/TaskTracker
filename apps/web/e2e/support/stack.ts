@@ -38,6 +38,9 @@ export function apiEnv(): NodeJS.ProcessEnv {
     BETTER_AUTH_URL: WEB_URL,
     CORS_ORIGINS: WEB_URL,
     TRUST_PROXY: '0',
+    // A placeholder GitHub OAuth app, so "Continue with GitHub" shows; the tests stub github.com.
+    GITHUB_CLIENT_ID: 'e2e-github-client',
+    GITHUB_CLIENT_SECRET: 'e2e-github-placeholder',
     STORAGE_DRIVER: 'local',
     STORAGE_LOCAL_DIR: join(tmpdir(), 'taskflow-web-e2e-uploads'),
   };

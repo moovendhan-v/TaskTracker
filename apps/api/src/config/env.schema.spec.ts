@@ -41,4 +41,11 @@ describe('loadEnv', () => {
   it('rejects a short auth secret', () => {
     expect(() => loadEnv({ ...base, BETTER_AUTH_SECRET: 'short' })).toThrow(/BETTER_AUTH_SECRET/);
   });
+
+  it('takes GitHub sign-in keys in pairs', () => {
+    expect(loadEnv(base).GITHUB_CLIENT_ID).toBeUndefined();
+    expect(() => loadEnv({ ...base, GITHUB_CLIENT_ID: 'Iv1.abc' })).toThrow(/both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET/);
+    expect(() => loadEnv({ ...base, GITHUB_CLIENT_SECRET: 'secret' })).toThrow(/both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET/);
+    expect(loadEnv({ ...base, GITHUB_CLIENT_ID: 'Iv1.abc', GITHUB_CLIENT_SECRET: 'secret' }).GITHUB_CLIENT_ID).toBe('Iv1.abc');
+  });
 });
