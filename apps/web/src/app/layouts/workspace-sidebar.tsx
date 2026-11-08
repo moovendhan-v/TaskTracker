@@ -75,6 +75,96 @@ export function WorkspaceSidebar({ workspaceId, unread, variant = 'docked' }: { 
     window.addEventListener('pointerup', onUp);
   };
 
+  // The sidebar preset (B5): Minimal keeps the essentials, Manager puts people first; the rest stays on the rail.
+  const preset = preferences.sidebarPreset;
+  const mainLinks = (
+    <div className="grid gap-0.5 px-2">
+      <SidebarLink to="/w/$workspaceId" params={params} activeOptions={{ exact: true }} icon={<HomeIcon />}>
+        Home
+      </SidebarLink>
+      <SidebarLink to="/w/$workspaceId/inbox" params={params} icon={<InboxIcon />} badge={unread ? (unread > 99 ? '99+' : String(unread)) : undefined}>
+        Inbox
+      </SidebarLink>
+      {can('chat.use') ? (
+        <SidebarLink to="/w/$workspaceId/chat" params={params} icon={<MessagesSquareIcon />} badge={chatUnread ? (chatUnread > 99 ? '99+' : String(chatUnread)) : undefined}>
+          Chat
+        </SidebarLink>
+      ) : null}
+      <SidebarLink to="/w/$workspaceId/docs" params={params} icon={<FileTextIcon />}>
+        Docs
+      </SidebarLink>
+      <SidebarLink to="/w/$workspaceId/my-tasks" params={params} icon={<CheckSquareIcon />}>
+        My tasks
+      </SidebarLink>
+      {preset !== 'minimal' ? (
+        <>
+          <SidebarLink to="/w/$workspaceId/daily-log" params={params} icon={<CalendarCheckIcon />}>
+            Daily log
+          </SidebarLink>
+          <SidebarLink to="/w/$workspaceId/timesheets" params={params} icon={<TimerIcon />}>
+            Timesheets
+          </SidebarLink>
+        </>
+      ) : null}
+    </div>
+  );
+  const spaceTree = <SpaceTree workspaceId={workspaceId} stats={stats} filter={filter} defaultView={defaultTaskView} />;
+  const workspaceSection = (
+    <SidebarSection title="Workspace">
+      <SidebarLink to="/w/$workspaceId/members" params={params} icon={<UsersIcon />}>
+        Members
+      </SidebarLink>
+      <SidebarLink to="/w/$workspaceId/roles" params={params} icon={<ShieldIcon />}>
+        Roles
+      </SidebarLink>
+      <SidebarLink to="/w/$workspaceId/access" params={params} icon={<KeyRoundIcon />}>
+        Access
+      </SidebarLink>
+      {can('audit.view') ? (
+        <SidebarLink to="/w/$workspaceId/audit-log" params={params} icon={<ScrollTextIcon />}>
+          Audit log
+        </SidebarLink>
+      ) : null}
+      <SidebarLink to="/w/$workspaceId/settings" params={params} icon={<SettingsIcon />}>
+        Settings
+      </SidebarLink>
+    </SidebarSection>
+  );
+  const peopleSection = (
+    <SidebarSection title="People">
+      {can('hr.view') ? (
+        <SidebarLink to="/w/$workspaceId/people" params={params} activeOptions={{ exact: true }} icon={<UsersRoundIcon />}>
+          Directory
+        </SidebarLink>
+      ) : null}
+      {can('leave.request') ? (
+        <SidebarLink to="/w/$workspaceId/people/time-off" params={params} icon={<PalmtreeIcon />}>
+          Time off
+        </SidebarLink>
+      ) : null}
+      {can('time.log') ? (
+        <SidebarLink to="/w/$workspaceId/people/attendance" params={params} icon={<TimerIcon />}>
+          Attendance
+        </SidebarLink>
+      ) : null}
+      {can('leave.approve') ? (
+        <SidebarLink to="/w/$workspaceId/people/approvals" params={params} icon={<ClipboardCheckIcon />}>
+          Approvals
+        </SidebarLink>
+      ) : null}
+      {can('hr.view') ? (
+        <SidebarLink to="/w/$workspaceId/people/departments" params={params} icon={<Building2Icon />}>
+          Departments
+        </SidebarLink>
+      ) : null}
+      {can('hr.manage') ? (
+        <SidebarLink to="/w/$workspaceId/people/leave-types" params={params} icon={<TagsIcon />}>
+          Leave types
+        </SidebarLink>
+      ) : null}
+    </SidebarSection>
+  );
+
   if (preferences.sidebarCollapsed && !drawer) return null;
 
   return (
@@ -99,83 +189,12 @@ export function WorkspaceSidebar({ workspaceId, unread, variant = 'docked' }: { 
         </div>
       </div>
       <nav aria-label="Main" className="flex-1 overflow-y-auto pb-4">
-        <div className="grid gap-0.5 px-2">
-          <SidebarLink to="/w/$workspaceId" params={params} activeOptions={{ exact: true }} icon={<HomeIcon />}>
-            Home
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/inbox" params={params} icon={<InboxIcon />} badge={unread ? (unread > 99 ? '99+' : String(unread)) : undefined}>
-            Inbox
-          </SidebarLink>
-          {can('chat.use') ? (
-            <SidebarLink to="/w/$workspaceId/chat" params={params} icon={<MessagesSquareIcon />} badge={chatUnread ? (chatUnread > 99 ? '99+' : String(chatUnread)) : undefined}>
-              Chat
-            </SidebarLink>
-          ) : null}
-          <SidebarLink to="/w/$workspaceId/docs" params={params} icon={<FileTextIcon />}>
-            Docs
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/my-tasks" params={params} icon={<CheckSquareIcon />}>
-            My tasks
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/daily-log" params={params} icon={<CalendarCheckIcon />}>
-            Daily log
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/timesheets" params={params} icon={<TimerIcon />}>
-            Timesheets
-          </SidebarLink>
-        </div>
-        <SpaceTree workspaceId={workspaceId} stats={stats} filter={filter} defaultView={defaultTaskView} />
-        <SidebarSection title="Workspace">
-          <SidebarLink to="/w/$workspaceId/members" params={params} icon={<UsersIcon />}>
-            Members
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/roles" params={params} icon={<ShieldIcon />}>
-            Roles
-          </SidebarLink>
-          <SidebarLink to="/w/$workspaceId/access" params={params} icon={<KeyRoundIcon />}>
-            Access
-          </SidebarLink>
-          {can('audit.view') ? (
-            <SidebarLink to="/w/$workspaceId/audit-log" params={params} icon={<ScrollTextIcon />}>
-              Audit log
-            </SidebarLink>
-          ) : null}
-          <SidebarLink to="/w/$workspaceId/settings" params={params} icon={<SettingsIcon />}>
-            Settings
-          </SidebarLink>
-        </SidebarSection>
-        <SidebarSection title="People">
-          {can('hr.view') ? (
-            <SidebarLink to="/w/$workspaceId/people" params={params} activeOptions={{ exact: true }} icon={<UsersRoundIcon />}>
-              Directory
-            </SidebarLink>
-          ) : null}
-          {can('leave.request') ? (
-            <SidebarLink to="/w/$workspaceId/people/time-off" params={params} icon={<PalmtreeIcon />}>
-              Time off
-            </SidebarLink>
-          ) : null}
-          {can('time.log') ? (
-            <SidebarLink to="/w/$workspaceId/people/attendance" params={params} icon={<TimerIcon />}>
-              Attendance
-            </SidebarLink>
-          ) : null}
-          {can('leave.approve') ? (
-            <SidebarLink to="/w/$workspaceId/people/approvals" params={params} icon={<ClipboardCheckIcon />}>
-              Approvals
-            </SidebarLink>
-          ) : null}
-          {can('hr.view') ? (
-            <SidebarLink to="/w/$workspaceId/people/departments" params={params} icon={<Building2Icon />}>
-              Departments
-            </SidebarLink>
-          ) : null}
-          {can('hr.manage') ? (
-            <SidebarLink to="/w/$workspaceId/people/leave-types" params={params} icon={<TagsIcon />}>
-              Leave types
-            </SidebarLink>
-          ) : null}
-        </SidebarSection>
+        {mainLinks}
+        {preset === 'manager' ? peopleSection : null}
+        {spaceTree}
+        {preset === 'default' ? workspaceSection : null}
+        {preset === 'default' ? peopleSection : null}
+        {preset === 'manager' ? workspaceSection : null}
       </nav>
       {drawer ? null : <span role="separator" aria-orientation="vertical" aria-label="Resize sidebar" onPointerDown={resize} className="absolute top-0 -right-1 bottom-0 w-2 cursor-col-resize hover:bg-primary/30" />}
     </aside>

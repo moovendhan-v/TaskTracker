@@ -855,6 +855,26 @@ test('sets how long chat is kept, and chat says so', async () => {
   await expect(page.getByText('Chat is kept for 1 year, then removed.')).toBeVisible();
 });
 
+test('switches the sidebar to the Minimal and Manager layouts', async () => {
+  await page.getByRole('link', { name: 'Appearance' }).click();
+  const presets = page.getByRole('radiogroup', { name: 'Sidebar layout' });
+  const sidebar = page.getByRole('navigation', { name: 'Main' });
+  await presets.getByRole('radio', { name: 'Minimal' }).click();
+  await expect(sidebar.getByRole('link', { name: 'Members' })).toHaveCount(0);
+  await expect(sidebar.getByRole('link', { name: 'Timesheets' })).toHaveCount(0);
+  await expect(sidebar.getByRole('link', { name: 'My tasks' })).toBeVisible();
+  // Manager: the people section comes before the projects.
+  await presets.getByRole('radio', { name: 'Manager' }).click();
+  await expect(sidebar.getByRole('link', { name: 'Members' })).toBeVisible();
+  const order = await sidebar.locator('h3, [role="heading"], button, a').allInnerTexts();
+  expect(order.findIndex((text) => /Directory|Time off/.test(text))).toBeLessThan(order.findIndex((text) => /Members/.test(text)));
+  // Saved with the account, so it survives a reload.
+  await page.reload();
+  await expect(page.getByRole('radiogroup', { name: 'Sidebar layout' }).getByRole('radio', { name: 'Manager' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('radiogroup', { name: 'Sidebar layout' }).getByRole('radio', { name: 'Default' }).click();
+  await expect(sidebar.getByRole('link', { name: 'Timesheets' })).toBeVisible();
+});
+
 test('fits a phone: bottom tabs, a menu drawer and a bottom-sheet new task', async () => {
   const desktop = page.viewportSize()!;
   await page.setViewportSize({ width: 390, height: 844 });

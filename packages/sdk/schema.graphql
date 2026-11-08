@@ -1803,6 +1803,9 @@ type Preferences {
   radius: String!
   savedViews: [SavedView!]!
   sidebarCollapsed: Boolean!
+
+  """default, minimal or manager"""
+  sidebarPreset: String!
   sidebarWidth: Int!
   tables: [TableLayout!]!
   tabs: [WorkspaceTab!]!
@@ -2797,6 +2800,7 @@ input UpdatePreferencesInput {
   font: String
   radius: String
   sidebarCollapsed: Boolean
+  sidebarPreset: String
   sidebarWidth: Int
   taskDetailMode: String
   theme: String
