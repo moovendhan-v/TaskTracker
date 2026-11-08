@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createHmac } from 'node:crypto';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
@@ -933,6 +934,35 @@ test('fits a phone: bottom tabs, a menu drawer and a bottom-sheet new task', asy
     await page.setViewportSize(desktop);
   }
   await expect(page.getByRole('navigation', { name: 'Main sections' })).toBeHidden();
+});
+
+/** The code an authenticator app would show now (RFC 6238). */
+function totp(secret: string): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  for (const char of secret.replace(/=+$/, '').toUpperCase()) bits += alphabet.indexOf(char).toString(2).padStart(5, '0');
+  const key = Buffer.from(Array.from({ length: Math.floor(bits.length / 8) }, (_, i) => parseInt(bits.slice(i * 8, i * 8 + 8), 2)));
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30_000)));
+  const hmac = createHmac('sha1', key).update(counter).digest();
+  const offset = hmac[hmac.length - 1]! & 0xf;
+  return String((hmac.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).padStart(6, '0');
+}
+
+test('turns two-step sign-in on with an authenticator code, and off again', async () => {
+  await page.getByRole('button', { name: /Dana Reyes/ }).click();
+  await page.getByRole('menuitem', { name: 'Security…' }).click();
+  await page.getByLabel('Your password').fill('correct-horse-42');
+  await page.getByRole('button', { name: 'Set up' }).click();
+  await expect(page.getByRole('img', { name: 'QR code for your authenticator app' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Backup codes' }).getByRole('listitem')).toHaveCount(10);
+  const secret = (await page.locator('code').first().innerText()).trim();
+  await page.getByLabel(/Enter the 6-digit code/).fill(totp(secret));
+  await page.getByRole('button', { name: 'Turn on' }).click();
+  await expect(page.getByText('On: signing in asks for a code')).toBeVisible();
+  await page.getByLabel('Your password').fill('correct-horse-42');
+  await page.getByRole('button', { name: 'Turn off' }).click();
+  await expect(page.getByRole('button', { name: 'Set up' })).toBeVisible();
 });
 
 test('signs out', async () => {

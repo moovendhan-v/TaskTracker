@@ -9,7 +9,7 @@ import { hasSession } from '@/core/auth/session';
 import { queryKeys } from '@/lib/query-keys';
 import { AdminAuditLogPage, AdminLayout, AdminUsersPage, AdminWorkspacesPage } from '@/modules/admin';
 import { WorkspaceAuditLogPage } from '@/modules/audit-log';
-import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/modules/auth';
+import { ForgotPasswordPage, ResetPasswordPage, SecurityPage, SignInPage, SignUpPage, TwoFactorPage } from '@/modules/auth';
 import { DocumentsPage } from '@/modules/documents';
 import { ChatMessageRedirect, ChatPage } from '@/modules/chat';
 import { HomePage } from '@/modules/dashboard';
@@ -52,6 +52,8 @@ const publicLayout = createRoute({
 const signInRoute = createRoute({ getParentRoute: () => publicLayout, path: '/sign-in', component: SignInPage });
 const signUpRoute = createRoute({ getParentRoute: () => publicLayout, path: '/sign-up', component: SignUpPage });
 const forgotPasswordRoute = createRoute({ getParentRoute: () => publicLayout, path: '/forgot-password', component: ForgotPasswordPage });
+// The second sign-in step (A4); the server only accepts a code after the password step succeeded.
+const twoFactorRoute = createRoute({ getParentRoute: () => publicLayout, path: '/two-factor', component: TwoFactorPage });
 const resetPasswordRoute = createRoute({
   getParentRoute: () => publicLayout,
   path: '/reset-password',
@@ -342,6 +344,7 @@ const accessRoute = createRoute({
 
 /** Personal appearance settings; shown inside the workspace shell, saved per user (not per workspace). */
 const appearanceRoute = createRoute({ getParentRoute: () => workspaceRoute, path: '/appearance', component: AppearancePage });
+const securityRoute = createRoute({ getParentRoute: () => workspaceRoute, path: '/security', component: SecurityPage });
 
 const settingsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
@@ -352,7 +355,7 @@ const settingsRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-  publicLayout.addChildren([signInRoute, signUpRoute, forgotPasswordRoute, resetPasswordRoute]),
+  publicLayout.addChildren([signInRoute, signUpRoute, forgotPasswordRoute, resetPasswordRoute, twoFactorRoute]),
   appLayout.addChildren([
     indexRoute,
     onboardingRoute,
@@ -386,6 +389,7 @@ const routeTree = rootRoute.addChildren([
       accessRoute,
       settingsRoute,
       appearanceRoute,
+      securityRoute,
     ]),
   ]),
 ]);

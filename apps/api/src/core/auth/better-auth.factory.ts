@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
-import { captcha } from 'better-auth/plugins';
+import { captcha, twoFactor } from 'better-auth/plugins';
 import type { Pool } from 'pg';
 import type { Env } from '../../config/env.schema.js';
 import { PASSWORD_MAX, PASSWORD_MIN, validateAuthBody } from './auth-forms.js';
@@ -60,6 +60,11 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
         '/sign-up/email': { window: 60, max: 3 },
         '/request-password-reset': { window: 300, max: 3 },
         '/send-verification-email': { window: 300, max: 3 },
+        // Six digits are guessable without a tight limit (A4).
+        '/two-factor/verify-totp': { window: 60, max: 5 },
+        '/two-factor/verify-backup-code': { window: 60, max: 5 },
+        '/two-factor/enable': { window: 60, max: 5 },
+        '/two-factor/disable': { window: 60, max: 5 },
       },
     },
     advanced: {
@@ -67,15 +72,22 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
       defaultCookieAttributes: { httpOnly: true, sameSite: 'lax', secure: isProduction },
       ipAddress: { ipAddressHeaders: env.TRUST_PROXY > 0 ? ['x-forwarded-for'] : [] },
     },
-    plugins: env.TURNSTILE_SECRET_KEY
-      ? [
-          captcha({
-            provider: 'cloudflare-turnstile',
-            secretKey: env.TURNSTILE_SECRET_KEY,
-            endpoints: PUBLIC_AUTH_FORMS,
-          }),
-        ]
-      : [],
+    plugins: [
+      // A4: two-step sign-in with an authenticator app (TOTP) and one-time backup codes.
+      // The secret and the backup codes are stored encrypted with BETTER_AUTH_SECRET; turning
+      // it on or off needs the password, and signing in asks for a code only once the first
+      // step has succeeded.
+      twoFactor({ issuer: 'TaskFlow', skipVerificationOnEnable: false, backupCodeOptions: { amount: 10, length: 10 } }),
+      ...(env.TURNSTILE_SECRET_KEY
+        ? [
+            captcha({
+              provider: 'cloudflare-turnstile',
+              secretKey: env.TURNSTILE_SECRET_KEY,
+              endpoints: PUBLIC_AUTH_FORMS,
+            }),
+          ]
+        : []),
+    ],
   });
 }
 
