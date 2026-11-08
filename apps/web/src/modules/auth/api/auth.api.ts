@@ -45,6 +45,34 @@ export const authApi = {
     return throwOnError(await authClient.resetPassword({ token, newPassword }));
   },
 
+  /** Second step of signing in (A4): a code from the authenticator app, or one backup code. */
+  async verifyTotp(code: string, trustDevice: boolean) {
+    return throwOnError(await authClient.twoFactor.verifyTotp({ code, trustDevice }));
+  },
+
+  async verifyBackupCode(code: string, trustDevice: boolean) {
+    return throwOnError(await authClient.twoFactor.verifyBackupCode({ code, trustDevice }));
+  },
+
+  /** Starts turning two-factor on: returns the authenticator link and the backup codes; a code confirms it. */
+  async enableTwoFactor(password: string) {
+    return throwOnError(await authClient.twoFactor.enable({ password, issuer: 'TaskFlow' })).data!;
+  },
+
+  async disableTwoFactor(password: string) {
+    return throwOnError(await authClient.twoFactor.disable({ password }));
+  },
+
+  async newBackupCodes(password: string) {
+    return throwOnError(await authClient.twoFactor.generateBackupCodes({ password })).data!;
+  },
+
+  /** Whether the signed-in person has two-factor on. */
+  async twoFactorEnabled() {
+    const session = await authClient.getSession();
+    return Boolean((session.data?.user as { twoFactorEnabled?: boolean | null } | undefined)?.twoFactorEnabled);
+  },
+
   async signOut() {
     return throwOnError(await authClient.signOut());
   },

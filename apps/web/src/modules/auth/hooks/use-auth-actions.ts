@@ -8,7 +8,12 @@ export function useSignIn() {
   return useMutation({
     mutationFn: (input: { email: string; password: string; captcha: string | null }) =>
       authApi.signIn({ email: input.email, password: input.password }, input.captcha),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      // With two-factor on, the password only gets you to the second step (A4).
+      if ((result.data as { twoFactorRedirect?: boolean } | null)?.twoFactorRedirect) {
+        await navigate({ to: '/two-factor' });
+        return;
+      }
       queryClient.clear();
       await navigate({ to: '/' });
     },
@@ -50,6 +55,20 @@ export function useSignOut() {
     onSettled: async () => {
       queryClient.clear();
       await navigate({ to: '/sign-in' });
+    },
+  });
+}
+
+/** The second step of signing in: a code (or a backup code), then into the app. */
+export function useVerifyTwoFactor() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { code: string; backup: boolean; trustDevice: boolean }) =>
+      input.backup ? authApi.verifyBackupCode(input.code, input.trustDevice) : authApi.verifyTotp(input.code, input.trustDevice),
+    onSuccess: async () => {
+      queryClient.clear();
+      await navigate({ to: '/' });
     },
   });
 }
