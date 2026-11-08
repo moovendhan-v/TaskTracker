@@ -19,6 +19,8 @@ export function describeNotification(notification: Describable): string {
       return `${who} added you to this workspace${notification.subject ? ` as ${notification.subject}` : ''}`;
     case 'access_requested':
       return `${who} asked for access: ${notification.subject}${notification.excerpt ? ` (“${notification.excerpt}”)` : ''}`;
+    case 'access_decided':
+      return `${who} answered your access request: ${notification.subject}`;
     case 'chat_mention':
       return `${who} mentioned you in ${notification.subject || 'chat'}`;
     case 'automation':
@@ -27,7 +29,7 @@ export function describeNotification(notification: Describable): string {
   }
 }
 
-/** An access request opens the checker on that person and permission ("task.update in Ops"). */
+/** An access request opens the checker on that person and permission ("task.update in Ops"); an answer, on your own. */
 export function accessSearch(notification: Pick<NotificationResponse, 'actorId' | 'subject'>): { user?: string; permission?: string } {
-  return { user: notification.actorId ?? undefined, permission: notification.subject.split(' ')[0] || undefined };
+  return { user: notification.actorId ?? undefined, permission: notification.subject.split(' ')[0]?.replace(/:$/, '') || undefined };
 }

@@ -469,6 +469,7 @@ export type MoveTaskListInput = {
 };
 
 export type NotificationKind =
+  | 'access_decided'
   | 'access_requested'
   | 'automation'
   | 'chat_mention'
@@ -912,6 +913,38 @@ export type RequestAccessMutationVariables = Exact<{
 
 
 export type RequestAccessMutation = { requestAccess: number };
+
+export type AccessRequestsQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type AccessRequestsQuery = { accessRequests: Array<{ id: string, requesterId: string, requesterName: string, permission: string, spaceId: string | null, spaceName: string | null, note: string, status: string, createdAt: string }> };
+
+export type AccessGrantsQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type AccessGrantsQuery = { accessGrants: Array<{ id: string, userId: string, userName: string, permission: string, spaceId: string | null, spaceName: string | null, expiresAt: string, grantedByName: string | null, createdAt: string }> };
+
+export type DecideAccessRequestMutationVariables = Exact<{
+  workspaceId: string;
+  requestId: string;
+  approve: boolean;
+  days?: number | null | undefined;
+}>;
+
+
+export type DecideAccessRequestMutation = { decideAccessRequest: { id: string, status: string } };
+
+export type RevokeAccessGrantMutationVariables = Exact<{
+  workspaceId: string;
+  grantId: string;
+}>;
+
+
+export type RevokeAccessGrantMutation = { revokeAccessGrant: boolean };
 
 export type AdminUsersQueryVariables = Exact<{
   search?: string | null | undefined;
@@ -3553,6 +3586,54 @@ export const RequestAccessDocument = new TypedDocumentString(`
   requestAccess(workspaceId: $workspaceId, input: $input)
 }
     `) as unknown as TypedDocumentString<RequestAccessMutation, RequestAccessMutationVariables>;
+export const AccessRequestsDocument = new TypedDocumentString(`
+    query AccessRequests($workspaceId: ID!) {
+  accessRequests(workspaceId: $workspaceId) {
+    id
+    requesterId
+    requesterName
+    permission
+    spaceId
+    spaceName
+    note
+    status
+    createdAt
+  }
+}
+    `) as unknown as TypedDocumentString<AccessRequestsQuery, AccessRequestsQueryVariables>;
+export const AccessGrantsDocument = new TypedDocumentString(`
+    query AccessGrants($workspaceId: ID!) {
+  accessGrants(workspaceId: $workspaceId) {
+    id
+    userId
+    userName
+    permission
+    spaceId
+    spaceName
+    expiresAt
+    grantedByName
+    createdAt
+  }
+}
+    `) as unknown as TypedDocumentString<AccessGrantsQuery, AccessGrantsQueryVariables>;
+export const DecideAccessRequestDocument = new TypedDocumentString(`
+    mutation DecideAccessRequest($workspaceId: ID!, $requestId: ID!, $approve: Boolean!, $days: Int) {
+  decideAccessRequest(
+    workspaceId: $workspaceId
+    requestId: $requestId
+    approve: $approve
+    days: $days
+  ) {
+    id
+    status
+  }
+}
+    `) as unknown as TypedDocumentString<DecideAccessRequestMutation, DecideAccessRequestMutationVariables>;
+export const RevokeAccessGrantDocument = new TypedDocumentString(`
+    mutation RevokeAccessGrant($workspaceId: ID!, $grantId: ID!) {
+  revokeAccessGrant(workspaceId: $workspaceId, grantId: $grantId)
+}
+    `) as unknown as TypedDocumentString<RevokeAccessGrantMutation, RevokeAccessGrantMutationVariables>;
 export const AdminUsersDocument = new TypedDocumentString(`
     query AdminUsers($search: String, $page: Int, $pageSize: Int) {
   adminUsers(search: $search, page: $page, pageSize: $pageSize) {

@@ -53,6 +53,13 @@ export function NotificationItem({ workspaceId, notification, onOpen }: Notifica
       </Link>
     );
   }
+  if (notification.kind === 'access_decided') {
+    return (
+      <Link to="/w/$workspaceId/access" params={{ workspaceId }} search={{ permission: accessSearch(notification).permission }} onClick={onClick} className={className}>
+        {body}
+      </Link>
+    );
+  }
   if (notification.kind === 'access_requested') {
     return (
       <Link to="/w/$workspaceId/access" params={{ workspaceId }} search={accessSearch(notification)} onClick={onClick} className={className}>

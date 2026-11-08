@@ -1,6 +1,9 @@
 import {
   MANAGED_POLICIES,
   evaluatePolicies,
+  isSpaceScoped,
+  type Permission,
+  type SpaceScopedPermission,
   type EffectiveAccess,
   type ManagedPolicy,
   type PolicyDocument,
@@ -68,4 +71,37 @@ export function effectiveAccessForRole(
   customPolicies: ReadonlyMap<string, Pick<CustomPolicy, 'document'>>,
 ): EffectiveAccess {
   return evaluatePolicies(documentsForRole(role, attachments, customPolicies));
+}
+
+/** A time-limited grant that is still running (E3): one permission, in one space or everywhere. */
+export interface ActiveGrant {
+  permission: Permission;
+  spaceId: string | null;
+}
+
+/**
+ * A role's access plus its holder's running grants. Grants only add allows, so a
+ * deny in the role still wins. A grant for one space gives the permission only
+ * there (as a "denied everywhere else" rule), unless the role already has it, in
+ * which case nothing changes and the role's own space denies keep applying.
+ * Grants of permissions that don't apply in a space are only honoured workspace-wide.
+ */
+export function effectiveAccessWithGrants(documents: readonly PolicyDocument[], grants: readonly ActiveGrant[]): EffectiveAccess {
+  const allow = (permissions: readonly Permission[]): PolicyDocument => ({ statements: permissions.length ? [{ effect: 'allow', permissions: [...permissions] }] : [] });
+  const everywhere = [...new Set(grants.filter((grant) => grant.spaceId === null).map((grant) => grant.permission))];
+  const base = evaluatePolicies([...documents, allow(everywhere)]);
+  const spaced = grants.filter((grant): grant is { permission: SpaceScopedPermission; spaceId: string } => grant.spaceId !== null && isSpaceScoped(grant.permission) && !base.permissions.includes(grant.permission));
+  if (spaced.length === 0) return base;
+  // Would the role allow these at all once granted (no workspace-wide deny)?
+  const withSpaced = evaluatePolicies([...documents, allow([...everywhere, ...spaced.map((grant) => grant.permission)])]);
+  const onlyIn = new Map<SpaceScopedPermission, string[]>();
+  for (const grant of spaced) {
+    if (!withSpaced.permissions.includes(grant.permission)) continue;
+    onlyIn.set(grant.permission, [...new Set([...(onlyIn.get(grant.permission) ?? []), grant.spaceId])]);
+  }
+  return {
+    ...base,
+    permissions: [...base.permissions, ...onlyIn.keys()],
+    spaceRules: [...base.spaceRules, ...[...onlyIn].map(([permission, spaces]) => ({ spaces: null, notSpaces: spaces, permissions: [permission] }))],
+  };
 }

@@ -17,3 +17,13 @@ query ExplainMyAccess($workspaceId: ID!, $permission: String!, $spaceId: ID) {
 }
 
 mutation RequestAccess($workspaceId: ID!, $input: RequestAccessInput!) { requestAccess(workspaceId: $workspaceId, input: $input) }
+
+query AccessRequests($workspaceId: ID!) { accessRequests(workspaceId: $workspaceId) { id requesterId requesterName permission spaceId spaceName note status createdAt } }
+
+query AccessGrants($workspaceId: ID!) { accessGrants(workspaceId: $workspaceId) { id userId userName permission spaceId spaceName expiresAt grantedByName createdAt } }
+
+mutation DecideAccessRequest($workspaceId: ID!, $requestId: ID!, $approve: Boolean!, $days: Int) {
+  decideAccessRequest(workspaceId: $workspaceId, requestId: $requestId, approve: $approve, days: $days) { id status }
+}
+
+mutation RevokeAccessGrant($workspaceId: ID!, $grantId: ID!) { revokeAccessGrant(workspaceId: $workspaceId, grantId: $grantId) }
