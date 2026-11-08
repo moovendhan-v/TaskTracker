@@ -1,5 +1,5 @@
 import { Link, useParams } from '@tanstack/react-router';
-import { LogOutIcon, MoonIcon, PaletteIcon, ShieldAlertIcon, ShieldIcon, SunIcon } from 'lucide-react';
+import { Building2Icon, LogOutIcon, MoonIcon, PaletteIcon, ShieldAlertIcon, ShieldIcon, SunIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useCurrentUser } from '@/core/auth/use-current-user';
@@ -71,6 +71,13 @@ export function UserMenu({ variant = 'row' }: { variant?: 'row' | 'avatar' | 'ra
           <DropdownMenuItem asChild>
             <Link to="/w/$workspaceId/security" params={{ workspaceId }}>
               <ShieldIcon /> Security…
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
+        {workspaceId ? (
+          <DropdownMenuItem asChild>
+            <Link to="/w/$workspaceId/organizations" params={{ workspaceId }}>
+              <Building2Icon /> Organizations…
             </Link>
           </DropdownMenuItem>
         ) : null}

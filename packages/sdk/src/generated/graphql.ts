@@ -2143,6 +2143,121 @@ export type WorkspaceEventsSubscriptionVariables = Exact<{
 
 export type WorkspaceEventsSubscription = { workspaceEvents: { type: string, entityType: RealtimeEntityType, entityId: string, actorId: string, occurredAt: string } };
 
+export type OrganizationFieldsFragment = { id: string, name: string, role: string, twoStepRequired: string, createdAt: string };
+
+export type OrganizationMemberFieldsFragment = { userId: string, name: string, email: string, role: string, hasTwoStep: boolean, joinedAt: string };
+
+export type OrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type OrganizationsQuery = { organizations: Array<{ id: string, name: string, role: string, twoStepRequired: string, createdAt: string }> };
+
+export type OrganizationQueryVariables = Exact<{
+  organizationId: string;
+}>;
+
+
+export type OrganizationQuery = { organization: { id: string, name: string, role: string, twoStepRequired: string, createdAt: string } };
+
+export type OrganizationMembersQueryVariables = Exact<{
+  organizationId: string;
+}>;
+
+
+export type OrganizationMembersQuery = { organizationMembers: Array<{ userId: string, name: string, email: string, role: string, hasTwoStep: boolean, joinedAt: string }> };
+
+export type OrganizationWorkspacesQueryVariables = Exact<{
+  organizationId: string;
+}>;
+
+
+export type OrganizationWorkspacesQuery = { organizationWorkspaces: Array<{ id: string, name: string, color: string }> };
+
+export type OrganizationActivityQueryVariables = Exact<{
+  organizationId: string;
+}>;
+
+
+export type OrganizationActivityQuery = { organizationActivity: Array<{ id: string, action: string, actorName: string | null, targetType: string, metadata: Record<string, unknown>, createdAt: string }> };
+
+export type WorkspaceOrganizationQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type WorkspaceOrganizationQuery = { workspaceOrganization: { id: string, name: string, twoStepRequired: string } | null };
+
+export type CreateOrganizationMutationVariables = Exact<{
+  name: string;
+}>;
+
+
+export type CreateOrganizationMutation = { createOrganization: { id: string, name: string, role: string, twoStepRequired: string, createdAt: string } };
+
+export type RenameOrganizationMutationVariables = Exact<{
+  organizationId: string;
+  name: string;
+}>;
+
+
+export type RenameOrganizationMutation = { renameOrganization: { id: string, name: string, role: string, twoStepRequired: string, createdAt: string } };
+
+export type SetOrganizationTwoStepMutationVariables = Exact<{
+  organizationId: string;
+  require: string;
+}>;
+
+
+export type SetOrganizationTwoStepMutation = { setOrganizationTwoStep: { id: string, name: string, role: string, twoStepRequired: string, createdAt: string } };
+
+export type DeleteOrganizationMutationVariables = Exact<{
+  organizationId: string;
+}>;
+
+
+export type DeleteOrganizationMutation = { deleteOrganization: boolean };
+
+export type AddOrganizationMemberMutationVariables = Exact<{
+  organizationId: string;
+  email: string;
+  role: string;
+}>;
+
+
+export type AddOrganizationMemberMutation = { addOrganizationMember: Array<{ userId: string, name: string, email: string, role: string, hasTwoStep: boolean, joinedAt: string }> };
+
+export type SetOrganizationMemberRoleMutationVariables = Exact<{
+  organizationId: string;
+  userId: string;
+  role: string;
+}>;
+
+
+export type SetOrganizationMemberRoleMutation = { setOrganizationMemberRole: Array<{ userId: string, name: string, email: string, role: string, hasTwoStep: boolean, joinedAt: string }> };
+
+export type RemoveOrganizationMemberMutationVariables = Exact<{
+  organizationId: string;
+  userId: string;
+}>;
+
+
+export type RemoveOrganizationMemberMutation = { removeOrganizationMember: Array<{ userId: string, name: string, email: string, role: string, hasTwoStep: boolean, joinedAt: string }> };
+
+export type AddWorkspaceToOrganizationMutationVariables = Exact<{
+  workspaceId: string;
+  organizationId: string;
+}>;
+
+
+export type AddWorkspaceToOrganizationMutation = { addWorkspaceToOrganization: boolean };
+
+export type RemoveWorkspaceFromOrganizationMutationVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type RemoveWorkspaceFromOrganizationMutation = { removeWorkspaceFromOrganization: boolean };
+
 export type PoliciesQueryVariables = Exact<{
   workspaceId: string;
 }>;
@@ -2779,7 +2894,7 @@ export type TwoStepPolicyQueryVariables = Exact<{
 }>;
 
 
-export type TwoStepPolicyQuery = { twoStepPolicy: { id: string, workspaceId: string, require: string, callerHasTwoStep: boolean } };
+export type TwoStepPolicyQuery = { twoStepPolicy: { id: string, workspaceId: string, require: string, organizationRequire: string | null, organizationName: string | null, callerHasTwoStep: boolean } };
 
 export type SetTwoStepRequirementMutationVariables = Exact<{
   workspaceId: string;
@@ -2787,7 +2902,7 @@ export type SetTwoStepRequirementMutationVariables = Exact<{
 }>;
 
 
-export type SetTwoStepRequirementMutation = { setTwoStepRequirement: { id: string, workspaceId: string, require: string, callerHasTwoStep: boolean } };
+export type SetTwoStepRequirementMutation = { setTwoStepRequirement: { id: string, workspaceId: string, require: string, organizationRequire: string | null, organizationName: string | null, callerHasTwoStep: boolean } };
 
 export class TypedDocumentString<TResult, TVariables>
   extends String
@@ -3511,6 +3626,25 @@ export const NamedDashboardFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"NamedDashboardFields"}) as unknown as TypedDocumentString<NamedDashboardFieldsFragment, unknown>;
+export const OrganizationFieldsFragmentDoc = new TypedDocumentString(`
+    fragment OrganizationFields on Organization {
+  id
+  name
+  role
+  twoStepRequired
+  createdAt
+}
+    `, {"fragmentName":"OrganizationFields"}) as unknown as TypedDocumentString<OrganizationFieldsFragment, unknown>;
+export const OrganizationMemberFieldsFragmentDoc = new TypedDocumentString(`
+    fragment OrganizationMemberFields on OrganizationMember {
+  userId
+  name
+  email
+  role
+  hasTwoStep
+  joinedAt
+}
+    `, {"fragmentName":"OrganizationMemberFields"}) as unknown as TypedDocumentString<OrganizationMemberFieldsFragment, unknown>;
 export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
     fragment TemplateFields on ProjectTemplate {
   id
@@ -6283,6 +6417,183 @@ export const WorkspaceEventsDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<WorkspaceEventsSubscription, WorkspaceEventsSubscriptionVariables>;
+export const OrganizationsDocument = new TypedDocumentString(`
+    query Organizations {
+  organizations {
+    ...OrganizationFields
+  }
+}
+    fragment OrganizationFields on Organization {
+  id
+  name
+  role
+  twoStepRequired
+  createdAt
+}`) as unknown as TypedDocumentString<OrganizationsQuery, OrganizationsQueryVariables>;
+export const OrganizationDocument = new TypedDocumentString(`
+    query Organization($organizationId: ID!) {
+  organization(organizationId: $organizationId) {
+    ...OrganizationFields
+  }
+}
+    fragment OrganizationFields on Organization {
+  id
+  name
+  role
+  twoStepRequired
+  createdAt
+}`) as unknown as TypedDocumentString<OrganizationQuery, OrganizationQueryVariables>;
+export const OrganizationMembersDocument = new TypedDocumentString(`
+    query OrganizationMembers($organizationId: ID!) {
+  organizationMembers(organizationId: $organizationId) {
+    ...OrganizationMemberFields
+  }
+}
+    fragment OrganizationMemberFields on OrganizationMember {
+  userId
+  name
+  email
+  role
+  hasTwoStep
+  joinedAt
+}`) as unknown as TypedDocumentString<OrganizationMembersQuery, OrganizationMembersQueryVariables>;
+export const OrganizationWorkspacesDocument = new TypedDocumentString(`
+    query OrganizationWorkspaces($organizationId: ID!) {
+  organizationWorkspaces(organizationId: $organizationId) {
+    id
+    name
+    color
+  }
+}
+    `) as unknown as TypedDocumentString<OrganizationWorkspacesQuery, OrganizationWorkspacesQueryVariables>;
+export const OrganizationActivityDocument = new TypedDocumentString(`
+    query OrganizationActivity($organizationId: ID!) {
+  organizationActivity(organizationId: $organizationId) {
+    id
+    action
+    actorName
+    targetType
+    metadata
+    createdAt
+  }
+}
+    `) as unknown as TypedDocumentString<OrganizationActivityQuery, OrganizationActivityQueryVariables>;
+export const WorkspaceOrganizationDocument = new TypedDocumentString(`
+    query WorkspaceOrganization($workspaceId: ID!) {
+  workspaceOrganization(workspaceId: $workspaceId) {
+    id
+    name
+    twoStepRequired
+  }
+}
+    `) as unknown as TypedDocumentString<WorkspaceOrganizationQuery, WorkspaceOrganizationQueryVariables>;
+export const CreateOrganizationDocument = new TypedDocumentString(`
+    mutation CreateOrganization($name: String!) {
+  createOrganization(name: $name) {
+    ...OrganizationFields
+  }
+}
+    fragment OrganizationFields on Organization {
+  id
+  name
+  role
+  twoStepRequired
+  createdAt
+}`) as unknown as TypedDocumentString<CreateOrganizationMutation, CreateOrganizationMutationVariables>;
+export const RenameOrganizationDocument = new TypedDocumentString(`
+    mutation RenameOrganization($organizationId: ID!, $name: String!) {
+  renameOrganization(organizationId: $organizationId, name: $name) {
+    ...OrganizationFields
+  }
+}
+    fragment OrganizationFields on Organization {
+  id
+  name
+  role
+  twoStepRequired
+  createdAt
+}`) as unknown as TypedDocumentString<RenameOrganizationMutation, RenameOrganizationMutationVariables>;
+export const SetOrganizationTwoStepDocument = new TypedDocumentString(`
+    mutation SetOrganizationTwoStep($organizationId: ID!, $require: String!) {
+  setOrganizationTwoStep(organizationId: $organizationId, require: $require) {
+    ...OrganizationFields
+  }
+}
+    fragment OrganizationFields on Organization {
+  id
+  name
+  role
+  twoStepRequired
+  createdAt
+}`) as unknown as TypedDocumentString<SetOrganizationTwoStepMutation, SetOrganizationTwoStepMutationVariables>;
+export const DeleteOrganizationDocument = new TypedDocumentString(`
+    mutation DeleteOrganization($organizationId: ID!) {
+  deleteOrganization(organizationId: $organizationId)
+}
+    `) as unknown as TypedDocumentString<DeleteOrganizationMutation, DeleteOrganizationMutationVariables>;
+export const AddOrganizationMemberDocument = new TypedDocumentString(`
+    mutation AddOrganizationMember($organizationId: ID!, $email: String!, $role: String!) {
+  addOrganizationMember(
+    organizationId: $organizationId
+    email: $email
+    role: $role
+  ) {
+    ...OrganizationMemberFields
+  }
+}
+    fragment OrganizationMemberFields on OrganizationMember {
+  userId
+  name
+  email
+  role
+  hasTwoStep
+  joinedAt
+}`) as unknown as TypedDocumentString<AddOrganizationMemberMutation, AddOrganizationMemberMutationVariables>;
+export const SetOrganizationMemberRoleDocument = new TypedDocumentString(`
+    mutation SetOrganizationMemberRole($organizationId: ID!, $userId: String!, $role: String!) {
+  setOrganizationMemberRole(
+    organizationId: $organizationId
+    userId: $userId
+    role: $role
+  ) {
+    ...OrganizationMemberFields
+  }
+}
+    fragment OrganizationMemberFields on OrganizationMember {
+  userId
+  name
+  email
+  role
+  hasTwoStep
+  joinedAt
+}`) as unknown as TypedDocumentString<SetOrganizationMemberRoleMutation, SetOrganizationMemberRoleMutationVariables>;
+export const RemoveOrganizationMemberDocument = new TypedDocumentString(`
+    mutation RemoveOrganizationMember($organizationId: ID!, $userId: String!) {
+  removeOrganizationMember(organizationId: $organizationId, userId: $userId) {
+    ...OrganizationMemberFields
+  }
+}
+    fragment OrganizationMemberFields on OrganizationMember {
+  userId
+  name
+  email
+  role
+  hasTwoStep
+  joinedAt
+}`) as unknown as TypedDocumentString<RemoveOrganizationMemberMutation, RemoveOrganizationMemberMutationVariables>;
+export const AddWorkspaceToOrganizationDocument = new TypedDocumentString(`
+    mutation AddWorkspaceToOrganization($workspaceId: ID!, $organizationId: ID!) {
+  addWorkspaceToOrganization(
+    workspaceId: $workspaceId
+    organizationId: $organizationId
+  )
+}
+    `) as unknown as TypedDocumentString<AddWorkspaceToOrganizationMutation, AddWorkspaceToOrganizationMutationVariables>;
+export const RemoveWorkspaceFromOrganizationDocument = new TypedDocumentString(`
+    mutation RemoveWorkspaceFromOrganization($workspaceId: ID!) {
+  removeWorkspaceFromOrganization(workspaceId: $workspaceId)
+}
+    `) as unknown as TypedDocumentString<RemoveWorkspaceFromOrganizationMutation, RemoveWorkspaceFromOrganizationMutationVariables>;
 export const PoliciesDocument = new TypedDocumentString(`
     query Policies($workspaceId: ID!) {
   policies(workspaceId: $workspaceId) {
@@ -8301,6 +8612,8 @@ export const TwoStepPolicyDocument = new TypedDocumentString(`
     id
     workspaceId
     require
+    organizationRequire
+    organizationName
     callerHasTwoStep
   }
 }
@@ -8311,6 +8624,8 @@ export const SetTwoStepRequirementDocument = new TypedDocumentString(`
     id
     workspaceId
     require
+    organizationRequire
+    organizationName
     callerHasTwoStep
   }
 }

@@ -42,6 +42,14 @@ export class TypeOrmWorkspaceRepository extends WorkspaceRepository {
     return isTwoStepRequirement(row?.two_step_required) ? row.two_step_required : 'off';
   }
 
+  async organizationTwoStep(id: string): Promise<{ name: string; require: TwoStepRequirement } | null> {
+    const [row] = (await this.transactional.manager.query(
+      `SELECT o.name, o.two_step_required FROM workspace w JOIN organization o ON o.id = w.organization_id WHERE w.id = $1`,
+      [id],
+    )) as { name: string; two_step_required: string }[];
+    return row ? { name: row.name, require: isTwoStepRequirement(row.two_step_required) ? row.two_step_required : 'everyone' } : null;
+  }
+
   async setTwoStep(id: string, requirement: TwoStepRequirement): Promise<void> {
     await this.transactional.manager.query(`UPDATE workspace SET two_step_required = $2 WHERE id = $1`, [id, requirement]);
   }

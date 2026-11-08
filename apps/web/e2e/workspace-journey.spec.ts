@@ -986,6 +986,29 @@ test('turns two-step sign-in on with an authenticator code, and off again', asyn
   await expect(page.getByRole('button', { name: 'Set up' })).toBeVisible();
 });
 
+test('starts an organization and puts the workspace in it', async () => {
+  const workspace = /\/w\/([0-9a-f-]+)/.exec(page.url())![1];
+  await page.getByRole('button', { name: /Dana Reyes/ }).first().click();
+  await page.getByRole('menuitem', { name: 'Organizations…' }).click();
+  await page.getByLabel('Name').fill('Northwind Group');
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('heading', { name: 'Northwind Group' })).toBeVisible();
+  await expect(page.getByText('No workspaces yet.')).toBeVisible();
+  await page.getByRole('tab', { name: 'People' }).click();
+  await expect(page.getByRole('list', { name: 'People in this organization' }).getByText('Dana Reyes')).toBeVisible();
+
+  await page.goto(`/w/${workspace}/settings`);
+  await expect(page.getByLabel('Organization', { exact: true })).toHaveValue(/[0-9a-f-]+/);
+  await page.getByRole('button', { name: 'Add to organization' }).click();
+  await expect(page.getByText('In Northwind Group.')).toBeVisible();
+
+  await page.goto(`/w/${workspace}/organizations`);
+  await page.getByRole('link', { name: /Northwind Group/ }).click();
+  await expect(page.getByRole('list', { name: 'Workspaces in this organization' }).getByText('Northwind Studio')).toBeVisible();
+  await page.getByRole('tab', { name: 'Activity' }).click();
+  await expect(page.getByRole('list', { name: 'Organization activity' }).getByText('added a workspace')).toBeVisible();
+});
+
 test("won't require two-step sign-in of others until you have it yourself", async () => {
   const workspace = /\/w\/([0-9a-f-]+)/.exec(page.url())![1];
   await page.goto(`/w/${workspace}/settings`);

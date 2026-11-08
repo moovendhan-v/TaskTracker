@@ -10,6 +10,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { AdminAuditLogPage, AdminLayout, AdminUsersPage, AdminWorkspacesPage } from '@/modules/admin';
 import { WorkspaceAuditLogPage } from '@/modules/audit-log';
 import { ForgotPasswordPage, ResetPasswordPage, SecurityPage, SignInPage, SignUpPage, TwoFactorPage } from '@/modules/auth';
+import { OrganizationPage, OrganizationsPage } from '@/modules/organizations';
 import { DocumentsPage } from '@/modules/documents';
 import { ChatMessageRedirect, ChatPage } from '@/modules/chat';
 import { HomePage } from '@/modules/dashboard';
@@ -346,6 +347,23 @@ const accessRoute = createRoute({
 const appearanceRoute = createRoute({ getParentRoute: () => workspaceRoute, path: '/appearance', component: AppearancePage });
 const securityRoute = createRoute({ getParentRoute: () => workspaceRoute, path: '/security', component: SecurityPage });
 
+const organizationsRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/organizations',
+  component: function OrganizationsRoute() {
+    return <OrganizationsPage workspaceId={workspaceRoute.useParams().workspaceId} />;
+  },
+});
+
+const organizationRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/organizations/$organizationId',
+  component: function OrganizationRoute() {
+    const { workspaceId, organizationId } = organizationRoute.useParams();
+    return <OrganizationPage key={organizationId} workspaceId={workspaceId} organizationId={organizationId} />;
+  },
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: '/settings',
@@ -390,6 +408,8 @@ const routeTree = rootRoute.addChildren([
       settingsRoute,
       appearanceRoute,
       securityRoute,
+      organizationsRoute,
+      organizationRoute,
     ]),
   ]),
 ]);

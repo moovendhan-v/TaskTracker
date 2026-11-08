@@ -9,6 +9,7 @@ import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
 import { ChatRetentionCard } from '@/modules/chat';
 import { GithubIntegration } from '@/modules/integrations';
+import { WorkspaceOrganizationCard } from '@/modules/organizations';
 import { TwoStepRequirementCard } from '../components/two-step-requirement-card';
 import { WorkspaceForm } from '../components/workspace-form';
 import { usePermissions } from '../hooks/use-permissions';
@@ -62,6 +63,7 @@ export function WorkspaceSettingsPage({ workspaceId }: { workspaceId: string }) 
             <GithubIntegration workspaceId={workspaceId} canManage={can('integration.manage')} />
           </CardContent>
         </Card>
+        {canManage ? <WorkspaceOrganizationCard workspaceId={workspaceId} /> : null}
         {canManage ? <TwoStepRequirementCard workspaceId={workspaceId} /> : null}
         {canManage ? <ChatRetentionCard workspaceId={workspaceId} /> : null}
         {canManage ? (

@@ -6,6 +6,7 @@ import { AdminResolver } from './modules/admin/presentation/graphql/admin.resolv
 import { WorkspaceAuditLogResolver } from './modules/audit-log/presentation/graphql/workspace-audit-log.resolver.js';
 import { CommentsResolver } from './modules/comments/presentation/graphql/comments.resolver.js';
 import { DocumentsResolver } from './modules/documents/presentation/graphql/documents.resolver.js';
+import { OrganizationsResolver } from './modules/organizations/presentation/graphql/organizations.resolver.js';
 import { DepartmentsResolver } from './modules/hr/departments/presentation/graphql/departments.resolver.js';
 import { EmployeesResolver } from './modules/hr/employees/presentation/graphql/employees.resolver.js';
 import { LeaveResolver } from './modules/hr/leave/presentation/graphql/leave.resolver.js';
@@ -56,6 +57,7 @@ export const RESOLVERS = [
   CommentsResolver,
   SprintsResolver,
   DocumentsResolver,
+  OrganizationsResolver,
   DepartmentsResolver,
   EmployeesResolver,
   LeaveResolver,

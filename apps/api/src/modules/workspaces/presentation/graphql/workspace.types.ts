@@ -62,5 +62,7 @@ export class TwoStepPolicyGql implements TwoStepPolicyResponse {
   @Field(() => ID) id: string;
   @Field(() => ID) workspaceId: string;
   @Field(() => String, { description: 'off, admins (people with admin rights) or everyone' }) require: TwoStepRequirement;
+  @Field(() => String, { nullable: true, description: "The organization's rule, if the workspace is in one; the stricter applies" }) organizationRequire: TwoStepRequirement | null;
+  @Field(() => String, { nullable: true }) organizationName: string | null;
   @Field({ description: 'Whether the caller has two-step sign-in' }) callerHasTwoStep: boolean;
 }

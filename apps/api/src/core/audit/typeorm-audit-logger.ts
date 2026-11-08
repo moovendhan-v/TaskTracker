@@ -19,6 +19,7 @@ export class TypeOrmAuditLogger extends AuditLogger {
       targetType: entry.targetType,
       targetId: entry.targetId ?? null,
       workspaceId: entry.workspaceId ?? null,
+      organizationId: entry.organizationId ?? null,
       ip: actor.ip,
       metadata: { ...entry.metadata, ...platformMeta },
     });

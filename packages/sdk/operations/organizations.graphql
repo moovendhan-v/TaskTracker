@@ -1,0 +1,19 @@
+fragment OrganizationFields on Organization { id name role twoStepRequired createdAt }
+fragment OrganizationMemberFields on OrganizationMember { userId name email role hasTwoStep joinedAt }
+
+query Organizations { organizations { ...OrganizationFields } }
+query Organization($organizationId: ID!) { organization(organizationId: $organizationId) { ...OrganizationFields } }
+query OrganizationMembers($organizationId: ID!) { organizationMembers(organizationId: $organizationId) { ...OrganizationMemberFields } }
+query OrganizationWorkspaces($organizationId: ID!) { organizationWorkspaces(organizationId: $organizationId) { id name color } }
+query OrganizationActivity($organizationId: ID!) { organizationActivity(organizationId: $organizationId) { id action actorName targetType metadata createdAt } }
+query WorkspaceOrganization($workspaceId: ID!) { workspaceOrganization(workspaceId: $workspaceId) { id name twoStepRequired } }
+
+mutation CreateOrganization($name: String!) { createOrganization(name: $name) { ...OrganizationFields } }
+mutation RenameOrganization($organizationId: ID!, $name: String!) { renameOrganization(organizationId: $organizationId, name: $name) { ...OrganizationFields } }
+mutation SetOrganizationTwoStep($organizationId: ID!, $require: String!) { setOrganizationTwoStep(organizationId: $organizationId, require: $require) { ...OrganizationFields } }
+mutation DeleteOrganization($organizationId: ID!) { deleteOrganization(organizationId: $organizationId) }
+mutation AddOrganizationMember($organizationId: ID!, $email: String!, $role: String!) { addOrganizationMember(organizationId: $organizationId, email: $email, role: $role) { ...OrganizationMemberFields } }
+mutation SetOrganizationMemberRole($organizationId: ID!, $userId: String!, $role: String!) { setOrganizationMemberRole(organizationId: $organizationId, userId: $userId, role: $role) { ...OrganizationMemberFields } }
+mutation RemoveOrganizationMember($organizationId: ID!, $userId: String!) { removeOrganizationMember(organizationId: $organizationId, userId: $userId) { ...OrganizationMemberFields } }
+mutation AddWorkspaceToOrganization($workspaceId: ID!, $organizationId: ID!) { addWorkspaceToOrganization(workspaceId: $workspaceId, organizationId: $organizationId) }
+mutation RemoveWorkspaceFromOrganization($workspaceId: ID!) { removeWorkspaceFromOrganization(workspaceId: $workspaceId) }
