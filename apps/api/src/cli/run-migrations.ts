@@ -17,7 +17,7 @@ async function main(): Promise<void> {
   const url = env.MIGRATION_DATABASE_URL ?? env.DATABASE_URL;
   const pool = new Pool({ connectionString: url, ssl: env.DATABASE_SSL ? { rejectUnauthorized: true } : false });
   try {
-    const auth = createAuth(env, pool, new ConsoleMailer(false));
+    const auth = createAuth(env, pool, new ConsoleMailer(false), { validateSchema: false });
     const { runMigrations } = await getMigrations(auth.options);
     await runMigrations();
     console.log('Better Auth schema is up to date');

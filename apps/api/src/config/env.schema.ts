@@ -31,6 +31,9 @@ const envSchema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   // An empty value (as in .env.example) means unset.
   TURNSTILE_SECRET_KEY: optionalString(z.string().trim().min(1)),
+  /** "Sign in with GitHub" (A4): a GitHub OAuth app's client id and secret; both or neither. */
+  GITHUB_CLIENT_ID: optionalString(z.string().trim().min(1).max(100)),
+  GITHUB_CLIENT_SECRET: optionalString(z.string().trim().min(1).max(200)),
   /** Outgoing mail for password resets, e.g. smtps://user:pass@smtp.example.com:465 */
   SMTP_URL: optionalString(z.string().url().refine((url) => /^smtps?:\/\//.test(url), 'SMTP_URL must start with smtp:// or smtps://')),
   /** Sender address, e.g. "TaskFlow <no-reply@example.com>" */
@@ -59,6 +62,10 @@ const envSchema = z.object({
   S3_ACCESS_KEY_ID: optionalString(z.string().trim().min(1)),
   S3_SECRET_ACCESS_KEY: optionalString(z.string().trim().min(1)),
 })
+  .refine((env) => (env.GITHUB_CLIENT_ID === undefined) === (env.GITHUB_CLIENT_SECRET === undefined), {
+    path: ['GITHUB_CLIENT_SECRET'],
+    message: 'Set both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET for GitHub sign-in, or neither',
+  })
   // Public forms need a CAPTCHA in production (AGENTS.md rule 11), so a missing secret fails startup.
   .refine((env) => env.NODE_ENV !== 'production' || env.TURNSTILE_SECRET_KEY !== undefined, {
     path: ['TURNSTILE_SECRET_KEY'],

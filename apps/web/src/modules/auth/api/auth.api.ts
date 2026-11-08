@@ -1,3 +1,5 @@
+import { SignInOptionsDocument } from '@taskflow/sdk';
+import { graphql } from '@/core/api/graphql-client';
 import { authClient, captchaHeaders } from '@/core/auth/auth-client';
 
 interface AuthResult {
@@ -71,6 +73,58 @@ export const authApi = {
   async twoFactorEnabled() {
     const session = await authClient.getSession();
     return Boolean((session.data?.user as { twoFactorEnabled?: boolean | null } | undefined)?.twoFactorEnabled);
+  },
+
+  /** Which ways of signing in the server offers (A4); asked before anyone is signed in. */
+  async signInOptions() {
+    return (await graphql(SignInOptionsDocument, {})).signInOptions;
+  },
+
+  /**
+   * Starts "Sign in with GitHub": the browser leaves for GitHub and comes back signed in, or to
+   * the sign-in page with `?error=` when GitHub's email already belongs to a password account.
+   */
+  async signInWithGithub() {
+    return throwOnError(await authClient.signIn.social({ provider: 'github', callbackURL: '/', errorCallbackURL: '/sign-in' }));
+  },
+
+  /** Connects GitHub to the signed-in account; the browser comes back to the Security page. */
+  async connectGithub(returnTo: string) {
+    return throwOnError(await authClient.linkSocial({ provider: 'github', callbackURL: returnTo, errorCallbackURL: returnTo }));
+  },
+
+  /** Removes one sign-in method by its account id; the server refuses to remove the last one. */
+  async unlinkAccount(accountId: string) {
+    return throwOnError(await authClient.unlinkAccount({ accountId }));
+  },
+
+  /** The sign-in methods on the signed-in account: `credential` (password) and providers like `github`. */
+  async linkedAccounts() {
+    return (throwOnError(await authClient.listAccounts()).data ?? []).map((account) => ({ id: account.id, providerId: account.providerId }));
+  },
+
+  /** Signs in with a passkey (A4): the browser asks which one, and the device checks it's you. */
+  async signInWithPasskey() {
+    const result = await authClient.signIn.passkey();
+    if (result.error) throw new AuthRequestError(result.error.message || 'Passkey sign-in did not work', null);
+    return result.data;
+  },
+
+  /** Passkeys on the signed-in account, newest first. */
+  async passkeys() {
+    const list = throwOnError(await authClient.passkey.listUserPasskeys()).data ?? [];
+    return list
+      .map((key) => ({ id: key.id, name: key.name ?? null, createdAt: new Date(key.createdAt).toISOString(), backedUp: key.backedUp }))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  async addPasskey(name: string) {
+    const result = await authClient.passkey.addPasskey({ name });
+    if (result?.error) throw new AuthRequestError(result.error.message || 'The passkey was not added', null);
+  },
+
+  async deletePasskey(id: string) {
+    return throwOnError(await authClient.passkey.deletePasskey({ id }));
   },
 
   async signOut() {

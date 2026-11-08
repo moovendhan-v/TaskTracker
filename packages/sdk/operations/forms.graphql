@@ -1,1 +1,2 @@
 query FormSchemas($names: [String!]) { formSchemas(names: $names) { ...FormSchemaFields } }
+query SignInOptions { signInOptions { github } }

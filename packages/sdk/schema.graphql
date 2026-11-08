@@ -2150,6 +2150,9 @@ type Query {
   """
   searchWorkspaceAuditLog(query: ResourceQueryInput, workspaceId: ID!): AuditLogPage!
 
+  """Which ways of signing in this server offers"""
+  signInOptions: SignInOptions!
+
   """A space as template content, to export without saving"""
   spaceTemplateContent(includeContent: Boolean! = false, spaceId: ID!, workspaceId: ID!): JSONObject!
   spaces(workspaceId: ID!): [Space!]!
@@ -2461,6 +2464,12 @@ input SetTabsInput {
 input SetWorkspaceLayoutInput {
   items: [LayoutItemInput!]!
   pageKey: String!
+}
+
+"""Which ways of signing in this server offers"""
+type SignInOptions {
+  """Sign in with GitHub is configured"""
+  github: Boolean!
 }
 
 enum SortDirection {

@@ -24,6 +24,7 @@ import { AnalyticsResolver } from './modules/analytics/presentation/graphql/anal
 import { TimeResolver } from './modules/time-tracking/presentation/graphql/time.resolver.js';
 import { StatusesResolver } from './modules/statuses/presentation/graphql/statuses.resolver.js';
 import { FormSchemaResolver } from './modules/forms/presentation/graphql/form-schema.resolver.js';
+import { SignInOptionsResolver } from './modules/forms/presentation/graphql/sign-in-options.resolver.js';
 import { PreferencesResolver, SavedViewFieldsResolver } from './modules/preferences/presentation/graphql/preferences.resolver.js';
 import { DashboardsResolver } from './modules/layouts/presentation/graphql/dashboards.resolver.js';
 import { LayoutsResolver } from './modules/layouts/presentation/graphql/layouts.resolver.js';
@@ -66,6 +67,7 @@ export const RESOLVERS = [
   WorkspaceEventsResolver,
   ResourceSchemaResolver,
   FormSchemaResolver,
+  SignInOptionsResolver,
   PreferencesResolver,
   LayoutsResolver,
   DashboardsResolver,

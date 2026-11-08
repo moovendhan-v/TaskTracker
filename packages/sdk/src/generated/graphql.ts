@@ -1502,6 +1502,11 @@ export type FormSchemasQueryVariables = Exact<{
 
 export type FormSchemasQuery = { formSchemas: Array<{ name: string, fields: Array<{ name: string, label: string | null, type: string, required: boolean, nullable: boolean, rules: Array<{ kind: string, value: string | null, values: Array<string> | null, field: string | null, message: string }> }> }> };
 
+export type SignInOptionsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type SignInOptionsQuery = { signInOptions: { github: boolean } };
+
 export type CurrentUserFieldsFragment = { id: string, email: string, name: string, image: string | null, platformRole: PlatformRole, emailVerified: boolean };
 
 export type WorkspaceFieldsFragment = { id: string, name: string, color: string, roleName: string, permissions: Array<string>, createdAt: string, spaceRules: Array<{ spaces: Array<string> | null, notSpaces: Array<string> | null, permissions: Array<string> }> };
@@ -5047,6 +5052,13 @@ export const FormSchemasDocument = new TypedDocumentString(`
     }
   }
 }`) as unknown as TypedDocumentString<FormSchemasQuery, FormSchemasQueryVariables>;
+export const SignInOptionsDocument = new TypedDocumentString(`
+    query SignInOptions {
+  signInOptions {
+    github
+  }
+}
+    `) as unknown as TypedDocumentString<SignInOptionsQuery, SignInOptionsQueryVariables>;
 export const DepartmentsDocument = new TypedDocumentString(`
     query Departments($workspaceId: ID!) {
   departments(workspaceId: $workspaceId) {

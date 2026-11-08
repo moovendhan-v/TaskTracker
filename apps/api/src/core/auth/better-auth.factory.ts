@@ -1,14 +1,21 @@
 import { betterAuth } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { passkey } from '@better-auth/passkey';
 import { captcha, twoFactor } from 'better-auth/plugins';
 import type { Pool } from 'pg';
 import type { Env } from '../../config/env.schema.js';
 import { PASSWORD_MAX, PASSWORD_MIN, validateAuthBody } from './auth-forms.js';
 import type { Mailer } from './mailer/mailer.port.js';
 
+const PASSKEY_NAME_PATHS = new Set(['/passkey/verify-registration', '/passkey/update-passkey']);
+const PASSKEY_NAME_MAX = 60;
 const PUBLIC_AUTH_FORMS = ['/sign-up/email', '/sign-in/email', '/request-password-reset'];
 
-export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
+/**
+ * `validateSchema: false` is for the migration command: Better Auth otherwise checks the tables at
+ * start-up and logs "schema mismatch" for exactly the tables that command is about to create.
+ */
+export function createAuth(env: Env, pool: Pool, mailer: Mailer, { validateSchema = true }: { validateSchema?: boolean } = {}) {
   const isProduction = env.NODE_ENV === 'production';
 
   return betterAuth({
@@ -33,6 +40,19 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
       expiresIn: 60 * 60 * 24,
       sendVerificationEmail: async ({ user, url }) => mailer.sendEmailVerification(user.email, url),
     },
+    // "Sign in with GitHub" (A4), only when an OAuth app is configured. A first GitHub
+    // sign-in creates an account. It never merges into an existing account with the same email on
+    // its own (that sign-in is refused): you connect GitHub from the Security page while signed in,
+    // and only a GitHub account with the same email. No CAPTCHA here: /sign-in/social only hands
+    // back GitHub's URL, and GitHub's own sign-in page is the human check. A GitHub sign-in is a
+    // complete sign-in of its own, so it doesn't ask for the authenticator code (GitHub has its
+    // own two-step); the Security page says so.
+    ...(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
+      ? { socialProviders: { github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET } } }
+      : {}),
+    account: {
+      accountLinking: { enabled: true, trustedProviders: [], allowDifferentEmails: false, disableImplicitLinking: true },
+    },
     user: {
       additionalFields: {
         // input: false keeps both fields out of the sign-up and update-user payloads.
@@ -47,6 +67,13 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
     // The same rules the web app gets from formSchemas('auth.*'), with the same per-field messages.
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        // Passkey names are free text the plugin doesn't bound; keep them short.
+        if (PASSKEY_NAME_PATHS.has(ctx.path)) {
+          const name = (ctx.body as { name?: unknown } | undefined)?.name;
+          if (name !== undefined && (typeof name !== 'string' || name.trim().length > PASSKEY_NAME_MAX)) {
+            throw new APIError('BAD_REQUEST', { code: 'VALIDATION_FAILED', message: `A passkey name is at most ${PASSKEY_NAME_MAX} characters` });
+          }
+        }
         const fields = await validateAuthBody(ctx.path, ctx.body);
         if (fields.length > 0) throw new APIError('BAD_REQUEST', { code: 'VALIDATION_FAILED', message: fields[0]?.message ?? 'Invalid input', fields });
       }),
@@ -65,9 +92,20 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
         '/two-factor/verify-backup-code': { window: 60, max: 5 },
         '/two-factor/enable': { window: 60, max: 5 },
         '/two-factor/disable': { window: 60, max: 5 },
+        '/sign-in/social': { window: 60, max: 10 },
+        '/passkey/generate-authenticate-options': { window: 60, max: 20 },
+        '/passkey/verify-authentication': { window: 60, max: 10 },
+        '/passkey/generate-register-options': { window: 60, max: 10 },
+        '/passkey/verify-registration': { window: 60, max: 10 },
+        '/link-social': { window: 60, max: 5 },
+        '/unlink-account': { window: 60, max: 5 },
       },
     },
     advanced: {
+      // Better Auth skips its origin and callback-URL checks when NODE_ENV=test; keep them on so the
+      // e2e suite runs the same checks as production (no redirects to other sites).
+      disableOriginCheck: false,
+      database: { validateSchema },
       useSecureCookies: isProduction,
       defaultCookieAttributes: { httpOnly: true, sameSite: 'lax', secure: isProduction },
       ipAddress: { ipAddressHeaders: env.TRUST_PROXY > 0 ? ['x-forwarded-for'] : [] },
@@ -78,6 +116,14 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer) {
       // it on or off needs the password, and signing in asks for a code only once the first
       // step has succeeded.
       twoFactor({ issuer: 'TaskFlow', skipVerificationOnEnable: false, backupCodeOptions: { amount: 10, length: 10 } }),
+      // A4: passkeys. Bound to the app's own host (the WebAuthn relying party), added only from a
+      // fresh session, and the authenticator must verify the person (PIN, fingerprint, face), so
+      // a passkey is two factors in one and signing in with it skips the authenticator code.
+      passkey({
+        rpID: new URL(env.BETTER_AUTH_URL).hostname,
+        rpName: 'TaskFlow',
+        authenticatorSelection: { residentKey: 'preferred', userVerification: 'required' },
+      }),
       ...(env.TURNSTILE_SECRET_KEY
         ? [
             captcha({
