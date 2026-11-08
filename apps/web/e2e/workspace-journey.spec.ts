@@ -201,7 +201,7 @@ test('writes a doc with autosave and a preview that drops unsafe markup', async 
   await page.getByLabel('Page content (markdown)').fill(
     '# Welcome\n\nRead the **basics** first.\n\n- One\n- Two\n\n[click me](javascript:alert(1)) <img src=x onerror=alert(1)>',
   );
-  await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/^(Saved|Live · saved)$/)).toBeVisible({ timeout: 10_000 });
 
   await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Preview' }).click();
   const preview = page.getByRole('article', { name: 'Preview' });
@@ -217,6 +217,27 @@ test('writes a doc with autosave and a preview that drops unsafe markup', async 
   expect(unsafeUrls).toBe(0);
 });
 
+test('edits a page together, live, in two tabs', async () => {
+  const other = await page.context().newPage();
+  await other.goto(page.url());
+  await expect(other.getByText('Live · saved')).toBeVisible();
+  // Each tab sees the other there.
+  await expect(page.getByRole('list', { name: 'Also on this page' }).getByText('Dana Reyes')).toBeAttached();
+  await other.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Markdown' }).click();
+  const source = other.getByLabel('Page content (markdown)');
+  await source.click();
+  await source.press('ControlOrMeta+End');
+  await source.pressSequentially('\n\nWritten in the other tab.');
+  // The first tab shows it without a reload, in its Preview.
+  await expect(page.getByRole('article', { name: 'Preview' }).getByText('Written in the other tab.')).toBeVisible();
+  await expect(other.getByText('Live · saved')).toBeVisible({ timeout: 10_000 });
+  await other.close();
+  await expect(page.getByRole('list', { name: 'Also on this page' })).toHaveCount(0);
+  await page.reload();
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Preview' }).click();
+  await expect(page.getByRole('article', { name: 'Preview' }).getByText('Written in the other tab.')).toBeVisible();
+});
+
 test('adds a sub-page that survives a reload', async () => {
   const parentUrl = page.url();
   await page.getByRole('treeitem', { name: /Team handbook/ }).hover();
@@ -225,7 +246,7 @@ test('adds a sub-page that survives a reload', async () => {
   await expect(page).not.toHaveURL(parentUrl);
   await expect(page.getByLabel('Document title')).toHaveValue('Untitled');
   await page.getByLabel('Document title').fill('First week');
-  await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/^(Saved|Live · saved)$/)).toBeVisible({ timeout: 10_000 });
   await page.reload();
   await expect(page.getByRole('treeitem', { name: /First week/ })).toBeVisible();
 });

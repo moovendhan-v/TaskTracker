@@ -46,6 +46,9 @@ import { DocVisualEditor } from './doc-visual-editor';
 import { MarkdownPreview } from './markdown-preview';
 import { TaskMentionTextarea } from './task-embeds';
 import { SlidePresentationModal } from './slide-presentation-modal';
+import { UserAvatar } from '@/components/common/user-avatar';
+import { useLiveDoc } from '../live/use-live-doc';
+import type { LivePeerView, LiveStatus } from '../live/live-doc';
 
 const AUTOSAVE_DELAY_MS = 800;
 
@@ -63,7 +66,7 @@ type EditorMode = 'visual' | 'split' | 'preview';
 export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onToggleTree }: DocEditorProps) {
   const { mutate } = useDocumentMutations(workspaceId).update;
   const [title, setTitle] = useState(document.title);
-  const [content, setContent] = useState(document.content);
+  const [localContent, setLocalContent] = useState(document.content);
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [mode, setMode] = useState<EditorMode>('visual');
   const [fullWidth, setFullWidth] = useState(false);
@@ -74,6 +77,30 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
   });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Live editing (C5): everyone on the page edits one shared text. Until it connects the page
+  // waits; if live editing isn't available it saves on its own as before.
+  const live = useLiveDoc(workspaceId, document.id, true);
+  const liveOn = live.status === 'live' || live.status === 'offline';
+  const editable = canEdit && live.status !== 'connecting' && !(liveOn && live.readOnly);
+  // Live, the shared text is the page; otherwise what you typed here.
+  const content = liveOn ? live.text : localContent;
+  // Someone else's change moves your caret along with the text, instead of jumping.
+  useEffect(
+    () =>
+      live.live?.onRemoteChange((map) => {
+        const element = textareaRef.current;
+        if (!element || window.document.activeElement !== element) return;
+        const start = map(element.selectionStart);
+        const end = map(element.selectionEnd);
+        requestAnimationFrame(() => element.setSelectionRange(start, end));
+      }),
+    [live.live],
+  );
+  const shareCursor = () => {
+    const element = textareaRef.current;
+    if (element) live.live?.setCursorLine(element.value.slice(0, element.selectionStart).split('\n').length);
+  };
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<{ title?: string; content?: string }>({});
 
@@ -97,11 +124,17 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
 
   useEffect(() => flush, [flush]);
 
+  /** A change you made to the page's text: shared live, or saved on its own when not live. */
+  function changeContent(next: string) {
+    if (liveOn) return live.live?.setText(next);
+    setLocalContent(next);
+    scheduleSave({ content: next });
+  }
+
   // Insert markdown snippet when in raw textarea mode
   const insertSnippet = (snippet: string) => {
     const next = content ? `${content}\n\n${snippet}` : snippet;
-    setContent(next);
-    scheduleSave({ content: next });
+    changeContent(next);
     toast.success('Block added');
   };
 
@@ -185,7 +218,14 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="hidden sm:inline">Updated {formatLongDate(document.updatedAt)}</span>
             <span className="hidden sm:inline">·</span>
-            {canEdit ? <SaveIndicator state={saveState} /> : <span>Read only</span>}
+            {liveOn || live.status === 'connecting' ? (
+              <LiveIndicator status={live.status} readOnly={!canEdit || live.readOnly} error={live.error} saving={live.pending || saveState !== 'saved'} />
+            ) : canEdit ? (
+              <SaveIndicator state={saveState} />
+            ) : (
+              <span>Read only</span>
+            )}
+            {live.peers.length ? <LivePeers peers={live.peers} /> : null}
           </div>
         </div>
 
@@ -443,11 +483,8 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
             <DocVisualEditor
               key={document.id}
               initialMarkdown={content}
-              canEdit={canEdit}
-              onChange={(updatedMd) => {
-                setContent(updatedMd);
-                scheduleSave({ content: updatedMd });
-              }}
+              canEdit={editable}
+              onChange={changeContent}
             />
           ) : mode === 'split' ? (
             /* Mode 2: Split Markdown & Preview (For developers) */
@@ -456,10 +493,9 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
                 ref={textareaRef}
                 value={content}
                 maxLength={DOC_CONTENT_MAX}
-                onValueChange={(next) => {
-                  setContent(next);
-                  scheduleSave({ content: next });
-                }}
+                readOnly={!editable}
+                onValueChange={changeContent}
+                onSelect={shareCursor}
                 aria-label="Page content (markdown)"
                 placeholder="Type raw markdown here… (# to reference a task)"
                 className="size-full min-h-[70vh] resize-none rounded-xl border bg-card/60 p-5 font-mono text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -485,6 +521,42 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
         content={content}
       />
     </div>
+  );
+}
+
+/** Live status in the page header: connecting, live (and whether the latest change is saved), or offline. */
+function LiveIndicator({ status, readOnly, error, saving }: { status: LiveStatus; readOnly: boolean; error: string | null; saving: boolean }) {
+  if (error) {
+    return (
+      <span className="text-xs text-destructive" role="alert">
+        {error}
+      </span>
+    );
+  }
+  const label =
+    status === 'connecting' ? 'Connecting…' : status === 'offline' ? 'Offline: your changes sync when you’re back' : readOnly ? 'Live · read only' : saving ? 'Live · saving…' : 'Live · saved';
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
+      <span aria-hidden className={cn('size-1.5 rounded-full', status === 'live' ? 'bg-good' : status === 'offline' ? 'bg-amber-500' : 'animate-pulse bg-muted-foreground')} />
+      {label}
+    </span>
+  );
+}
+
+/** Who else has the page open, and which line they're on. */
+function LivePeers({ peers }: { peers: readonly LivePeerView[] }) {
+  // One avatar per person, even with the page open in several tabs.
+  const people = [...new Map(peers.map((peer) => [peer.id, peer])).values()];
+  return (
+    <ul aria-label="Also on this page" className="flex -space-x-1.5">
+      {people.slice(0, 5).map((peer) => (
+        <li key={peer.id} title={`${peer.name}${peer.line ? ` · line ${peer.line}` : ''}${peer.canEdit ? '' : ' · viewing'}`} className="animate-in fade-in-0 zoom-in-95">
+          <UserAvatar name={peer.name} className="size-6 border-2 border-background text-[10px]" />
+          <span className="sr-only">{peer.name}</span>
+        </li>
+      ))}
+      {people.length > 5 ? <li className="ml-2 self-center text-xs">+{people.length - 5}</li> : null}
+    </ul>
   );
 }
 

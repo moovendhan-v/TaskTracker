@@ -13,6 +13,9 @@ export abstract class DocumentRepository {
   abstract maxSiblingPosition(workspaceId: string, parentId: string | null): Promise<number>;
   abstract create(document: NewDocument): Promise<Document>;
   abstract save(document: Document): Promise<Document>;
+  /** The stored live editing history (C5), if any. */
+  abstract findLiveState(workspaceId: string, documentId: string): Promise<{ state: Uint8Array; lineage: string } | null>;
+  abstract saveLiveState(workspaceId: string, documentId: string, state: Uint8Array | null, lineage: string | null): Promise<void>;
   /** Child pages go with it (ON DELETE CASCADE). */
   abstract delete(workspaceId: string, documentId: string): Promise<void>;
 }
