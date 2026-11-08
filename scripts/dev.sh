@@ -132,6 +132,19 @@ Following logs; Ctrl+C stops following, the stack keeps running. Stop it with: .
 INFO
 }
 
+# Postgres sets the app roles' passwords once, when its data volume is first created.
+# If .env changed since (recreated, edited, or an older one filled in), migrations fail
+# with "password authentication failed". Set them from .env again on every start; the
+# container has the current values and connects over its own socket.
+sync_db_roles() {
+  "${COMPOSE[@]}" exec -T postgres sh -c 'psql -q -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+    -v owner="$APP_DB_OWNER" -v owner_password="$APP_DB_OWNER_PASSWORD" \
+    -v app_user="$APP_DB_USER" -v app_password="$APP_DB_PASSWORD"' <<'SQL'
+ALTER ROLE :"owner" WITH PASSWORD :'owner_password';
+ALTER ROLE :"app_user" WITH PASSWORD :'app_password';
+SQL
+}
+
 cmd="${1:-up}"
 case "$cmd" in
   env)
@@ -140,12 +153,15 @@ case "$cmd" in
     create_env
     pick_ports
     "${COMPOSE[@]}" up -d --wait postgres redis mailpit
+    sync_db_roles
     # Bootstrap prints its progress; the API and web start once it succeeds.
     "${COMPOSE[@]}" run --rm bootstrap
     "${COMPOSE[@]}" up -d --wait --no-deps api web
     urls
     "${COMPOSE[@]}" logs -f --tail 20 api web ;;
   bootstrap)
+    "${COMPOSE[@]}" up -d --wait postgres
+    sync_db_roles
     "${COMPOSE[@]}" run --rm bootstrap ;;
   logs)
     "${COMPOSE[@]}" logs -f --tail 50 api web ;;
