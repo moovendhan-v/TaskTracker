@@ -87,6 +87,11 @@ export function TwoStepRequirementCard({ workspaceId }: { workspaceId: string })
           )}
         </div>
         <p className="text-xs text-muted-foreground">{EFFECT[value]}</p>
+        {policy.data?.organizationRequire && policy.data.organizationRequire !== 'off' ? (
+          <p className="text-xs text-muted-foreground">
+            {policy.data.organizationName} requires it of {LABEL[policy.data.organizationRequire].toLowerCase()} in all its workspaces; the stricter rule applies here.
+          </p>
+        ) : null}
         {blocked ? (
           <p role="alert" className="text-xs text-destructive">
             Set up two-step sign-in for yourself first, so this can never lock you out.{' '}

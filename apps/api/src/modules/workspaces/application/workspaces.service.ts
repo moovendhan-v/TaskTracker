@@ -85,10 +85,13 @@ export class WorkspacesService {
 
   /** The workspace's two-step sign-in requirement (A4 / E3), and whether the caller meets it. */
   async twoStepPolicy(access: WorkspaceAccess, userId: string): Promise<TwoStepPolicyResponse> {
+    const organization = await this.workspaces.organizationTwoStep(access.workspaceId);
     return {
       id: access.workspaceId,
       workspaceId: access.workspaceId,
       require: await this.workspaces.getTwoStep(access.workspaceId),
+      organizationRequire: organization?.require ?? null,
+      organizationName: organization?.name ?? null,
       callerHasTwoStep: await this.accessService.hasTwoStep(userId),
     };
   }

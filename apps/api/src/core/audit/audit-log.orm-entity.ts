@@ -22,6 +22,10 @@ export class AuditLogOrmEntity {
   @Column({ type: 'uuid', nullable: true })
   workspaceId: string | null;
 
+  /** Organization activity (A3): readable by the organization's owners and admins. */
+  @Column({ type: 'uuid', nullable: true })
+  organizationId: string | null;
+
   @Column({ type: 'varchar', length: 64, nullable: true })
   ip: string | null;
 

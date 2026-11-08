@@ -1402,6 +1402,10 @@ input MoveTaskListInput {
 type Mutation {
   addChatChannelMembers(channelId: ID!, userIds: [ID!]!, workspaceId: ID!): [ChatMember!]!
   addMember(input: AddMemberInput!, workspaceId: ID!): AddMemberResult!
+  addOrganizationMember(email: String!, organizationId: ID!, role: String!): [OrganizationMember!]!
+
+  """Needs workspace.manage here and owner or admin in the organization"""
+  addWorkspaceToOrganization(organizationId: ID!, workspaceId: ID!): Boolean!
   archiveChatChannel(archived: Boolean! = true, channelId: ID!, workspaceId: ID!): ChatChannel!
   attachRolePolicy(
     """managed:<key> or a custom policy id"""
@@ -1457,6 +1461,7 @@ type Mutation {
   createFolder(input: CreateFolderInput!, spaceId: ID!, workspaceId: ID!): Folder!
   createLeaveType(input: CreateLeaveTypeInput!, workspaceId: ID!): LeaveType!
   createList(input: TaskListInput!, spaceId: ID!, workspaceId: ID!): TaskList!
+  createOrganization(name: String!): Organization!
   createPolicy(input: SavePolicyInput!, workspaceId: ID!): Policy!
   createRole(input: CreateRoleInput!, workspaceId: ID!): Role!
   createSpace(input: CreateSpaceInput!, workspaceId: ID!): Space!
@@ -1509,6 +1514,9 @@ type Mutation {
   deleteFolder(folderId: ID!, workspaceId: ID!): Boolean!
   deleteLeaveType(leaveTypeId: ID!, workspaceId: ID!): Boolean!
   deleteList(listId: ID!, workspaceId: ID!): Boolean!
+
+  """Owners only; its workspaces stay, on their own"""
+  deleteOrganization(organizationId: ID!): Boolean!
   deletePolicy(policyId: ID!, workspaceId: ID!): Boolean!
   deleteRole(roleId: ID!, workspaceId: ID!): Boolean!
   deleteSpace(spaceId: ID!, workspaceId: ID!): Boolean!
@@ -1591,6 +1599,11 @@ type Mutation {
   relateTasks(kind: TaskRelationKind!, relatedTaskId: ID!, taskId: ID!, workspaceId: ID!): [TaskRelation!]!
   removeChatChannelMember(channelId: ID!, userId: ID!, workspaceId: ID!): Boolean!
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
+
+  """Owners and admins remove people; anyone can remove themselves (leave)"""
+  removeOrganizationMember(organizationId: ID!, userId: String!): [OrganizationMember!]!
+  removeWorkspaceFromOrganization(workspaceId: ID!): Boolean!
+  renameOrganization(name: String!, organizationId: ID!): Organization!
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
 
   """
@@ -1652,6 +1665,10 @@ type Mutation {
   """Make someone an owner, or a plain member again"""
   setChatChannelMemberRole(channelId: ID!, role: String!, userId: ID!, workspaceId: ID!): [ChatMember!]!
   setChatRetention(days: Int, workspaceId: ID!): ChatRetention!
+  setOrganizationMemberRole(organizationId: ID!, role: String!, userId: String!): [OrganizationMember!]!
+
+  """Two-step sign-in required in all its workspaces"""
+  setOrganizationTwoStep(organizationId: ID!, require: String!): Organization!
 
   """
   Replaces a role's inline policy (statements that belong to that role only)
@@ -1812,6 +1829,45 @@ enum NotifyAudience {
   assignee
   creator
   watchers
+}
+
+"""A group of workspaces run together (A3)"""
+type Organization {
+  createdAt: String!
+  id: ID!
+  name: String!
+
+  """The caller's role: owner, admin or member"""
+  role: String!
+
+  """
+  Two-step sign-in required in all its workspaces: off, admins or everyone
+  """
+  twoStepRequired: String!
+}
+
+type OrganizationActivity {
+  action: String!
+  actorName: String
+  createdAt: String!
+  id: ID!
+  metadata: JSONObject!
+  targetType: String!
+}
+
+type OrganizationMember {
+  email: String!
+  hasTwoStep: Boolean!
+  joinedAt: String!
+  name: String!
+  role: String!
+  userId: ID!
+}
+
+type OrganizationWorkspace {
+  color: String!
+  id: ID!
+  name: String!
 }
 
 enum PlatformRole {
@@ -2103,6 +2159,19 @@ type Query {
     unreadOnly: Boolean
     workspaceId: ID!
   ): NotificationPage!
+  organization(organizationId: ID!): Organization!
+
+  """Latest organization activity; owners and admins only"""
+  organizationActivity(organizationId: ID!): [OrganizationActivity!]!
+  organizationMembers(organizationId: ID!): [OrganizationMember!]!
+
+  """
+  Its workspaces, by name; being in the organization does not let you into them
+  """
+  organizationWorkspaces(organizationId: ID!): [OrganizationWorkspace!]!
+
+  """Organizations the caller belongs to"""
+  organizations: [Organization!]!
 
   """Managed and custom policies, with how many roles use each"""
   policies(workspaceId: ID!): [Policy!]!
@@ -2239,6 +2308,9 @@ type Query {
 
   """The workspace's default for a page; null means the built-in layout"""
   workspaceLayout(pageKey: String!, workspaceId: ID!): WorkspaceLayout
+
+  """The organization this workspace is in, if any"""
+  workspaceOrganization(workspaceId: ID!): WorkspaceOrganization
 
   """Every status in the workspace, for views across spaces"""
   workspaceStatuses(workspaceId: ID!): [TaskStatus!]!
@@ -2835,6 +2907,12 @@ type TwoStepPolicy {
   """Whether the caller has two-step sign-in"""
   callerHasTwoStep: Boolean!
   id: ID!
+  organizationName: String
+
+  """
+  The organization's rule, if the workspace is in one; the stricter applies
+  """
+  organizationRequire: String
 
   """off, admins (people with admin rights) or everyone"""
   require: String!
@@ -3037,6 +3115,13 @@ type WorkspaceLayout {
   pageKey: String!
   updatedAt: String!
   updatedByName: String
+}
+
+"""The organization a workspace is in"""
+type WorkspaceOrganization {
+  id: ID!
+  name: String!
+  twoStepRequired: String!
 }
 
 type WorkspaceTab {

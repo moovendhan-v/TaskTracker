@@ -5,6 +5,8 @@ export interface AuditEntry {
   targetType: string;
   targetId?: string | null;
   workspaceId?: string | null;
+  /** Also shown in this organization's activity (A3). */
+  organizationId?: string | null;
   metadata?: Record<string, unknown>;
 }
 

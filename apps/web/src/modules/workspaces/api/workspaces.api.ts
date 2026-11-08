@@ -19,8 +19,10 @@ const toWorkspace = (workspace: WorkspaceFieldsFragment) => ({
 });
 
 /** An unknown value from a newer API reads as the strictest one, so the UI never understates it. */
-const toTwoStep = (policy: { require: string; callerHasTwoStep: boolean }) => ({
+const toTwoStep = (policy: { require: string; organizationRequire?: string | null; organizationName?: string | null; callerHasTwoStep: boolean }) => ({
   require: (isTwoStepRequirement(policy.require) ? policy.require : 'everyone') as TwoStepRequirement,
+  organizationRequire: policy.organizationRequire == null ? null : ((isTwoStepRequirement(policy.organizationRequire) ? policy.organizationRequire : 'everyone') as TwoStepRequirement),
+  organizationName: policy.organizationName ?? null,
   callerHasTwoStep: policy.callerHasTwoStep,
 });
 

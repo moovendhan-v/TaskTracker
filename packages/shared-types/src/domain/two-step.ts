@@ -28,6 +28,9 @@ export interface TwoStepPolicyResponse {
   id: string;
   workspaceId: string;
   require: TwoStepRequirement;
+  /** The rule of the organization the workspace is in (A3); the stricter of the two applies. */
+  organizationRequire: TwoStepRequirement | null;
+  organizationName: string | null;
   /** Whether the caller has two-step sign-in (an authenticator app or a passkey). */
   callerHasTwoStep: boolean;
 }

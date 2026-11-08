@@ -11,6 +11,8 @@ import { spaceVisibility, type SpaceRule, type SpaceScopedPermission, type Space
  *   denied, and the docs of spaces whose doc.view is denied.
  * - `user`: the caller's own memberships, and the workspaces and roles they
  *   hold. Used for operations outside a workspace, such as listing workspaces.
+ * - `organization`: one organization's rows (A3), set only after the caller's membership
+ *   was checked. Its workspaces are readable by name; their data is not.
  * - `platform`: every row. Only for platform admin operations and operator CLIs.
  *
  * With no scope set, tenant tables return no rows and reject writes (fail closed).
@@ -18,6 +20,7 @@ import { spaceVisibility, type SpaceRule, type SpaceScopedPermission, type Space
 export type DataScope =
   | { kind: 'workspace'; workspaceId: string; userId: string | null; spaceRules?: readonly SpaceRule[] }
   | { kind: 'user'; userId: string }
+  | { kind: 'organization'; organizationId: string; userId: string }
   | { kind: 'platform' };
 
 /** How a visibility list travels in a setting: `*` for "no limit", `-` for "no space at all", otherwise comma-separated ids. */
@@ -39,22 +42,24 @@ export function scopeVisibility(scope: DataScope | null, permission: SpaceScoped
 
 /**
  * Values for the settings, in APPLY_SCOPE_SQL's order: `app.workspace_id`,
- * `app.user_id`, `app.scope`, then the task and doc space limits.
+ * `app.user_id`, `app.scope`, the task and doc space limits, then `app.org_id`.
  */
 export function toScopeSettings(scope: DataScope | null): string[] {
   const spaces = [...settingsFor(scopeVisibility(scope, 'task.view')), ...settingsFor(scopeVisibility(scope, 'doc.view'))];
-  if (!scope) return ['', '', '', ...spaces];
+  if (!scope) return ['', '', '', ...spaces, ''];
   switch (scope.kind) {
     case 'workspace':
-      return [scope.workspaceId, scope.userId ?? '', '', ...spaces];
+      return [scope.workspaceId, scope.userId ?? '', '', ...spaces, ''];
     case 'user':
-      return ['', scope.userId, '', ...spaces];
+      return ['', scope.userId, '', ...spaces, ''];
+    case 'organization':
+      return ['', scope.userId, '', ...spaces, scope.organizationId];
     case 'platform':
-      return ['', '', 'platform', ...spaces];
+      return ['', '', 'platform', ...spaces, ''];
   }
 }
 
 /** Sets every setting for the current transaction only (`is_local = true`), so they never leak to the next pooled use. */
 export const APPLY_SCOPE_SQL = `SELECT set_config('app.workspace_id', $1, true), set_config('app.user_id', $2, true), set_config('app.scope', $3, true),
   set_config('app.space_task_deny', $4, true), set_config('app.space_task_only', $5, true),
-  set_config('app.space_doc_deny', $6, true), set_config('app.space_doc_only', $7, true)`;
+  set_config('app.space_doc_deny', $6, true), set_config('app.space_doc_only', $7, true), set_config('app.org_id', $8, true)`;

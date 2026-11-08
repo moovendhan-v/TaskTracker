@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { isTwoStepRequirement, PERMISSIONS, type Permission } from '@taskflow/shared-types';
+import { isTwoStepRequirement, PERMISSIONS, stricterTwoStep, type Permission } from '@taskflow/shared-types';
 import { MembershipReader, type MembershipGrant } from '../../../core/access/membership-reader.port.js';
 import { Cached } from '../../../core/cache/cached.decorator.js';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
@@ -42,9 +42,17 @@ export class TypeOrmMembershipReader extends MembershipReader {
       const access = await this.roleAccess.forRoleWithGrants(workspaceId, membership.roleId, running);
       if (!access) return null;
       // Members can read their own workspace's row; the requirement is applied per request in AccessService.
-      const [workspace] = (await this.transactional.manager.query(`SELECT two_step_required FROM workspace WHERE id = $1`, [workspaceId])) as { two_step_required: string }[];
+      // The workspace's own rule and its organization's (A3), whichever is stricter. Members can read
+      // their workspace's row, and the organization it is in.
+      const [workspace] = (await this.transactional.manager.query(
+        `SELECT w.two_step_required, w.organization_id, o.two_step_required AS org_two_step_required
+         FROM workspace w LEFT JOIN organization o ON o.id = w.organization_id WHERE w.id = $1`,
+        [workspaceId],
+      )) as { two_step_required: string; organization_id: string | null; org_two_step_required: string | null }[];
       // An unreadable or unknown value fails closed to the strictest setting.
-      const twoStep = workspace && isTwoStepRequirement(workspace.two_step_required) ? workspace.two_step_required : 'everyone';
+      const own = workspace && isTwoStepRequirement(workspace.two_step_required) ? workspace.two_step_required : 'everyone';
+      const inherited = workspace?.organization_id ? (isTwoStepRequirement(workspace.org_two_step_required) ? workspace.org_two_step_required : 'everyone') : null;
+      const twoStep = stricterTwoStep(own, inherited);
       return { roleId: membership.roleId, permissions: access.permissions, readableFields: access.readableFields, spaceRules: access.spaceRules, twoStep };
     });
   }
