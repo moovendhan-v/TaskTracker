@@ -130,6 +130,31 @@ export class DocumentsService {
     return DocumentMapper.toResponse(document);
   }
 
+  /**
+   * Live editing (C5): what someone may do with a page when they open it live. Runs in the
+   * caller's workspace scope, so row-level security hides pages in spaces they can't read.
+   */
+  async openLive(
+    access: WorkspaceAccess,
+    userId: string,
+    documentId: string,
+  ): Promise<{ content: string; canEdit: boolean; live: { state: Uint8Array; lineage: string } | null }> {
+    const document = await this.getInWorkspace(access.workspaceId, documentId);
+    if (document.kind === 'folder') throw DomainError.invalid('A folder has no content');
+    const held = inSpace(access.permissions, document.spaceId);
+    if (!held.has('doc.view')) throw DomainError.forbidden('You can’t read pages in this space');
+    return {
+      content: document.content,
+      canEdit: DocumentAccessPolicy.canEdit(document, userId, held),
+      live: await this.documents.findLiveState(access.workspaceId, documentId),
+    };
+  }
+
+  /** Stores the live editing history next to the markdown; called right after a live save. */
+  async saveLiveState(access: WorkspaceAccess, documentId: string, state: Uint8Array | null, lineage: string | null): Promise<void> {
+    await this.documents.saveLiveState(access.workspaceId, documentId, state, lineage);
+  }
+
   private async getInWorkspace(workspaceId: string, documentId: string): Promise<Document> {
     return found(await this.documents.findInWorkspace(workspaceId, documentId), 'Page');
   }

@@ -108,4 +108,21 @@ export class TypeOrmDocumentRepository extends DocumentRepository {
   async delete(workspaceId: string, documentId: string): Promise<void> {
     await this.repository.delete({ id: documentId, workspaceId });
   }
+
+  async findLiveState(workspaceId: string, documentId: string): Promise<{ state: Uint8Array; lineage: string } | null> {
+    const [row] = (await this.transactional.manager.query(`SELECT live_state, live_lineage FROM document WHERE workspace_id = $1 AND id = $2`, [workspaceId, documentId])) as {
+      live_state: Buffer | null;
+      live_lineage: string | null;
+    }[];
+    return row?.live_state && row.live_lineage ? { state: new Uint8Array(row.live_state), lineage: row.live_lineage } : null;
+  }
+
+  async saveLiveState(workspaceId: string, documentId: string, state: Uint8Array | null, lineage: string | null): Promise<void> {
+    await this.transactional.manager.query(`UPDATE document SET live_state = $3, live_lineage = $4 WHERE workspace_id = $1 AND id = $2`, [
+      workspaceId,
+      documentId,
+      state ? Buffer.from(state) : null,
+      lineage,
+    ]);
+  }
 }

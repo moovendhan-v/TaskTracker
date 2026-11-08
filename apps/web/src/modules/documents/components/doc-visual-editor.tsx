@@ -22,7 +22,7 @@ import {
   ListChecksIcon,
   TicketIcon,
 } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -405,6 +405,8 @@ export function DocVisualEditor({ initialMarkdown, onChange, canEdit }: DocVisua
   // The latest blocks, so an update can tell the parent outside of React's render phase
   // (calling onChange inside a setState updater updates DocEditor while this one renders).
   const latest = useRef(blocks);
+  // The markdown this editor last produced, to tell its own changes from someone else's (C5).
+  const emitted = useRef(initialMarkdown);
 
   const updateBlocks = useCallback(
     (updater: (prev: VisualBlock[]) => VisualBlock[]) => {
@@ -413,10 +415,26 @@ export function DocVisualEditor({ initialMarkdown, onChange, canEdit }: DocVisua
       latest.current = next;
       isInternalChange.current = true;
       setBlocks(next);
-      onChange(blocksToMarkdown(next));
+      const markdown = blocksToMarkdown(next);
+      emitted.current = markdown;
+      onChange(markdown);
     },
     [onChange]
   );
+
+  // Someone else changed the page (live editing): show their version. Blocks keep their
+  // ids by position when the type is unchanged, so the one you're typing in keeps focus.
+  useEffect(() => {
+    if (initialMarkdown === emitted.current) return;
+    emitted.current = initialMarkdown;
+    const previous = latest.current;
+    const next = markdownToBlocks(initialMarkdown).map((block, index) => {
+      const before = previous[index];
+      return before && before.type === block.type ? { ...block, id: before.id } : block;
+    });
+    latest.current = next;
+    setBlocks(next);
+  }, [initialMarkdown]);
 
   const updateBlock = (id: string, partial: Partial<VisualBlock>) => {
     updateBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...partial } : b)));
