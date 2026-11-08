@@ -43,3 +43,11 @@ mutation LinkInboxPullRequest($workspaceId: ID!, $itemId: ID!, $taskNumber: Int!
 }
 
 mutation DismissInboxPullRequest($workspaceId: ID!, $itemId: ID!) { dismissInboxPullRequest(workspaceId: $workspaceId, itemId: $itemId) }
+
+query GithubConflicts($workspaceId: ID!, $taskId: ID!) {
+  githubConflicts(workspaceId: $workspaceId, taskId: $taskId) { id taskId prNumber prTitle prUrl event wantedStatus { id name color } createdAt }
+}
+
+mutation ResolveGithubConflict($workspaceId: ID!, $conflictId: ID!, $useGithub: Boolean!) {
+  resolveGithubConflict(workspaceId: $workspaceId, conflictId: $conflictId, useGithub: $useGithub) { id status { id name } }
+}

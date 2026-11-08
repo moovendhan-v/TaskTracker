@@ -1,3 +1,4 @@
+import type { SidebarPreset } from '@taskflow/shared-types';
 import { CheckIcon, PaletteIcon, RotateCcwIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/common/page-header';
@@ -11,6 +12,17 @@ import { getErrorMessage } from '@/lib/errors';
 import { AppearancePreview } from '../components/appearance-preview';
 import { ThemeCard } from '../components/theme-card';
 import { ACCENT_OPTIONS, DEFAULT_APPEARANCE, DENSITY_OPTIONS, FONT_OPTIONS, isDefaultAppearance, RADIUS_OPTIONS, SIDEBAR_OPTIONS, THEME_OPTIONS } from '../lib/appearance-options';
+
+const PRESET_OPTIONS: { value: SidebarPreset; label: string }[] = [
+  { value: 'default', label: 'Default' },
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'manager', label: 'Manager' },
+];
+const PRESET_HINT: Record<SidebarPreset, string> = {
+  default: 'Everything: your work, projects, the workspace and people.',
+  minimal: 'Just your work and your projects. The rest stays one click away on the rail.',
+  manager: 'People first (directory, approvals, attendance), then projects and the workspace.',
+};
 
 function Setting({ id, label, hint, children }: { id: string; label: string; hint?: string; children: ReactNode }) {
   return (
@@ -28,7 +40,7 @@ function Setting({ id, label, hint, children }: { id: string; label: string; hin
 
 /** Settings → Appearance: theme, accent, radius, density and font. Saved to the account, applied at once. */
 export function AppearancePage() {
-  const { theme, accent, density, radius, font, sidebarCollapsed } = usePreferences();
+  const { theme, accent, density, radius, font, sidebarCollapsed, sidebarPreset } = usePreferences();
   const current: Appearance = { theme, accent, density, radius, font };
   const { update } = usePreferenceMutations();
 
@@ -99,6 +111,17 @@ export function AppearancePage() {
               value={sidebarCollapsed ? 'rail' : 'panel'}
               options={SIDEBAR_OPTIONS}
               onChange={(value) => update.mutate({ sidebarCollapsed: value === 'rail' }, { onError: (error) => toast.error(getErrorMessage(error)) })}
+            />
+          </Setting>
+
+          <Setting id="appearance-sidebar-preset" label="Sidebar layout" hint={PRESET_HINT[sidebarPreset]}>
+            <Segmented
+              className="self-start"
+              label="Sidebar layout"
+              size="md"
+              value={sidebarPreset}
+              options={PRESET_OPTIONS}
+              onChange={(value) => update.mutate({ sidebarPreset: value }, { onError: (error) => toast.error(getErrorMessage(error)) })}
             />
           </Setting>
 

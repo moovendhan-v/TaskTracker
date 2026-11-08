@@ -1,7 +1,8 @@
-import { GitMergeIcon, GitPullRequestClosedIcon, GitPullRequestIcon } from 'lucide-react';
+import { GitMergeIcon, GitPullRequestClosedIcon, GitPullRequestIcon, TriangleAlertIcon } from 'lucide-react';
 import type { PullRequestState } from '@taskflow/shared-types';
 import { cn } from '@/lib/cn';
-import { useTaskPullRequests } from '../hooks/use-integrations';
+import { Button } from '@/components/ui/button';
+import { useGithubConflicts, useResolveGithubConflict, useTaskPullRequests } from '../hooks/use-integrations';
 
 const STATE = {
   open: { icon: GitPullRequestIcon, label: 'Open', className: 'text-good' },
@@ -9,10 +10,14 @@ const STATE = {
   closed: { icon: GitPullRequestClosedIcon, label: 'Closed', className: 'text-critical' },
 } satisfies Record<PullRequestState, unknown>;
 
+const EVENT_LABEL: Record<PullRequestState, string> = { open: 'opened', merged: 'merged', closed: 'closed without merging' };
+
 /** Pull requests that mention the task, from connected GitHub repositories. Renders nothing when there are none. */
 export function PullRequestsSection({ workspaceId, taskId }: { workspaceId: string; taskId: string }) {
   const { data: links = [] } = useTaskPullRequests(workspaceId, taskId);
-  if (links.length === 0) return null;
+  const { data: conflicts = [] } = useGithubConflicts(workspaceId, taskId);
+  const resolve = useResolveGithubConflict(workspaceId, taskId);
+  if (links.length === 0 && conflicts.length === 0) return null;
   return (
     <section aria-labelledby="task-development" className="overflow-hidden rounded-xl border bg-card">
       <header className="flex h-10 items-center gap-2 border-b px-4">
@@ -22,6 +27,25 @@ export function PullRequestsSection({ workspaceId, taskId }: { workspaceId: stri
         </h3>
         <span className="font-mono text-[11px] text-subtle-foreground">{[...new Set(links.map((link) => link.repo))].join(' · ')}</span>
       </header>
+      {conflicts.map((conflict) => (
+        <div key={conflict.id} role="group" aria-label={`GitHub conflict for pull request #${conflict.prNumber}`} className="grid gap-2 border-b border-warning/40 bg-warning/5 px-4 py-3 text-sm">
+          <p className="flex items-start gap-2">
+            <TriangleAlertIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-warning" />
+            <span>
+              Pull request <span className="font-mono text-[12px]">#{conflict.prNumber}</span> was {EVENT_LABEL[conflict.event]}, which would move this task to <span className="font-medium">{conflict.wantedStatus.name}</span>, but
+              it was changed here since. Sync left it as it is.
+            </span>
+          </p>
+          <div className="flex flex-wrap gap-2 pl-6">
+            <Button size="sm" disabled={resolve.isPending} onClick={() => resolve.mutate({ conflictId: conflict.id, useGithub: true })}>
+              Use GitHub&rsquo;s: {conflict.wantedStatus.name}
+            </Button>
+            <Button size="sm" variant="outline" disabled={resolve.isPending} onClick={() => resolve.mutate({ conflictId: conflict.id, useGithub: false })}>
+              Keep it as it is
+            </Button>
+          </div>
+        </div>
+      ))}
       <ul className="divide-y">
         {links.map((link) => {
           const state = STATE[link.state];

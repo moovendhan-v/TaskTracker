@@ -66,3 +66,20 @@ export function taskReferences(prefix: string, ...texts: readonly (string | null
   }
   return [...numbers];
 }
+
+/**
+ * A GitHub event that would have moved a task someone had already moved by hand in
+ * TaskFlow (E2). Sync leaves the task alone and asks: use GitHub's status, or keep ours.
+ */
+export interface GithubSyncConflictResponse {
+  id: string;
+  taskId: string;
+  prNumber: number;
+  prTitle: string;
+  prUrl: string;
+  /** What happened on GitHub. */
+  event: PullRequestState;
+  /** The status the mapping would have set. */
+  wantedStatus: { id: string; name: string; color: string };
+  createdAt: string;
+}

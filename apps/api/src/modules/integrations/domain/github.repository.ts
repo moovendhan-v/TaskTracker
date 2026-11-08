@@ -1,4 +1,4 @@
-import type { GithubInboxPullRequestResponse, GithubSyncEventResponse, GithubSyncOutcome } from '@taskflow/shared-types';
+import type { GithubInboxPullRequestResponse, GithubSyncConflictResponse, GithubSyncEventResponse, GithubSyncOutcome, PullRequestState } from '@taskflow/shared-types';
 import type { GithubConnection, NewGithubConnection, PullRequestLink, PullRequestLinkInput } from './github.js';
 
 export abstract class GithubRepository {
@@ -23,4 +23,13 @@ export abstract class GithubRepository {
   abstract listInbox(workspaceId: string, limit: number): Promise<GithubInboxPullRequestResponse[]>;
   abstract findInboxItem(workspaceId: string, id: string): Promise<GithubInboxPullRequestResponse | null>;
   abstract deleteInboxItem(workspaceId: string, id: string): Promise<boolean>;
+
+  /** The status sync last left a task in for this pull request; null before the first sync. */
+  abstract syncedStatus(workspaceId: string, connectionId: string, taskId: string, prNumber: number): Promise<string | null>;
+  abstract setSyncedStatus(workspaceId: string, connectionId: string, taskId: string, prNumber: number, statusId: string): Promise<void>;
+  /** One open conflict per task and pull request: a newer event replaces the older one. */
+  abstract upsertConflict(conflict: { workspaceId: string; connectionId: string; taskId: string; prNumber: number; prTitle: string; prUrl: string; event: PullRequestState; wantedStatusId: string }): Promise<void>;
+  abstract listConflictsForTask(workspaceId: string, taskId: string): Promise<GithubSyncConflictResponse[]>;
+  abstract findConflict(workspaceId: string, id: string): Promise<(GithubSyncConflictResponse & { connectionId: string }) | null>;
+  abstract deleteConflict(workspaceId: string, id: string): Promise<boolean>;
 }

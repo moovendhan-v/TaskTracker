@@ -182,4 +182,45 @@ describe('GitHub integration', () => {
     expect(left).not.toContain(30);
     expect(left).not.toContain(31);
   });
+
+  it('leaves a conflict card instead of overwriting a task moved by hand, and settles it either way', async () => {
+    const CONFLICTS = 'query($w: ID!, $t: ID!) { githubConflicts(workspaceId: $w, taskId: $t) { id prNumber event wantedStatus { name } } }';
+    const RESOLVE = 'mutation($w: ID!, $c: ID!, $g: Boolean!) { resolveGithubConflict(workspaceId: $w, conflictId: $c, useGithub: $g) { status { name } } }';
+    const MOVE = 'mutation($w: ID!, $t: ID!, $s: ID!) { updateTask(workspaceId: $w, taskId: $t, input: { statusId: $s }) { id } }';
+    const { createTask: other } = await ws.owner.data<{ createTask: { id: string; number: number } }>(
+      'mutation($w: ID!, $l: ID!) { createTask(workspaceId: $w, listId: $l, input: { title: "Slow export" }) { id number } }',
+      vars({ l: ws.listId }),
+    );
+    const pr = (action: string, extra: Record<string, unknown> = {}) => ({ ...pullRequest(action, extra), pull_request: { ...pullRequest(action, extra).pull_request, number: 31, title: `TF-${other.number}: speed up export`, ...extra } });
+    const status = async () => (await ws.owner.data<{ task: { status: { name: string } } }>(TASK, vars({ t: other.id }))).task.status.name;
+    const conflicts = async (user: TestUser) => (await user.data<{ githubConflicts: { id: string; prNumber: number; event: string; wantedStatus: { name: string } }[] }>(CONFLICTS, vars({ t: other.id }))).githubConflicts;
+
+    await deliver(pr('opened'));
+    expect(await status()).toBe('In review');
+    // Someone moves it back by hand; then the pull request merges.
+    await ws.owner.data(MOVE, vars({ t: other.id, s: ws.statuses['In progress'] }));
+    await deliver(pr('closed', { state: 'closed', merged: true }));
+    expect(await status()).toBe('In progress');
+    const [card] = await conflicts(member);
+    expect(card).toMatchObject({ prNumber: 31, event: 'merged', wantedStatus: { name: 'Done' } });
+    expect((await ws.owner.data<{ githubSyncLog: { detail: string }[] }>('query($w: ID!, $c: ID!) { githubSyncLog(workspaceId: $w, connectionId: $c) { detail } }', vars({ c: connection.id }))).githubSyncLog[0]!.detail).toMatch(/1 left as a conflict/);
+
+    // Keep TaskFlow's: nothing moves, and the card goes.
+    expect((await member.data<{ resolveGithubConflict: { status: { name: string } } }>(RESOLVE, vars({ c: card!.id, g: false }))).resolveGithubConflict.status.name).toBe('In progress');
+    expect(await conflicts(member)).toEqual([]);
+    // From then on sync treats that as its own: the next event moves it without asking.
+    await deliver(pr('reopened', { state: 'open', merged: false }));
+    expect(await status()).toBe('In review');
+
+    // Moved by hand again, merged again: this time use GitHub's.
+    await ws.owner.data(MOVE, vars({ t: other.id, s: ws.statuses['To do'] }));
+    await deliver(pr('closed', { state: 'closed', merged: true }));
+    const [again] = await conflicts(ws.owner);
+    const outsider = await TestUser.signUp('GitHub outsider');
+    expect((await outsider.error(RESOLVE, vars({ c: again!.id, g: true }))).code).toBe('NOT_FOUND');
+    expect((await ws.owner.data<{ resolveGithubConflict: { status: { name: string } } }>(RESOLVE, vars({ c: again!.id, g: true }))).resolveGithubConflict.status.name).toBe('Done');
+    expect((await ws.owner.error(RESOLVE, vars({ c: again!.id, g: true }))).code).toBe('NOT_FOUND');
+    const audit = (await ws.owner.data<{ workspaceAuditLog: { items: { action: string }[] } }>('query($w: ID!) { workspaceAuditLog(workspaceId: $w) { items { action } } }', vars())).workspaceAuditLog.items.filter((entry) => entry.action === 'github.conflict.resolve');
+    expect(audit).toHaveLength(2);
+  });
 });

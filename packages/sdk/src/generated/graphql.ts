@@ -796,6 +796,7 @@ export type UpdatePreferencesInput = {
   font?: string | null | undefined;
   radius?: string | null | undefined;
   sidebarCollapsed?: boolean | null | undefined;
+  sidebarPreset?: string | null | undefined;
   sidebarWidth?: number | null | undefined;
   taskDetailMode?: string | null | undefined;
   theme?: string | null | undefined;
@@ -1522,7 +1523,7 @@ export type FormSchemaFieldsFragment = { name: string, fields: Array<{ name: str
 
 export type PolicyFieldsFragment = { id: string, name: string, description: string, managed: boolean, attachedRoleCount: number, document: { statements: Array<{ effect: PolicyEffect, permissions: Array<string> | null, fields: Array<string> | null, spaces: Array<string> | null, notSpaces: Array<string> | null }> } };
 
-export type PreferencesFieldsFragment = { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> };
+export type PreferencesFieldsFragment = { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> };
 
 export type DepartmentsQueryVariables = Exact<{
   workspaceId: string;
@@ -1807,6 +1808,23 @@ export type DismissInboxPullRequestMutationVariables = Exact<{
 
 
 export type DismissInboxPullRequestMutation = { dismissInboxPullRequest: boolean };
+
+export type GithubConflictsQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type GithubConflictsQuery = { githubConflicts: Array<{ id: string, taskId: string, prNumber: number, prTitle: string, prUrl: string, event: string, createdAt: string, wantedStatus: { id: string, name: string, color: string } }> };
+
+export type ResolveGithubConflictMutationVariables = Exact<{
+  workspaceId: string;
+  conflictId: string;
+  useGithub: boolean;
+}>;
+
+
+export type ResolveGithubConflictMutation = { resolveGithubConflict: { id: string, status: { id: string, name: string } } };
 
 export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, pinned: boolean | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> };
 
@@ -2163,54 +2181,54 @@ export type SetRoleInlinePolicyMutation = { setRoleInlinePolicy: { id: string, n
 export type MyPreferencesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MyPreferencesQuery = { myPreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type MyPreferencesQuery = { myPreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type UpdatePreferencesMutationVariables = Exact<{
   input: UpdatePreferencesInput;
 }>;
 
 
-export type UpdatePreferencesMutation = { updatePreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type UpdatePreferencesMutation = { updatePreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type SaveTableLayoutMutationVariables = Exact<{
   input: TableLayoutInput;
 }>;
 
 
-export type SaveTableLayoutMutation = { saveTableLayout: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type SaveTableLayoutMutation = { saveTableLayout: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type ResetTableLayoutMutationVariables = Exact<{
   key: string;
 }>;
 
 
-export type ResetTableLayoutMutation = { resetTableLayout: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type ResetTableLayoutMutation = { resetTableLayout: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type SaveViewMutationVariables = Exact<{
   input: SaveViewInput;
 }>;
 
 
-export type SaveViewMutation = { saveView: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type SaveViewMutation = { saveView: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type DeleteViewMutationVariables = Exact<{
   viewId: string;
 }>;
 
 
-export type DeleteViewMutation = { deleteView: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type DeleteViewMutation = { deleteView: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type SetTabsMutationVariables = Exact<{
   input: SetTabsInput;
 }>;
 
 
-export type SetTabsMutation = { setTabs: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type SetTabsMutation = { setTabs: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type ResetPreferencesMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ResetPreferencesMutation = { resetPreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
+export type ResetPreferencesMutation = { resetPreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
 export type ResourceSchemaQueryVariables = Exact<{
   workspaceId: string;
@@ -3296,6 +3314,7 @@ export const PreferencesFieldsFragmentDoc = new TypedDocumentString(`
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat
@@ -5524,6 +5543,39 @@ export const DismissInboxPullRequestDocument = new TypedDocumentString(`
   dismissInboxPullRequest(workspaceId: $workspaceId, itemId: $itemId)
 }
     `) as unknown as TypedDocumentString<DismissInboxPullRequestMutation, DismissInboxPullRequestMutationVariables>;
+export const GithubConflictsDocument = new TypedDocumentString(`
+    query GithubConflicts($workspaceId: ID!, $taskId: ID!) {
+  githubConflicts(workspaceId: $workspaceId, taskId: $taskId) {
+    id
+    taskId
+    prNumber
+    prTitle
+    prUrl
+    event
+    wantedStatus {
+      id
+      name
+      color
+    }
+    createdAt
+  }
+}
+    `) as unknown as TypedDocumentString<GithubConflictsQuery, GithubConflictsQueryVariables>;
+export const ResolveGithubConflictDocument = new TypedDocumentString(`
+    mutation ResolveGithubConflict($workspaceId: ID!, $conflictId: ID!, $useGithub: Boolean!) {
+  resolveGithubConflict(
+    workspaceId: $workspaceId
+    conflictId: $conflictId
+    useGithub: $useGithub
+  ) {
+    id
+    status {
+      id
+      name
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<ResolveGithubConflictMutation, ResolveGithubConflictMutationVariables>;
 export const MyLayoutDocument = new TypedDocumentString(`
     query MyLayout($workspaceId: ID!, $pageKey: String!) {
   myLayout(workspaceId: $workspaceId, pageKey: $pageKey) {
@@ -6344,6 +6396,7 @@ export const MyPreferencesDocument = new TypedDocumentString(`
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat
@@ -6399,6 +6452,7 @@ export const UpdatePreferencesDocument = new TypedDocumentString(`
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat
@@ -6454,6 +6508,7 @@ export const SaveTableLayoutDocument = new TypedDocumentString(`
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat
@@ -6509,6 +6564,7 @@ export const ResetTableLayoutDocument = new TypedDocumentString(`
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat
@@ -6564,6 +6620,7 @@ export const SaveViewDocument = new TypedDocumentString(`
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat
@@ -6619,6 +6676,7 @@ export const DeleteViewDocument = new TypedDocumentString(`
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat
@@ -6674,6 +6732,7 @@ export const SetTabsDocument = new TypedDocumentString(`
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat
@@ -6729,6 +6788,7 @@ export const ResetPreferencesDocument = new TypedDocumentString(`
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat

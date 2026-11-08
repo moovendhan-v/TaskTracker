@@ -135,6 +135,7 @@ fragment PreferencesFields on Preferences {
   font
   sidebarCollapsed
   sidebarWidth
+  sidebarPreset
   defaultTaskView
   taskDetailMode
   dateFormat

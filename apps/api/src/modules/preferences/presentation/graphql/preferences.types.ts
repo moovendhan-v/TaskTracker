@@ -11,6 +11,7 @@ import {
   PREFERENCE_LIMITS,
   RADII,
   TASK_DETAIL_MODES,
+  SIDEBAR_PRESETS,
   TASK_VIEWS,
   THEMES,
   TIME_FORMATS,
@@ -23,6 +24,7 @@ import {
   type SavedView,
   type TableLayout,
   type TaskDetailMode,
+  type SidebarPreset,
   type TaskView,
   type Theme,
   type TimeFormat,
@@ -80,6 +82,7 @@ export class PreferencesGql implements UserPreferences {
   @Field(() => String) font: Font;
   @Field() sidebarCollapsed: boolean;
   @Field(() => Int) sidebarWidth: number;
+  @Field(() => String, { description: 'default, minimal or manager' }) sidebarPreset: SidebarPreset;
   @Field(() => String) defaultTaskView: TaskView;
   @Field(() => String) taskDetailMode: TaskDetailMode;
   @Field(() => String) dateFormat: DateFormat;
@@ -105,6 +108,7 @@ export class UpdatePreferencesInput implements Partial<PreferenceSettings> {
   @Min(PREFERENCE_LIMITS.sidebarWidthMin)
   @Max(PREFERENCE_LIMITS.sidebarWidthMax)
   sidebarWidth?: number;
+  @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(SIDEBAR_PRESETS) sidebarPreset?: SidebarPreset;
   @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(TASK_VIEWS) defaultTaskView?: TaskView;
   @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(TASK_DETAIL_MODES) taskDetailMode?: TaskDetailMode;
   @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(DATE_FORMATS) dateFormat?: DateFormat;

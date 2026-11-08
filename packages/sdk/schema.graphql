@@ -1039,6 +1039,12 @@ type FormSchema {
   name: String!
 }
 
+type GithubConflictStatus {
+  color: String!
+  id: ID!
+  name: String!
+}
+
 type GithubConnection {
   createdAt: String!
 
@@ -1086,6 +1092,24 @@ type GithubSync {
 
   """Move linked tasks here when a pull request opens"""
   onOpened: StatusCategory
+}
+
+"""
+A GitHub event that would have moved a task someone moved by hand in TaskFlow; sync waits for a person to settle it
+"""
+type GithubSyncConflict {
+  createdAt: String!
+
+  """open, merged or closed"""
+  event: String!
+  id: ID!
+  prNumber: Int!
+  prTitle: String!
+  prUrl: String!
+  taskId: ID!
+
+  """The status the mapping would have set"""
+  wantedStatus: GithubConflictStatus!
 }
 
 """What one webhook delivery did"""
@@ -1558,6 +1582,11 @@ type Mutation {
   resetTableLayout(key: String!): Preferences!
 
   """
+  Settles a conflict: useGithub moves the task to GitHub's status, otherwise it stays as it is. Needs edit rights on the task
+  """
+  resolveGithubConflict(conflictId: ID!, useGithub: Boolean!, workspaceId: ID!): Task!
+
+  """
   The secret this automation signs webhook calls with. Audited; rotate makes a new one
   """
   revealAutomationWebhookSecret(rotate: Boolean! = false, ruleId: ID!, workspaceId: ID!): String!
@@ -1803,6 +1832,9 @@ type Preferences {
   radius: String!
   savedViews: [SavedView!]!
   sidebarCollapsed: Boolean!
+
+  """default, minimal or manager"""
+  sidebarPreset: String!
   sidebarWidth: Int!
   tables: [TableLayout!]!
   tabs: [WorkspaceTab!]!
@@ -1942,6 +1974,11 @@ type Query {
 
   """Validation rules for the named forms, or all of them"""
   formSchemas(names: [String!]): [FormSchema!]!
+
+  """
+  GitHub moves left for a person because the task was changed in TaskFlow
+  """
+  githubConflicts(taskId: ID!, workspaceId: ID!): [GithubSyncConflict!]!
   githubConnections(workspaceId: ID!): [GithubConnection!]!
 
   """Pull requests that mention no task"""
@@ -2797,6 +2834,7 @@ input UpdatePreferencesInput {
   font: String
   radius: String
   sidebarCollapsed: Boolean
+  sidebarPreset: String
   sidebarWidth: Int
   taskDetailMode: String
   theme: String

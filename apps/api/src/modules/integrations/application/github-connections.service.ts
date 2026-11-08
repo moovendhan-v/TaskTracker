@@ -9,7 +9,9 @@ import {
   type GithubConnectionResponse,
   type GithubInboxPullRequestResponse,
   type GithubSecretResponse,
+  type GithubSyncConflictResponse,
   type GithubSyncEventResponse,
+  type TaskResponse,
   type PullRequestLinkResponse,
   type SaveGithubConnectionRequest,
 } from '@taskflow/shared-types';
@@ -75,6 +77,34 @@ export class GithubConnectionsService {
     await this.github.deleteInboxItem(access.workspaceId, item.id);
     await this.auditLogger.record(actor, { action: 'github.pull_request.link', targetType: 'task', targetId: task.id, workspaceId: access.workspaceId, metadata: { repo: item.repo, number: item.number, taskNumber } });
     return item;
+  }
+
+  /** GitHub moves that were left for a person because the task was changed in TaskFlow. */
+  async conflictsForTask(workspaceId: string, taskId: string): Promise<GithubSyncConflictResponse[]> {
+    await this.tasksService.get(workspaceId, taskId);
+    return this.github.listConflictsForTask(workspaceId, taskId);
+  }
+
+  /**
+   * Settles a conflict: use GitHub's status (moves the task, as you) or keep the task as it
+   * is. Either way sync now treats the task's status as its own, so the next event moves it
+   * again. Needs edit rights on the task; audited.
+   */
+  async resolveConflict(actor: Actor, access: WorkspaceAccess, conflictId: string, useGithub: boolean): Promise<TaskResponse> {
+    const conflict = found(await this.github.findConflict(access.workspaceId, conflictId), 'Conflict');
+    const task = await this.tasksService.get(access.workspaceId, conflict.taskId);
+    if (!canInSpace(access, task.spaceId, 'task.update')) throw DomainError.forbidden('You need to be able to edit this task to settle it');
+    const settled = useGithub && task.status.id !== conflict.wantedStatus.id ? await this.tasksService.update(actor, access, task.id, { statusId: conflict.wantedStatus.id }) : task;
+    await this.github.setSyncedStatus(access.workspaceId, conflict.connectionId, task.id, conflict.prNumber, settled.status.id);
+    await this.github.deleteConflict(access.workspaceId, conflict.id);
+    await this.auditLogger.record(actor, {
+      action: 'github.conflict.resolve',
+      targetType: 'task',
+      targetId: task.id,
+      workspaceId: access.workspaceId,
+      metadata: { prNumber: conflict.prNumber, kept: useGithub ? 'github' : 'taskflow', status: settled.status.name },
+    });
+    return settled;
   }
 
   async dismissFromInbox(actor: Actor, access: WorkspaceAccess, itemId: string): Promise<boolean> {

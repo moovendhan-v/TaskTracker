@@ -26,6 +26,9 @@ export type TaskView = (typeof TASK_VIEWS)[number];
 
 /** Where a task opens: a centred modal, a side panel or a full page. */
 export const TASK_DETAIL_MODES = ['modal', 'side', 'page'] as const;
+/** Which sidebar layout someone uses (B5): everything, the essentials, or people and dashboards first. */
+export const SIDEBAR_PRESETS = ['default', 'minimal', 'manager'] as const;
+export type SidebarPreset = (typeof SIDEBAR_PRESETS)[number];
 export type TaskDetailMode = (typeof TASK_DETAIL_MODES)[number];
 
 export const DATE_FORMATS = ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'] as const;
@@ -91,6 +94,7 @@ export interface UserPreferences {
   font: Font;
   sidebarCollapsed: boolean;
   sidebarWidth: number;
+  sidebarPreset: SidebarPreset;
   defaultTaskView: TaskView;
   taskDetailMode: TaskDetailMode;
   dateFormat: DateFormat;
@@ -110,6 +114,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   font: 'geist',
   sidebarCollapsed: false,
   sidebarWidth: 260,
+  sidebarPreset: 'default',
   defaultTaskView: 'list',
   taskDetailMode: 'modal',
   dateFormat: 'MM/DD/YYYY',
@@ -147,6 +152,7 @@ export function readPreferences(stored: unknown): UserPreferences {
     font: oneOf(FONTS, data.font, d.font),
     sidebarCollapsed: typeof data.sidebarCollapsed === 'boolean' ? data.sidebarCollapsed : d.sidebarCollapsed,
     sidebarWidth: clamp(data.sidebarWidth, PREFERENCE_LIMITS.sidebarWidthMin, PREFERENCE_LIMITS.sidebarWidthMax, d.sidebarWidth),
+    sidebarPreset: oneOf(SIDEBAR_PRESETS, data.sidebarPreset, d.sidebarPreset),
     defaultTaskView: oneOf(TASK_VIEWS, data.defaultTaskView, d.defaultTaskView),
     taskDetailMode: oneOf(TASK_DETAIL_MODES, data.taskDetailMode, d.taskDetailMode),
     dateFormat: oneOf(DATE_FORMATS, data.dateFormat, d.dateFormat),

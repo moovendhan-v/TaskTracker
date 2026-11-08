@@ -47,3 +47,21 @@ export function useGithubMutations(workspaceId: string) {
     disconnect: useMutation({ mutationFn: (connectionId: string) => integrationsApi.disconnectGithub(workspaceId, connectionId), onSuccess: invalidate, onError }),
   };
 }
+
+/** Conflict cards for a task: GitHub events sync didn't apply because the task was moved by hand. */
+export function useGithubConflicts(workspaceId: string, taskId: string) {
+  return useQuery({ queryKey: [...queryKeys.taskPullRequests(workspaceId, taskId), 'conflicts'], queryFn: () => integrationsApi.conflicts(workspaceId, taskId) });
+}
+
+export function useResolveGithubConflict(workspaceId: string, taskId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ conflictId, useGithub }: { conflictId: string; useGithub: boolean }) => integrationsApi.resolveConflict(workspaceId, conflictId, useGithub),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.taskPullRequests(workspaceId, taskId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.task(workspaceId, taskId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tasksRoot(workspaceId) });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+}

@@ -663,6 +663,35 @@ test('adds a section heading and stacks two blocks as tabs in one slot', async (
   await expect(page.getByRole('heading', { name: 'Created vs closed', exact: true })).toBeVisible();
 });
 
+test('drags widgets in from the tray while arranging, and the others make room', async () => {
+  await page.getByRole('button', { name: /Arrange/ }).click();
+  const tray = page.getByRole('complementary', { name: 'Widgets' });
+  await expect(tray).toBeVisible();
+  const sections = page.getByRole('heading', { name: 'Section', level: 2 });
+  const before = await sections.count();
+  // Click: into the first gap.
+  await tray.getByRole('button', { name: 'Place Section' }).click();
+  await expect(sections).toHaveCount(before + 1);
+  // Drag: onto the empty rows under the blocks.
+  // (The hint itself lets the pointer through to the grid behind it, so drag by coordinates.)
+  await page.getByText('Drag a widget here').evaluate((element) => element.scrollIntoView({ block: 'center' }));
+  const target = (await page.getByText('Drag a widget here').boundingBox())!;
+  await tray.getByRole('button', { name: 'Place Section' }).hover();
+  await page.mouse.down();
+  await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
+  // The others move aside under a still pointer; a real browser keeps sending dragover, headless needs a nudge.
+  await page.mouse.move(target.x + target.width / 2 + 2, target.y + target.height / 2 + 1, { steps: 2 });
+  await page.mouse.up();
+  await expect(sections).toHaveCount(before + 2);
+  await expect(page.getByRole('status').filter({ hasText: 'Section added' })).toHaveCount(1);
+  // Done hides the tray; undo the two new sections so the rest of the journey is unchanged.
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(sections).toHaveCount(before);
+  await page.getByRole('button', { name: /^Done/ }).click();
+  await expect(tray).toBeHidden();
+});
+
 test('builds an automation flow with an if / else branch and gets it back', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByText('Ops', { exact: true }).click();
   await page.goto(page.url().replace(/\/p\/([^/?]+).*/, '/p/$1/automations'));
@@ -853,6 +882,26 @@ test('sets how long chat is kept, and chat says so', async () => {
   await expect(page.getByText('Chat is kept for 1 year')).toBeVisible();
   await page.getByRole('navigation', { name: 'Apps' }).getByRole('link', { name: /^Chat/ }).click();
   await expect(page.getByText('Chat is kept for 1 year, then removed.')).toBeVisible();
+});
+
+test('switches the sidebar to the Minimal and Manager layouts', async () => {
+  await page.getByRole('link', { name: 'Appearance' }).click();
+  const presets = page.getByRole('radiogroup', { name: 'Sidebar layout' });
+  const sidebar = page.getByRole('navigation', { name: 'Main' });
+  await presets.getByRole('radio', { name: 'Minimal' }).click();
+  await expect(sidebar.getByRole('link', { name: 'Members' })).toHaveCount(0);
+  await expect(sidebar.getByRole('link', { name: 'Timesheets' })).toHaveCount(0);
+  await expect(sidebar.getByRole('link', { name: 'My tasks' })).toBeVisible();
+  // Manager: the people section comes before the projects.
+  await presets.getByRole('radio', { name: 'Manager' }).click();
+  await expect(sidebar.getByRole('link', { name: 'Members' })).toBeVisible();
+  const order = await sidebar.locator('h3, [role="heading"], button, a').allInnerTexts();
+  expect(order.findIndex((text) => /Directory|Time off/.test(text))).toBeLessThan(order.findIndex((text) => /Members/.test(text)));
+  // Saved with the account, so it survives a reload.
+  await page.reload();
+  await expect(page.getByRole('radiogroup', { name: 'Sidebar layout' }).getByRole('radio', { name: 'Manager' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('radiogroup', { name: 'Sidebar layout' }).getByRole('radio', { name: 'Default' }).click();
+  await expect(sidebar.getByRole('link', { name: 'Timesheets' })).toBeVisible();
 });
 
 test('fits a phone: bottom tabs, a menu drawer and a bottom-sheet new task', async () => {

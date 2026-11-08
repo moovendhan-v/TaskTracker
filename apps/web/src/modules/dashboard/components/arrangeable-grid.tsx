@@ -5,14 +5,16 @@ import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import type { BlockState } from '@/components/kit/block-state';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
+import { cn } from '@/lib/cn';
 import { usePermissions } from '@/modules/workspaces';
 import type { ArrangeableLayout } from '../hooks/use-layout';
-import { addItem, collapseSections, removeItem } from '../lib/grid';
+import { addItem, collapseSections, moveItem, removeItem } from '../lib/grid';
 import { BlockConfigDrawer } from './block-config-drawer';
 import { BlockGrid } from './block-grid';
 import { ConfiguredBlock, type BlockScope } from './configured-block';
 import { LayoutMenu } from './layout-menu';
 import { BlockLibrary } from './block-library';
+import { WidgetTray } from './widget-tray';
 import { HOME_REGISTRY, type BlockRegistry } from './home-blocks';
 
 function isEditable(target: EventTarget | null): boolean {
@@ -67,6 +69,19 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
   };
   // Stacking: the library opens for one slot and adds the picked block as a tab there.
   const [stackOn, setStackOn] = useState<string | null>(null);
+  /** A fresh id: sections can repeat, so they get the next free one. */
+  const newId = (type: string) => {
+    let id = type;
+    for (let n = 1; type === SECTION_BLOCK && layout.items?.some((item) => item.id === id); n++) id = `${type}-${n}`;
+    return id;
+  };
+  /** A widget dropped from the tray lands on the cell it was let go over; the others make room. */
+  const dropAt = (type: string, at: { x: number; y: number }) => {
+    const block = registry.blocks[type];
+    if (!layout.items || !block) return;
+    const id = newId(type);
+    layout.setItems(moveItem([...layout.items, { id, type, x: at.x, y: at.y, ...block.size }], id, at.x, at.y, fixed));
+  };
   const add = (type: string) => {
     const block = registry.blocks[type];
     if (!layout.items || !block) return;
@@ -76,10 +91,7 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
       setLibrary(false);
       return;
     }
-    // Sections can repeat, so they get the next free id.
-    let id = type;
-    for (let n = 1; type === SECTION_BLOCK && layout.items.some((item) => item.id === id); n++) id = `${type}-${n}`;
-    layout.setItems(addItem(layout.items, { id, type, ...block.size }, fixed));
+    layout.setItems(addItem(layout.items, { id: newId(type), type, ...block.size }, fixed));
     setLibrary(false);
   };
   const unstack = (item: LayoutItem, type: string) => {
@@ -175,40 +187,44 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
             ) : null}
           </div>
         ) : (
-          <BlockGrid
-            items={shownItems ?? layout.items}
-            arranging={arranging}
-            onChange={(items) => layout.setItems(items)}
-            onRemove={remove}
-            fixed={fixed}
-            titleOf={(item) => blockOf(item)?.title ?? 'Block'}
-            renderBlock={(item) => {
-              const block = blockOf(item);
-              if (!block) return null;
-              return (
-                <ConfiguredBlock
-                  item={item}
-                  block={block}
-                  data={data}
-                  state={state}
-                  arranging={arranging && !fixed.has(item.id)}
-                  canArrange={canArrange && !fixed.has(item.id)}
-                  pinnedNote={fixed.has(item.id) ? 'Pinned by your workspace' : item.pinned && managesLayouts && personal ? 'Pinned for everyone once published' : undefined}
-                  fold={item.type === SECTION_BLOCK ? { collapsed: collapsed.has(item.id), hidden: folded?.hidden.get(item.id) ?? 0, onToggle: () => toggleSection(item.id) } : undefined}
-                  onTogglePin={personal && managesLayouts && canArrange ? () => layout.items && layout.setItems(layout.items.map((other) => (other.id === item.id ? cleanLayoutItem({ ...other, pinned: !other.pinned }) : other))) : undefined}
-                  scope={scope}
-                  onConfigure={() => setConfiguring(item.id)}
-                  onRemove={() => remove(item)}
-                  registry={registry}
-                  onStack={canArrange && !fixed.has(item.id) && canStack(item.type) && (item.tabs?.length ?? 0) < LAYOUT_LIMITS.tabsMax ? () => {
-                    setStackOn(item.id);
-                    setLibrary(true);
-                  } : undefined}
-                  onUnstack={(type) => unstack(item, type)}
-                />
-              );
-            }}
-          />
+          <div className={cn('grid gap-5', arranging && 'lg:grid-cols-[minmax(0,1fr)_260px]')}>
+            <BlockGrid
+              items={shownItems ?? layout.items}
+              onDropNew={dropAt}
+              arranging={arranging}
+              onChange={(items) => layout.setItems(items)}
+              onRemove={remove}
+              fixed={fixed}
+              titleOf={(item) => blockOf(item)?.title ?? 'Block'}
+              renderBlock={(item) => {
+                const block = blockOf(item);
+                if (!block) return null;
+                return (
+                  <ConfiguredBlock
+                    item={item}
+                    block={block}
+                    data={data}
+                    state={state}
+                    arranging={arranging && !fixed.has(item.id)}
+                    canArrange={canArrange && !fixed.has(item.id)}
+                    pinnedNote={fixed.has(item.id) ? 'Pinned by your workspace' : item.pinned && managesLayouts && personal ? 'Pinned for everyone once published' : undefined}
+                    fold={item.type === SECTION_BLOCK ? { collapsed: collapsed.has(item.id), hidden: folded?.hidden.get(item.id) ?? 0, onToggle: () => toggleSection(item.id) } : undefined}
+                    onTogglePin={personal && managesLayouts && canArrange ? () => layout.items && layout.setItems(layout.items.map((other) => (other.id === item.id ? cleanLayoutItem({ ...other, pinned: !other.pinned }) : other))) : undefined}
+                    scope={scope}
+                    onConfigure={() => setConfiguring(item.id)}
+                    onRemove={() => remove(item)}
+                    registry={registry}
+                    onStack={canArrange && !fixed.has(item.id) && canStack(item.type) && (item.tabs?.length ?? 0) < LAYOUT_LIMITS.tabsMax ? () => {
+                      setStackOn(item.id);
+                      setLibrary(true);
+                    } : undefined}
+                    onUnstack={(type) => unstack(item, type)}
+                  />
+                );
+              }}
+            />
+            {arranging ? <div className="max-lg:hidden"><WidgetTray registry={registry} placed={placed} onAdd={add} /></div> : null}
+          </div>
         )
       ) : null}
       {canArrange && configuringItem ? (

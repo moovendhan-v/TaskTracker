@@ -9,6 +9,7 @@ import {
   type GithubConnectionResponse,
   type GithubSecretResponse,
   type GithubSyncSettings,
+  type GithubSyncConflictResponse,
   type GithubSyncEventResponse,
   type GithubSyncOutcome,
   type GithubInboxPullRequestResponse,
@@ -110,4 +111,23 @@ export class ConnectGithubInput implements SaveGithubConnectionRequest {
 export class UpdateGithubConnectionInput implements Omit<SaveGithubConnectionRequest, 'repo'> {
   @Field({ nullable: true }) @IsOmittable() @IsString() @Matches(new RegExp(TASK_PREFIX_PATTERN), { message: 'Letters and digits, starting with a letter, like TF' }) taskPrefix?: string;
   @Field(() => GithubSyncInput, { nullable: true }) @IsOmittable() @ValidateNested() @Type(() => GithubSyncInput) sync?: GithubSyncInput;
+}
+
+@ObjectType('GithubConflictStatus')
+export class GithubConflictStatusGql {
+  @Field(() => ID) id: string;
+  @Field() name: string;
+  @Field() color: string;
+}
+
+@ObjectType('GithubSyncConflict', { description: 'A GitHub event that would have moved a task someone moved by hand in TaskFlow; sync waits for a person to settle it' })
+export class GithubSyncConflictGql implements GithubSyncConflictResponse {
+  @Field(() => ID) id: string;
+  @Field(() => ID) taskId: string;
+  @Field(() => Int) prNumber: number;
+  @Field() prTitle: string;
+  @Field() prUrl: string;
+  @Field(() => String, { description: 'open, merged or closed' }) event: PullRequestState;
+  @Field(() => GithubConflictStatusGql, { description: 'The status the mapping would have set' }) wantedStatus: GithubConflictStatusGql;
+  @Field() createdAt: string;
 }
