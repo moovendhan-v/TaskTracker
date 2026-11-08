@@ -1,3 +1,4 @@
+import type { PullRequestState } from '@taskflow/shared-types';
 import type { SaveGithubConnectionRequest } from '@taskflow/shared-types';
 import {
   ConnectGithubDocument,
@@ -9,6 +10,8 @@ import {
   GithubConnectionsDocument,
   RotateGithubSecretDocument,
   TaskPullRequestsDocument,
+  GithubConflictsDocument,
+  ResolveGithubConflictDocument,
   UpdateGithubConnectionDocument,
 } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
@@ -25,4 +28,8 @@ export const integrationsApi = {
   linkInbox: async (workspaceId: string, itemId: string, taskNumber: number) => (await graphql(LinkInboxPullRequestDocument, { workspaceId, itemId, taskNumber })).linkInboxPullRequest,
   dismissInbox: async (workspaceId: string, itemId: string) => (await graphql(DismissInboxPullRequestDocument, { workspaceId, itemId })).dismissInboxPullRequest,
   taskPullRequests: async (workspaceId: string, taskId: string) => (await graphql(TaskPullRequestsDocument, { workspaceId, taskId })).taskPullRequests,
+  /** GitHub moves left for a person: the task was changed in TaskFlow since sync last moved it. */
+  conflicts: async (workspaceId: string, taskId: string) =>
+    (await graphql(GithubConflictsDocument, { workspaceId, taskId })).githubConflicts.map((conflict) => ({ ...conflict, event: conflict.event as PullRequestState })),
+  resolveConflict: async (workspaceId: string, conflictId: string, useGithub: boolean) => (await graphql(ResolveGithubConflictDocument, { workspaceId, conflictId, useGithub })).resolveGithubConflict,
 };

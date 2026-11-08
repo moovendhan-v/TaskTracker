@@ -1809,6 +1809,23 @@ export type DismissInboxPullRequestMutationVariables = Exact<{
 
 export type DismissInboxPullRequestMutation = { dismissInboxPullRequest: boolean };
 
+export type GithubConflictsQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type GithubConflictsQuery = { githubConflicts: Array<{ id: string, taskId: string, prNumber: number, prTitle: string, prUrl: string, event: string, createdAt: string, wantedStatus: { id: string, name: string, color: string } }> };
+
+export type ResolveGithubConflictMutationVariables = Exact<{
+  workspaceId: string;
+  conflictId: string;
+  useGithub: boolean;
+}>;
+
+
+export type ResolveGithubConflictMutation = { resolveGithubConflict: { id: string, status: { id: string, name: string } } };
+
 export type LayoutFieldsFragment = { pageKey: string, version: number, updatedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, pinned: boolean | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> };
 
 export type MyLayoutQueryVariables = Exact<{
@@ -5526,6 +5543,39 @@ export const DismissInboxPullRequestDocument = new TypedDocumentString(`
   dismissInboxPullRequest(workspaceId: $workspaceId, itemId: $itemId)
 }
     `) as unknown as TypedDocumentString<DismissInboxPullRequestMutation, DismissInboxPullRequestMutationVariables>;
+export const GithubConflictsDocument = new TypedDocumentString(`
+    query GithubConflicts($workspaceId: ID!, $taskId: ID!) {
+  githubConflicts(workspaceId: $workspaceId, taskId: $taskId) {
+    id
+    taskId
+    prNumber
+    prTitle
+    prUrl
+    event
+    wantedStatus {
+      id
+      name
+      color
+    }
+    createdAt
+  }
+}
+    `) as unknown as TypedDocumentString<GithubConflictsQuery, GithubConflictsQueryVariables>;
+export const ResolveGithubConflictDocument = new TypedDocumentString(`
+    mutation ResolveGithubConflict($workspaceId: ID!, $conflictId: ID!, $useGithub: Boolean!) {
+  resolveGithubConflict(
+    workspaceId: $workspaceId
+    conflictId: $conflictId
+    useGithub: $useGithub
+  ) {
+    id
+    status {
+      id
+      name
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<ResolveGithubConflictMutation, ResolveGithubConflictMutationVariables>;
 export const MyLayoutDocument = new TypedDocumentString(`
     query MyLayout($workspaceId: ID!, $pageKey: String!) {
   myLayout(workspaceId: $workspaceId, pageKey: $pageKey) {

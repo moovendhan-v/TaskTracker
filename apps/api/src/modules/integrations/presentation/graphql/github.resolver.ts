@@ -6,7 +6,8 @@ import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { GithubConnectionsService } from '../../application/github-connections.service.js';
-import { ConnectGithubInput, GithubConnectionGql, GithubInboxPullRequestGql, GithubSecretGql, GithubSyncEventGql, PullRequestLinkGql, UpdateGithubConnectionInput } from './github.types.js';
+import { TaskGql } from '../../../tasks/presentation/graphql/task.types.js';
+import { ConnectGithubInput, GithubConnectionGql, GithubInboxPullRequestGql, GithubSecretGql, GithubSyncConflictGql, GithubSyncEventGql, PullRequestLinkGql, UpdateGithubConnectionInput } from './github.types.js';
 
 @Resolver(() => GithubConnectionGql)
 export class GithubResolver {
@@ -22,6 +23,24 @@ export class GithubResolver {
   @RequirePermissions('task.view')
   taskPullRequests(@WorkspaceIdArg() _workspaceId: string, @UuidArg('taskId') taskId: string, @CurrentAccess() access: WorkspaceAccess): Promise<PullRequestLinkGql[]> {
     return this.connections.linksForTask(access.workspaceId, taskId);
+  }
+
+  @Query(() => [GithubSyncConflictGql], { description: 'GitHub moves left for a person because the task was changed in TaskFlow' })
+  @RequirePermissions('task.view')
+  githubConflicts(@WorkspaceIdArg() _workspaceId: string, @UuidArg('taskId') taskId: string, @CurrentAccess() access: WorkspaceAccess): Promise<GithubSyncConflictGql[]> {
+    return this.connections.conflictsForTask(access.workspaceId, taskId);
+  }
+
+  @Mutation(() => TaskGql, { description: "Settles a conflict: useGithub moves the task to GitHub's status, otherwise it stays as it is. Needs edit rights on the task" })
+  @RequirePermissions('task.update')
+  resolveGithubConflict(
+    @WorkspaceIdArg() _workspaceId: string,
+    @UuidArg('conflictId') conflictId: string,
+    @Args('useGithub', { type: () => Boolean }) useGithub: boolean,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<TaskGql> {
+    return this.connections.resolveConflict(actor, access, conflictId, useGithub) as Promise<TaskGql>;
   }
 
   @Query(() => [GithubSyncEventGql], { description: 'What the latest webhook deliveries did, newest first' })

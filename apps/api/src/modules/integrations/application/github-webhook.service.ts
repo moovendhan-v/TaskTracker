@@ -108,8 +108,9 @@ export class GithubWebhookService {
         await this.note(connection, 'ignored: the owner left; save the connection again', { event, prNumber: pr.number });
         return 'ignored';
       }
-      const linked = await this.handlePullRequest(connection, access, pr);
-      await this.note(connection, `ok: #${pr.number} ${pr.action}, ${linked.length} linked${linked.length ? '' : ' (in the pull request inbox)'}`, { event, prNumber: pr.number, taskNumbers: linked });
+      const { linked, conflicts } = await this.handlePullRequest(connection, access, pr);
+      const asked = conflicts ? `, ${conflicts} left as ${conflicts === 1 ? 'a conflict' : 'conflicts'} (changed in TaskFlow)` : '';
+      await this.note(connection, `ok: #${pr.number} ${pr.action}, ${linked.length} linked${linked.length ? '' : ' (in the pull request inbox)'}${asked}`, { event, prNumber: pr.number, taskNumbers: linked });
       return 'ok';
     });
   }
@@ -119,7 +120,7 @@ export class GithubWebhookService {
    * numbers. A pull request that links to nothing waits in the inbox, where
    * someone can link it by hand.
    */
-  private async handlePullRequest(connection: GithubConnection, access: WorkspaceAccess, pr: PullRequestEvent): Promise<number[]> {
+  private async handlePullRequest(connection: GithubConnection, access: WorkspaceAccess, pr: PullRequestEvent): Promise<{ linked: number[]; conflicts: number }> {
     const { workspaceId } = connection;
     const trigger: AutomationTriggerType | null =
       pr.action === 'closed'
@@ -139,6 +140,7 @@ export class GithubWebhookService {
             : null;
 
     const linked: number[] = [];
+    let conflicts = 0;
     for (const number of taskReferences(connection.taskPrefix, pr.title, pr.body, pr.branch)) {
       let task: TaskResponse;
       try {
@@ -161,22 +163,39 @@ export class GithubWebhookService {
         branch: pr.branch,
       });
       linked.push(number);
-      if (category) await this.moveTo(connection, access, task, category);
+      if (category && (await this.moveTo(connection, access, task, category, pr)) === 'conflict') conflicts += 1;
       if (trigger) await this.automationEngine.run(workspaceId, [trigger], task.id, { actorId: null, pr: `${pr.title} (#${pr.number})` });
     }
     if (linked.length) await this.github.removeFromInbox(workspaceId, connection.id, pr.number);
     else await this.github.upsertInbox({ workspaceId, connectionId: connection.id, repo: connection.repo, number: pr.number, title: pr.title, url: pr.url, author: pr.author, branch: pr.branch, state: pr.state });
-    return linked;
+    return { linked, conflicts };
   }
 
-  /** Moves a task to the first status of its space with this meaning, as the connection's owner. */
-  private async moveTo(connection: GithubConnection, access: WorkspaceAccess, task: TaskResponse, category: StatusCategory): Promise<void> {
-    if (task.status.category === category) return;
+  /**
+   * Moves a task to the first status of its space with this meaning, as the connection's owner.
+   * If someone moved the task by hand since sync last did, it isn't overwritten: the move is
+   * left as a conflict for a person to settle (E2).
+   */
+  private async moveTo(connection: GithubConnection, access: WorkspaceAccess, task: TaskResponse, category: StatusCategory, pr: PullRequestEvent): Promise<'moved' | 'conflict' | 'unchanged'> {
+    const key = [connection.workspaceId, connection.id, task.id, pr.number] as const;
+    const synced = await this.github.syncedStatus(...key);
+    const remember = (statusId: string) => this.github.setSyncedStatus(...key, statusId);
+    if (task.status.category === category) {
+      await remember(task.status.id);
+      return 'unchanged';
+    }
     // An opened pull request doesn't reopen finished work.
-    if (CLOSED.includes(task.status.category) && !CLOSED.includes(category)) return;
-    if (!connection.createdById || !canInSpace(access, task.spaceId, 'task.update')) return;
+    if (CLOSED.includes(task.status.category) && !CLOSED.includes(category)) {
+      if (!synced) await remember(task.status.id);
+      return 'unchanged';
+    }
+    if (!connection.createdById || !canInSpace(access, task.spaceId, 'task.update')) return 'unchanged';
     const target = (await this.statusesService.listForSpace(connection.workspaceId, task.spaceId)).find((status) => status.category === category);
-    if (!target) return;
+    if (!target) return 'unchanged';
+    if (synced && synced !== task.status.id) {
+      await this.github.upsertConflict({ workspaceId: connection.workspaceId, connectionId: connection.id, taskId: task.id, prNumber: pr.number, prTitle: pr.title, prUrl: pr.url, event: pr.state, wantedStatusId: target.id });
+      return 'conflict';
+    }
     const actor = { userId: connection.createdById, platformRole: 'USER' as const, ip: null };
     try {
       await this.transactional.savepoint(() =>
@@ -184,9 +203,12 @@ export class GithubWebhookService {
           this.tasksService.update(actor, access, task.id, { statusId: target.id }),
         ),
       );
+      await remember(target.id);
+      return 'moved';
     } catch (error) {
       if (!(error instanceof DomainError)) throw error;
       this.logger.warn(`GitHub connection ${connection.id} could not move task ${task.id}: ${error.message}`);
+      return 'unchanged';
     }
   }
 
