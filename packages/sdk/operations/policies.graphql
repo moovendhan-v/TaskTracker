@@ -2,7 +2,7 @@ query Policies($workspaceId: ID!) { policies(workspaceId: $workspaceId) { ...Pol
 
 query ProtectedFields($workspaceId: ID!) { protectedFields(workspaceId: $workspaceId) { key label description visibleByDefault } }
 
-query MyAccess($workspaceId: ID!) { myAccess(workspaceId: $workspaceId) { permissions readableFields spaceRules { ...SpaceRuleFields } } }
+query MyAccess($workspaceId: ID!) { myAccess(workspaceId: $workspaceId) { permissions readableFields spaceRules { ...SpaceRuleFields } twoStepMissing } }
 
 mutation CreatePolicy($workspaceId: ID!, $input: SavePolicyInput!) {
   createPolicy(workspaceId: $workspaceId, input: $input) { ...PolicyFields }

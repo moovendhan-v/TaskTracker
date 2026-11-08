@@ -3,7 +3,7 @@
 
 fragment CurrentUserFields on CurrentUser { id email name image platformRole emailVerified }
 
-fragment WorkspaceFields on Workspace { id name color roleName permissions spaceRules { ...SpaceRuleFields } createdAt }
+fragment WorkspaceFields on Workspace { id name color roleName permissions spaceRules { ...SpaceRuleFields } twoStepMissing createdAt }
 
 fragment SpaceRuleFields on SpaceRule { spaces notSpaces permissions }
 

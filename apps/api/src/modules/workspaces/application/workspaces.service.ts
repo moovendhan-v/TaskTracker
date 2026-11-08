@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
-import type { CreateWorkspaceRequest, UpdateWorkspaceRequest, WorkspaceResponse } from '@taskflow/shared-types';
+import type { CreateWorkspaceRequest, TwoStepPolicyResponse, TwoStepRequirement, UpdateWorkspaceRequest, WorkspaceResponse } from '@taskflow/shared-types';
+import { AccessService } from '../../../core/access/access.service.js';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
+import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
 import { Announces } from '../../../core/events/announces.decorator.js';
 import { workspaceFromAccess } from '../../../core/runtime/change-target.js';
@@ -23,6 +25,7 @@ export class WorkspacesService {
     private readonly membersService: MembersService,
     private readonly unitOfWork: UnitOfWork,
     private readonly auditLogger: AuditLogger,
+    private readonly accessService: AccessService,
   ) {}
 
   async listForUser(userId: string): Promise<WorkspaceResponse[]> {
@@ -66,7 +69,7 @@ export class WorkspacesService {
 
   async get(access: WorkspaceAccess, userId: string): Promise<WorkspaceResponse> {
     const workspace = await this.getOrFail(access.workspaceId);
-    return WorkspaceMapper.toResponse(workspace, await this.roleName(access, userId), access.permissions, access.spaceRules);
+    return WorkspaceMapper.toResponse(workspace, await this.roleName(access, userId), access.permissions, access.spaceRules, access.twoStepMissing === true);
   }
 
   @Announces('workspace.updated', workspaceFromAccess)
@@ -77,7 +80,39 @@ export class WorkspacesService {
     const saved = await this.workspaces.save(workspace);
 
     await this.audit(actor, 'workspace.update', saved, { fields: Object.keys(request) });
-    return WorkspaceMapper.toResponse(saved, await this.roleName(access, actor.userId), access.permissions, access.spaceRules);
+    return WorkspaceMapper.toResponse(saved, await this.roleName(access, actor.userId), access.permissions, access.spaceRules, access.twoStepMissing === true);
+  }
+
+  /** The workspace's two-step sign-in requirement (A4 / E3), and whether the caller meets it. */
+  async twoStepPolicy(access: WorkspaceAccess, userId: string): Promise<TwoStepPolicyResponse> {
+    return {
+      id: access.workspaceId,
+      workspaceId: access.workspaceId,
+      require: await this.workspaces.getTwoStep(access.workspaceId),
+      callerHasTwoStep: await this.accessService.hasTwoStep(userId),
+    };
+  }
+
+  /**
+   * Requires two-step sign-in of admins or everyone. You can only require it while you have
+   * it yourself, so turning it on never locks out the person doing it. Announced, so every
+   * instance drops cached access at once; audited.
+   */
+  @Announces('workspace.updated', workspaceFromAccess)
+  async setTwoStep(actor: Actor, access: WorkspaceAccess, requirement: TwoStepRequirement): Promise<TwoStepPolicyResponse> {
+    const before = await this.workspaces.getTwoStep(access.workspaceId);
+    if (requirement !== 'off' && !(await this.accessService.hasTwoStep(actor.userId))) {
+      throw DomainError.forbidden('Set up two-step sign-in for yourself first (Security), so this can never lock you out');
+    }
+    await this.workspaces.setTwoStep(access.workspaceId, requirement);
+    await this.auditLogger.record(actor, {
+      action: 'workspace.two_step.update',
+      targetType: 'workspace',
+      targetId: access.workspaceId,
+      workspaceId: access.workspaceId,
+      metadata: { from: before, to: requirement },
+    });
+    return this.twoStepPolicy(access, actor.userId);
   }
 
   /** Announced so every instance drops cached access to the workspace at once. */

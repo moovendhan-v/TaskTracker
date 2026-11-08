@@ -73,7 +73,10 @@ function PasskeysCard() {
   const queryClient = useQueryClient();
   const passkeys = useQuery({ queryKey: PASSKEYS, queryFn: () => authApi.passkeys() });
   const [name, setName] = useState('');
-  const refresh = () => void queryClient.invalidateQueries({ queryKey: PASSKEYS });
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: PASSKEYS });
+    void queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+  };
   const add = useMutation({
     mutationFn: () => authApi.addPasskey(name.trim() || 'Passkey'),
     onSuccess: () => {
@@ -219,6 +222,8 @@ export function SecurityPage() {
     setPassword('');
     setCode('');
     void queryClient.invalidateQueries({ queryKey: KEY });
+    // A workspace that requires two-step sign-in gives rights back (or holds them) at once.
+    void queryClient.invalidateQueries({ queryKey: ['workspaces'] });
   };
 
   const start = useMutation({

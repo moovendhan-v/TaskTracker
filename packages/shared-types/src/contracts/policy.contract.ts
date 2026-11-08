@@ -23,4 +23,6 @@ export interface MyAccessResponse {
   readableFields: string[];
   /** Spaces where some of `permissions` are taken away. */
   spaceRules: SpaceRule[];
+  /** Some permissions are held back until the caller sets up two-step sign-in. */
+  twoStepMissing: boolean;
 }

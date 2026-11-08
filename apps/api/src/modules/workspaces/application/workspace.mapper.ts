@@ -3,7 +3,7 @@ import type { Workspace } from '../domain/workspace.js';
 
 export const WorkspaceMapper = {
   /** Includes the caller's role and permissions so the UI can show or hide actions. */
-  toResponse(workspace: Workspace, roleName: string, permissions: Iterable<Permission>, spaceRules: readonly SpaceRule[] = []): WorkspaceResponse {
+  toResponse(workspace: Workspace, roleName: string, permissions: Iterable<Permission>, spaceRules: readonly SpaceRule[] = [], twoStepMissing = false): WorkspaceResponse {
     const granted = new Set(permissions);
     return {
       id: workspace.id,
@@ -12,6 +12,7 @@ export const WorkspaceMapper = {
       roleName,
       permissions: PERMISSIONS.filter((permission) => granted.has(permission)),
       spaceRules: [...spaceRules],
+      twoStepMissing,
       createdAt: workspace.createdAt.toISOString(),
     };
   },

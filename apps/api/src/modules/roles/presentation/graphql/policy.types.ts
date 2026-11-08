@@ -70,6 +70,7 @@ export class MyAccessGql implements MyAccessResponse {
   @Field(() => [String]) permissions: string[];
   @Field(() => [String]) readableFields: string[];
   @Field(() => [SpaceRuleGql]) spaceRules: SpaceRuleGql[];
+  @Field({ description: 'Some permissions are held back until the caller sets up two-step sign-in' }) twoStepMissing: boolean;
 }
 
 @InputType('PolicyStatementInput')

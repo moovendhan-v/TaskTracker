@@ -9,3 +9,5 @@ mutation UpdateWorkspace($workspaceId: ID!, $input: UpdateWorkspaceInput!) {
 }
 
 mutation DeleteWorkspace($workspaceId: ID!) { deleteWorkspace(workspaceId: $workspaceId) }
+query TwoStepPolicy($workspaceId: ID!) { twoStepPolicy(workspaceId: $workspaceId) { id workspaceId require callerHasTwoStep } }
+mutation SetTwoStepRequirement($workspaceId: ID!, $require: String!) { setTwoStepRequirement(workspaceId: $workspaceId, require: $require) { id workspaceId require callerHasTwoStep } }

@@ -10,6 +10,8 @@ export interface WorkspaceResponse {
   permissions: Permission[];
   /** Spaces where some of `permissions` are taken away (see canInSpace). */
   spaceRules: SpaceRule[];
+  /** The workspace requires two-step sign-in and the caller hasn't set it up, so some permissions are held back. */
+  twoStepMissing: boolean;
   createdAt: string;
 }
 
