@@ -8,6 +8,7 @@ import {
   FileTextIcon,
   HomeIcon,
   InboxIcon,
+  ArmchairIcon,
   MessagesSquareIcon,
   PalmtreeIcon,
   ScrollTextIcon,
@@ -37,6 +38,7 @@ const TITLES: [RegExp, string][] = [
   [/\/timesheets/, 'Timesheets'],
   [/\/inbox/, 'Inbox'],
   [/\/chat/, 'Chat'],
+  [/\/office/, 'Office'],
   [/\/docs/, 'Docs'],
   [/\/people/, 'People'],
   [/\/settings|\/members|\/roles|\/audit-log/, 'Workspace'],
@@ -88,6 +90,11 @@ export function WorkspaceSidebar({ workspaceId, unread, variant = 'docked' }: { 
       {can('chat.use') ? (
         <SidebarLink to="/w/$workspaceId/chat" params={params} icon={<MessagesSquareIcon />} badge={chatUnread ? (chatUnread > 99 ? '99+' : String(chatUnread)) : undefined}>
           Chat
+        </SidebarLink>
+      ) : null}
+      {can('chat.use') ? (
+        <SidebarLink to="/w/$workspaceId/office" params={params} icon={<ArmchairIcon />}>
+          Office
         </SidebarLink>
       ) : null}
       <SidebarLink to="/w/$workspaceId/docs" params={params} icon={<FileTextIcon />}>

@@ -76,6 +76,8 @@ export abstract class ChatRepository {
   abstract findChannel(workspaceId: string, userId: string, channelId: string): Promise<ChatChannelRecord | null>;
   abstract findDm(workspaceId: string, userId: string, dmKey: string): Promise<ChatChannelRecord | null>;
   abstract nameTaken(workspaceId: string, name: string, exceptId: string | null): Promise<boolean>;
+  /** A public channel's id by name (office meeting rooms, D3). */
+  abstract findPublicByName(workspaceId: string, name: string): Promise<string | null>;
   abstract insertChannel(input: { workspaceId: string; kind: ChatChannelKind; name: string | null; topic: string; dmKey: string | null; createdBy: string }): Promise<string>;
   abstract updateChannel(workspaceId: string, channelId: string, changes: { name?: string; topic?: string; archived?: boolean }): Promise<boolean>;
 

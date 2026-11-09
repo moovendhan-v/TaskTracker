@@ -22,6 +22,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module.js';
 import { CommentsModule } from './modules/comments/comments.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
 import { OrganizationsModule } from './modules/organizations/organizations.module.js';
+import { OfficeModule } from './modules/office/office.module.js';
 import { TemplatesModule } from './modules/templates/templates.module.js';
 import { AutomationsModule } from './modules/automations/automations.module.js';
 import { AccessReviewModule } from './modules/access-review/access-review.module.js';
@@ -79,6 +80,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     SprintsModule,
     DocumentsModule,
     OrganizationsModule,
+    OfficeModule,
     TemplatesModule,
     AutomationsModule,
     AccessReviewModule,

@@ -1590,6 +1590,9 @@ type Mutation {
   joinChatChannel(channelId: ID!, workspaceId: ID!): ChatChannel!
   leaveChatChannel(channelId: ID!, workspaceId: ID!): Boolean!
 
+  """Leaving the office page: you show as offline at once"""
+  leaveOffice(workspaceId: ID!): Boolean!
+
   """Leave a workspace. The last owner cannot leave."""
   leaveWorkspace(workspaceId: ID!): Boolean!
 
@@ -1624,10 +1627,17 @@ type Mutation {
     workspaceId: ID!
   ): Document!
   moveFolder(folderId: ID!, input: MoveFolderInput!, workspaceId: ID!): Folder!
+  moveInOffice(workspaceId: ID!, x: Int!, y: Int!): OfficePerson!
 
   """Moves a list into a folder of its project, or out of it"""
   moveList(input: MoveTaskListInput!, listId: ID!, workspaceId: ID!): TaskList!
   muteChatChannel(channelId: ID!, muted: Boolean!, workspaceId: ID!): Boolean!
+
+  """A sign of life from the open office page, every minute"""
+  officeHeartbeat(workspaceId: ID!): OfficePerson!
+
+  """A meeting room's channel (made the first time someone goes in)"""
+  officeMeetingRoom(workspaceId: ID!, zoneId: String!): ID!
 
   """Finds or starts the direct message between you and these people"""
   openDirectMessage(userIds: [ID!]!, workspaceId: ID!): ChatChannel!
@@ -1700,6 +1710,7 @@ type Mutation {
   """Make someone an owner, or a plain member again"""
   setChatChannelMemberRole(channelId: ID!, role: String!, userId: ID!, workspaceId: ID!): [ChatMember!]!
   setChatRetention(days: Int, workspaceId: ID!): ChatRetention!
+  setOfficeStatus(status: String!, workspaceId: ID!): OfficePerson!
   setOrganizationMemberRole(organizationId: ID!, role: String!, userId: String!): [OrganizationMember!]!
 
   """Two-step sign-in required in all its workspaces"""
@@ -1864,6 +1875,25 @@ enum NotifyAudience {
   assignee
   creator
   watchers
+}
+
+"""The virtual office: who is where, and how they show"""
+type Office {
+  people: [OfficePerson!]!
+  workspaceId: ID!
+}
+
+type OfficePerson {
+  """What they chose: available, focused or away"""
+  chosenStatus: String!
+  name: String!
+
+  """available, focused, in_meeting, away or offline"""
+  status: String!
+  userId: ID!
+  x: Int!
+  y: Int!
+  zoneId: String
 }
 
 """A group of workspaces run together (A3)"""
@@ -2195,6 +2225,7 @@ type Query {
     unreadOnly: Boolean
     workspaceId: ID!
   ): NotificationPage!
+  office(workspaceId: ID!): Office!
   organization(organizationId: ID!): Organization!
 
   """Latest organization activity; owners and admins only"""
@@ -2379,6 +2410,7 @@ enum RealtimeEntityType {
   list
   member
   notification
+  office_presence
   policy
   role
   space

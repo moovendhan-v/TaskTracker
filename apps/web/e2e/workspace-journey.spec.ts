@@ -49,7 +49,15 @@ test('signs up and lands on onboarding', async () => {
 });
 
 test('creates a workspace, a space and a list', async () => {
-  await page.getByLabel('Name').fill('Northwind Studio');
+  // Right after sign-up the app is still loading (session, form rules); let it settle so the
+  // field isn't replaced under the typing (this flaked on a cold dev server).
+  await expect(page.getByText('Set up your workspace')).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  const name = page.getByLabel('Name');
+  await expect(async () => {
+    await name.fill('Northwind Studio');
+    await expect(name).toHaveValue('Northwind Studio', { timeout: 500 });
+  }).toPass();
   await page.getByRole('button', { name: 'Create workspace' }).click();
   await expect(page).toHaveURL(/\/w\/[0-9a-f-]+$/);
   await expect(page.getByText('Create your first space')).toBeVisible();
@@ -926,6 +934,24 @@ test('starts a huddle from a channel, keeps it in a dock across pages, and leave
   await page.getByRole('navigation', { name: 'Apps' }).getByRole('link', { name: /^Chat/ }).click();
   await page.getByRole('navigation', { name: 'Conversations' }).getByRole('button', { name: /release-crew/ }).click();
   await expect(page.getByText(/Huddle ended · .* · 1 person/)).toBeVisible({ timeout: 20_000 });
+});
+
+test('walks around the virtual office and into a meeting room', async () => {
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Office' }).click();
+  const floor = page.getByRole('application', { name: /Office floor/ });
+  await expect(floor.getByRole('img', { name: 'Dana Reyes (you): Available' })).toBeVisible();
+  // The focus area shows you as focused.
+  await floor.locator('[data-tile][data-x="2"][data-y="9"]').click();
+  await expect(floor.getByRole('img', { name: 'Dana Reyes (you): Focused' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Focused' }).getByText('Dana Reyes')).toBeVisible();
+  // The same floor, isometric; arrow keys walk too.
+  await page.getByRole('group', { name: 'Floor view' }).getByRole('button', { name: 'isometric' }).click();
+  await floor.focus();
+  await page.keyboard.press('ArrowRight');
+  await floor.locator('[data-tile][data-x="14"][data-y="2"]').click();
+  await expect(page.getByRole('status').filter({ hasText: 'You’re in Aurora.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Room chat' }).click();
+  await expect(page.getByRole('heading', { name: 'room-aurora', level: 2 })).toBeVisible();
 });
 
 test('sets how long chat is kept, and chat says so', async () => {

@@ -178,6 +178,11 @@ export class TypeOrmChatRepository extends ChatRepository {
     return rows.length > 0;
   }
 
+  async findPublicByName(workspaceId: string, name: string): Promise<string | null> {
+    const [row] = await this.query<{ id: string }>(`SELECT id FROM chat_channel WHERE workspace_id = $1 AND name = $2 AND kind = 'public' AND archived_at IS NULL`, [workspaceId, name]);
+    return row?.id ?? null;
+  }
+
   async insertChannel(input: { workspaceId: string; kind: ChatChannelKind; name: string | null; topic: string; dmKey: string | null; createdBy: string }): Promise<string> {
     const [row] = await this.query<{ id: string }>(
       `INSERT INTO chat_channel (workspace_id, kind, name, topic, dm_key, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,

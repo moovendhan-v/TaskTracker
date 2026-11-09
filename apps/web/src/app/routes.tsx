@@ -11,6 +11,7 @@ import { AdminAuditLogPage, AdminLayout, AdminUsersPage, AdminWorkspacesPage } f
 import { WorkspaceAuditLogPage } from '@/modules/audit-log';
 import { ForgotPasswordPage, ResetPasswordPage, SecurityPage, SignInPage, SignUpPage, TwoFactorPage } from '@/modules/auth';
 import { OrganizationPage, OrganizationsPage } from '@/modules/organizations';
+import { OfficePage } from '@/modules/office';
 import { DocumentsPage } from '@/modules/documents';
 import { ChatMessageRedirect, ChatPage } from '@/modules/chat';
 import { HomePage } from '@/modules/dashboard';
@@ -255,6 +256,14 @@ const chatSearch = (search: Record<string, unknown>): { thread?: string } => ({
   thread: typeof search.thread === 'string' && UUID.test(search.thread) ? search.thread : undefined,
 });
 
+const officeRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/office',
+  component: function OfficeRoute() {
+    return <OfficePage workspaceId={workspaceRoute.useParams().workspaceId} />;
+  },
+});
+
 const chatRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: '/chat',
@@ -393,6 +402,7 @@ const routeTree = rootRoute.addChildren([
       documentsRoute,
       documentRoute,
       chatRoute,
+      officeRoute,
       chatChannelRoute,
       chatMessageRoute,
       directoryRoute,
