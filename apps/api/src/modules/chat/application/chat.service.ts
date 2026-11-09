@@ -484,6 +484,36 @@ export class ChatService {
 
   // ── Helpers ─────────────────────────────────────────────────────────────
 
+  /**
+   * Calls (D2): the channel a call is in, for someone joining it. Like posting, joining a
+   * call in a public channel joins the channel; private channels and DMs need membership.
+   */
+  async channelForCall(actor: Actor, access: WorkspaceAccess, channelId: string): Promise<ChatChannelRecord> {
+    return this.postable(actor, access, channelId);
+  }
+
+  /** Calls (D2): a line such as "started a huddle" in the channel, as the person it's about. */
+  async postSystemLine(actor: Actor, channel: ChatChannelRecord, body: string): Promise<string> {
+    const id = await this.chat.insertMessage({ workspaceId: channel.workspaceId, channelId: channel.id, authorId: actor.userId, body, parentId: null, kind: 'system', taskId: null });
+    await this.announce(actor, channel, 'chat_message', 'created', id);
+    return id;
+  }
+
+  /** Calls (D2): rewrites a system line (e.g. when a call ends). Runs as the line's author. */
+  async editSystemLine(actor: Actor, channel: ChatChannelRecord, messageId: string, body: string): Promise<void> {
+    if (await this.chat.editSystemMessage(channel.workspaceId, messageId, actor.userId, body)) await this.announce(actor, channel, 'chat_message', 'updated', messageId);
+  }
+
+  /** Calls (D2): tells everyone who can read the channel that its call changed. */
+  async announceChannel(actor: Actor, channel: ChatChannelRecord): Promise<void> {
+    await this.announce(actor, channel, 'chat_channel', 'updated', channel.id);
+  }
+
+  /** Calls (D2): a channel as seen by someone (null when they can't read it). */
+  findChannelAs(workspaceId: string, userId: string, channelId: string): Promise<ChatChannelRecord | null> {
+    return this.chat.findChannel(workspaceId, userId, channelId);
+  }
+
   /** A channel the caller can read; anything else is not found, never forbidden, so it doesn't confirm it exists. */
   private async readable(access: WorkspaceAccess, actor: Actor, channelId: string): Promise<ChatChannelRecord> {
     const channel = await this.chat.findChannel(access.workspaceId, actor.userId, channelId);

@@ -1,5 +1,5 @@
 import type { ChatChannelResponse } from '@taskflow/shared-types';
-import { BellOffIcon, CompassIcon, HashIcon, LockIcon, PlusIcon, SearchIcon, SquarePenIcon } from 'lucide-react';
+import { BellOffIcon, CompassIcon, HashIcon, HeadphonesIcon, LockIcon, PlusIcon, SearchIcon, SquarePenIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,6 +9,8 @@ import { channelLabel } from '../lib/chat-display';
 
 interface ChannelListProps {
   channels: ChatChannelResponse[] | undefined;
+  /** Channels with a huddle going on, and how many people are in it (D2). */
+  liveCalls?: ReadonlyMap<string, number>;
   activeId: string | undefined;
   onSelect: (channel: ChatChannelResponse) => void;
   onNewChannel: () => void;
@@ -34,7 +36,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
   );
 }
 
-function Row({ channel, active, onSelect }: { channel: ChatChannelResponse; active: boolean; onSelect: () => void }) {
+function Row({ channel, active, onSelect, inCall }: { channel: ChatChannelResponse; active: boolean; onSelect: () => void; inCall?: number }) {
   const unread = !channel.muted && channel.unreadCount > 0;
   const label = channelLabel(channel);
   return (
@@ -58,6 +60,12 @@ function Row({ channel, active, onSelect }: { channel: ChatChannelResponse; acti
           <HashIcon aria-hidden className="size-3.5 shrink-0" />
         )}
         <span className="min-w-0 flex-1 truncate">{channel.kind === 'dm' ? label : channel.name}</span>
+        {inCall ? (
+          <span aria-label={`Huddle: ${inCall} in it`} title="Huddle going on" className="inline-flex items-center gap-0.5 rounded-full bg-good/15 px-1.5 text-[10.5px] font-medium text-good">
+            <HeadphonesIcon aria-hidden className="size-3" />
+            {inCall}
+          </span>
+        ) : null}
         {channel.muted ? <BellOffIcon aria-label="Muted" className="size-3 shrink-0" /> : null}
         {unread ? (
           <span aria-label={`${channel.unreadCount} unread`} className="rounded-full bg-ring px-1.5 font-mono text-[10.5px] leading-[18px] font-semibold text-white">
@@ -82,7 +90,7 @@ function Section({ title, action, children }: { title: string; action?: ReactNod
 }
 
 /** Channels and direct messages, with unread counts (v2 #2a). */
-export function ChannelList({ channels, activeId, onSelect, onNewChannel, onNewMessage, onBrowse, onSearch, keptFor }: ChannelListProps) {
+export function ChannelList({ channels, liveCalls, activeId, onSelect, onNewChannel, onNewMessage, onBrowse, onSearch, keptFor }: ChannelListProps) {
   const rooms = (channels ?? []).filter((channel) => channel.kind !== 'dm');
   const dms = (channels ?? []).filter((channel) => channel.kind === 'dm').sort((a, b) => (b.lastMessageAt ?? b.createdAt).localeCompare(a.lastMessageAt ?? a.createdAt));
   return (
@@ -117,7 +125,7 @@ export function ChannelList({ channels, activeId, onSelect, onNewChannel, onNewM
               }
             >
               {rooms.map((channel) => (
-                <Row key={channel.id} channel={channel} active={channel.id === activeId} onSelect={() => onSelect(channel)} />
+                <Row key={channel.id} channel={channel} inCall={liveCalls?.get(channel.id)} active={channel.id === activeId} onSelect={() => onSelect(channel)} />
               ))}
               {rooms.length === 0 ? (
                 <li>
@@ -129,7 +137,7 @@ export function ChannelList({ channels, activeId, onSelect, onNewChannel, onNewM
             </Section>
             <Section title="Direct messages">
               {dms.map((channel) => (
-                <Row key={channel.id} channel={channel} active={channel.id === activeId} onSelect={() => onSelect(channel)} />
+                <Row key={channel.id} channel={channel} inCall={liveCalls?.get(channel.id)} active={channel.id === activeId} onSelect={() => onSelect(channel)} />
               ))}
               {dms.length === 0 ? <li className="px-2 py-1 text-xs text-muted-foreground">No direct messages yet</li> : null}
             </Section>

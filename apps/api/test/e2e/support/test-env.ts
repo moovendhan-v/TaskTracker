@@ -7,6 +7,10 @@ import { join, resolve } from 'node:path';
 const LOCAL_E2E_ENV = resolve(import.meta.dirname, '../../../../../.env.e2e');
 if (existsSync(LOCAL_E2E_ENV)) process.loadEnvFile(LOCAL_E2E_ENV);
 
+/** LiveKit credentials the API under test uses, so tests can sign webhooks like LiveKit does. */
+export const E2E_LIVEKIT_KEY = 'e2e-livekit';
+export const E2E_LIVEKIT_SECRET = 'e2e-livekit-secret-0123456789abcdef';
+
 /** The origin the API trusts for browser calls during the tests. */
 export const TEST_ORIGIN = 'http://localhost:5173';
 
@@ -46,6 +50,11 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     // A placeholder GitHub OAuth app, so sign-in with GitHub is on; tests never reach GitHub itself.
     GITHUB_CLIENT_ID: 'e2e-github-client',
     GITHUB_CLIENT_SECRET: 'e2e-github-placeholder',
+    // Calls (D2): tokens and webhooks are signed with these; no media server is needed for the API tests.
+    LIVEKIT_URL: 'ws://127.0.0.1:7880',
+    LIVEKIT_API_KEY: E2E_LIVEKIT_KEY,
+    LIVEKIT_API_SECRET: E2E_LIVEKIT_SECRET,
+    CALL_SWEEP_SECONDS: '0',
     // Webhook steps call a local receiver in tests; production refuses both settings below.
     AUTOMATION_WEBHOOK_HOSTS: 'localhost,127.0.0.1',
     AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS: 'true',

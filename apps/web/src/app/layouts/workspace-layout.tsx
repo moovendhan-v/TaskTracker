@@ -7,6 +7,7 @@ import { VerifyEmailBanner } from '@/core/auth/verify-email-banner';
 import { useWorkspaceEvents } from '@/core/realtime/use-workspace-events';
 import { toast } from '@/components/ui/sonner';
 import { describeNotification, InboxPanel, inboxApi, useInboxPanel, useUnreadCount } from '@/modules/inbox';
+import { CallOverlay } from '@/modules/chat';
 import { TaskDetail, useOpenTask } from '@/modules/tasks';
 import { TwoStepBanner } from '@/modules/workspaces';
 import { AppRail } from './app-rail';
@@ -53,6 +54,8 @@ export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: stri
         <Outlet />
         {viewport === 'phone' ? <BottomTabBar workspaceId={workspaceId} unread={unread} /> : null}
       </main>
+      {/* Calls (D2): the lobby, and the call you're in, over every page. */}
+      <CallOverlay />
       {!docked ? (
         <Sheet open={drawer.open} onOpenChange={drawer.setOpen}>
           <SheetContent side="left" className="w-[85vw] max-w-80 p-0" onOpenAutoFocus={(event) => event.preventDefault()} aria-describedby={undefined}>

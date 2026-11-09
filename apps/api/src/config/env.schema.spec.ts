@@ -48,4 +48,15 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...base, GITHUB_CLIENT_SECRET: 'secret' })).toThrow(/both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET/);
     expect(loadEnv({ ...base, GITHUB_CLIENT_ID: 'Iv1.abc', GITHUB_CLIENT_SECRET: 'secret' }).GITHUB_CLIENT_ID).toBe('Iv1.abc');
   });
+
+  it('takes the calls media server settings all together, and secure in production', () => {
+    const livekit = { LIVEKIT_URL: 'ws://localhost:7880', LIVEKIT_API_KEY: 'key', LIVEKIT_API_SECRET: 's'.repeat(32) };
+    expect(loadEnv({ ...base, ...livekit }).LIVEKIT_URL).toBe('ws://localhost:7880');
+    expect(() => loadEnv({ ...base, LIVEKIT_URL: 'ws://localhost:7880' })).toThrow(/LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET/);
+    expect(() => loadEnv({ ...base, ...livekit, LIVEKIT_API_SECRET: 'short' })).toThrow(/LIVEKIT_API_SECRET/);
+    expect(() => loadEnv({ ...base, ...livekit, LIVEKIT_URL: 'https://media.example.com' })).toThrow(/ws:\/\/ or wss:\/\//);
+    const live = { ...production, TURNSTILE_SECRET_KEY: 'secret' };
+    expect(() => loadEnv({ ...live, ...livekit })).toThrow(/wss:\/\/ in production/);
+    expect(loadEnv({ ...live, ...livekit, LIVEKIT_URL: 'wss://media.example.com' }).LIVEKIT_URL).toBe('wss://media.example.com');
+  });
 });

@@ -15,6 +15,7 @@ import { useOpenTask } from '@/modules/tasks';
 import { usePermissions } from '@/modules/workspaces';
 import { AddPeopleDialog } from '../components/add-people-dialog';
 import { ChannelList } from '../components/channel-list';
+import { HuddleButton, useCallsOverview } from '../calls/huddle';
 import { BrowseChannelsDialog, CreateTaskDialog, EditChannelDialog, NewChannelDialog, NewDirectMessageDialog } from '../components/chat-dialogs';
 import { Composer } from '../components/composer';
 import { MessageFeed } from '../components/message-feed';
@@ -39,6 +40,9 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
   const allowed = can('chat.use');
   const { data: me } = useCurrentUser();
   const { data: channels } = useChatChannels(workspaceId, allowed);
+  // Channels with a huddle going on, and how many people are in each (D2).
+  const calls = useCallsOverview(workspaceId).data?.calls;
+  const liveCalls = new Map((calls ?? []).map((call) => [call.channelId, call.participants.length]));
   const retention = useChatRetention(workspaceId, allowed);
   const [dialog, setDialog] = useState<'channel' | 'dm' | 'browse' | 'search' | null>(null);
 
@@ -74,7 +78,7 @@ export function ChatPage({ workspaceId, channelId, threadId }: ChatPageProps) {
   return (
     <DocTasksProvider workspaceId={workspaceId}>
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <ChannelList channels={channels} activeId={channelId} onSelect={openChannel} onNewChannel={() => setDialog('channel')} onNewMessage={() => setDialog('dm')} onBrowse={() => setDialog('browse')} onSearch={() => setDialog('search')} keptFor={retention.data ? retentionLabel(retention.data).toLowerCase() : null} />
+        <ChannelList channels={channels} liveCalls={liveCalls} activeId={channelId} onSelect={openChannel} onNewChannel={() => setDialog('channel')} onNewMessage={() => setDialog('dm')} onBrowse={() => setDialog('browse')} onSearch={() => setDialog('search')} keptFor={retention.data ? retentionLabel(retention.data).toLowerCase() : null} />
         {channelId && me ? (
           <Conversation key={channelId} workspaceId={workspaceId} channelId={channelId} threadId={threadId} me={me.id} onThread={(thread) => open(channelId, thread)} />
         ) : channels && channels.length === 0 ? (
@@ -290,6 +294,7 @@ function ChannelHeader({ workspaceId, channel }: { workspaceId: string; channel:
       <h2 className="truncate text-[15px] font-semibold">{channel.kind === 'dm' ? channelLabel(channel) : channel.name}</h2>
       {channel.topic ? <span className="hidden truncate text-sm text-muted-foreground md:inline">· {channel.topic}</span> : null}
       <span className="flex-1" />
+      <HuddleButton workspaceId={workspaceId} channelId={channel.id} label={channel.kind === 'dm' ? channelLabel(channel) : `#${channel.name}`} disabled={channel.archived} />
       <span className="flex items-center gap-1 text-xs text-muted-foreground">
         <UsersIcon aria-hidden className="size-3.5" />
         {channel.memberCount}

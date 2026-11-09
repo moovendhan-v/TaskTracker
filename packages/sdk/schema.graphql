@@ -55,6 +55,15 @@ type AccessRequest {
   status: String!
 }
 
+"""A call (huddle) going on now in a channel"""
+type ActiveCall {
+  channelId: ID!
+  id: ID!
+  participants: [CallParticipant!]!
+  startedAt: String!
+  startedById: ID!
+}
+
 input AddMemberInput {
   email: String!
   roleId: ID!
@@ -336,6 +345,29 @@ input BlockConfigInput {
   priorities: [TaskPriority!]
   spaceId: ID
   title: String
+}
+
+"""
+Connect to `url` with `token` (valid for 10 minutes, for this one call)
+"""
+type CallJoin {
+  callId: ID!
+  channelId: ID!
+  token: String!
+  url: String!
+}
+
+type CallParticipant {
+  name: String!
+  userId: ID!
+}
+
+type CallsOverview {
+  """Calls now, in channels you can read"""
+  calls: [ActiveCall!]!
+
+  """Whether calls are set up on this server"""
+  enabled: Boolean!
 }
 
 type ChatAttachment {
@@ -1552,6 +1584,9 @@ type Mutation {
 
   """Adds a template from an exported JSON file"""
   importTemplate(input: ImportTemplateInput!, workspaceId: ID!): ProjectTemplate!
+
+  """Joins the channel's call, starting one if none is going"""
+  joinCall(channelId: ID!, workspaceId: ID!): CallJoin!
   joinChatChannel(channelId: ID!, workspaceId: ID!): ChatChannel!
   leaveChatChannel(channelId: ID!, workspaceId: ID!): Boolean!
 
@@ -2024,6 +2059,7 @@ type Query {
 
   """Public channels to join"""
   browseChatChannels(first: Int, search: String, workspaceId: ID!): [ChatChannel!]!
+  callsOverview(workspaceId: ID!): CallsOverview!
   chatChannel(channelId: ID!, workspaceId: ID!): ChatChannel!
   chatChannelMembers(channelId: ID!, workspaceId: ID!): [ChatMember!]!
 

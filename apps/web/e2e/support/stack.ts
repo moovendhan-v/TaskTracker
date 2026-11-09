@@ -14,6 +14,26 @@ export const WEB_PORT = 5174;
 export const WEB_URL = `http://localhost:${WEB_PORT}`;
 export const API_DIR = resolve(import.meta.dirname, '../../../api');
 
+/**
+ * Calls (D2): a LiveKit server binary to run during the tests (E2E_LIVEKIT_BINARY). Without one,
+ * calls stay off and the call test is skipped.
+ */
+export const LIVEKIT_BINARY = process.env['E2E_LIVEKIT_BINARY'] && existsSync(process.env['E2E_LIVEKIT_BINARY']) ? process.env['E2E_LIVEKIT_BINARY'] : null;
+export const LIVEKIT_PORT = 7880;
+const LIVEKIT_KEY = 'e2e-livekit';
+const LIVEKIT_SECRET = 'e2e-livekit-secret-0123456789abcdef';
+
+/** LiveKit's config: local only, rooms close a few seconds after the last person leaves, webhooks to the API. */
+export function livekitConfig(): string {
+  return [
+    `port: ${LIVEKIT_PORT}`,
+    'rtc: { tcp_port: 7881, port_range_start: 50100, port_range_end: 50140, use_external_ip: false, node_ip: 127.0.0.1 }',
+    `keys: { ${LIVEKIT_KEY}: ${LIVEKIT_SECRET} }`,
+    'room: { empty_timeout: 3, departure_timeout: 2 }',
+    `webhook: { api_key: ${LIVEKIT_KEY}, urls: ["http://127.0.0.1:${API_PORT}/api/integrations/livekit/webhook"] }`,
+  ].join('\n');
+}
+
 function testDatabaseUrl(name: 'E2E_DATABASE_URL' | 'E2E_MIGRATION_DATABASE_URL'): string | undefined {
   const url = process.env[name];
   if (url && !new URL(url).pathname.includes('test')) {
@@ -42,6 +62,7 @@ export function apiEnv(): NodeJS.ProcessEnv {
     // A placeholder GitHub OAuth app, so "Continue with GitHub" shows; the tests stub github.com.
     GITHUB_CLIENT_ID: 'e2e-github-client',
     GITHUB_CLIENT_SECRET: 'e2e-github-placeholder',
+    ...(LIVEKIT_BINARY ? { LIVEKIT_URL: `ws://localhost:${LIVEKIT_PORT}`, LIVEKIT_API_KEY: LIVEKIT_KEY, LIVEKIT_API_SECRET: LIVEKIT_SECRET } : {}),
     STORAGE_DRIVER: 'local',
     STORAGE_LOCAL_DIR: join(tmpdir(), 'taskflow-web-e2e-uploads'),
   };

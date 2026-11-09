@@ -20,6 +20,9 @@ RUN pnpm --filter @taskflow/shared-types build \
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
-COPY apps/web/security-headers.conf /etc/nginx/snippets/security-headers.conf
+# Rendered at start-up (envsubst) into /tmp, which stays writable in the read-only container.
+COPY apps/web/security-headers.conf.template /etc/nginx/templates/security-headers.conf.template
+ENV NGINX_ENVSUBST_OUTPUT_DIR=/tmp/nginx-snippets \
+    LIVEKIT_CONNECT_SRC=
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
 EXPOSE 8080

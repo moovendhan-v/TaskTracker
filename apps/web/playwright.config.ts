@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { API_DIR, API_PORT, WEB_PORT, WEB_URL, apiEnv } from './e2e/support/stack';
+import { API_DIR, API_PORT, LIVEKIT_BINARY, LIVEKIT_PORT, WEB_PORT, WEB_URL, apiEnv, livekitConfig } from './e2e/support/stack';
 
 /**
  * Browser tests against the real stack: the built API (migrated first) on a
@@ -25,11 +25,23 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1400, height: 900 },
-        launchOptions: { executablePath: process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE'] || undefined },
+        // Fake camera and microphone, allowed without asking, for calls (D2).
+        launchOptions: { executablePath: process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE'] || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] },
       },
     },
   ],
   webServer: [
+    ...(LIVEKIT_BINARY
+      ? [
+          {
+            command: `"${LIVEKIT_BINARY}" --config-body "$LIVEKIT_CONFIG_BODY"`,
+            env: { LIVEKIT_CONFIG_BODY: livekitConfig() },
+            url: `http://127.0.0.1:${LIVEKIT_PORT}`,
+            reuseExistingServer: false,
+            timeout: 60_000,
+          },
+        ]
+      : []),
     {
       command: 'node dist/cli/run-migrations.js && node dist/main.js',
       cwd: API_DIR,
