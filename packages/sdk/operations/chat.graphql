@@ -130,3 +130,5 @@ query TaskChatMessages($workspaceId: ID!, $taskId: ID!) {
 query ChatRetention($workspaceId: ID!) { chatRetention(workspaceId: $workspaceId) { id workspaceId days } }
 
 mutation SetChatRetention($workspaceId: ID!, $days: Int) { setChatRetention(workspaceId: $workspaceId, days: $days) { id workspaceId days } }
+query CallsOverview($workspaceId: ID!) { callsOverview(workspaceId: $workspaceId) { enabled calls { id channelId startedById startedAt participants { userId name } } } }
+mutation JoinCall($workspaceId: ID!, $channelId: ID!) { joinCall(workspaceId: $workspaceId, channelId: $channelId) { callId channelId url token } }

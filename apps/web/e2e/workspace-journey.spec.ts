@@ -3,7 +3,7 @@ import { createHmac } from 'node:crypto';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { API_DIR, apiEnv } from './support/stack';
+import { API_DIR, apiEnv, LIVEKIT_BINARY } from './support/stack';
 
 /**
  * One person's first day in TaskFlow, end to end in a real browser: sign-up,
@@ -892,6 +892,40 @@ test('chats in a channel, replies in a thread and turns a message into a task', 
   await expect(edit).toBeHidden();
   await expect(page.getByRole('heading', { name: 'release-crew', level: 2 })).toBeVisible();
   await expect(page.getByText('· Ship notes every Friday')).toBeVisible();
+});
+
+test('starts a huddle from a channel, keeps it in a dock across pages, and leaves', async () => {
+  test.skip(!LIVEKIT_BINARY, 'Set E2E_LIVEKIT_BINARY to a livekit-server binary to test calls');
+  await page.getByRole('navigation', { name: 'Apps' }).getByRole('link', { name: /^Chat/ }).click();
+  await page.getByRole('navigation', { name: 'Conversations' }).getByRole('button', { name: /release-crew/ }).click();
+  await page.getByRole('button', { name: 'Start a huddle' }).click();
+  const lobby = page.getByRole('dialog', { name: /Huddle in #release-crew/ });
+  // The fake camera shows in the preview before anything is sent.
+  await lobby.getByRole('button', { name: 'Camera off' }).click();
+  await expect(lobby.locator('video')).toBeVisible();
+  await lobby.getByRole('button', { name: 'Join' }).click();
+
+  const dock = page.getByRole('region', { name: 'Huddle in #release-crew' });
+  await expect(dock.getByRole('listitem', { name: 'Dana Reyes (you)' })).toBeVisible({ timeout: 15_000 });
+  await expect(dock.locator('video')).toBeVisible();
+  // LiveKit tells the API who's in; the channel list and chat show it.
+  await expect(page.getByRole('navigation', { name: 'Conversations' }).getByLabel('Huddle: 1 in it')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('started a huddle')).toBeVisible();
+
+  await dock.getByRole('button', { name: 'Mute' }).click();
+  await expect(dock.getByRole('listitem', { name: 'Dana Reyes (you), muted' })).toBeVisible();
+  // The call follows you around the app.
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Docs' }).click();
+  await expect(dock).toBeVisible();
+  await dock.getByRole('button', { name: 'Fold the call' }).click();
+  await expect(dock.getByRole('button', { name: 'Show the call' })).toBeVisible();
+  await dock.getByRole('button', { name: 'Leave' }).click();
+  await expect(dock).toHaveCount(0);
+
+  // LiveKit closes the empty room and the line in chat says how it went.
+  await page.getByRole('navigation', { name: 'Apps' }).getByRole('link', { name: /^Chat/ }).click();
+  await page.getByRole('navigation', { name: 'Conversations' }).getByRole('button', { name: /release-crew/ }).click();
+  await expect(page.getByText(/Huddle ended · .* · 1 person/)).toBeVisible({ timeout: 20_000 });
 });
 
 test('sets how long chat is kept, and chat says so', async () => {

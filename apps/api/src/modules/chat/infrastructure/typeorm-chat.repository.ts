@@ -436,6 +436,14 @@ export class TypeOrmChatRepository extends ChatRepository {
     return rows.length > 0;
   }
 
+  async editSystemMessage(workspaceId: string, messageId: string, authorId: string, body: string): Promise<boolean> {
+    const rows = await this.query(
+      `UPDATE chat_message SET body = $4 WHERE workspace_id = $1 AND id = $2 AND author_id = $3 AND kind = 'system' AND deleted_at IS NULL RETURNING id`,
+      [workspaceId, messageId, authorId, body],
+    );
+    return rows.length > 0;
+  }
+
   async deleteMessage(workspaceId: string, messageId: string, authorId: string): Promise<boolean> {
     const rows = await this.query(
       `UPDATE chat_message SET body = '', deleted_at = now() WHERE workspace_id = $1 AND id = $2 AND author_id = $3 AND deleted_at IS NULL RETURNING id`,

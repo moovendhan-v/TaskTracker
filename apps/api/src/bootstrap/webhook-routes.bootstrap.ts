@@ -15,7 +15,9 @@ export function mountWebhookParsers(app: NestExpressApplication): void {
 
 function readRawBody(request: Request, response: Response, next: NextFunction): void {
   if (request.method !== 'POST') return next();
-  if (!(request.headers['content-type'] ?? '').toLowerCase().startsWith('application/json')) {
+  // LiveKit sends application/webhook+json.
+  const type = (request.headers['content-type'] ?? '').toLowerCase();
+  if (!type.startsWith('application/json') && !type.startsWith('application/webhook+json')) {
     response.status(415).json({ message: 'Send webhooks as application/json' });
     return;
   }

@@ -1367,6 +1367,21 @@ export type SetChatRetentionMutationVariables = Exact<{
 
 export type SetChatRetentionMutation = { setChatRetention: { id: string, workspaceId: string, days: number | null } };
 
+export type CallsOverviewQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type CallsOverviewQuery = { callsOverview: { enabled: boolean, calls: Array<{ id: string, channelId: string, startedById: string, startedAt: string, participants: Array<{ userId: string, name: string }> }> } };
+
+export type JoinCallMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+}>;
+
+
+export type JoinCallMutation = { joinCall: { callId: string, channelId: string, url: string, token: string } };
+
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
   taskId: string;
@@ -4933,6 +4948,33 @@ export const SetChatRetentionDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<SetChatRetentionMutation, SetChatRetentionMutationVariables>;
+export const CallsOverviewDocument = new TypedDocumentString(`
+    query CallsOverview($workspaceId: ID!) {
+  callsOverview(workspaceId: $workspaceId) {
+    enabled
+    calls {
+      id
+      channelId
+      startedById
+      startedAt
+      participants {
+        userId
+        name
+      }
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<CallsOverviewQuery, CallsOverviewQueryVariables>;
+export const JoinCallDocument = new TypedDocumentString(`
+    mutation JoinCall($workspaceId: ID!, $channelId: ID!) {
+  joinCall(workspaceId: $workspaceId, channelId: $channelId) {
+    callId
+    channelId
+    url
+    token
+  }
+}
+    `) as unknown as TypedDocumentString<JoinCallMutation, JoinCallMutationVariables>;
 export const CommentsDocument = new TypedDocumentString(`
     query Comments($workspaceId: ID!, $taskId: ID!) {
   comments(workspaceId: $workspaceId, taskId: $taskId) {

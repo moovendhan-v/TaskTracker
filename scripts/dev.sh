@@ -48,6 +48,7 @@ create_env() {
       APP_DB_PASSWORD=) echo "APP_DB_PASSWORD=${app}" ;;
       REDIS_PASSWORD=) echo "REDIS_PASSWORD=${redis}" ;;
       MINIO_ROOT_PASSWORD=) echo "MINIO_ROOT_PASSWORD=${minio}" ;;
+      DEV_LIVEKIT_API_SECRET=) echo "DEV_LIVEKIT_API_SECRET=$(secret)" ;;
       SEED_PASSWORD=) echo "SEED_PASSWORD=${seed}" ;;
       *) echo "$line" ;;
     esac
@@ -60,7 +61,7 @@ create_env() {
 complete_env() {
   local key value added=() tmp
   tmp="$(mktemp)"
-  local -a keys=(BETTER_AUTH_SECRET POSTGRES_PASSWORD APP_DB_OWNER_PASSWORD APP_DB_PASSWORD REDIS_PASSWORD MINIO_ROOT_PASSWORD SEED_PASSWORD SEED_DEMO)
+  local -a keys=(BETTER_AUTH_SECRET POSTGRES_PASSWORD APP_DB_OWNER_PASSWORD APP_DB_PASSWORD REDIS_PASSWORD MINIO_ROOT_PASSWORD DEV_LIVEKIT_API_SECRET SEED_PASSWORD SEED_DEMO)
   generated() {
     case "$1" in
       BETTER_AUTH_SECRET) echo "$(secret)$(secret)" ;;
@@ -106,7 +107,7 @@ port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 pick_ports() {
   if [[ -n "$("${COMPOSE[@]}" ps -q 2>/dev/null)" ]]; then return; fi
   local entry key port start
-  for entry in DEV_WEB_PORT:5180 DEV_API_PORT:3100 DEV_POSTGRES_PORT:55432 DEV_MAIL_PORT:8125 DEV_MINIO_CONSOLE_PORT:9101; do
+  for entry in DEV_WEB_PORT:5180 DEV_API_PORT:3100 DEV_POSTGRES_PORT:55432 DEV_MAIL_PORT:8125 DEV_MINIO_CONSOLE_PORT:9101 DEV_LIVEKIT_PORT:7880; do
     key="${entry%%:*}"
     port="$(env_value "$key")"; port="${port:-${entry#*:}}"
     start="$port"
@@ -124,6 +125,7 @@ TaskFlow dev stack is up:
   API      http://localhost:$(env_value DEV_API_PORT)/api/graphql
   Mail     http://localhost:$(env_value DEV_MAIL_PORT)
   Files    http://localhost:$(env_value DEV_MINIO_CONSOLE_PORT) (MinIO console; MINIO_ROOT_USER / MINIO_ROOT_PASSWORD in .env)
+  Calls    ws://localhost:$(env_value DEV_LIVEKIT_PORT) (LiveKit)
   Postgres localhost:$(env_value DEV_POSTGRES_PORT)
 Demo accounts: avery@example.com, jordan@example.com, sam@example.com, kai@example.com
   (password: SEED_PASSWORD in .env)
@@ -152,7 +154,7 @@ case "$cmd" in
   up)
     create_env
     pick_ports
-    "${COMPOSE[@]}" up -d --wait postgres redis mailpit
+    "${COMPOSE[@]}" up -d --wait postgres redis mailpit livekit
     sync_db_roles
     # Bootstrap prints its progress; the API and web start once it succeeds.
     "${COMPOSE[@]}" run --rm bootstrap

@@ -118,6 +118,8 @@ export abstract class ChatRepository {
   abstract insertMessage(input: { workspaceId: string; channelId: string; authorId: string; body: string; parentId: string | null; kind: 'user' | 'system'; taskId: string | null }): Promise<string>;
   abstract findMessage(workspaceId: string, messageId: string): Promise<ChatMessageRecord | null>;
   abstract editMessage(workspaceId: string, messageId: string, authorId: string, body: string): Promise<boolean>;
+  /** A system line's text (e.g. a call that ended); not shown as edited. */
+  abstract editSystemMessage(workspaceId: string, messageId: string, authorId: string, body: string): Promise<boolean>;
   abstract deleteMessage(workspaceId: string, messageId: string, authorId: string): Promise<boolean>;
   /** Top-level messages, newest first, before `before` when given. */
   abstract listChannelMessages(workspaceId: string, channelId: string, before: MessagePosition | null, limit: number): Promise<ChatMessageRecord[]>;

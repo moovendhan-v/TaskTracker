@@ -1,0 +1,12 @@
+# Included in every location: nginx drops server-level add_header lines in any
+# location that sets its own headers. A template: the image fills in ${LIVEKIT_CONNECT_SRC}
+# when the container starts (the calls media server, e.g. wss://media.example.com; empty
+# when calls are off), writing the result to /tmp/nginx-snippets.
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${LIVEKIT_CONNECT_SRC}; media-src 'self' blob:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+# Calls (D2) use the camera, microphone and screen sharing, on this site only.
+add_header Permissions-Policy "camera=(self), microphone=(self), display-capture=(self), geolocation=()" always;
+# Enable once the site is served over HTTPS:
+# add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
