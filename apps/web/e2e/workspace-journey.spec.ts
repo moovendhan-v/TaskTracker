@@ -1067,6 +1067,11 @@ test('starts an organization and puts the workspace in it', async () => {
   await expect(page.getByRole('list', { name: 'Workspaces in this organization' }).getByText('Northwind Studio')).toBeVisible();
   await page.getByRole('tab', { name: 'Activity' }).click();
   await expect(page.getByRole('list', { name: 'Organization activity' }).getByText('added a workspace')).toBeVisible();
+  // Owners set up single sign-on on the Security tab.
+  await page.getByRole('tab', { name: 'Security' }).click();
+  await expect(page.getByText('Single sign-on')).toBeVisible();
+  await expect(page.getByLabel('Email domain')).toBeVisible();
+  await expect(page.getByLabel('Client secret')).toHaveAttribute('type', 'password');
 });
 
 test("won't require two-step sign-in of others until you have it yourself", async () => {
@@ -1109,6 +1114,8 @@ test('signs out', async () => {
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
   await expect(page.getByRole('button', { name: 'Continue with GitHub' })).toBeVisible();
+  await page.getByRole('button', { name: 'Sign in with SSO' }).click();
+  await expect(page.getByLabel('Work email for single sign-on')).toBeFocused();
 });
 
 test('explains a GitHub sign-in that could not join an existing account', async () => {

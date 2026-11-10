@@ -24,6 +24,12 @@ export function describeActivity(action: string, metadata: Record<string, unknow
       return 'added a workspace';
     case 'organization.workspace.remove':
       return 'took a workspace out';
+    case 'organization.sso.set':
+      return `set up single sign-on for ${String(metadata['domain'] ?? '')}`;
+    case 'organization.sso.verify':
+      return `verified ${String(metadata['domain'] ?? '')} for single sign-on`;
+    case 'organization.sso.remove':
+      return 'removed single sign-on';
     case 'organization.delete':
       return 'deleted the organization';
     default:

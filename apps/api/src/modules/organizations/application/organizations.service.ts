@@ -1,16 +1,24 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import type { IncomingHttpHeaders } from 'node:http';
+import { APIError } from 'better-auth/api';
+import { fromNodeHeaders } from 'better-auth/node';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   canManageOrg,
   ORG_NAME_MAX,
   type OrganizationActivityResponse,
   type OrganizationMemberResponse,
   type OrganizationResponse,
+  type OrganizationSsoResponse,
+  SSO_DOMAIN_PATTERN,
   type OrganizationWorkspaceResponse,
   type OrgRole,
   type TwoStepRequirement,
 } from '@taskflow/shared-types';
 import { AccessService } from '../../../core/access/access.service.js';
+import { AuthService } from '../../../core/auth/auth.service.js';
+import { ENV } from '../../../config/config.module.js';
+import type { Env } from '../../../config/env.schema.js';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
 import { entityTag } from '../../../core/cache/cache-keys.js';
 import { CacheStore } from '../../../core/cache/cache-store.port.js';
@@ -38,6 +46,8 @@ export class OrganizationsService {
     private readonly accessService: AccessService,
     private readonly audit: AuditLogger,
     private readonly cache: CacheStore,
+    private readonly auth: AuthService,
+    @Inject(ENV) private readonly env: Env,
   ) {}
 
   async listMine(userId: string): Promise<OrganizationResponse[]> {
@@ -111,8 +121,9 @@ export class OrganizationsService {
       const organization = await this.found(organizationId);
       const inside = await this.organizations.workspaces(organizationId);
       await this.record(actor, organizationId, 'organization.delete', { name: organization.name, workspaces: inside.length });
-      // Its workspaces stay, on their own (ON DELETE SET NULL).
+      // Its workspaces stay, on their own (ON DELETE SET NULL); its SSO stops signing anyone in.
       await this.organizations.delete(organizationId);
+      await this.organizations.deleteSsoProviders(organizationId);
       return inside;
     });
     await this.cache.invalidateTags(workspaces.map((workspace) => entityTag(workspace.id, 'access')));
@@ -164,6 +175,104 @@ export class OrganizationsService {
       await this.organizations.removeMember(organizationId, userId);
       return userId === actor.userId ? [] : this.organizations.members(organizationId);
     });
+  }
+
+  /**
+   * SSO (A4): the organization's identity provider, and the DNS record that proves its domain
+   * until that's done. Owners and admins; the client secret is never shown.
+   */
+  async sso(actor: Actor, headers: IncomingHttpHeaders, organizationId: string): Promise<OrganizationSsoResponse | null> {
+    await this.role(actor, organizationId, 'manage');
+    const provider = await this.organizations.ssoProvider(organizationId);
+    if (!provider) return null;
+    let dnsRecord: OrganizationSsoResponse['dnsRecord'] = null;
+    if (!provider.verified) {
+      await this.organizations.bindSsoProvider(provider.providerId, organizationId, actor.userId);
+      const { domainVerificationToken } = await this.callAuth(() =>
+        this.auth.auth.api.requestDomainVerification({ body: { providerId: provider.providerId }, headers: fromNodeHeaders(headers) }),
+      );
+      dnsRecord = { name: `_better-auth-token-${provider.providerId}.${provider.domain}`, value: domainVerificationToken };
+    }
+    return { domain: provider.domain, issuer: provider.issuer, clientId: provider.clientId, verified: provider.verified, dnsRecord };
+  }
+
+  /**
+   * Sets the organization's SSO (owners, who need two-step sign-in themselves): replaces any
+   * provider it had, so the domain has to be proved again. The identity provider must be one
+   * the operator allows (SSO_TRUSTED_ISSUERS).
+   */
+  async setSso(
+    actor: Actor,
+    headers: IncomingHttpHeaders,
+    organizationId: string,
+    input: { domain: string; issuer: string; clientId: string; clientSecret: string },
+  ): Promise<OrganizationSsoResponse | null> {
+    await this.role(actor, organizationId, 'owner');
+    if (!(await this.accessService.hasTwoStep(actor.userId))) throw DomainError.forbidden('Set up two-step sign-in for yourself first (Security)');
+    const domain = input.domain.trim().toLowerCase();
+    if (!SSO_DOMAIN_PATTERN.test(domain)) throw DomainError.invalid('Enter your email domain, such as acme.com');
+    let issuer: URL;
+    try {
+      issuer = new URL(input.issuer.trim());
+    } catch {
+      throw DomainError.invalid('Enter the identity provider’s issuer URL');
+    }
+    if (!this.env.SSO_TRUSTED_ISSUERS.includes(issuer.origin)) throw DomainError.invalid('This server doesn’t allow that identity provider; ask whoever runs TaskFlow to add it');
+    if (!input.clientId.trim() || input.clientId.length > 500 || !input.clientSecret || input.clientSecret.length > 1000) throw DomainError.invalid('Enter the client ID and secret from your identity provider');
+    const providerId = `org-${organizationId}`;
+    await this.dropSso(actor, headers, organizationId);
+    await this.callAuth(() =>
+      this.auth.auth.api.registerSSOProvider({
+        body: { providerId, issuer: issuer.toString().replace(/\/$/, ''), domain, oidcConfig: { clientId: input.clientId.trim(), clientSecret: input.clientSecret, pkce: true } },
+        headers: fromNodeHeaders(headers),
+      }),
+    );
+    await this.organizations.bindSsoProvider(providerId, organizationId, actor.userId);
+    await this.inOrg(organizationId, actor.userId, () => this.record(actor, organizationId, 'organization.sso.set', { domain, issuer: issuer.origin }));
+    return this.sso(actor, headers, organizationId);
+  }
+
+  /** Checks the DNS record; SSO works once it's there. */
+  async verifySsoDomain(actor: Actor, headers: IncomingHttpHeaders, organizationId: string): Promise<OrganizationSsoResponse | null> {
+    await this.role(actor, organizationId, 'manage');
+    const provider = await this.organizations.ssoProvider(organizationId);
+    if (!provider) throw DomainError.notFound('SSO');
+    if (!provider.verified) {
+      await this.organizations.bindSsoProvider(provider.providerId, organizationId, actor.userId);
+      await this.callAuth(() => this.auth.auth.api.verifyDomain({ body: { providerId: provider.providerId }, headers: fromNodeHeaders(headers) }));
+      await this.inOrg(organizationId, actor.userId, () => this.record(actor, organizationId, 'organization.sso.verify', { domain: provider.domain }));
+    }
+    return this.sso(actor, headers, organizationId);
+  }
+
+  async removeSso(actor: Actor, headers: IncomingHttpHeaders, organizationId: string): Promise<boolean> {
+    await this.role(actor, organizationId, 'owner');
+    const removed = await this.dropSso(actor, headers, organizationId);
+    if (removed) await this.inOrg(organizationId, actor.userId, () => this.record(actor, organizationId, 'organization.sso.remove', {}));
+    return removed;
+  }
+
+  private async dropSso(actor: Actor, headers: IncomingHttpHeaders, organizationId: string): Promise<boolean> {
+    const provider = await this.organizations.ssoProvider(organizationId);
+    if (!provider) return false;
+    await this.organizations.bindSsoProvider(provider.providerId, organizationId, actor.userId);
+    await this.callAuth(() => this.auth.auth.api.deleteSSOProvider({ body: { providerId: provider.providerId }, headers: fromNodeHeaders(headers) }));
+    return true;
+  }
+
+  /** Better Auth's refusals become TaskFlow's errors, with their (safe) messages. */
+  private async callAuth<T>(work: () => Promise<T>): Promise<T> {
+    try {
+      return await work();
+    } catch (error) {
+      if (error instanceof APIError) {
+        const message = typeof error.body?.message === 'string' ? error.body.message : 'The identity provider couldn’t be set up';
+        if (error.status === 'NOT_FOUND') throw DomainError.notFound('SSO');
+        if (error.status === 'FORBIDDEN' || error.status === 'UNAUTHORIZED') throw DomainError.forbidden(message);
+        throw DomainError.invalid(message);
+      }
+      throw error;
+    }
   }
 
   /** The organization a workspace is in (workspace scope), for its settings page. */

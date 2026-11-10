@@ -88,6 +88,16 @@ export const authApi = {
     return throwOnError(await authClient.signIn.social({ provider: 'github', callbackURL: '/', errorCallbackURL: '/sign-in' }));
   },
 
+  /**
+   * Single sign-on (A4): finds the organization whose verified domain the email is in, and
+   * sends the browser to its identity provider. Back on the sign-in page with `?error=` if that fails.
+   */
+  async signInWithSso(email: string) {
+    const result = await authClient.$fetch<{ url: string }>('/sign-in/sso', { method: 'POST', body: { email: email.trim(), callbackURL: '/', errorCallbackURL: '/sign-in' } });
+    if (result.error || !result.data?.url) throw new AuthRequestError('No single sign-on is set up for that email', null);
+    window.location.assign(result.data.url);
+  },
+
   /** Connects GitHub to the signed-in account; the browser comes back to the Security page. */
   async connectGithub(returnTo: string) {
     return throwOnError(await authClient.linkSocial({ provider: 'github', callbackURL: returnTo, errorCallbackURL: returnTo }));

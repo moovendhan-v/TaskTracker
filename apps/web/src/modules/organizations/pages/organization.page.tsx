@@ -15,6 +15,7 @@ import { useCurrentUser } from '@/core/auth/use-current-user';
 import { cn } from '@/lib/cn';
 import { timeAgo } from '@/lib/relative-time';
 import { organizationKeys, organizationsApi } from '../api/organizations.api';
+import { SsoCard } from '../components/sso-card';
 import { describeActivity, ROLE_LABEL, TWO_STEP_LABEL } from '../lib/labels';
 
 type Tab = 'workspaces' | 'people' | 'security' | 'activity';
@@ -296,6 +297,7 @@ function SecurityTab({ organizationId, name, current, isOwner, workspaceId }: { 
           </Button>
         </CardContent>
       </Card>
+      <SsoCard organizationId={organizationId} isOwner={isOwner} />
       <Card>
         <CardHeader>
           <CardTitle>Name</CardTitle>

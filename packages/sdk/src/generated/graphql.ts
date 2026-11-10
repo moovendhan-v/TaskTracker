@@ -485,6 +485,15 @@ export type NotifyAudience =
   | 'creator'
   | 'watchers';
 
+export type OrganizationSsoInput = {
+  clientId: string;
+  clientSecret: string;
+  /** Email domain, e.g. acme.com */
+  domain: string;
+  /** Issuer URL, e.g. https://acme.okta.com */
+  issuer: string;
+};
+
 export type PlatformRole =
   | 'SUPER_ADMIN'
   | 'USER';
@@ -2322,6 +2331,37 @@ export type RemoveWorkspaceFromOrganizationMutationVariables = Exact<{
 
 export type RemoveWorkspaceFromOrganizationMutation = { removeWorkspaceFromOrganization: boolean };
 
+export type OrganizationSsoFieldsFragment = { domain: string, issuer: string, clientId: string, verified: boolean, dnsRecord: { name: string, value: string } | null };
+
+export type OrganizationSsoQueryVariables = Exact<{
+  organizationId: string;
+}>;
+
+
+export type OrganizationSsoQuery = { organizationSso: { domain: string, issuer: string, clientId: string, verified: boolean, dnsRecord: { name: string, value: string } | null } | null };
+
+export type SetOrganizationSsoMutationVariables = Exact<{
+  organizationId: string;
+  input: OrganizationSsoInput;
+}>;
+
+
+export type SetOrganizationSsoMutation = { setOrganizationSso: { domain: string, issuer: string, clientId: string, verified: boolean, dnsRecord: { name: string, value: string } | null } | null };
+
+export type VerifyOrganizationSsoDomainMutationVariables = Exact<{
+  organizationId: string;
+}>;
+
+
+export type VerifyOrganizationSsoDomainMutation = { verifyOrganizationSsoDomain: { domain: string, issuer: string, clientId: string, verified: boolean, dnsRecord: { name: string, value: string } | null } | null };
+
+export type RemoveOrganizationSsoMutationVariables = Exact<{
+  organizationId: string;
+}>;
+
+
+export type RemoveOrganizationSsoMutation = { removeOrganizationSso: boolean };
+
 export type PoliciesQueryVariables = Exact<{
   workspaceId: string;
 }>;
@@ -3720,6 +3760,18 @@ export const OrganizationMemberFieldsFragmentDoc = new TypedDocumentString(`
   joinedAt
 }
     `, {"fragmentName":"OrganizationMemberFields"}) as unknown as TypedDocumentString<OrganizationMemberFieldsFragment, unknown>;
+export const OrganizationSsoFieldsFragmentDoc = new TypedDocumentString(`
+    fragment OrganizationSsoFields on OrganizationSso {
+  domain
+  issuer
+  clientId
+  verified
+  dnsRecord {
+    name
+    value
+  }
+}
+    `, {"fragmentName":"OrganizationSsoFields"}) as unknown as TypedDocumentString<OrganizationSsoFieldsFragment, unknown>;
 export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
     fragment TemplateFields on ProjectTemplate {
   id
@@ -6768,6 +6820,59 @@ export const RemoveWorkspaceFromOrganizationDocument = new TypedDocumentString(`
   removeWorkspaceFromOrganization(workspaceId: $workspaceId)
 }
     `) as unknown as TypedDocumentString<RemoveWorkspaceFromOrganizationMutation, RemoveWorkspaceFromOrganizationMutationVariables>;
+export const OrganizationSsoDocument = new TypedDocumentString(`
+    query OrganizationSso($organizationId: ID!) {
+  organizationSso(organizationId: $organizationId) {
+    ...OrganizationSsoFields
+  }
+}
+    fragment OrganizationSsoFields on OrganizationSso {
+  domain
+  issuer
+  clientId
+  verified
+  dnsRecord {
+    name
+    value
+  }
+}`) as unknown as TypedDocumentString<OrganizationSsoQuery, OrganizationSsoQueryVariables>;
+export const SetOrganizationSsoDocument = new TypedDocumentString(`
+    mutation SetOrganizationSso($organizationId: ID!, $input: OrganizationSsoInput!) {
+  setOrganizationSso(organizationId: $organizationId, input: $input) {
+    ...OrganizationSsoFields
+  }
+}
+    fragment OrganizationSsoFields on OrganizationSso {
+  domain
+  issuer
+  clientId
+  verified
+  dnsRecord {
+    name
+    value
+  }
+}`) as unknown as TypedDocumentString<SetOrganizationSsoMutation, SetOrganizationSsoMutationVariables>;
+export const VerifyOrganizationSsoDomainDocument = new TypedDocumentString(`
+    mutation VerifyOrganizationSsoDomain($organizationId: ID!) {
+  verifyOrganizationSsoDomain(organizationId: $organizationId) {
+    ...OrganizationSsoFields
+  }
+}
+    fragment OrganizationSsoFields on OrganizationSso {
+  domain
+  issuer
+  clientId
+  verified
+  dnsRecord {
+    name
+    value
+  }
+}`) as unknown as TypedDocumentString<VerifyOrganizationSsoDomainMutation, VerifyOrganizationSsoDomainMutationVariables>;
+export const RemoveOrganizationSsoDocument = new TypedDocumentString(`
+    mutation RemoveOrganizationSso($organizationId: ID!) {
+  removeOrganizationSso(organizationId: $organizationId)
+}
+    `) as unknown as TypedDocumentString<RemoveOrganizationSsoMutation, RemoveOrganizationSsoMutationVariables>;
 export const PoliciesDocument = new TypedDocumentString(`
     query Policies($workspaceId: ID!) {
   policies(workspaceId: $workspaceId) {

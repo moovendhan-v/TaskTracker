@@ -93,6 +93,13 @@ export class TestUser {
     return { code: error.extensions?.code, message: error.message };
   }
 
+  /** A GET the way a browser follows a link: with this user's cookies, keeping any it gets, not following redirects. */
+  async visit(url: string): Promise<Response> {
+    const response = await fetch(url, { redirect: 'manual', headers: this.headers() });
+    this.keepCookies(response);
+    return response;
+  }
+
   /** The Cookie header this user's browser would send, e.g. on a WebSocket handshake. */
   cookieHeader(): string {
     return [...this.cookies].map(([name, value]) => `${name}=${value}`).join('; ');

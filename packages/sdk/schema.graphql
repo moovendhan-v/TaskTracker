@@ -1647,6 +1647,7 @@ type Mutation {
 
   """Owners and admins remove people; anyone can remove themselves (leave)"""
   removeOrganizationMember(organizationId: ID!, userId: String!): [OrganizationMember!]!
+  removeOrganizationSso(organizationId: ID!): Boolean!
   removeWorkspaceFromOrganization(workspaceId: ID!): Boolean!
   renameOrganization(name: String!, organizationId: ID!): Organization!
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
@@ -1712,6 +1713,9 @@ type Mutation {
   setChatRetention(days: Int, workspaceId: ID!): ChatRetention!
   setOfficeStatus(status: String!, workspaceId: ID!): OfficePerson!
   setOrganizationMemberRole(organizationId: ID!, role: String!, userId: String!): [OrganizationMember!]!
+
+  """Owners, with two-step sign-in; replaces any SSO it had"""
+  setOrganizationSso(input: OrganizationSsoInput!, organizationId: ID!): OrganizationSso
 
   """Two-step sign-in required in all its workspaces"""
   setOrganizationTwoStep(organizationId: ID!, require: String!): Organization!
@@ -1784,6 +1788,9 @@ type Mutation {
   updateTimeEntry(entryId: ID!, input: UpdateTimeEntryInput!, workspaceId: ID!): TimeEntry!
   updateWorkspace(input: UpdateWorkspaceInput!, workspaceId: ID!): Workspace!
   upsertEmployeeProfile(input: EmployeeProfileInput!, userId: ID!, workspaceId: ID!): Employee!
+
+  """Checks the DNS record that proves the domain"""
+  verifyOrganizationSsoDomain(organizationId: ID!): OrganizationSso
 
   """Follow (true) or stop following (false) a task"""
   watchTask(taskId: ID!, watching: Boolean!, workspaceId: ID!): [ID!]!
@@ -1927,6 +1934,30 @@ type OrganizationMember {
   name: String!
   role: String!
   userId: ID!
+}
+
+"""
+Sign-in through the organization’s identity provider (OIDC); the client secret is never shown
+"""
+type OrganizationSso {
+  clientId: String!
+  dnsRecord: SsoDnsRecord
+  domain: String!
+  issuer: String!
+
+  """The domain is proved; SSO works only then"""
+  verified: Boolean!
+}
+
+input OrganizationSsoInput {
+  clientId: String!
+  clientSecret: String!
+
+  """Email domain, e.g. acme.com"""
+  domain: String!
+
+  """Issuer URL, e.g. https://acme.okta.com"""
+  issuer: String!
 }
 
 type OrganizationWorkspace {
@@ -2231,6 +2262,9 @@ type Query {
   """Latest organization activity; owners and admins only"""
   organizationActivity(organizationId: ID!): [OrganizationActivity!]!
   organizationMembers(organizationId: ID!): [OrganizationMember!]!
+
+  """SSO for the organization (owners and admins)"""
+  organizationSso(organizationId: ID!): OrganizationSso
 
   """
   Its workspaces, by name; being in the organization does not let you into them
@@ -2700,6 +2734,12 @@ input SprintTaskMoveInput {
   """A planned sprint in the same space; null for the backlog"""
   sprintId: ID
   taskId: ID!
+}
+
+"""A TXT record to add to the domain, proving the organization owns it"""
+type SsoDnsRecord {
+  name: String!
+  value: String!
 }
 
 input StartTimerInput {

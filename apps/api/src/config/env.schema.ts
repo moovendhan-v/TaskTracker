@@ -43,6 +43,15 @@ const envSchema = z.object({
   LIVEKIT_API_SECRET: optionalString(z.string().trim().min(32).max(500)),
   /** How the API reaches LiveKit's HTTP API, when that differs from LIVEKIT_URL (e.g. http://livekit:7880 in Docker). */
   LIVEKIT_SERVER_URL: optionalString(z.string().url().refine((url) => /^https?:\/\//.test(url), 'LIVEKIT_SERVER_URL must start with http:// or https://')),
+  /**
+   * SSO (A4): origins of the OIDC identity providers organizations may use, comma-separated
+   * (e.g. https://acme.okta.com). Better Auth only fetches discovery documents from these.
+   */
+  SSO_TRUSTED_ISSUERS: z
+    .string()
+    .default('')
+    .transform((value) => value.split(',').map((item) => item.trim()).filter(Boolean))
+    .pipe(z.array(z.string().url().refine((url) => new URL(url).origin === url.replace(/\/$/, ''), 'SSO_TRUSTED_ISSUERS lists origins only (scheme, host, port)')).max(50)),
   /** How often ended and abandoned calls are cleaned up, in seconds (0 turns it off). */
   CALL_SWEEP_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
   /** Outgoing mail for password resets, e.g. smtps://user:pass@smtp.example.com:465 */
@@ -76,6 +85,10 @@ const envSchema = z.object({
   .refine((env) => [env.LIVEKIT_URL, env.LIVEKIT_API_KEY, env.LIVEKIT_API_SECRET].every((value) => value === undefined) || [env.LIVEKIT_URL, env.LIVEKIT_API_KEY, env.LIVEKIT_API_SECRET].every((value) => value !== undefined), {
     path: ['LIVEKIT_API_SECRET'],
     message: 'Set LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET for calls, or none of them',
+  })
+  .refine((env) => env.NODE_ENV !== 'production' || env.SSO_TRUSTED_ISSUERS.every((origin) => origin.startsWith('https://')), {
+    path: ['SSO_TRUSTED_ISSUERS'],
+    message: 'SSO_TRUSTED_ISSUERS must use https:// in production',
   })
   .refine((env) => env.NODE_ENV !== 'production' || env.LIVEKIT_URL === undefined || env.LIVEKIT_URL.startsWith('wss://'), {
     path: ['LIVEKIT_URL'],
