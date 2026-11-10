@@ -29,5 +29,7 @@ export const REALTIME_ENTITY_TYPES = [
   /** Someone is typing in a channel: a live signal only, never stored. */
   'chat_typing',
   'task_attachment',
+  /** Someone moved or changed state in the virtual office (D3). */
+  'office_presence',
 ] as const;
 export type RealtimeEntityType = (typeof REALTIME_ENTITY_TYPES)[number];

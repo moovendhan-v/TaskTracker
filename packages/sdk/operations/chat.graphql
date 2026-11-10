@@ -132,3 +132,10 @@ query ChatRetention($workspaceId: ID!) { chatRetention(workspaceId: $workspaceId
 mutation SetChatRetention($workspaceId: ID!, $days: Int) { setChatRetention(workspaceId: $workspaceId, days: $days) { id workspaceId days } }
 query CallsOverview($workspaceId: ID!) { callsOverview(workspaceId: $workspaceId) { enabled calls { id channelId startedById startedAt participants { userId name } } } }
 mutation JoinCall($workspaceId: ID!, $channelId: ID!) { joinCall(workspaceId: $workspaceId, channelId: $channelId) { callId channelId url token } }
+fragment OfficePersonFields on OfficePerson { userId name x y status chosenStatus zoneId }
+query Office($workspaceId: ID!) { office(workspaceId: $workspaceId) { people { ...OfficePersonFields } } }
+mutation MoveInOffice($workspaceId: ID!, $x: Int!, $y: Int!) { moveInOffice(workspaceId: $workspaceId, x: $x, y: $y) { ...OfficePersonFields } }
+mutation SetOfficeStatus($workspaceId: ID!, $status: String!) { setOfficeStatus(workspaceId: $workspaceId, status: $status) { ...OfficePersonFields } }
+mutation OfficeHeartbeat($workspaceId: ID!) { officeHeartbeat(workspaceId: $workspaceId) { ...OfficePersonFields } }
+mutation LeaveOffice($workspaceId: ID!) { leaveOffice(workspaceId: $workspaceId) }
+mutation OfficeMeetingRoom($workspaceId: ID!, $zoneId: String!) { officeMeetingRoom(workspaceId: $workspaceId, zoneId: $zoneId) }

@@ -509,6 +509,16 @@ export class ChatService {
     await this.announce(actor, channel, 'chat_channel', 'updated', channel.id);
   }
 
+  /**
+   * The virtual office (D3): a meeting room's public channel, made the first time someone
+   * goes in. Anyone with chat.use can make a public channel, so this is no new right.
+   */
+  async meetingRoomChannel(actor: Actor, access: WorkspaceAccess, name: string, topic: string): Promise<string> {
+    const existing = await this.chat.findPublicByName(access.workspaceId, name);
+    if (existing) return existing;
+    return (await this.createChannel(actor, access, { name, topic, kind: 'public' })).id;
+  }
+
   /** Calls (D2): a channel as seen by someone (null when they can't read it). */
   findChannelAs(workspaceId: string, userId: string, channelId: string): Promise<ChatChannelRecord | null> {
     return this.chat.findChannel(workspaceId, userId, channelId);

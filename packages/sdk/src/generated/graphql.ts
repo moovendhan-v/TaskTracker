@@ -527,6 +527,7 @@ export type RealtimeEntityType =
   | 'list'
   | 'member'
   | 'notification'
+  | 'office_presence'
   | 'policy'
   | 'role'
   | 'space'
@@ -1381,6 +1382,54 @@ export type JoinCallMutationVariables = Exact<{
 
 
 export type JoinCallMutation = { joinCall: { callId: string, channelId: string, url: string, token: string } };
+
+export type OfficePersonFieldsFragment = { userId: string, name: string, x: number, y: number, status: string, chosenStatus: string, zoneId: string | null };
+
+export type OfficeQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type OfficeQuery = { office: { people: Array<{ userId: string, name: string, x: number, y: number, status: string, chosenStatus: string, zoneId: string | null }> } };
+
+export type MoveInOfficeMutationVariables = Exact<{
+  workspaceId: string;
+  x: number;
+  y: number;
+}>;
+
+
+export type MoveInOfficeMutation = { moveInOffice: { userId: string, name: string, x: number, y: number, status: string, chosenStatus: string, zoneId: string | null } };
+
+export type SetOfficeStatusMutationVariables = Exact<{
+  workspaceId: string;
+  status: string;
+}>;
+
+
+export type SetOfficeStatusMutation = { setOfficeStatus: { userId: string, name: string, x: number, y: number, status: string, chosenStatus: string, zoneId: string | null } };
+
+export type OfficeHeartbeatMutationVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type OfficeHeartbeatMutation = { officeHeartbeat: { userId: string, name: string, x: number, y: number, status: string, chosenStatus: string, zoneId: string | null } };
+
+export type LeaveOfficeMutationVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type LeaveOfficeMutation = { leaveOffice: boolean };
+
+export type OfficeMeetingRoomMutationVariables = Exact<{
+  workspaceId: string;
+  zoneId: string;
+}>;
+
+
+export type OfficeMeetingRoomMutation = { officeMeetingRoom: string };
 
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
@@ -3072,6 +3121,17 @@ export const ChatMessageFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"ChatMessageFields"}) as unknown as TypedDocumentString<ChatMessageFieldsFragment, unknown>;
+export const OfficePersonFieldsFragmentDoc = new TypedDocumentString(`
+    fragment OfficePersonFields on OfficePerson {
+  userId
+  name
+  x
+  y
+  status
+  chosenStatus
+  zoneId
+}
+    `, {"fragmentName":"OfficePersonFields"}) as unknown as TypedDocumentString<OfficePersonFieldsFragment, unknown>;
 export const CurrentUserFieldsFragmentDoc = new TypedDocumentString(`
     fragment CurrentUserFields on CurrentUser {
   id
@@ -4975,6 +5035,78 @@ export const JoinCallDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<JoinCallMutation, JoinCallMutationVariables>;
+export const OfficeDocument = new TypedDocumentString(`
+    query Office($workspaceId: ID!) {
+  office(workspaceId: $workspaceId) {
+    people {
+      ...OfficePersonFields
+    }
+  }
+}
+    fragment OfficePersonFields on OfficePerson {
+  userId
+  name
+  x
+  y
+  status
+  chosenStatus
+  zoneId
+}`) as unknown as TypedDocumentString<OfficeQuery, OfficeQueryVariables>;
+export const MoveInOfficeDocument = new TypedDocumentString(`
+    mutation MoveInOffice($workspaceId: ID!, $x: Int!, $y: Int!) {
+  moveInOffice(workspaceId: $workspaceId, x: $x, y: $y) {
+    ...OfficePersonFields
+  }
+}
+    fragment OfficePersonFields on OfficePerson {
+  userId
+  name
+  x
+  y
+  status
+  chosenStatus
+  zoneId
+}`) as unknown as TypedDocumentString<MoveInOfficeMutation, MoveInOfficeMutationVariables>;
+export const SetOfficeStatusDocument = new TypedDocumentString(`
+    mutation SetOfficeStatus($workspaceId: ID!, $status: String!) {
+  setOfficeStatus(workspaceId: $workspaceId, status: $status) {
+    ...OfficePersonFields
+  }
+}
+    fragment OfficePersonFields on OfficePerson {
+  userId
+  name
+  x
+  y
+  status
+  chosenStatus
+  zoneId
+}`) as unknown as TypedDocumentString<SetOfficeStatusMutation, SetOfficeStatusMutationVariables>;
+export const OfficeHeartbeatDocument = new TypedDocumentString(`
+    mutation OfficeHeartbeat($workspaceId: ID!) {
+  officeHeartbeat(workspaceId: $workspaceId) {
+    ...OfficePersonFields
+  }
+}
+    fragment OfficePersonFields on OfficePerson {
+  userId
+  name
+  x
+  y
+  status
+  chosenStatus
+  zoneId
+}`) as unknown as TypedDocumentString<OfficeHeartbeatMutation, OfficeHeartbeatMutationVariables>;
+export const LeaveOfficeDocument = new TypedDocumentString(`
+    mutation LeaveOffice($workspaceId: ID!) {
+  leaveOffice(workspaceId: $workspaceId)
+}
+    `) as unknown as TypedDocumentString<LeaveOfficeMutation, LeaveOfficeMutationVariables>;
+export const OfficeMeetingRoomDocument = new TypedDocumentString(`
+    mutation OfficeMeetingRoom($workspaceId: ID!, $zoneId: String!) {
+  officeMeetingRoom(workspaceId: $workspaceId, zoneId: $zoneId)
+}
+    `) as unknown as TypedDocumentString<OfficeMeetingRoomMutation, OfficeMeetingRoomMutationVariables>;
 export const CommentsDocument = new TypedDocumentString(`
     query Comments($workspaceId: ID!, $taskId: ID!) {
   comments(workspaceId: $workspaceId, taskId: $taskId) {

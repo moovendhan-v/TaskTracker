@@ -31,6 +31,7 @@ export * from './domain/access-grants.js';
 export * from './domain/two-step.js';
 export * from './domain/organization.js';
 export * from './domain/calls.js';
+export * from './domain/office.js';
 export * from './contracts/policy.contract.js';
 export * from './domain/preferences.js';
 export * from './contracts/custom-field.contract.js';

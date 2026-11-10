@@ -1,4 +1,5 @@
 import {
+  ArmchairIcon,
   Building2Icon,
   CalendarCheckIcon,
   CheckSquareIcon,
@@ -34,6 +35,9 @@ const PAGES: Record<string, Omit<TabDescription, 'entity'>> = {
   '/inbox': { label: 'Inbox', icon: InboxIcon },
   '/docs': { label: 'Docs', icon: FileTextIcon },
   '/chat': { label: 'Chat', icon: MessagesSquareIcon },
+  '/office': { label: 'Office', icon: ArmchairIcon },
+  '/security': { label: 'Security', icon: ShieldIcon },
+  '/organizations': { label: 'Organizations', icon: Building2Icon },
   '/my-tasks': { label: 'My tasks', icon: CheckSquareIcon },
   '/daily-log': { label: 'Daily log', icon: CalendarCheckIcon },
   '/timesheets': { label: 'Timesheets', icon: TimerIcon },
