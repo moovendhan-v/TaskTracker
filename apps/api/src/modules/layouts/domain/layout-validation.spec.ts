@@ -33,12 +33,21 @@ describe('block settings', () => {
     expect(blockConfigKeys('home', 'overdue-tasks')).toEqual(['title', 'accent', 'followContext', 'spaceId', 'limit', 'mine', 'assigneeIds', 'priorities', 'categories', 'fields']);
     expect(blockConfigKeys('home', 'hours-per-day')).toEqual(['title', 'accent', 'followContext', 'spaceId', 'chart']);
     expect(blockConfigKeys('project', 'recent-tasks')).toEqual(['title', 'accent', 'followContext', 'limit', 'mine', 'assigneeIds', 'priorities', 'categories', 'fields']);
-    expect(blockConfigKeys('home', 'status')).toEqual(['title', 'accent', 'followContext', 'spaceId', 'includeClosed']);
-    expect(blockConfigKeys('home', 'hours-by-project')).toEqual(['title', 'accent', 'followContext']);
+    expect(blockConfigKeys('home', 'status')).toEqual(['title', 'accent', 'followContext', 'spaceId', 'breakdownChart', 'includeClosed']);
+    expect(blockConfigKeys('home', 'hours-by-project')).toEqual(['title', 'accent', 'followContext', 'breakdownChart']);
     expect(blockConfigKeys('project', 'kpis')).toEqual(['title', 'accent', 'followContext']);
     // Nothing on the project's status card reads data, so it has nothing to follow; nor does a section.
     expect(blockConfigKeys('project', 'project-status')).toEqual(['title', 'accent']);
     expect(blockConfigKeys('home', 'section')).toEqual(['title', 'accent']);
+  });
+
+  it('offers breakdown blocks bars, a donut or a pie, and nothing else', () => {
+    const status = { id: 'status', type: 'status', ...at, config: { breakdownChart: 'donut' as const } };
+    expect(validateLayoutItems('home', [status])).toEqual([]);
+    expect(validateLayoutItems('home', [{ ...status, config: { breakdownChart: 'radar' as never } }]).join()).toMatch(/bars, donut or pie/);
+    expect(validateLayoutItems('home', [{ id: 'hours-per-day', type: 'hours-per-day', ...at, config: { breakdownChart: 'pie' as const } }]).join()).toMatch(/isn't a setting/);
+    expect(blockConfigKeys('project', 'status-breakdown')).toContain('breakdownChart');
+    expect(blockConfigKeys('project', 'hours-by-task')).toContain('breakdownChart');
   });
 
   it('checks values and refuses settings a block does not have', () => {

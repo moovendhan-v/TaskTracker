@@ -25,6 +25,8 @@ import {
   OPEN_STATUS_CATEGORIES,
   BLOCK_ASSIGNEES_MAX,
   BLOCK_CHARTS,
+  BLOCK_BREAKDOWN_CHARTS,
+  type BlockBreakdownChart,
   type BlockChart,
   type StatusCategory,
   TASK_PRIORITIES,
@@ -46,6 +48,7 @@ export class BlockConfigGql implements BlockConfig {
   @Field(() => [String], { nullable: true, description: 'View: task-list columns, in order' }) fields?: TaskListField[];
   @Field(() => [StatusCategoryEnum], { nullable: true, description: 'Data: only these status meanings' }) categories?: StatusCategory[];
   @Field(() => String, { nullable: true, description: 'View: bar or line' }) chart?: BlockChart;
+  @Field(() => String, { nullable: true, description: 'View: bars, donut or pie (breakdown blocks)' }) breakdownChart?: BlockBreakdownChart;
   @Field(() => [ID], { nullable: true, description: 'Data: only tasks assigned to these people' }) assigneeIds?: string[];
   @Field({ nullable: true, description: 'Data: narrow to the person or project selected on the page' }) followContext?: boolean;
 }
@@ -62,6 +65,7 @@ export class BlockConfigInput implements BlockConfig {
   @Field(() => [String], { nullable: true }) @IsOmittable() @IsArray() @ArrayMaxSize(TASK_LIST_FIELDS.length) @ArrayUnique() @IsIn(TASK_LIST_FIELDS, { each: true }) fields?: TaskListField[];
   @Field(() => [StatusCategoryEnum], { nullable: true }) @IsOmittable() @IsArray() @ArrayMaxSize(OPEN_STATUS_CATEGORIES.length) @ArrayUnique() @IsIn(OPEN_STATUS_CATEGORIES, { each: true }) categories?: StatusCategory[];
   @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(BLOCK_CHARTS) chart?: BlockChart;
+  @Field(() => String, { nullable: true }) @IsOmittable() @IsIn(BLOCK_BREAKDOWN_CHARTS) breakdownChart?: BlockBreakdownChart;
   @Field(() => [ID], { nullable: true }) @IsOmittable() @IsArray() @ArrayMaxSize(BLOCK_ASSIGNEES_MAX) @ArrayUnique() @IsString({ each: true }) @Matches(/^[A-Za-z0-9_-]{1,64}$/, { each: true }) assigneeIds?: string[];
   @Field({ nullable: true }) @IsOmittable() @IsBoolean() followContext?: boolean;
 }

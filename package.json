@@ -10,7 +10,7 @@
     "build": "pnpm -r --workspace-concurrency=1 build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "lint": "eslint .",
+    "lint": "NODE_OPTIONS=--max-old-space-size=6144 eslint .",
     "test:e2e": "pnpm --filter @taskflow/api test:e2e && pnpm --filter @taskflow/web test:e2e",
     "dev:api": "pnpm --filter @taskflow/api dev",
     "dev:web": "pnpm --filter @taskflow/web dev",

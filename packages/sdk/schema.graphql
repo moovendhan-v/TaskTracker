@@ -307,6 +307,9 @@ type BlockConfig {
   """Data: only tasks assigned to these people"""
   assigneeIds: [ID!]
 
+  """View: bars, donut or pie (breakdown blocks)"""
+  breakdownChart: String
+
   """Data: only these status meanings"""
   categories: [StatusCategory!]
 
@@ -335,6 +338,7 @@ type BlockConfig {
 input BlockConfigInput {
   accent: String
   assigneeIds: [ID!]
+  breakdownChart: String
   categories: [StatusCategory!]
   chart: String
   fields: [String!]

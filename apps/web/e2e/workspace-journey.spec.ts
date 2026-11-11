@@ -505,6 +505,27 @@ test('draws Hours per day as a line instead of bars', async () => {
   await expect(block.getByText('8 h day')).toBeVisible();
 });
 
+test('draws a breakdown as a donut, with the numbers beside it', async () => {
+  const block = page.locator('section', { has: page.getByRole('heading', { name: 'Team status', exact: true }) }).last();
+  await block.hover();
+  await block.getByRole('button', { name: 'Block options' }).click();
+  await page.getByRole('menuitem', { name: 'Configure…' }).click();
+  const drawer = page.getByRole('dialog', { name: /Configure/ });
+  await drawer.getByRole('radiogroup', { name: 'Chart' }).getByRole('radio', { name: 'Donut' }).click();
+  await drawer.getByRole('button', { name: 'Done' }).click();
+  // The chart names every slice with its number and share; the legend carries the same.
+  await expect(block.getByRole('img', { name: /^Tasks by status: .*\(\d+%\)/ })).toBeVisible();
+  const legend = block.getByRole('list', { name: 'Tasks by status' });
+  await expect(legend.getByRole('listitem').first()).toContainText('%');
+  // Back to bars.
+  await block.hover();
+  await block.getByRole('button', { name: 'Block options' }).click();
+  await page.getByRole('menuitem', { name: 'Configure…' }).click();
+  await page.getByRole('dialog', { name: /Configure/ }).getByRole('radiogroup', { name: 'Chart' }).getByRole('radio', { name: 'Bars' }).click();
+  await page.getByRole('dialog', { name: /Configure/ }).getByRole('button', { name: 'Done' }).click();
+  await expect(block.getByRole('img', { name: /^Tasks by status/ })).toHaveCount(0);
+});
+
 test('a block follows the person picked on the page, and another narrows to chosen people', async () => {
   const blockNamed = (title: string) => page.locator('section', { has: page.getByRole('heading', { name: title, exact: true }) }).last();
   const configure = async (title: string) => {

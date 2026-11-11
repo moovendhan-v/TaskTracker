@@ -58,7 +58,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Insights',
     skeleton: 'rows',
     size: { w: 4, h: 5 },
-    render: (data, config) => <StatusBreakdown data={data} openOnly={!config.includeClosed} />,
+    render: (data, config) => <StatusBreakdown data={data} openOnly={!config.includeClosed} chart={config.breakdownChart} />,
   },
   priority: {
     title: 'Priority',
@@ -67,7 +67,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Insights',
     skeleton: 'rows',
     size: { w: 4, h: 5 },
-    render: (data) => <PriorityPanel data={data} />,
+    render: (data, config) => <PriorityPanel data={data} chart={config.breakdownChart} />,
   },
   'overdue-aging': {
     title: 'Overdue aging',
@@ -115,7 +115,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Time',
     skeleton: 'rows',
     size: { w: 4, h: 5 },
-    render: (data) => <HoursByPerson data={data} />,
+    render: (data, config) => <HoursByPerson data={data} chart={config.breakdownChart} />,
   },
   'hours-by-project': {
     title: 'Hours by project',
@@ -124,7 +124,7 @@ export const HOME_BLOCKS: Record<HomeBlockType, BlockDefinition> = {
     category: 'Time',
     skeleton: 'rows',
     size: { w: 4, h: 5 },
-    render: (data) => <HoursByProject data={data} />,
+    render: (data, config) => <HoursByProject data={data} chart={config.breakdownChart} />,
   },
   'overdue-tasks': {
     title: 'Overdue',

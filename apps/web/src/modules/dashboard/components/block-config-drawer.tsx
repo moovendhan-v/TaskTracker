@@ -14,8 +14,7 @@ import {
   type BlockChart,
   type StatusCategory,
   type TaskListField,
-  type TaskPriority,
-} from '@taskflow/shared-types';
+  type TaskPriority, BLOCK_BREAKDOWN_CHARTS, type BlockBreakdownChart } from '@taskflow/shared-types';
 import { ArrowDownIcon, ArrowUpIcon, CheckIcon, RotateCcwIcon } from 'lucide-react';
 import { Segmented } from '@/components/kit/segmented';
 import { Button } from '@/components/ui/button';
@@ -40,6 +39,7 @@ const SWATCH: Record<(typeof BLOCK_ACCENTS)[number], string> = {
 const PRIORITY_LABEL: Record<TaskPriority, string> = { urgent: 'Urgent', high: 'High', normal: 'Normal', low: 'Low', none: 'No priority' };
 const CATEGORY_LABEL: Record<StatusCategory, string> = { unstarted: 'To do', started: 'In progress', review: 'In review', blocked: 'Blocked', done: 'Done', cancelled: 'Cancelled' };
 const CHART_LABEL: Record<BlockChart, string> = { bar: 'Bars', line: 'Line' };
+const BREAKDOWN_LABEL: Record<BlockBreakdownChart, string> = { bars: 'Bars', donut: 'Donut', pie: 'Pie' };
 
 const FIELD_LABEL: Record<TaskListField, string> = { number: 'Number', status: 'Status', priority: 'Priority', date: 'Date', assignee: 'Assignee', project: 'Project' };
 
@@ -254,6 +254,14 @@ export function BlockConfigDrawer({ workspaceId, pageKey, item, block, onOpenCha
               value={config.chart ?? 'bar'}
               onChange={(value) => set({ chart: value === 'bar' ? undefined : (value as BlockChart) })}
               options={BLOCK_CHARTS.map((chart) => ({ value: chart, label: CHART_LABEL[chart] }))}
+            />
+          ) : null}
+          {keys.includes('breakdownChart') ? (
+            <Segmented
+              label="Chart"
+              value={config.breakdownChart ?? 'bars'}
+              onChange={(value) => set({ breakdownChart: value === 'bars' ? undefined : (value as BlockBreakdownChart) })}
+              options={BLOCK_BREAKDOWN_CHARTS.map((chart) => ({ value: chart, label: BREAKDOWN_LABEL[chart] }))}
             />
           ) : null}
           {keys.includes('fields') ? <FieldPicker value={config.fields ?? defaultFields(pageKey)} onChange={(fields) => set({ fields })} /> : null}
