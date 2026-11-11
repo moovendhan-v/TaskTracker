@@ -8,6 +8,10 @@ import {
   OrganizationMembersDocument,
   OrganizationsDocument,
   OrganizationWorkspacesDocument,
+  OrganizationSsoDocument,
+  RemoveOrganizationSsoDocument,
+  SetOrganizationSsoDocument,
+  VerifyOrganizationSsoDomainDocument,
   RemoveOrganizationMemberDocument,
   RemoveWorkspaceFromOrganizationDocument,
   RenameOrganizationDocument,
@@ -45,6 +49,11 @@ export const organizationsApi = {
     (await graphql(SetOrganizationMemberRoleDocument, { organizationId, userId, role: memberRole })).setOrganizationMemberRole.map(toMember),
   removeMember: async (organizationId: string, userId: string) =>
     (await graphql(RemoveOrganizationMemberDocument, { organizationId, userId })).removeOrganizationMember.map(toMember),
+  sso: async (organizationId: string) => (await graphql(OrganizationSsoDocument, { organizationId })).organizationSso,
+  setSso: async (organizationId: string, input: { domain: string; issuer: string; clientId: string; clientSecret: string }) =>
+    (await graphql(SetOrganizationSsoDocument, { organizationId, input })).setOrganizationSso,
+  verifySso: async (organizationId: string) => (await graphql(VerifyOrganizationSsoDomainDocument, { organizationId })).verifyOrganizationSsoDomain,
+  removeSso: async (organizationId: string) => (await graphql(RemoveOrganizationSsoDocument, { organizationId })).removeOrganizationSso,
   attachWorkspace: async (workspaceId: string, organizationId: string) => (await graphql(AddWorkspaceToOrganizationDocument, { workspaceId, organizationId })).addWorkspaceToOrganization,
   detachWorkspace: async (workspaceId: string) => (await graphql(RemoveWorkspaceFromOrganizationDocument, { workspaceId })).removeWorkspaceFromOrganization,
 };
@@ -55,5 +64,6 @@ export const organizationKeys = {
   members: (organizationId: string) => ['organizations', organizationId, 'members'] as const,
   workspaces: (organizationId: string) => ['organizations', organizationId, 'workspaces'] as const,
   activity: (organizationId: string) => ['organizations', organizationId, 'activity'] as const,
+  sso: (organizationId: string) => ['organizations', organizationId, 'sso'] as const,
   ofWorkspace: (workspaceId: string) => ['workspaces', workspaceId, 'organization'] as const,
 };

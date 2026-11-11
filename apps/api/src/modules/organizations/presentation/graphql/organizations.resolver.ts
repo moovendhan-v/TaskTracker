@@ -5,9 +5,18 @@ import { RequirePermissions } from '../../../../core/access/require-permissions.
 import { DomainError } from '../../../../core/domain/domain-error.js';
 import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
-import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
+import type { Actor, AuthenticatedRequest, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { OrganizationsService } from '../../application/organizations.service.js';
-import { OrganizationActivityGql, OrganizationGql, OrganizationMemberGql, OrganizationWorkspaceGql, WorkspaceOrganizationGql } from './organization.types.js';
+import {
+  OrganizationActivityGql,
+  OrganizationGql,
+  OrganizationMemberGql,
+  OrganizationSsoGql,
+  OrganizationSsoInput,
+  OrganizationWorkspaceGql,
+  WorkspaceOrganizationGql,
+} from './organization.types.js';
+import { CurrentRequest } from '../../../../core/http/decorators/current-request.decorator.js';
 
 const role = (value: string) => {
   if (!isOrgRole(value)) throw DomainError.invalid('Role must be owner, admin or member');
@@ -96,6 +105,31 @@ export class OrganizationsResolver {
   @Mutation(() => [OrganizationMemberGql], { description: 'Owners and admins remove people; anyone can remove themselves (leave)' })
   removeOrganizationMember(@UuidArg('organizationId') organizationId: string, @Args('userId') userId: string, @CurrentActor() actor: Actor): Promise<OrganizationMemberGql[]> {
     return this.service.removeMember(actor, organizationId, userId.slice(0, 100));
+  }
+
+  @Query(() => OrganizationSsoGql, { nullable: true, description: 'SSO for the organization (owners and admins)' })
+  organizationSso(@UuidArg('organizationId') organizationId: string, @CurrentActor() actor: Actor, @CurrentRequest() request: AuthenticatedRequest): Promise<OrganizationSsoGql | null> {
+    return this.service.sso(actor, request.headers, organizationId);
+  }
+
+  @Mutation(() => OrganizationSsoGql, { nullable: true, description: 'Owners, with two-step sign-in; replaces any SSO it had' })
+  setOrganizationSso(
+    @UuidArg('organizationId') organizationId: string,
+    @Args('input') input: OrganizationSsoInput,
+    @CurrentActor() actor: Actor,
+    @CurrentRequest() request: AuthenticatedRequest,
+  ): Promise<OrganizationSsoGql | null> {
+    return this.service.setSso(actor, request.headers, organizationId, input);
+  }
+
+  @Mutation(() => OrganizationSsoGql, { nullable: true, description: 'Checks the DNS record that proves the domain' })
+  verifyOrganizationSsoDomain(@UuidArg('organizationId') organizationId: string, @CurrentActor() actor: Actor, @CurrentRequest() request: AuthenticatedRequest): Promise<OrganizationSsoGql | null> {
+    return this.service.verifySsoDomain(actor, request.headers, organizationId);
+  }
+
+  @Mutation(() => Boolean)
+  removeOrganizationSso(@UuidArg('organizationId') organizationId: string, @CurrentActor() actor: Actor, @CurrentRequest() request: AuthenticatedRequest): Promise<boolean> {
+    return this.service.removeSso(actor, request.headers, organizationId);
   }
 
   @Query(() => WorkspaceOrganizationGql, { nullable: true, description: 'The organization this workspace is in, if any' })

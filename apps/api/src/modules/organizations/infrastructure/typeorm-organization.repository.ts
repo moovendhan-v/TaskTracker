@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import type { Pool } from 'pg';
+import { PG_POOL } from '../../../core/database/pg-pool.provider.js';
 import {
   isOrgRole,
   isTwoStepRequirement,
@@ -29,7 +31,10 @@ const toRecord = (row: OrganizationRow): OrganizationRecord => ({
 /** Bound parameters only; row-level security limits every query to the current scope. */
 @Injectable()
 export class TypeOrmOrganizationRepository extends OrganizationRepository {
-  constructor(private readonly transactional: TransactionalManager) {
+  constructor(
+    private readonly transactional: TransactionalManager,
+    @Inject(PG_POOL) private readonly pool: Pool,
+  ) {
     super();
   }
 
@@ -126,6 +131,32 @@ export class TypeOrmOrganizationRepository extends OrganizationRepository {
   async findUserByEmail(email: string): Promise<{ id: string; name: string; emailVerified: boolean } | null> {
     const [row] = await this.query<{ id: string; name: string; emailVerified: boolean }>(`SELECT id, name, "emailVerified" FROM "user" WHERE lower(email) = lower($1)`, [email]);
     return row ?? null;
+  }
+
+  async ssoProvider(organizationId: string): Promise<{ providerId: string; issuer: string; domain: string; verified: boolean; clientId: string } | null> {
+    const [row] = await this.query<{ providerId: string; issuer: string; domain: string; domainVerified: boolean | null; oidcConfig: string | null }>(
+      `SELECT "providerId", issuer, domain, "domainVerified", "oidcConfig" FROM "ssoProvider" WHERE "organizationId" = $1 LIMIT 1`,
+      [organizationId],
+    );
+    if (!row) return null;
+    let clientId: string;
+    try {
+      // Only the client id is read; the secret never leaves the table.
+      clientId = String((JSON.parse(row.oidcConfig ?? '{}') as { clientId?: unknown }).clientId ?? '');
+    } catch {
+      clientId = '';
+    }
+    return { providerId: row.providerId, issuer: row.issuer, domain: row.domain, verified: row.domainVerified === true, clientId };
+  }
+
+  async bindSsoProvider(providerId: string, organizationId: string, userId: string): Promise<void> {
+    // On its own connection, committed at once: Better Auth reads the row through its own pool,
+    // and must neither miss this change nor wait behind the request's transaction for it.
+    await this.pool.query(`UPDATE "ssoProvider" SET "organizationId" = $2, "userId" = $3 WHERE "providerId" = $1`, [providerId, organizationId, userId]);
+  }
+
+  async deleteSsoProviders(organizationId: string): Promise<void> {
+    await this.pool.query(`DELETE FROM "ssoProvider" WHERE "organizationId" = $1`, [organizationId]);
   }
 
   async workspaceOrganization(workspaceId: string): Promise<{ id: string; name: string; twoStepRequired: TwoStepRequirement } | null> {

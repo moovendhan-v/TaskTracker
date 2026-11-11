@@ -35,6 +35,12 @@ export abstract class OrganizationRepository {
   abstract activity(organizationId: string, limit: number): Promise<OrganizationActivityResponse[]>;
   /** A signed-up user by email (Better Auth's table, outside row-level security). */
   abstract findUserByEmail(email: string): Promise<{ id: string; name: string; emailVerified: boolean } | null>;
+  /** SSO (A4): the organization's provider row (Better Auth's table), if it has one. */
+  abstract ssoProvider(organizationId: string): Promise<{ providerId: string; issuer: string; domain: string; verified: boolean; clientId: string } | null>;
+  /** Ties a provider to the organization, and lets `userId` manage it through Better Auth (it only lets the creator). */
+  abstract bindSsoProvider(providerId: string, organizationId: string, userId: string): Promise<void>;
+  /** Removes the organization's SSO providers (when it's deleted), so they stop signing anyone in. */
+  abstract deleteSsoProviders(organizationId: string): Promise<void>;
   /** Workspace scope: the organization a workspace is in, if any. */
   abstract workspaceOrganization(workspaceId: string): Promise<{ id: string; name: string; twoStepRequired: TwoStepRequirement } | null>;
   /** Workspace scope: moves the workspace into an organization, or out (null). */

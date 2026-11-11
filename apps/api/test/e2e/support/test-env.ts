@@ -55,6 +55,8 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     LIVEKIT_API_KEY: E2E_LIVEKIT_KEY,
     LIVEKIT_API_SECRET: E2E_LIVEKIT_SECRET,
     CALL_SWEEP_SECONDS: '0',
+    // SSO (A4): the test identity provider in support/oidc-idp.ts.
+    SSO_TRUSTED_ISSUERS: 'http://127.0.0.1:7790',
     // Webhook steps call a local receiver in tests; production refuses both settings below.
     AUTOMATION_WEBHOOK_HOSTS: 'localhost,127.0.0.1',
     AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS: 'true',

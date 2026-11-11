@@ -53,3 +53,16 @@ export function stricterTwoStep(a: TwoStepRequirement, b: TwoStepRequirement | n
   const order: readonly TwoStepRequirement[] = ['off', 'admins', 'everyone'];
   return b && order.indexOf(b) > order.indexOf(a) ? b : a;
 }
+
+/** SSO (A4) for an organization: OIDC through its identity provider, once it proved it owns the email domain. */
+export interface OrganizationSsoResponse {
+  domain: string;
+  issuer: string;
+  clientId: string;
+  verified: boolean;
+  /** The DNS TXT record that proves the domain: add it, then verify. Absent once verified. */
+  dnsRecord: { name: string; value: string } | null;
+}
+
+/** A bare domain such as acme.com: lowercase letters, digits, hyphens and dots. */
+export const SSO_DOMAIN_PATTERN = /^(?=.{3,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;

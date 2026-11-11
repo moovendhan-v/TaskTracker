@@ -39,5 +39,5 @@ owner or admin of it.
 
 ## Later
 
-Billing, shared HR and IAM (org-wide roles and policies), ARN-like resource names,
-SSO (A4) per verified email domain.
+Billing, shared HR and IAM (org-wide roles and policies), ARN-like resource names.
+SSO per verified email domain is done (A4, OIDC): see the status page.
