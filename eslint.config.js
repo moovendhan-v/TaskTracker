@@ -50,9 +50,14 @@ export default tseslint.config(
 
   {
     // Build tooling that isn't part of any tsconfig project.
-    files: ['**/*.{js,mjs}', '**/vitest*.config.ts', '**/playwright.config.ts'],
+    files: ['**/*.{js,mjs}', '**/vitest*.config.ts', '**/playwright*.config.ts'],
     ...tseslint.configs.disableTypeChecked,
     languageOptions: { ...tseslint.configs.disableTypeChecked.languageOptions, globals: globals.node },
+  },
+  {
+    // The web app's service worker (F1) runs in the browser's worker scope, not Node.
+    files: ['apps/web/public/sw.js'],
+    languageOptions: { globals: globals.serviceworker },
   },
 
   // ── API: NestJS decorators need runtime imports for DI tokens, so keep `import { X }` there.

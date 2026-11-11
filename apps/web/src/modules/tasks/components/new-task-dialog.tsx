@@ -17,6 +17,7 @@ import { useTaskMutations } from '../hooks/use-task-mutations';
 import { PRIORITY_META, TYPE_META } from '../lib/task-meta';
 import { PriorityIcon } from './shared/priority-picker';
 import { AssigneePicker } from './shared/assignee-picker';
+import { isPhone, useSwipeDismiss } from '@/lib/swipe';
 
 interface Values {
   title: string;
@@ -110,6 +111,8 @@ export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initial
     })();
 
   const busy = form.formState.isSubmitting;
+  // A bottom sheet on phones: swipe it down to close (F1).
+  const swipe = useSwipeDismiss('down', () => onOpenChange(false), isPhone());
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -117,9 +120,12 @@ export function NewTaskDialog({ workspaceId, open, onOpenChange, listId: initial
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
+          style={swipe.style}
+          {...swipe.handlers}
           className="fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] overflow-y-auto rounded-t-2xl border-t bg-popover pb-[env(safe-area-inset-bottom)] text-popover-foreground shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-8 sm:inset-x-auto sm:top-[10vh] sm:bottom-auto sm:left-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-[720px] sm:-translate-x-1/2 sm:overflow-visible sm:rounded-xl sm:border sm:pb-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=open]:zoom-in-95"
         >
           <DialogPrimitive.Title className="sr-only">New task</DialogPrimitive.Title>
+          <span aria-hidden className="mx-auto mt-2 block h-1 w-10 rounded-full bg-muted-foreground/30 sm:hidden" />
           <form
             noValidate
             onSubmit={(event) => {

@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { useNavDrawer, useViewport } from '@/core/layout/use-viewport';
 import { VerifyEmailBanner } from '@/core/auth/verify-email-banner';
+import { PullToRefresh } from '@/core/layout/pull-to-refresh';
 import { useWorkspaceEvents } from '@/core/realtime/use-workspace-events';
 import { toast } from '@/components/ui/sonner';
 import { describeNotification, InboxPanel, inboxApi, useInboxPanel, useUnreadCount } from '@/modules/inbox';
@@ -46,14 +47,14 @@ export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: stri
     <div className="flex h-full overflow-hidden">
       {viewport !== 'phone' ? <AppRail workspaceId={workspaceId} unread={unread} /> : null}
       {docked ? <WorkspaceSidebar workspaceId={workspaceId} unread={unread} /> : null}
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <PullToRefresh enabled={viewport === 'phone'} className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AppTopbar workspaceId={workspaceId} compact={viewport === 'phone'} showMenu={!docked} />
         {viewport !== 'phone' ? <WorkbenchTabs workspaceId={workspaceId} /> : null}
         <VerifyEmailBanner />
         <TwoStepBanner workspaceId={workspaceId} />
         <Outlet />
         {viewport === 'phone' ? <BottomTabBar workspaceId={workspaceId} unread={unread} /> : null}
-      </main>
+      </PullToRefresh>
       {/* Calls (D2): the lobby, and the call you're in, over every page. */}
       <CallOverlay />
       {!docked ? (

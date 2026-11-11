@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import type { ChatChannelResponse, ChatMessageResponse } from '@taskflow/shared-types';
 import { ArchiveIcon, BellIcon, BellOffIcon, HashIcon, LockIcon, LogOutIcon, MessagesSquareIcon, MoreHorizontalIcon, PencilIcon, UserPlusIcon, UsersIcon, XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useSwipeDismiss } from '@/lib/swipe';
 import { EmptyState } from '@/components/common/empty-state';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { notify } from '@/components/kit/notify';
@@ -378,6 +379,8 @@ function ThreadPane({ workspaceId, rootId, channelLabel: where, archived, onClos
 }) {
   const root = useChatMessage(workspaceId, rootId);
   const thread = useChatThread(workspaceId, rootId);
+  // On phones the thread is a full-screen sheet; swipe it away to the right (F1).
+  const swipe = useSwipeDismiss('right', onClose);
   const replies = thread.data?.items ?? [];
   const item = (message: ChatMessageResponse, head: boolean) => (
     <MessageItem
@@ -399,7 +402,9 @@ function ThreadPane({ workspaceId, rootId, channelLabel: where, archived, onClos
       onKeyDown={(event) => {
         if (event.key === 'Escape' && !event.defaultPrevented) onClose();
       }}
-      className="flex w-[360px] shrink-0 flex-col border-l bg-background max-lg:fixed max-lg:inset-y-0 max-lg:right-0 max-lg:z-40 max-lg:shadow-popover"
+      className="flex w-[360px] shrink-0 flex-col border-l bg-background max-lg:fixed max-lg:inset-y-0 max-lg:right-0 max-lg:z-40 max-lg:shadow-popover max-sm:inset-0 max-sm:z-50 max-sm:w-full max-sm:border-l-0 max-sm:pb-[env(safe-area-inset-bottom)]"
+      style={swipe.style}
+      {...swipe.handlers}
     >
       <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
         <h2 className="text-sm font-semibold">Thread</h2>

@@ -15,6 +15,12 @@ applyAppearance(storedAppearance());
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
 
+// Installable app and offline shell (F1). Production builds only: in development Vite serves
+// files that change all the time, and a service worker would hand out stale ones.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => void navigator.serviceWorker.register('/sw.js').catch(() => undefined));
+}
+
 createRoot(root).render(
   <StrictMode>
     <App />
