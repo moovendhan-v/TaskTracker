@@ -4,12 +4,14 @@ import {
   ExternalLinkIcon,
   Maximize2Icon,
   Minimize2Icon,
+  NotebookPenIcon,
   PresentationIcon,
   XIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
+import { parseSlides, type Slide } from '../lib/slides';
 import { MarkdownPreview } from './markdown-preview';
 
 interface SlidePresentationModalProps {
@@ -19,44 +21,15 @@ interface SlidePresentationModalProps {
   content: string;
 }
 
-interface Slide {
-  id: number;
-  content: string;
-  title: string;
-}
-
-const DEFAULT_SLIDE: Slide = {
-  id: 0,
-  content: '# Presentation\n\nNo slides found.',
-  title: 'Presentation',
-};
+const DEFAULT_SLIDE: Slide = { id: 0, content: '# Presentation\n\nNo slides found.', notes: '', title: 'Presentation' };
 
 export function SlidePresentationModal({ open, onClose, documentTitle, content }: SlidePresentationModalProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Parse slides separated by '---' or headings
-  const slides: Slide[] = useMemo(() => {
-    const rawChunks = content
-      .split(/(?:^|\n)---\s*(?:\n|$)/)
-      .map((chunk) => chunk.trim())
-      .filter((chunk): chunk is string => Boolean(chunk));
-
-    if (rawChunks.length === 0) {
-      return [{ id: 0, content: `# ${documentTitle || 'Untitled'}\n\nNo presentation slides yet.`, title: documentTitle || 'Title' }];
-    }
-
-    return rawChunks.map((chunk, idx) => {
-      // Find the first heading to use as slide title
-      const titleMatch = chunk.match(/^#{1,3}\s+(.+)$/m);
-      const title = (titleMatch && titleMatch[1]) ? titleMatch[1] : `Slide ${idx + 1}`;
-      return {
-        id: idx,
-        content: chunk,
-        title,
-      };
-    });
-  }, [content, documentTitle]);
+  // Slides at '---' lines; a 'Note:' line starts the presenter's notes for that slide.
+  const slides: Slide[] = useMemo(() => parseSlides(content, documentTitle), [content, documentTitle]);
+  const [notesOpen, setNotesOpen] = useState(false);
 
   const currentSlide: Slide = slides[currentSlideIndex] ?? slides[0] ?? DEFAULT_SLIDE;
 
@@ -100,6 +73,8 @@ export function SlidePresentationModal({ open, onClose, documentTitle, content }
         }
       } else if (e.key.toLowerCase() === 'f') {
         toggleFullscreen();
+      } else if (e.key.toLowerCase() === 'n') {
+        setNotesOpen((open) => !open);
       }
     };
 
@@ -122,7 +97,7 @@ export function SlidePresentationModal({ open, onClose, documentTitle, content }
   const progressPercent = ((currentSlideIndex + 1) / Math.max(1, slides.length)) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-slate-100 antialiased select-none">
+    <div role="dialog" aria-modal="true" aria-label="Presentation" className="dark fixed inset-0 z-50 flex flex-col bg-slate-950 text-slate-100 antialiased select-none">
       {/* Top Presentation Bar */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800/80 bg-slate-900/60 px-6 backdrop-blur">
         <div className="flex items-center gap-3">
@@ -147,6 +122,18 @@ export function SlidePresentationModal({ open, onClose, documentTitle, content }
           >
             <span>md2slides Studio</span>
             <ExternalLinkIcon className="size-3 text-slate-400" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setNotesOpen((open) => !open)}
+            aria-pressed={notesOpen}
+            className="h-8 gap-1.5 border-slate-700 bg-slate-800/80 text-xs text-slate-200 hover:bg-slate-700"
+            title="Speaker notes (N)"
+          >
+            <NotebookPenIcon className="size-3.5" />
+            <span>Notes</span>
           </Button>
 
           <Button
@@ -206,6 +193,18 @@ export function SlidePresentationModal({ open, onClose, documentTitle, content }
         </button>
       </main>
 
+      {/* Speaker notes: for the presenter, with task references and embeds live */}
+      {notesOpen ? (
+        <section aria-label="Speaker notes" className="max-h-[30vh] shrink-0 overflow-y-auto border-t border-slate-800/80 bg-slate-900/80 px-6 py-4 select-text">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Notes · {currentSlide.title}</h2>
+          {currentSlide.notes ? (
+            <MarkdownPreview content={currentSlide.notes} className="prose-invert prose-p:text-slate-300 prose-li:text-slate-300 max-w-none text-sm" />
+          ) : (
+            <p className="text-sm text-slate-400">No notes for this slide. Add a line starting with “Note:” after the slide’s content; everything below it is yours alone, and #123 or :::task 123 shows the task.</p>
+          )}
+        </section>
+      ) : null}
+
       {/* Bottom Progress Bar & Navigation Footer */}
       <footer className="flex h-12 shrink-0 items-center justify-between border-t border-slate-800/80 bg-slate-900/60 px-6 backdrop-blur">
         <div className="flex items-center gap-1">
@@ -223,7 +222,7 @@ export function SlidePresentationModal({ open, onClose, documentTitle, content }
         </div>
 
         <div className="flex items-center gap-3 text-xs text-slate-400">
-          <span>Use ← / → or Space to navigate</span>
+          <span>Use ← / → or Space to navigate · N for notes</span>
           <span>·</span>
           <span>Slide {currentSlideIndex + 1} / {slides.length}</span>
         </div>

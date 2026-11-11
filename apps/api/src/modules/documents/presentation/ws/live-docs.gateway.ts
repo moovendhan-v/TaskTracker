@@ -101,7 +101,7 @@ export class LiveDocsGateway implements OnApplicationBootstrap, OnModuleDestroy 
   }
 
   private async connected(ws: WebSocket, request: IncomingMessage, session: LiveSession, opened: Awaited<ReturnType<LiveDocsService['authorize']>>): Promise<void> {
-    const { content, canEdit, live } = opened;
+    const { content, title, canEdit, live } = opened;
     ws.binaryType = 'nodebuffer';
     const peer: LivePeer = {
       userId: session.user.id,
@@ -138,7 +138,7 @@ export class LiveDocsGateway implements OnApplicationBootstrap, OnModuleDestroy 
     });
 
     try {
-      state = await this.live.join(session, peer, content, live);
+      state = await this.live.join(session, peer, { content, title }, live);
     } catch (error) {
       ws.close(4429, error instanceof DomainError ? error.message.slice(0, 120) : 'Could not open the page');
       return;

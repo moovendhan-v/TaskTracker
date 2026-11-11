@@ -10,8 +10,15 @@ export const MESSAGE_SYNC = 0;
 export const MESSAGE_AWARENESS = 1;
 export const MESSAGE_NOTICE = 3;
 
-/** The shared text's name in the Yjs document: the page's markdown. */
+/** The shared texts in the Yjs document: the page's markdown and its title. */
 export const LIVE_TEXT = 'markdown';
+export const LIVE_TITLE = 'title';
+
+/** What a room starts from when there's no live history to continue. */
+export interface LivePage {
+  content: string;
+  title: string;
+}
 
 /** The origin of changes that came from another API instance. */
 export const RELAYED = Symbol('relayed');
@@ -75,13 +82,13 @@ export class LiveDocRoom {
 
   constructor(
     readonly key: string,
-    content: string,
+    page: LivePage,
     stored: LiveHistory | null,
     private readonly onChange: () => void,
   ) {
     // The server's own presence isn't shown to anyone.
     this.awareness.setLocalState(null);
-    this.lineage = this.seed(content, stored);
+    this.lineage = this.seed(page, stored);
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
       const encoder = encoding.createEncoder();
       encoding.writeVarUint(encoder, MESSAGE_SYNC);
@@ -113,10 +120,11 @@ export class LiveDocRoom {
   }
 
   /**
-   * Continues the stored history when it still matches the stored markdown; otherwise the
-   * page changed outside live editing (or was never edited live), and a new history starts.
+   * Continues the stored history when it still matches the stored markdown and title;
+   * otherwise the page changed outside live editing (or was never edited live), and a new
+   * history starts.
    */
-  private seed(content: string, stored: LiveHistory | null): string {
+  private seed(page: LivePage, stored: LiveHistory | null): string {
     if (stored?.trusted) {
       // Another instance's live room: its text is newer than the database's.
       Y.applyUpdate(this.doc, stored.state);
@@ -126,7 +134,7 @@ export class LiveDocRoom {
       const probe = new Y.Doc();
       try {
         Y.applyUpdate(probe, stored.state);
-        if (probe.getText(LIVE_TEXT).toString() === content) {
+        if (probe.getText(LIVE_TEXT).toString() === page.content && probe.getText(LIVE_TITLE).toString() === page.title) {
           Y.applyUpdate(this.doc, stored.state);
           return stored.lineage;
         }
@@ -136,7 +144,10 @@ export class LiveDocRoom {
         probe.destroy();
       }
     }
-    this.doc.getText(LIVE_TEXT).insert(0, content);
+    this.doc.transact(() => {
+      this.doc.getText(LIVE_TEXT).insert(0, page.content);
+      this.doc.getText(LIVE_TITLE).insert(0, page.title);
+    }, this);
     return randomUUID();
   }
 
@@ -147,6 +158,10 @@ export class LiveDocRoom {
 
   get text(): string {
     return this.doc.getText(LIVE_TEXT).toString();
+  }
+
+  get title(): string {
+    return this.doc.getText(LIVE_TITLE).toString();
   }
 
   get size(): number {
@@ -232,8 +247,8 @@ export class LiveDocRoom {
       if (!owned.has(clientId) && (this.ownerOf(clientId) || this.remoteClients.has(clientId))) throw new Error('Presence belongs to someone else');
       owned.add(clientId);
       const state = JSON.parse(json) as unknown;
-      const cursor = state && typeof state === 'object' && 'cursor' in state ? (state as { cursor: unknown }).cursor : null;
-      const next = state === null ? null : { cursor: cursor ?? null, user: { id: peer.userId, name: peer.userName, canEdit: peer.canEdit } };
+      const cursor = state && typeof state === 'object' && 'cursor' in state ? cleanCursor((state as { cursor: unknown }).cursor) : null;
+      const next = state === null ? null : { cursor, user: { id: peer.userId, name: peer.userName, canEdit: peer.canEdit } };
       encoding.writeVarUint(clean, clientId);
       encoding.writeVarUint(clean, clock);
       encoding.writeVarString(clean, JSON.stringify(next));
@@ -287,8 +302,8 @@ export class LiveDocRoom {
   }
 
   /** Replaces the text with what was stored (the sanitizer may have changed it), as one change. */
-  replaceText(next: string): void {
-    const text = this.doc.getText(LIVE_TEXT);
+  replaceText(next: string, name: typeof LIVE_TEXT | typeof LIVE_TITLE = LIVE_TEXT): void {
+    const text = this.doc.getText(name);
     const current = text.toString();
     if (current === next) return;
     let start = 0;
@@ -309,4 +324,53 @@ export class LiveDocRoom {
     this.awareness.destroy();
     this.doc.destroy();
   }
+}
+
+/** Where someone's cursor is, as shared with others: which text, its line, and exact positions. */
+export interface LiveCursor {
+  field: typeof LIVE_TEXT | typeof LIVE_TITLE;
+  line: number | null;
+  anchor: RelativePositionJson | null;
+  head: RelativePositionJson | null;
+}
+
+/** A Yjs relative position (Y.relativePositionToJSON): after an item, or at the start/end of a text. */
+interface RelativePositionJson {
+  item?: { client: number; clock: number };
+  tname?: string;
+  assoc?: number;
+}
+
+const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+
+function cleanPosition(value: unknown): RelativePositionJson | null {
+  if (!value || typeof value !== 'object') return null;
+  const { item, tname, assoc } = value as { item?: unknown; tname?: unknown; assoc?: unknown };
+  const clean: RelativePositionJson = {};
+  if (item && typeof item === 'object') {
+    const { client, clock } = item as { client?: unknown; clock?: unknown };
+    if (!isCount(client) || !isCount(clock)) return null;
+    clean.item = { client, clock };
+  } else if (tname === LIVE_TEXT || tname === LIVE_TITLE) {
+    clean.tname = tname;
+  } else {
+    return null;
+  }
+  if (assoc === -1 || assoc === 0) clean.assoc = assoc;
+  return clean;
+}
+
+/**
+ * Keeps only the cursor fields others need, in their expected shapes: browsers draw these, so
+ * nothing else a client sends passes through.
+ */
+export function cleanCursor(value: unknown): LiveCursor | null {
+  if (!value || typeof value !== 'object') return null;
+  const { field, line, anchor, head } = value as Record<string, unknown>;
+  return {
+    field: field === LIVE_TITLE ? LIVE_TITLE : LIVE_TEXT,
+    line: isCount(line) && line <= 1_000_000 ? line : null,
+    anchor: cleanPosition(anchor),
+    head: cleanPosition(head),
+  };
 }

@@ -60,6 +60,24 @@ export class LiveDocClient {
     this.doc.getText('markdown').insert(index, value);
   }
 
+  get title(): string {
+    return this.doc.getText('title').toString();
+  }
+
+  insertTitle(index: number, value: string): void {
+    this.doc.getText('title').insert(index, value);
+  }
+
+  /** An exact position in the markdown, as browsers share it in presence. */
+  position(index: number): unknown {
+    return Y.relativePositionToJSON(Y.createRelativePositionFromTypeIndex(this.doc.getText('markdown'), index));
+  }
+
+  /** Turns a shared position back into an index in this client's text. */
+  indexOf(position: unknown): number | null {
+    return Y.createAbsolutePositionFromRelativePosition(Y.createRelativePositionFromJSON(position), this.doc)?.index ?? null;
+  }
+
   /** Sets this client's presence; the server fills in who they are. */
   setPresence(state: Record<string, unknown>): void {
     this.awareness.setLocalState(state);
@@ -69,8 +87,8 @@ export class LiveDocClient {
     this.send(encoding.toUint8Array(encoder));
   }
 
-  peers(): { user?: { id: string; name: string } }[] {
-    return [...this.awareness.getStates().entries()].filter(([id]) => id !== this.doc.clientID).map(([, state]) => state as { user?: { id: string; name: string } });
+  peers(): { user?: { id: string; name: string }; cursor?: Record<string, unknown> | null }[] {
+    return [...this.awareness.getStates().entries()].filter(([id]) => id !== this.doc.clientID).map(([, state]) => state as { user?: { id: string; name: string }; cursor?: Record<string, unknown> | null });
   }
 
   sendRaw(message: Uint8Array): void {

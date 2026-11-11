@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { LiveDoc, type LiveSnapshot } from './live-doc';
 
-const IDLE: LiveSnapshot = { status: 'unavailable', text: '', readOnly: true, peers: [], savedAt: null, pending: false, error: null };
+const IDLE: LiveSnapshot = { status: 'unavailable', text: '', title: '', readOnly: true, peers: [], savedAt: null, pending: false, error: null };
 const noop = () => () => undefined;
 const idle = () => IDLE;
 

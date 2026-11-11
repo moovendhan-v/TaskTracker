@@ -8,6 +8,7 @@ const MESSAGE_SYNC = 0;
 const MESSAGE_AWARENESS = 1;
 const MESSAGE_NOTICE = 3;
 const TEXT = 'markdown';
+const TITLE = 'title';
 const REMOTE = Symbol('remote');
 /** Reconnect waits, in seconds, after the connection drops. */
 const BACKOFF = [1, 2, 5, 10];
@@ -21,18 +22,27 @@ const FIRST_CONNECT_TIMEOUT_MS = 6_000;
  */
 export type LiveStatus = 'connecting' | 'live' | 'offline' | 'unavailable';
 
+/** Which shared text a cursor is in. */
+export type LiveField = 'markdown' | 'title';
+
 export interface LivePeerView {
   clientId: number;
   id: string;
   name: string;
   canEdit: boolean;
+  /** The text their cursor is in. */
+  field: LiveField;
   /** The line their cursor is on, counted from 1. */
   line: number | null;
+  /** Their selection in that text, as indexes in your copy of it (null when not known). */
+  anchor: number | null;
+  head: number | null;
 }
 
 export interface LiveSnapshot {
   status: LiveStatus;
   text: string;
+  title: string;
   readOnly: boolean;
   peers: readonly LivePeerView[];
   savedAt: string | null;
@@ -65,8 +75,8 @@ export class LiveDoc {
   private rebase: string | null = null;
   private destroyed = false;
   private readonly listeners = new Set<() => void>();
-  private readonly remoteListeners = new Set<(map: IndexMap) => void>();
-  private snapshot: LiveSnapshot = { status: 'connecting', text: '', readOnly: false, peers: [], savedAt: null, pending: false, error: null };
+  private readonly remoteListeners = new Set<(map: IndexMap, field: LiveField) => void>();
+  private snapshot: LiveSnapshot = { status: 'connecting', text: '', title: '', readOnly: false, peers: [], savedAt: null, pending: false, error: null };
 
   constructor(
     private readonly workspaceId: string,
@@ -86,16 +96,16 @@ export class LiveDoc {
 
   getSnapshot = (): LiveSnapshot => this.snapshot;
 
-  /** Called after someone else's change, with a way to move a caret along with it. */
-  onRemoteChange(listener: (map: IndexMap) => void): () => void {
+  /** Called after someone else's change, with a way to move a caret in that text along with it. */
+  onRemoteChange(listener: (map: IndexMap, field: LiveField) => void): () => void {
     this.remoteListeners.add(listener);
     return () => this.remoteListeners.delete(listener);
   }
 
   /** Replaces the text with `next`, as the smallest edit that gets there. */
-  setText(next: string): void {
+  setText(next: string, field: LiveField = TEXT): void {
     if (this.snapshot.readOnly || this.snapshot.status === 'connecting' || this.snapshot.status === 'unavailable') return;
-    const text = this.doc.getText(TEXT);
+    const text = this.doc.getText(field);
     const current = text.toString();
     if (current === next) return;
     const { start, removed, inserted } = diff(current, next);
@@ -105,11 +115,24 @@ export class LiveDoc {
     });
   }
 
-  /** Shares which line your cursor is on. */
-  setCursorLine(line: number | null): void {
-    const current = (this.awareness.getLocalState() as { cursor?: { line: number | null } } | null)?.cursor?.line ?? null;
-    if (current === line && this.awareness.getLocalState()) return;
-    this.awareness.setLocalState({ cursor: { line } });
+  setTitle(next: string): void {
+    this.setText(next, TITLE);
+  }
+
+  /**
+   * Shares where your cursor (and selection) is, exactly: as positions in the shared text,
+   * which stay put as others type. The line is for the avatars.
+   */
+  setCursor(field: LiveField, anchor: number, head: number = anchor): void {
+    const text = this.doc.getText(field);
+    const value = text.toString();
+    const clamp = (index: number) => Math.max(0, Math.min(index, value.length));
+    const line = field === TEXT ? value.slice(0, clamp(head)).split('\n').length : null;
+    const position = (index: number) => Y.relativePositionToJSON(Y.createRelativePositionFromTypeIndex(text, clamp(index))) as unknown;
+    const current = (this.awareness.getLocalState() as { cursor?: { field?: string; anchor?: unknown; head?: unknown } } | null)?.cursor;
+    const next = { field, line, anchor: position(anchor), head: position(head) };
+    if (current && JSON.stringify(current) === JSON.stringify(next)) return;
+    this.awareness.setLocalState({ cursor: next });
   }
 
   destroy(): void {
@@ -125,15 +148,18 @@ export class LiveDoc {
 
   private attach(): void {
     const text = this.doc.getText(TEXT);
-    text.observe((event, transaction) => {
-      // Changes during the first sync are the page as stored, not edits.
-      this.update({ text: text.toString(), pending: this.snapshot.pending || this.snapshot.status !== 'connecting' });
-      if (transaction.origin === REMOTE) {
-        const delta = event.delta;
-        const map: IndexMap = (index) => mapIndex(index, delta);
-        for (const listener of this.remoteListeners) listener(map);
-      }
-    });
+    for (const field of [TEXT, TITLE] as const) {
+      const shared = this.doc.getText(field);
+      shared.observe((event, transaction) => {
+        // Changes during the first sync are the page as stored, not edits. Cursors move with the text.
+        this.update({ [field === TEXT ? 'text' : 'title']: shared.toString(), pending: this.snapshot.pending || this.snapshot.status !== 'connecting', peers: this.readPeers() });
+        if (transaction.origin === REMOTE) {
+          const delta = event.delta;
+          const map: IndexMap = (index) => mapIndex(index, delta);
+          for (const listener of this.remoteListeners) listener(map, field);
+        }
+      });
+    }
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
       if (origin === REMOTE) return;
       if (this.snapshot.status !== 'live') this.unsynced = text.toString();
@@ -234,7 +260,7 @@ export class LiveDoc {
     this.attempts = 0;
     this.everLive = true;
     if (this.firstTimeout) clearTimeout(this.firstTimeout);
-    this.update({ status: 'live', text: this.doc.getText(TEXT).toString() });
+    this.update({ status: 'live', text: this.doc.getText(TEXT).toString(), title: this.doc.getText(TITLE).toString() });
     this.unsynced = null;
     if (this.rebase !== null) {
       const pending = this.rebase;
@@ -250,11 +276,31 @@ export class LiveDoc {
     const peers: LivePeerView[] = [];
     for (const [clientId, state] of this.awareness.getStates()) {
       if (clientId === this.doc.clientID) continue;
-      const view = state as { user?: { id?: string; name?: string; canEdit?: boolean }; cursor?: { line?: number | null } };
+      const view = state as { user?: { id?: string; name?: string; canEdit?: boolean }; cursor?: { field?: string; line?: number | null; anchor?: unknown; head?: unknown } | null };
       if (!view.user?.id) continue;
-      peers.push({ clientId, id: view.user.id, name: view.user.name ?? 'Someone', canEdit: view.user.canEdit === true, line: view.cursor?.line ?? null });
+      const field: LiveField = view.cursor?.field === TITLE ? TITLE : TEXT;
+      peers.push({
+        clientId,
+        id: view.user.id,
+        name: view.user.name ?? 'Someone',
+        canEdit: view.user.canEdit === true,
+        field,
+        line: typeof view.cursor?.line === 'number' ? view.cursor.line : null,
+        anchor: this.indexOf(view.cursor?.anchor),
+        head: this.indexOf(view.cursor?.head),
+      });
     }
     return peers;
+  }
+
+  /** Where a shared position is in this copy of the text; null for anything that isn't one. */
+  private indexOf(position: unknown): number | null {
+    if (!position || typeof position !== 'object') return null;
+    try {
+      return Y.createAbsolutePositionFromRelativePosition(Y.createRelativePositionFromJSON(position), this.doc)?.index ?? null;
+    } catch {
+      return null;
+    }
   }
 
   private send(message: Uint8Array): void {

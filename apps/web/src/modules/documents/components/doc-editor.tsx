@@ -48,6 +48,8 @@ import { TaskMentionTextarea } from './task-embeds';
 import { SlidePresentationModal } from './slide-presentation-modal';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { useLiveDoc } from '../live/use-live-doc';
+import { personColor } from '../lib/caret-coordinates';
+import { RemoteCarets } from './remote-carets';
 import type { LivePeerView, LiveStatus } from '../live/live-doc';
 
 const AUTOSAVE_DELAY_MS = 800;
@@ -65,7 +67,7 @@ type EditorMode = 'visual' | 'split' | 'preview';
 
 export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onToggleTree }: DocEditorProps) {
   const { mutate } = useDocumentMutations(workspaceId).update;
-  const [title, setTitle] = useState(document.title);
+  const [localTitle, setLocalTitle] = useState(document.title);
   const [localContent, setLocalContent] = useState(document.content);
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [mode, setMode] = useState<EditorMode>('visual');
@@ -77,29 +79,37 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
   });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
 
   // Live editing (C5): everyone on the page edits one shared text. Until it connects the page
   // waits; if live editing isn't available it saves on its own as before.
   const live = useLiveDoc(workspaceId, document.id, true);
   const liveOn = live.status === 'live' || live.status === 'offline';
   const editable = canEdit && live.status !== 'connecting' && !(liveOn && live.readOnly);
-  // Live, the shared text is the page; otherwise what you typed here.
+  // Live, the shared text and title are the page; otherwise what you typed here.
   const content = liveOn ? live.text : localContent;
+  const title = liveOn ? live.title : localTitle;
   // Someone else's change moves your caret along with the text, instead of jumping.
   useEffect(
     () =>
-      live.live?.onRemoteChange((map) => {
-        const element = textareaRef.current;
+      live.live?.onRemoteChange((map, field) => {
+        const element = field === 'title' ? titleRef.current : textareaRef.current;
         if (!element || window.document.activeElement !== element) return;
-        const start = map(element.selectionStart);
-        const end = map(element.selectionEnd);
-        requestAnimationFrame(() => element.setSelectionRange(start, end));
+        const start = map(element.selectionStart ?? 0);
+        const end = map(element.selectionEnd ?? 0);
+        const direction = element.selectionDirection ?? undefined;
+        requestAnimationFrame(() => element.setSelectionRange(start, end, direction));
       }),
     [live.live],
   );
-  const shareCursor = () => {
-    const element = textareaRef.current;
-    if (element) live.live?.setCursorLine(element.value.slice(0, element.selectionStart).split('\n').length);
+  /** Shares exactly where your cursor (or selection) is in the text or the title. */
+  const shareCursor = (field: 'markdown' | 'title') => {
+    const element = field === 'title' ? titleRef.current : textareaRef.current;
+    if (!element || !liveOn) return;
+    const start = element.selectionStart ?? 0;
+    const end = element.selectionEnd ?? start;
+    const backward = element.selectionDirection === 'backward';
+    live.live?.setCursor(field, backward ? end : start, backward ? start : end);
   };
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<{ title?: string; content?: string }>({});
@@ -464,19 +474,28 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
       {/* Editor & Content Workspace */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-8">
         <div className={cn('mx-auto transition-all', fullWidth ? 'max-w-full px-2' : 'max-w-4xl')}>
-          {/* Title Input */}
-          <input
-            value={title}
-            maxLength={DOC_TITLE_MAX}
-            readOnly={!canEdit}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              scheduleSave({ title: event.target.value });
-            }}
-            aria-label="Document title"
-            placeholder="Untitled document"
-            className="mb-4 w-full border-b border-transparent bg-transparent pb-2 text-2xl sm:text-4xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/30 focus:border-border/60 transition-colors"
-          />
+          {/* Title Input: shared live like the text */}
+          <div className="relative mb-4">
+            <input
+              ref={titleRef}
+              value={title}
+              maxLength={DOC_TITLE_MAX}
+              readOnly={!editable}
+              onChange={(event) => {
+                if (liveOn) return live.live?.setTitle(event.target.value);
+                setLocalTitle(event.target.value);
+                scheduleSave({ title: event.target.value });
+              }}
+              onSelect={() => shareCursor('title')}
+              onKeyUp={() => shareCursor('title')}
+              onMouseUp={() => shareCursor('title')}
+              onFocus={() => shareCursor('title')}
+              aria-label="Document title"
+              placeholder="Untitled document"
+              className="w-full border-b border-transparent bg-transparent pb-2 text-2xl sm:text-4xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/30 focus:border-border/60 transition-colors"
+            />
+            {liveOn ? <RemoteCarets fieldRef={titleRef} field="title" peers={live.peers} value={title} /> : null}
+          </div>
 
           {/* Mode 1: ClickUp Visual Block Editor (DEFAULT - no raw markdown codes) */}
           {mode === 'visual' ? (
@@ -495,7 +514,11 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
                 maxLength={DOC_CONTENT_MAX}
                 readOnly={!editable}
                 onValueChange={changeContent}
-                onSelect={shareCursor}
+                onSelect={() => shareCursor('markdown')}
+                onKeyUp={() => shareCursor('markdown')}
+                onMouseUp={() => shareCursor('markdown')}
+                onFocus={() => shareCursor('markdown')}
+                overlay={liveOn ? <RemoteCarets fieldRef={textareaRef} field="markdown" peers={live.peers} value={content} /> : null}
                 aria-label="Page content (markdown)"
                 placeholder="Type raw markdown here… (# to reference a task)"
                 className="size-full min-h-[70vh] resize-none rounded-xl border bg-card/60 p-5 font-mono text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -550,7 +573,12 @@ function LivePeers({ peers }: { peers: readonly LivePeerView[] }) {
   return (
     <ul aria-label="Also on this page" className="flex -space-x-1.5">
       {people.slice(0, 5).map((peer) => (
-        <li key={peer.id} title={`${peer.name}${peer.line ? ` · line ${peer.line}` : ''}${peer.canEdit ? '' : ' · viewing'}`} className="animate-in fade-in-0 zoom-in-95">
+        <li
+          key={peer.id}
+          title={`${peer.name}${peer.field === 'title' ? ' · editing the title' : peer.line ? ` · line ${peer.line}` : ''}${peer.canEdit ? '' : ' · viewing'}`}
+          className="animate-in fade-in-0 zoom-in-95 rounded-full"
+          style={{ boxShadow: `0 0 0 2px ${personColor(peer.id)}` }}
+        >
           <UserAvatar name={peer.name} className="size-6 border-2 border-background text-[10px]" />
           <span className="sr-only">{peer.name}</span>
         </li>

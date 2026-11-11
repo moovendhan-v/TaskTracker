@@ -2,14 +2,14 @@ import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import * as Y from 'yjs';
-import { DOC_CONTENT_MAX } from '@taskflow/shared-types';
+import { DOC_CONTENT_MAX, DOC_TITLE_MAX } from '@taskflow/shared-types';
 import { AccessService } from '../../../core/access/access.service.js';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import type { Actor, SessionUser, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { DocumentsService } from './documents.service.js';
 import { LiveDocRelay, type RelayHandler } from '../domain/live-doc-relay.port.js';
-import { encodeNotice, LiveDocRoom, type LiveHistory, type LivePeer } from './live-doc-room.js';
+import { encodeNotice, LIVE_TITLE, LiveDocRoom, type LiveHistory, type LivePage, type LivePeer } from './live-doc-room.js';
 
 /** Saves come this long after the last change, and at least this often while people keep typing. */
 const SAVE_DELAY_MS = 1_000;
@@ -25,6 +25,9 @@ export const LIVE_CONNECTIONS_PER_USER = 20;
 const HELLO_WAIT_MS = 300;
 /** Closes people's connections so they reconnect; the browser does so by itself. */
 const RECONNECT_CODE = 4409;
+/** Line breaks and control characters, which a title can't hold. */
+// eslint-disable-next-line no-control-regex
+const TITLE_BREAKS = /[\u0000-\u001F\u007F\u2028\u2029]/g;
 /** How long a save waits for another instance's save of the same page. */
 const SAVE_LOCK_WAIT_MS = 5_000;
 
@@ -52,6 +55,8 @@ interface RoomState {
   openedAt: number;
   /** Replaced by another instance's history; nobody new joins it, and it isn't saved. */
   stale: boolean;
+  /** The title as last stored, so a save sends it only when it changed here (not a rename elsewhere). */
+  savedTitle: string | null;
   relay: RelayHandler | null;
   workspaceId: string;
   documentId: string;
@@ -92,7 +97,7 @@ export class LiveDocsService implements OnModuleDestroy {
   }
 
   /** Checks access and returns what this person may do; throws DomainError when they may not open it. */
-  async authorize(session: LiveSession): Promise<{ access: WorkspaceAccess; content: string; canEdit: boolean; live: { state: Uint8Array; lineage: string } | null }> {
+  async authorize(session: LiveSession): Promise<{ access: WorkspaceAccess; content: string; title: string; canEdit: boolean; live: { state: Uint8Array; lineage: string } | null }> {
     const access = await this.accessService.resolve(session.user, session.workspaceId);
     if (!access?.permissions.has('doc.view')) throw DomainError.notFound('Page');
     const opened = await this.inScope(access, session.user.id, () => this.documents.openLive(access, session.user.id, session.documentId));
@@ -100,10 +105,10 @@ export class LiveDocsService implements OnModuleDestroy {
   }
 
   /** Adds a connection to the page's room, opening the room (from the database) if needed. */
-  async join(session: LiveSession, peer: LivePeer, content: string, live: LiveHistory | null): Promise<RoomState> {
+  async join(session: LiveSession, peer: LivePeer, page: LivePage, live: LiveHistory | null): Promise<RoomState> {
     const count = this.perUser.get(session.user.id) ?? 0;
     if (count >= LIVE_CONNECTIONS_PER_USER) throw DomainError.conflict('Too many pages open live');
-    const state = await this.room(session, content, live);
+    const state = await this.room(session, page, live);
     if (state.room.size >= LIVE_PEERS_PER_ROOM) throw DomainError.conflict('Too many people on this page');
     this.perUser.set(session.user.id, count + 1);
     state.sessions.set(peer, session);
@@ -143,22 +148,23 @@ export class LiveDocsService implements OnModuleDestroy {
 
   private readonly opening = new Map<string, Promise<RoomState>>();
 
-  private room(session: LiveSession, content: string, live: LiveHistory | null): Promise<RoomState> {
+  private room(session: LiveSession, page: LivePage, live: LiveHistory | null): Promise<RoomState> {
     const key = `${session.workspaceId}:${session.documentId}`;
     const existing = this.rooms.get(key);
     if (existing) return Promise.resolve(existing);
     const pending = this.opening.get(key);
     if (pending) return pending;
-    const opening = this.open(key, session, content, live).finally(() => this.opening.delete(key));
+    const opening = this.open(key, session, page, live).finally(() => this.opening.delete(key));
     this.opening.set(key, opening);
     return opening;
   }
 
-  private async open(key: string, session: LiveSession, content: string, live: LiveHistory | null): Promise<RoomState> {
+  private async open(key: string, session: LiveSession, page: LivePage, live: LiveHistory | null): Promise<RoomState> {
     const state: RoomState = {
       key,
       openedAt: Date.now(),
       stale: false,
+      savedTitle: page.title,
       relay: null,
       workspaceId: session.workspaceId,
       documentId: session.documentId,
@@ -168,7 +174,7 @@ export class LiveDocsService implements OnModuleDestroy {
       sessions: new Map(),
       room: undefined as unknown as LiveDocRoom,
     };
-    state.room = this.makeRoom(state, content, live);
+    state.room = this.makeRoom(state, page, live);
     if (this.relay.enabled) {
       const handler: RelayHandler = (message) => this.relayed(state, message);
       state.relay = handler;
@@ -186,8 +192,8 @@ export class LiveDocsService implements OnModuleDestroy {
     return state;
   }
 
-  private makeRoom(state: RoomState, content: string, history: LiveHistory | null): LiveDocRoom {
-    const room = new LiveDocRoom(state.key, content, history, () => this.changed(state));
+  private makeRoom(state: RoomState, page: LivePage, history: LiveHistory | null): LiveDocRoom {
+    const room = new LiveDocRoom(state.key, page, history, () => this.changed(state));
     if (this.relay.enabled) {
       room.outbound = {
         update: (update) => this.send(state, Relay.Update, (encoder) => {
@@ -275,8 +281,9 @@ export class LiveDocsService implements OnModuleDestroy {
     if (state.room.size === 0) {
       // Nobody here yet (the room is just opening): swap the history in.
       state.room.destroy();
-      state.room = this.makeRoom(state, '', history);
+      state.room = this.makeRoom(state, { content: '', title: '' }, history);
       state.openedAt = openedAt;
+      state.savedTitle = null;
       return;
     }
     // People here hold the other history: they reconnect and get the older room's.
@@ -344,9 +351,19 @@ export class LiveDocsService implements OnModuleDestroy {
     const editor = room.lastEditor;
     const session = editor ? state.sessions.get(editor) : undefined;
     const content = room.text;
+    const rawTitle = room.title;
     const version = room.version();
     room.dirty = false;
     if (!editor || !session) return;
+    // A title is one line; line breaks and control characters (a browser can't type them in the
+    // title field) become spaces. An empty title isn't saved while someone is still typing one.
+    const lineTitle = rawTitle.replace(TITLE_BREAKS, ' ');
+    const title = lineTitle.trim();
+    if (title.length > DOC_TITLE_MAX) {
+      room.dirty = true;
+      room.broadcast(encodeNotice({ type: 'error', message: `Titles can be at most ${DOC_TITLE_MAX} characters; shorten it to save` }));
+      return;
+    }
     if (content.length > DOC_CONTENT_MAX) {
       room.dirty = true;
       room.broadcast(encodeNotice({ type: 'error', message: `Pages can be at most ${DOC_CONTENT_MAX.toLocaleString('en')} characters; shorten it to save` }));
@@ -361,9 +378,12 @@ export class LiveDocsService implements OnModuleDestroy {
         access,
         actor.userId,
         async () => {
-          const result = await this.documents.update(actor, access, state.documentId, { content });
-          // Stored text may differ (the sanitizer); everyone moves to what was stored.
+          const result = await this.documents.update(actor, access, state.documentId, { content, ...(title && title !== state.savedTitle && { title }) });
+          state.savedTitle = result.title;
+          // Stored text may differ (the sanitizer); everyone moves to what was stored. The title
+          // keeps its spaces while people type (it's trimmed when stored).
           room.replaceText(result.content);
+          if (lineTitle !== rawTitle) room.replaceText(lineTitle, LIVE_TITLE);
           const history = room.encodeState();
           const fits = history.byteLength <= LIVE_STATE_MAX_BYTES;
           await this.documents.saveLiveState(access, state.documentId, fits ? history : null, fits ? room.lineage : null);
