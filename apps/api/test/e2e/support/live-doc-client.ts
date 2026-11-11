@@ -29,8 +29,8 @@ export class LiveDocClient {
   }
 
   /** Opens a connection; resolves once the first sync finished, or with the refusal status. */
-  static async open(user: TestUser | null, workspaceId: string, documentId: string, { origin = TEST_ORIGIN }: { origin?: string | null } = {}): Promise<LiveDocClient | { refused: number }> {
-    const url = `${inject('apiUrl').replace(/^http/, 'ws')}/api/docs/live?workspaceId=${workspaceId}&documentId=${documentId}`;
+  static async open(user: TestUser | null, workspaceId: string, documentId: string, { origin = TEST_ORIGIN, apiUrl = inject('apiUrl') }: { origin?: string | null; apiUrl?: string } = {}): Promise<LiveDocClient | { refused: number }> {
+    const url = `${apiUrl.replace(/^http/, 'ws')}/api/docs/live?workspaceId=${workspaceId}&documentId=${documentId}`;
     const headers: Record<string, string> = { ...(origin && { Origin: origin }), ...(user && { Cookie: user.cookieHeader(), 'X-Forwarded-For': user.ip }) };
     const ws = new WebSocket(url, { headers });
     return new Promise((resolve) => {
