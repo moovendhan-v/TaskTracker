@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHmac } from 'node:crypto';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { API_DIR, apiEnv, LIVEKIT_BINARY } from './support/stack';
 
 /**
@@ -999,6 +999,11 @@ test('fits a phone: bottom tabs, a menu drawer and a bottom-sheet new task', asy
     await page.getByRole('button', { name: 'Open menu' }).click();
     const drawer = page.getByRole('dialog', { name: 'Menu' });
     await expect(drawer).toBeVisible();
+    // A swipe to the left puts it away again.
+    await swipe(drawer, -160, 0);
+    await expect(drawer).toBeHidden();
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    await expect(drawer).toBeVisible();
     await drawer.getByRole('link', { name: 'Docs' }).first().click();
     await expect(drawer).toBeHidden();
     await expect(page).toHaveURL(/\/docs/);
@@ -1009,13 +1014,30 @@ test('fits a phone: bottom tabs, a menu drawer and a bottom-sheet new task', asy
     await expect(sheet).toBeVisible();
     // Polled: the sheet slides up into place.
     await expect.poll(async () => sheet.boundingBox().then((box) => box && [Math.round(box.y + box.height), Math.round(box.width)])).toEqual([844, 390]);
-    await page.keyboard.press('Escape');
+    // Swiping it down closes it.
+    await swipe(sheet, 0, 200);
     await expect(sheet).toBeHidden();
   } finally {
     await page.setViewportSize(desktop);
   }
   await expect(page.getByRole('navigation', { name: 'Main sections' })).toBeHidden();
 });
+
+/** A one-finger swipe across an element, as touch events (F1 gestures). */
+async function swipe(target: Locator, dx: number, dy: number): Promise<void> {
+  const box = (await target.boundingBox())!;
+  const x = box.x + box.width / 2;
+  // Near the top edge: where a bottom sheet's grab handle is.
+  const y = box.y + 14;
+  const at = (px: number, py: number) => [{ identifier: 1, clientX: px, clientY: py }];
+  await target.dispatchEvent('touchstart', { touches: at(x, y), changedTouches: at(x, y) });
+  for (let step = 1; step <= 5; step++) {
+    const px = x + (dx * step) / 5;
+    const py = y + (dy * step) / 5;
+    await target.dispatchEvent('touchmove', { touches: at(px, py), changedTouches: at(px, py) });
+  }
+  await target.dispatchEvent('touchend', { touches: [], changedTouches: at(x + dx, y + dy) });
+}
 
 /** The code an authenticator app would show now (RFC 6238). */
 function totp(secret: string): string {

@@ -1,13 +1,16 @@
 import { XIcon } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
-import type { ComponentProps } from 'react';
+import { useRef, type ComponentProps } from 'react';
 import { cn } from '@/lib/cn';
+import { isPhone, useSwipeDismiss } from '@/lib/swipe';
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 
-export function DialogContent({ className, children, ...props }: ComponentProps<typeof DialogPrimitive.Content>) {
+export function DialogContent({ className, children, style, ...props }: ComponentProps<typeof DialogPrimitive.Content>) {
+  const close = useRef<HTMLButtonElement>(null);
+  const swipe = useSwipeDismiss('down', () => close.current?.click(), isPhone());
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
@@ -18,10 +21,14 @@ export function DialogContent({ className, children, ...props }: ComponentProps<
           'sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:pb-6 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=open]:zoom-in-95',
           className,
         )}
+        style={{ ...style, ...swipe.style }}
+        {...swipe.handlers}
         {...props}
       >
+        {/* The grab handle says "swipe me down" on phones. */}
+        <span aria-hidden className="mx-auto -mt-3 -mb-1 h-1 w-10 rounded-full bg-muted-foreground/30 sm:hidden" />
         {children}
-        <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring">
+        <DialogPrimitive.Close ref={close} className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring">
           <XIcon className="size-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
