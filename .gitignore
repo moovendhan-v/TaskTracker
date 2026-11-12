@@ -24,3 +24,6 @@ infra/docker/docker-compose.dev.override.yml
 
 # Local file uploads (STORAGE_DRIVER=local)
 .data/
+
+# Private keys (e.g. a GitHub App .pem)
+*.pem

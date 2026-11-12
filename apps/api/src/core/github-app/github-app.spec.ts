@@ -47,13 +47,15 @@ describe('GitHub App private key', () => {
 });
 
 describe('GitHub App env settings', () => {
-  it('is off when none are set, and on with all five', () => {
+  it('is off when none are set, and on with all four (the client secret is optional)', () => {
     expect(loadEnv(base).GITHUB_APP_ID).toBeUndefined();
     expect(loadEnv({ ...base, ...app }).GITHUB_APP_SLUG).toBe('taskflow-sync');
   });
 
   it('refuses a partial or malformed setup', () => {
-    expect(() => loadEnv({ ...base, ...app, GITHUB_APP_CLIENT_SECRET: '' })).toThrow(/Set all of GITHUB_APP_ID/);
+    expect(() => loadEnv({ ...base, ...app, GITHUB_APP_CLIENT_ID: '' })).toThrow(/Set all of GITHUB_APP_ID/);
+    expect(loadEnv({ ...base, ...app, GITHUB_APP_CLIENT_SECRET: '' }).GITHUB_APP_ID).toBe('1234567');
+    expect(() => loadEnv({ ...base, GITHUB_APP_CLIENT_SECRET: 'secret' })).toThrow(/needs the GitHub App settings/);
     expect(() => loadEnv({ ...base, ...app, GITHUB_APP_ID: 'abc' })).toThrow(/numeric App ID/);
     expect(() => loadEnv({ ...base, ...app, GITHUB_APP_PRIVATE_KEY: 'bm90IGEga2V5' })).toThrow(/private key GitHub generated/);
     expect(() => loadEnv({ ...base, GITHUB_APP_WEBHOOK_SECRET: 'w'.repeat(32) })).toThrow(/needs the GitHub App settings/);

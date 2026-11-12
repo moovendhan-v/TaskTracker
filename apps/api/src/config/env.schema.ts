@@ -37,8 +37,9 @@ const envSchema = z.object({
   GITHUB_CLIENT_SECRET: optionalString(z.string().trim().min(1).max(200)),
   /**
    * Two-way GitHub sync (E2): a GitHub App. Its numeric App ID, its slug (the name in
-   * github.com/apps/<slug>), its OAuth client id and secret (to check who installs it), and its
-   * private key (base64 of the .pem, or the PEM itself). All five, or none (sync off).
+   * github.com/apps/<slug>), its OAuth client id and private key (base64 of the .pem, or the
+   * PEM itself): all four, or none (sync off). The client secret is optional: it's needed only
+   * to confirm who installs the app from TaskFlow.
    */
   GITHUB_APP_ID: optionalString(z.string().trim().regex(/^\d{1,12}$/, 'GITHUB_APP_ID is the numeric App ID')),
   GITHUB_APP_SLUG: optionalString(z.string().trim().regex(/^[a-z0-9][a-z0-9-]{0,99}$/, 'GITHUB_APP_SLUG is the app name in github.com/apps/<slug>')),
@@ -126,14 +127,18 @@ const envSchema = z.object({
   })
   .refine(
     (env) => {
-      const set = [env.GITHUB_APP_ID, env.GITHUB_APP_SLUG, env.GITHUB_APP_CLIENT_ID, env.GITHUB_APP_CLIENT_SECRET, env.GITHUB_APP_PRIVATE_KEY].filter((value) => value !== undefined).length;
-      return set === 0 || set === 5;
+      const set = [env.GITHUB_APP_ID, env.GITHUB_APP_SLUG, env.GITHUB_APP_CLIENT_ID, env.GITHUB_APP_PRIVATE_KEY].filter((value) => value !== undefined).length;
+      return set === 0 || set === 4;
     },
     {
       path: ['GITHUB_APP_ID'],
-      message: 'Set all of GITHUB_APP_ID, GITHUB_APP_SLUG, GITHUB_APP_CLIENT_ID, GITHUB_APP_CLIENT_SECRET and GITHUB_APP_PRIVATE_KEY for GitHub sync, or none',
+      message: 'Set all of GITHUB_APP_ID, GITHUB_APP_SLUG, GITHUB_APP_CLIENT_ID and GITHUB_APP_PRIVATE_KEY for GitHub sync, or none',
     },
   )
+  .refine((env) => env.GITHUB_APP_CLIENT_SECRET === undefined || env.GITHUB_APP_ID !== undefined, {
+    path: ['GITHUB_APP_CLIENT_SECRET'],
+    message: 'GITHUB_APP_CLIENT_SECRET needs the GitHub App settings (GITHUB_APP_ID and the rest)',
+  })
   .refine((env) => env.GITHUB_APP_WEBHOOK_SECRET === undefined || env.GITHUB_APP_ID !== undefined, {
     path: ['GITHUB_APP_WEBHOOK_SECRET'],
     message: 'GITHUB_APP_WEBHOOK_SECRET needs the GitHub App settings (GITHUB_APP_ID and the rest)',

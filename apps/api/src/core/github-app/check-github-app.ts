@@ -23,7 +23,7 @@ interface AppInfo {
  */
 export async function checkGithubApp(env: Env, { apiUrl = GITHUB_API, log = console.log }: { apiUrl?: string; log?: (line: string) => void } = {}): Promise<boolean> {
   if (!env.GITHUB_APP_ID || !env.GITHUB_APP_PRIVATE_KEY) {
-    log('✗ The GitHub App isn’t set up: add GITHUB_APP_ID, GITHUB_APP_SLUG, GITHUB_APP_CLIENT_ID, GITHUB_APP_CLIENT_SECRET and GITHUB_APP_PRIVATE_KEY to .env.');
+    log('✗ The GitHub App isn’t set up: add GITHUB_APP_ID, GITHUB_APP_SLUG, GITHUB_APP_CLIENT_ID and GITHUB_APP_PRIVATE_KEY to .env.');
     return false;
   }
   const jwt = githubAppJwt(env.GITHUB_APP_ID, readGithubAppPrivateKey(env.GITHUB_APP_PRIVATE_KEY));
@@ -60,7 +60,7 @@ export async function checkGithubApp(env: Env, { apiUrl = GITHUB_API, log = cons
   const installations = await call<unknown[]>('/app/installations?per_page=100');
   if (installations.body) log(`• Installed on ${installations.body.length} account(s)${installations.body.length ? '' : ' (TaskFlow will offer an Install button)'}`);
   log(env.GITHUB_APP_WEBHOOK_SECRET ? '• Webhook secret set: changes from GitHub arrive instantly once the webhook is active' : '• No webhook secret: TaskFlow will check GitHub about every minute');
-  log('• GITHUB_APP_CLIENT_SECRET can only be checked when someone installs the app; it’s tested then.');
+  log(env.GITHUB_APP_CLIENT_SECRET ? '• GITHUB_APP_CLIENT_SECRET set: it’s checked when someone installs the app from TaskFlow' : '• No GITHUB_APP_CLIENT_SECRET: sync works; installing from TaskFlow needs it');
   return ok;
 }
 
