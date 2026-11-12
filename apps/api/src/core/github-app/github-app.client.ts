@@ -47,6 +47,9 @@ export class GithubAppClient {
   private readonly key: KeyObject | null;
   private readonly appId: string | null;
   private readonly base: URL;
+  private readonly oauthBase: URL;
+  private readonly clientId: string | null;
+  private readonly clientSecret: string | null;
   private readonly tokens = new Map<number, CachedToken>();
   private readonly pending = new Map<number, Promise<CachedToken>>();
 
@@ -54,6 +57,45 @@ export class GithubAppClient {
     this.appId = env.GITHUB_APP_ID ?? null;
     this.key = env.GITHUB_APP_PRIVATE_KEY ? readGithubAppPrivateKey(env.GITHUB_APP_PRIVATE_KEY) : null;
     this.base = new URL(env.GITHUB_API_URL);
+    this.oauthBase = new URL(env.GITHUB_OAUTH_URL);
+    this.clientId = env.GITHUB_APP_CLIENT_ID ?? null;
+    this.clientSecret = env.GITHUB_APP_CLIENT_SECRET ?? null;
+  }
+
+  /** Whether people can install the app from TaskFlow (that needs the client secret). */
+  get canInstall(): boolean {
+    return this.enabled && this.clientSecret !== null;
+  }
+
+  /**
+   * Trades the code GitHub gave the person installing the app for their own token, used once
+   * to check which installations they can reach. Never stored.
+   */
+  async exchangeCode(code: string): Promise<string> {
+    if (!this.clientId || !this.clientSecret) throw new GithubApiError(0, 'Installing from TaskFlow needs GITHUB_APP_CLIENT_SECRET');
+    if (!/^[A-Za-z0-9_-]{1,100}$/.test(code)) throw new GithubApiError(400, 'GitHub sent an unreadable code');
+    let response: Response;
+    try {
+      response = await fetch(new URL('/login/oauth/access_token', this.oauthBase), {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'User-Agent': 'TaskFlow' },
+        body: JSON.stringify({ client_id: this.clientId, client_secret: this.clientSecret, code }),
+        redirect: 'error',
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+    } catch {
+      throw new GithubApiError(504, 'GitHub didn’t answer in time');
+    }
+    const text = await readLimited(response);
+    let body: { access_token?: unknown } = {};
+    try {
+      body = JSON.parse(text) as { access_token?: unknown };
+    } catch {
+      // Handled below.
+    }
+    const token = typeof body.access_token === 'string' && /^[A-Za-z0-9_]{20,255}$/.test(body.access_token) ? body.access_token : null;
+    if (!response.ok || !token) throw new GithubApiError(response.ok ? 401 : response.status, 'GitHub didn’t accept the sign-in');
+    return token;
   }
 
   /** Whether the app is set up (GITHUB_APP_* in the environment). */

@@ -28,7 +28,7 @@ import type { GithubConnection } from '../domain/github.js';
 import { GithubRepository } from '../domain/github.repository.js';
 import { GithubMapper } from './github.mapper.js';
 
-const CONNECTIONS_MAX = 20;
+export const CONNECTIONS_MAX = 20;
 const SYNC_LOG_SHOWN = 100;
 const INBOX_SHOWN = 100;
 const REPO = new RegExp(REPO_PATTERN);
@@ -161,6 +161,7 @@ export class GithubConnectionsService {
   @Audited('integration.github.rotate_secret', secretChange)
   async rotateSecret(actor: Actor, access: WorkspaceAccess, connectionId: string): Promise<GithubSecretResponse> {
     const connection = await this.get(access.workspaceId, connectionId);
+    if (connection.installationRef) throw DomainError.invalid('This repository is connected through the GitHub App: it has no webhook secret');
     const secret = newSecret();
     const saved = await this.github.save({ ...connection, secretSealed: this.secretBox.seal(secret), createdById: actor.userId });
     return { connection: GithubMapper.toResponse(saved), webhookSecret: secret };
@@ -183,7 +184,7 @@ function newSecret(): string {
   return randomBytes(32).toString('hex');
 }
 
-function prefixOf(value: string | undefined): string {
+export function prefixOf(value: string | undefined): string {
   const prefix = (value ?? DEFAULT_TASK_PREFIX).trim().toUpperCase();
   if (!PREFIX.test(prefix)) throw DomainError.invalid('The task prefix is letters and digits, starting with a letter, like TF');
   return prefix;

@@ -47,6 +47,10 @@ export class TypeOrmGithubRepository extends GithubRepository {
     await this.connections.delete({ id: connectionId, workspaceId });
   }
 
+  async noteDelivery(workspaceId: string, connectionId: string, at: Date, status: string): Promise<void> {
+    await this.transactional.manager.query(`UPDATE github_connection SET last_delivery_at = $3, last_delivery_status = $4 WHERE workspace_id = $1 AND id = $2`, [workspaceId, connectionId, at, status]);
+  }
+
   async claimDelivery(workspaceId: string, connectionId: string, deliveryId: string): Promise<boolean> {
     const rows: unknown[] = await this.transactional.manager.query(
       `INSERT INTO github_delivery (workspace_id, connection_id, delivery_id) VALUES ($1, $2, $3)

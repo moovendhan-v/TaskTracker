@@ -14,8 +14,20 @@ export class GithubConnectionOrmEntity extends TenantOrmEntity implements Github
   @Column({ type: 'jsonb', default: () => `'{}'::jsonb` })
   sync: GithubSyncSettings;
 
-  @Column({ type: 'text' })
-  secretSealed: string;
+  @Column({ type: 'text', nullable: true })
+  secretSealed: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  installationRef: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  pullsCursor: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  issuesCursor: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  polledAt: Date | null;
 
   @Column({ type: 'text', nullable: true })
   createdById: string | null;

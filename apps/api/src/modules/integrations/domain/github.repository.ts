@@ -9,6 +9,8 @@ export abstract class GithubRepository {
   abstract create(connection: NewGithubConnection): Promise<GithubConnection>;
   abstract save(connection: GithubConnection): Promise<GithubConnection>;
   abstract delete(workspaceId: string, connectionId: string): Promise<void>;
+  /** Records the latest delivery or poll on the connection, touching only those two columns. */
+  abstract noteDelivery(workspaceId: string, connectionId: string, at: Date, status: string): Promise<void>;
   /** False when this delivery was handled before. */
   abstract claimDelivery(workspaceId: string, connectionId: string, deliveryId: string): Promise<boolean>;
   abstract upsertLink(link: PullRequestLinkInput): Promise<void>;

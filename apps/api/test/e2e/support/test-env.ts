@@ -1,5 +1,5 @@
 import { tmpdir } from 'node:os';
-import { randomBytes } from 'node:crypto';
+import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -10,6 +10,11 @@ if (existsSync(LOCAL_E2E_ENV)) process.loadEnvFile(LOCAL_E2E_ENV);
 /** LiveKit credentials the API under test uses, so tests can sign webhooks like LiveKit does. */
 export const E2E_LIVEKIT_KEY = 'e2e-livekit';
 export const E2E_LIVEKIT_SECRET = 'e2e-livekit-secret-0123456789abcdef';
+
+/** The test GitHub (support/fake-github.ts) and the TaskFlow GitHub App settings that point at it. */
+export const FAKE_GITHUB_PORT = 7791;
+export const FAKE_GITHUB_URL = `http://127.0.0.1:${FAKE_GITHUB_PORT}`;
+export const E2E_GITHUB_APP = { id: '424242', slug: 'taskflow-e2e', clientId: 'Iv1e2eclient', clientSecret: 'e2e-github-app-client-secret' };
 
 /** The origin the API trusts for browser calls during the tests. */
 export const TEST_ORIGIN = 'http://localhost:5173';
@@ -60,6 +65,15 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     // Webhook steps call a local receiver in tests; production refuses both settings below.
     AUTOMATION_WEBHOOK_HOSTS: 'localhost,127.0.0.1',
     AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS: 'true',
+    // The TaskFlow GitHub App (E2), talking to the fake GitHub; the poller looks every second.
+    GITHUB_APP_ID: E2E_GITHUB_APP.id,
+    GITHUB_APP_SLUG: E2E_GITHUB_APP.slug,
+    GITHUB_APP_CLIENT_ID: E2E_GITHUB_APP.clientId,
+    GITHUB_APP_CLIENT_SECRET: E2E_GITHUB_APP.clientSecret,
+    GITHUB_APP_PRIVATE_KEY: Buffer.from(generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ type: 'pkcs1', format: 'pem' }).toString()).toString('base64'),
+    GITHUB_API_URL: FAKE_GITHUB_URL,
+    GITHUB_OAUTH_URL: FAKE_GITHUB_URL,
+    GITHUB_SYNC_POLL_SECONDS: '1',
     // Optional: run the suite against a real Redis (CI does) instead of the in-process cache.
     ...(process.env['E2E_REDIS_URL'] ? { REDIS_URL: process.env['E2E_REDIS_URL'] } : {}),
     // Uploads: a throwaway directory, or an S3-compatible service (MinIO, moto) when E2E_S3_ENDPOINT is set.

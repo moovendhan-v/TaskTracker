@@ -65,3 +65,57 @@ export function useResolveGithubConflict(workspaceId: string, taskId: string) {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 }
+
+/** Whether this server has the GitHub App, and the workspace's installations of it. */
+export function useGithubApp(workspaceId: string, enabled: boolean) {
+  const info = useQuery({ queryKey: [...queryKeys.integrations(workspaceId), 'app'], queryFn: () => integrationsApi.githubApp(workspaceId), enabled, staleTime: 5 * 60_000 });
+  const installations = useQuery({
+    queryKey: [...queryKeys.integrations(workspaceId), 'installations'],
+    queryFn: () => integrationsApi.installations(workspaceId),
+    enabled: enabled && info.data?.enabled === true,
+  });
+  return { info, installations };
+}
+
+export function useInstallationRepositories(workspaceId: string, installationId: string | null) {
+  return useQuery({
+    queryKey: [...queryKeys.integrations(workspaceId), 'installation-repos', installationId],
+    queryFn: () => integrationsApi.installationRepositories(workspaceId, installationId!),
+    enabled: installationId !== null,
+  });
+}
+
+export function useGithubAppMutations(workspaceId: string) {
+  const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.integrations(workspaceId) });
+  const onError = (error: unknown) => toast.error(getErrorMessage(error));
+  return {
+    // Off to GitHub to install; GitHub sends the person back to this workspace's settings.
+    install: useMutation({ mutationFn: () => integrationsApi.installUrl(workspaceId), onSuccess: (url) => window.location.assign(url), onError }),
+    connect: useMutation({ mutationFn: (input: { installationId: string; repo: string; taskPrefix?: string }) => integrationsApi.connectRepository(workspaceId, input), onSuccess: invalidate }),
+    remove: useMutation({ mutationFn: (installationId: string) => integrationsApi.removeInstallation(workspaceId, installationId), onSuccess: invalidate, onError }),
+  };
+}
+
+/** A task's GitHub issues, and where new ones can be opened. Refreshes while a change is on its way. */
+export function useTaskGithubIssues(workspaceId: string, taskId: string) {
+  const issues = useQuery({
+    queryKey: [...queryKeys.taskPullRequests(workspaceId, taskId), 'issues'],
+    queryFn: () => integrationsApi.taskIssues(workspaceId, taskId),
+    refetchInterval: (query) => (query.state.data?.some((issue) => issue.pending) ? 3_000 : false),
+  });
+  const repositories = useQuery({ queryKey: [...queryKeys.integrations(workspaceId), 'issue-repos'], queryFn: () => integrationsApi.issueRepositories(workspaceId), staleTime: 60_000 });
+  return { issues, repositories };
+}
+
+export function useCreateGithubIssue(workspaceId: string, taskId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (connectionId: string) => integrationsApi.createIssue(workspaceId, taskId, connectionId),
+    onSuccess: (issue) => {
+      toast.success(`Opened issue #${issue.number} in ${issue.repo}`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.taskPullRequests(workspaceId, taskId) });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+}

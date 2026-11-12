@@ -539,6 +539,15 @@ input ConnectGithubInput {
   taskPrefix: String
 }
 
+input ConnectGithubRepositoryInput {
+  installationId: ID!
+
+  """owner/name, one the installation can reach"""
+  repo: String!
+  sync: GithubSyncInput
+  taskPrefix: String
+}
+
 input CreateChatChannelInput {
   kind: String! = "public"
   memberIds: [ID!]
@@ -1105,6 +1114,14 @@ type FormSchema {
   name: String!
 }
 
+"""Whether this server has the TaskFlow GitHub App"""
+type GithubAppInfo {
+  """People can install it from TaskFlow (the server has its client secret)"""
+  canInstall: Boolean!
+  enabled: Boolean!
+  slug: String
+}
+
 type GithubConflictStatus {
   color: String!
   id: ID!
@@ -1122,6 +1139,9 @@ type GithubConnection {
   repo: String!
   sync: GithubSync!
   taskPrefix: String!
+
+  """Connected through the TaskFlow GitHub App: no webhook of its own"""
+  viaApp: Boolean!
 
   """Prefix with the site origin for the GitHub webhook URL"""
   webhookPath: String!
@@ -1141,6 +1161,42 @@ type GithubInboxPullRequest {
   title: String!
   updatedAt: String!
   url: String!
+}
+
+"""
+A GitHub account or organization where the app is installed for this workspace
+"""
+type GithubInstallation {
+  accountLogin: String!
+
+  """User or Organization"""
+  accountType: String!
+  createdAt: String!
+  id: ID!
+}
+
+"""
+A task's GitHub issue: title and open / closed follow each other both ways
+"""
+type GithubIssueLink {
+  closed: Boolean!
+  connectionId: ID!
+  id: ID!
+  lastError: String
+  number: Int!
+
+  """A change in TaskFlow is on its way to GitHub"""
+  pending: Boolean!
+  repo: String!
+  url: String!
+}
+
+"""
+A repository connected through the GitHub App, where issues can be opened for tasks
+"""
+type GithubIssueRepository {
+  connectionId: ID!
+  repo: String!
 }
 
 """Shown once; store it in the GitHub webhook settings"""
@@ -1487,6 +1543,9 @@ type Mutation {
   """
   completeTaskUpload(attachmentId: ID!, workspaceId: ID!): TaskUploadResult!
   connectGithub(input: ConnectGithubInput!, workspaceId: ID!): GithubSecret!
+
+  """Connects a repository through the app; linked tasks are moved as you"""
+  connectGithubRepository(input: ConnectGithubRepositoryInput!, workspaceId: ID!): GithubConnection!
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
   createChatChannel(input: CreateChatChannelInput!, workspaceId: ID!): ChatChannel!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
@@ -1495,6 +1554,11 @@ type Mutation {
   createDepartment(input: CreateDepartmentInput!, workspaceId: ID!): Department!
   createDocument(input: CreateDocumentInput!, workspaceId: ID!): Document!
   createFolder(input: CreateFolderInput!, spaceId: ID!, workspaceId: ID!): Folder!
+
+  """
+  Opens a GitHub issue for the task and links them (needs edit rights on the task)
+  """
+  createGithubIssue(connectionId: ID!, taskId: ID!, workspaceId: ID!): GithubIssueLink!
   createLeaveType(input: CreateLeaveTypeInput!, workspaceId: ID!): LeaveType!
   createList(input: TaskListInput!, spaceId: ID!, workspaceId: ID!): TaskList!
   createOrganization(name: String!): Organization!
@@ -1586,6 +1650,11 @@ type Mutation {
   editChatMessage(body: String!, messageId: ID!, workspaceId: ID!): ChatMessage!
   endBreak(workspaceId: ID!): AttendanceShift!
 
+  """
+  Where to send you to install the app on GitHub for this workspace; the link works for ten minutes, for you only
+  """
+  githubAppInstallUrl(workspaceId: ID!): String!
+
   """Adds a template from an exported JSON file"""
   importTemplate(input: ImportTemplateInput!, workspaceId: ID!): ProjectTemplate!
 
@@ -1647,6 +1716,11 @@ type Mutation {
   openDirectMessage(userIds: [ID!]!, workspaceId: ID!): ChatChannel!
   relateTasks(kind: TaskRelationKind!, relatedTaskId: ID!, taskId: ID!, workspaceId: ID!): [TaskRelation!]!
   removeChatChannelMember(channelId: ID!, userId: ID!, workspaceId: ID!): Boolean!
+
+  """
+  Forgets an installation here, with its repositories; it stays installed on GitHub
+  """
+  removeGithubInstallation(installationId: ID!, workspaceId: ID!): Boolean!
   removeMember(userId: ID!, workspaceId: ID!): Boolean!
 
   """Owners and admins remove people; anyone can remove themselves (leave)"""
@@ -2182,12 +2256,22 @@ type Query {
 
   """Validation rules for the named forms, or all of them"""
   formSchemas(names: [String!]): [FormSchema!]!
+  githubApp(workspaceId: ID!): GithubAppInfo!
 
   """
   GitHub moves left for a person because the task was changed in TaskFlow
   """
   githubConflicts(taskId: ID!, workspaceId: ID!): [GithubSyncConflict!]!
   githubConnections(workspaceId: ID!): [GithubConnection!]!
+
+  """
+  Repositories (owner/name) the installation can reach, as GitHub says now
+  """
+  githubInstallationRepositories(installationId: ID!, workspaceId: ID!): [String!]!
+  githubInstallations(workspaceId: ID!): [GithubInstallation!]!
+
+  """Repositories where issues can be opened for tasks"""
+  githubIssueRepositories(workspaceId: ID!): [GithubIssueRepository!]!
 
   """Pull requests that mention no task"""
   githubPullRequestInbox(workspaceId: ID!): [GithubInboxPullRequest!]!
@@ -2356,6 +2440,9 @@ type Query {
   Messages you can read that mention this task (#N or a task card) or record its creation, newest first
   """
   taskChatMessages(taskId: ID!, workspaceId: ID!): [ChatSearchHit!]!
+
+  """The task's GitHub issues"""
+  taskGithubIssues(taskId: ID!, workspaceId: ID!): [GithubIssueLink!]!
 
   """Pull requests that mention the task"""
   taskPullRequests(taskId: ID!, workspaceId: ID!): [PullRequestLink!]!

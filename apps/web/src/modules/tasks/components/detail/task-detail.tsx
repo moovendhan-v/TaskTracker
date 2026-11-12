@@ -373,7 +373,7 @@ function TaskMain({
       <Subtasks workspaceId={workspaceId} task={task} onOpen={onOpen} />
       <Relations workspaceId={workspaceId} task={task} onOpen={onOpen} />
       <TaskAttachments workspaceId={workspaceId} task={task} />
-      <PullRequestsSection workspaceId={workspaceId} taskId={task.id} />
+      <PullRequestsSection workspaceId={workspaceId} taskId={task.id} canEdit={canEdit} />
       <ActivityTabs workspaceId={workspaceId} task={task} />
     </div>
   );
