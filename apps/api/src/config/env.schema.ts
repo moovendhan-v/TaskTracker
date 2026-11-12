@@ -59,6 +59,12 @@ const envSchema = z.object({
         }
       }, 'GITHUB_APP_PRIVATE_KEY must be the private key GitHub generated (base64 of the .pem file, or the PEM itself)'),
   ),
+  /** GitHub's API. Only changed for GitHub Enterprise Server or tests. */
+  GITHUB_API_URL: z
+    .string()
+    .url()
+    .default('https://api.github.com')
+    .refine((url) => /^https?:\/\//.test(url), 'GITHUB_API_URL must start with https://'),
   /** Signs the app's webhooks. Optional: without it (webhook off) TaskFlow checks GitHub on a timer instead. */
   GITHUB_APP_WEBHOOK_SECRET: optionalString(z.string().trim().min(16, 'GITHUB_APP_WEBHOOK_SECRET must be at least 16 characters').max(200)),
   /**
@@ -138,6 +144,10 @@ const envSchema = z.object({
   .refine((env) => env.GITHUB_APP_CLIENT_SECRET === undefined || env.GITHUB_APP_ID !== undefined, {
     path: ['GITHUB_APP_CLIENT_SECRET'],
     message: 'GITHUB_APP_CLIENT_SECRET needs the GitHub App settings (GITHUB_APP_ID and the rest)',
+  })
+  .refine((env) => env.NODE_ENV !== 'production' || env.GITHUB_API_URL.startsWith('https://'), {
+    path: ['GITHUB_API_URL'],
+    message: 'GITHUB_API_URL must use https:// in production',
   })
   .refine((env) => env.GITHUB_APP_WEBHOOK_SECRET === undefined || env.GITHUB_APP_ID !== undefined, {
     path: ['GITHUB_APP_WEBHOOK_SECRET'],

@@ -21,7 +21,7 @@ interface AppInfo {
  * the private key signs in as the app, and the App ID, slug, client id and permissions must
  * match what GitHub has. Run with: pnpm --filter @taskflow/api github-app:check
  */
-export async function checkGithubApp(env: Env, { apiUrl = GITHUB_API, log = console.log }: { apiUrl?: string; log?: (line: string) => void } = {}): Promise<boolean> {
+export async function checkGithubApp(env: Env, { apiUrl = env.GITHUB_API_URL ?? GITHUB_API, log = console.log }: { apiUrl?: string; log?: (line: string) => void } = {}): Promise<boolean> {
   if (!env.GITHUB_APP_ID || !env.GITHUB_APP_PRIVATE_KEY) {
     log('✗ The GitHub App isn’t set up: add GITHUB_APP_ID, GITHUB_APP_SLUG, GITHUB_APP_CLIENT_ID and GITHUB_APP_PRIVATE_KEY to .env.');
     return false;
