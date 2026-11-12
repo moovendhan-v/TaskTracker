@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { readGithubAppPrivateKey } from '../core/github-app/github-app-credentials.js';
 
 const csv = z
   .string()
@@ -34,6 +35,31 @@ const envSchema = z.object({
   /** "Sign in with GitHub" (A4): a GitHub OAuth app's client id and secret; both or neither. */
   GITHUB_CLIENT_ID: optionalString(z.string().trim().min(1).max(100)),
   GITHUB_CLIENT_SECRET: optionalString(z.string().trim().min(1).max(200)),
+  /**
+   * Two-way GitHub sync (E2): a GitHub App. Its numeric App ID, its slug (the name in
+   * github.com/apps/<slug>), its OAuth client id and secret (to check who installs it), and its
+   * private key (base64 of the .pem, or the PEM itself). All five, or none (sync off).
+   */
+  GITHUB_APP_ID: optionalString(z.string().trim().regex(/^\d{1,12}$/, 'GITHUB_APP_ID is the numeric App ID')),
+  GITHUB_APP_SLUG: optionalString(z.string().trim().regex(/^[a-z0-9][a-z0-9-]{0,99}$/, 'GITHUB_APP_SLUG is the app name in github.com/apps/<slug>')),
+  GITHUB_APP_CLIENT_ID: optionalString(z.string().trim().min(1).max(100)),
+  GITHUB_APP_CLIENT_SECRET: optionalString(z.string().trim().min(1).max(200)),
+  GITHUB_APP_PRIVATE_KEY: optionalString(
+    z
+      .string()
+      .min(1)
+      .max(20_000)
+      .refine((value) => {
+        try {
+          readGithubAppPrivateKey(value);
+          return true;
+        } catch {
+          return false;
+        }
+      }, 'GITHUB_APP_PRIVATE_KEY must be the private key GitHub generated (base64 of the .pem file, or the PEM itself)'),
+  ),
+  /** Signs the app's webhooks. Optional: without it (webhook off) TaskFlow checks GitHub on a timer instead. */
+  GITHUB_APP_WEBHOOK_SECRET: optionalString(z.string().trim().min(16, 'GITHUB_APP_WEBHOOK_SECRET must be at least 16 characters').max(200)),
   /**
    * Calls (D2): a LiveKit server. The URL browsers connect to (wss://… in production), and the
    * API key and secret that sign join tokens and webhooks. All three, or none (calls off).
@@ -97,6 +123,20 @@ const envSchema = z.object({
   .refine((env) => (env.GITHUB_CLIENT_ID === undefined) === (env.GITHUB_CLIENT_SECRET === undefined), {
     path: ['GITHUB_CLIENT_SECRET'],
     message: 'Set both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET for GitHub sign-in, or neither',
+  })
+  .refine(
+    (env) => {
+      const set = [env.GITHUB_APP_ID, env.GITHUB_APP_SLUG, env.GITHUB_APP_CLIENT_ID, env.GITHUB_APP_CLIENT_SECRET, env.GITHUB_APP_PRIVATE_KEY].filter((value) => value !== undefined).length;
+      return set === 0 || set === 5;
+    },
+    {
+      path: ['GITHUB_APP_ID'],
+      message: 'Set all of GITHUB_APP_ID, GITHUB_APP_SLUG, GITHUB_APP_CLIENT_ID, GITHUB_APP_CLIENT_SECRET and GITHUB_APP_PRIVATE_KEY for GitHub sync, or none',
+    },
+  )
+  .refine((env) => env.GITHUB_APP_WEBHOOK_SECRET === undefined || env.GITHUB_APP_ID !== undefined, {
+    path: ['GITHUB_APP_WEBHOOK_SECRET'],
+    message: 'GITHUB_APP_WEBHOOK_SECRET needs the GitHub App settings (GITHUB_APP_ID and the rest)',
   })
   // Public forms need a CAPTCHA in production (AGENTS.md rule 11), so a missing secret fails startup.
   .refine((env) => env.NODE_ENV !== 'production' || env.TURNSTILE_SECRET_KEY !== undefined, {
