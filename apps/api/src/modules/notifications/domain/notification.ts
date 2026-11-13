@@ -17,10 +17,12 @@ export interface Notification {
   /** A short plain-text quote, e.g. the start of a comment. */
   excerpt: string;
   readAt: Date | null;
+  /** Hidden until then; comes back unread. */
+  snoozedUntil: Date | null;
   createdAt: Date;
 }
 
-export type NewNotification = Omit<Notification, 'id' | 'readAt' | 'createdAt'>;
+export type NewNotification = Omit<Notification, 'id' | 'readAt' | 'snoozedUntil' | 'createdAt'>;
 
 /** A notification with the actor's display name, for the inbox. */
 export interface NotificationView extends Notification {

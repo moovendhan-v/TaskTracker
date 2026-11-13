@@ -27,7 +27,7 @@ export function WorkspaceLayout({ workspaceId, openTaskId }: { workspaceId: stri
 
   // Live updates for this workspace, and a toast when something new lands in your inbox.
   const showLatestNotification = async () => {
-    const latest = (await inboxApi.list(workspaceId, true).catch(() => null))?.items[0];
+    const latest = (await inboxApi.list(workspaceId, { unreadOnly: true }).catch(() => null))?.items[0];
     if (!latest) return;
     toast(describeNotification(latest), {
       icon: <BellIcon className="size-4" />,

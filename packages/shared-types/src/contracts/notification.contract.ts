@@ -11,6 +11,8 @@ export interface NotificationResponse {
   subject: string;
   excerpt: string;
   readAt: string | null;
+  /** Hidden from the inbox until then, when it comes back unread. */
+  snoozedUntil: string | null;
   createdAt: string;
 }
 

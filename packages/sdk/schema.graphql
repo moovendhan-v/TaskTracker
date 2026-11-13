@@ -1883,6 +1883,19 @@ type Mutation {
   Locks the workspace default: everyone sees it, and only layout managers arrange the page (audited)
   """
   setWorkspaceLayoutLocked(locked: Boolean!, pageKey: String!, workspaceId: ID!): WorkspaceLayout!
+
+  """
+  Snoozes your notifications until a time (they come back unread), or brings them back now without `until`. Returns how many changed
+  """
+  snoozeNotifications(
+    ids: [ID!]!
+
+    """
+    When they come back (ISO time, at most 30 days ahead); omit to unsnooze now
+    """
+    until: String
+    workspaceId: ID!
+  ): Int!
   startBreak(workspaceId: ID!): AttendanceShift!
   startSprint(sprintId: ID!, workspaceId: ID!): Sprint!
 
@@ -1997,6 +2010,9 @@ type Notification {
   id: ID!
   kind: NotificationKind!
   readAt: String
+
+  """Hidden until then, when it comes back unread"""
+  snoozedUntil: String
 
   """What it is about, e.g. the task title"""
   subject: String!
@@ -2413,10 +2429,15 @@ type Query {
 
   """Your notifications in this workspace, newest first"""
   notifications(
+    """Only these kinds"""
+    kinds: [NotificationKind!]
     page: Int
 
     """1 to 100"""
     pageSize: Int
+
+    """The snoozed notifications (soonest back first) instead of the inbox"""
+    snoozed: Boolean
     unreadOnly: Boolean
     workspaceId: ID!
   ): NotificationPage!

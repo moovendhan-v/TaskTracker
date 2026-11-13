@@ -1,6 +1,6 @@
 import { ArgsType, Field, ID, ObjectType } from '@nestjs/graphql';
-import { ArrayMaxSize, ArrayMinSize, IsBoolean, IsOptional, IsUUID } from 'class-validator';
-import type { NotificationResponse } from '@taskflow/shared-types';
+import { ArrayMaxSize, ArrayMinSize, IsBoolean, IsIn, IsISO8601, IsOptional, IsUUID } from 'class-validator';
+import { NOTIFICATION_KINDS, type NotificationResponse } from '@taskflow/shared-types';
 import { NotificationKindEnum } from '../../../../core/graphql/enums.js';
 import { PageOf, WorkspacePageArgs } from '../../../../core/graphql/page.type.js';
 import type { NotificationKind } from '../../domain/notification.js';
@@ -17,6 +17,7 @@ export class NotificationGql implements NotificationResponse {
   @Field({ description: 'What it is about, e.g. the task title' }) subject: string;
   @Field({ description: 'Plain text; render as text, never HTML' }) excerpt: string;
   @Field(() => String, { nullable: true }) readAt: string | null;
+  @Field(() => String, { nullable: true, description: 'Hidden until then, when it comes back unread' }) snoozedUntil: string | null;
   @Field() createdAt: string;
 }
 
@@ -29,7 +30,20 @@ export class InboxArgs extends WorkspacePageArgs {
   @IsOptional()
   @IsBoolean()
   unreadOnly?: boolean;
+
+  @Field(() => [NotificationKindEnum], { nullable: true, description: 'Only these kinds' })
+  @IsOptional()
+  @ArrayMaxSize(20)
+  @IsIn(NOTIFICATION_KINDS, { each: true })
+  kinds?: NotificationKind[];
+
+  @Field({ nullable: true, description: 'The snoozed notifications (soonest back first) instead of the inbox' })
+  @IsOptional()
+  @IsBoolean()
+  snoozed?: boolean;
 }
+
+
 
 /** Up to one page of notifications at a time. */
 @ArgsType()
@@ -43,4 +57,12 @@ export class MarkReadArgs {
   @ArrayMaxSize(100)
   @IsUUID('4', { each: true })
   ids: string[];
+}
+
+@ArgsType()
+export class SnoozeArgs extends MarkReadArgs {
+  @Field({ nullable: true, description: 'When they come back (ISO time, at most 30 days ahead); omit to unsnooze now' })
+  @IsOptional()
+  @IsISO8601({ strict: true })
+  until?: string;
 }
