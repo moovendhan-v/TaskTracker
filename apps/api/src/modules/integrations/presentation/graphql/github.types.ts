@@ -141,6 +141,7 @@ export class GithubAppInfoGql implements GithubAppInfoResponse {
   @Field() enabled: boolean;
   @Field({ description: 'People can install it from TaskFlow (the server has its client secret)' }) canInstall: boolean;
   @Field(() => String, { nullable: true }) slug: string | null;
+  @Field({ description: 'GitHub changes arrive through the app webhook at once (otherwise polled)' }) webhook: boolean;
 }
 
 @ObjectType('GithubInstallation', { description: 'A GitHub account or organization where the app is installed for this workspace' })

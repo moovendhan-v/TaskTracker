@@ -175,6 +175,16 @@ function GithubAppPanel({ workspaceId }: { workspaceId: string }) {
         </Button>
       </div>
       {!info.data.canInstall ? <p className="text-xs text-muted-foreground">Installing from TaskFlow needs the app&rsquo;s client secret on the server (GITHUB_APP_CLIENT_SECRET).</p> : null}
+      <p className="text-xs text-muted-foreground">
+        {info.data.webhook ? (
+          <>Changes on GitHub arrive at once through the app&rsquo;s webhook.</>
+        ) : (
+          <>
+            Changes on GitHub are checked every minute. For instant updates, set the app&rsquo;s webhook on GitHub to{' '}
+            <code className="font-mono">{`${window.location.origin}/api/integrations/github/app-webhook`}</code> and its secret as GITHUB_APP_WEBHOOK_SECRET.
+          </>
+        )}
+      </p>
       {installations.data?.length ? (
         <ul aria-label="Installations" className="grid gap-2">
           {installations.data.map((installation) => (

@@ -6,6 +6,10 @@ export abstract class GithubAppRepository {
   abstract findInstallation(workspaceId: string, id: string): Promise<GithubInstallation | null>;
   abstract saveInstallation(installation: Omit<GithubInstallation, 'id' | 'createdAt'>): Promise<GithubInstallation>;
   abstract deleteInstallation(workspaceId: string, id: string): Promise<void>;
+  /** Platform scope: the app connections for a repository reached through this GitHub installation (in any workspace). */
+  abstract connectionsForRepo(installationId: number, repo: string): Promise<{ workspaceId: string; connectionId: string }[]>;
+  /** Platform scope: the app was uninstalled on GitHub; forgets that installation everywhere. Returns how many were removed. */
+  abstract deleteInstallationEverywhere(installationId: number): Promise<number>;
 
   /** Platform scope: workspaces with app connections to poll (not polled since `polledBefore`) or pushes due. */
   abstract workspacesToSync(now: Date, polledBefore: Date, limit: number): Promise<string[]>;

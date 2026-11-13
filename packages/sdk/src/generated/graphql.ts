@@ -1951,7 +1951,7 @@ export type GithubAppQueryVariables = Exact<{
 }>;
 
 
-export type GithubAppQuery = { githubApp: { enabled: boolean, canInstall: boolean, slug: string | null } };
+export type GithubAppQuery = { githubApp: { enabled: boolean, canInstall: boolean, slug: string | null, webhook: boolean } };
 
 export type GithubAppInstallUrlMutationVariables = Exact<{
   workspaceId: string;
@@ -6136,6 +6136,7 @@ export const GithubAppDocument = new TypedDocumentString(`
     enabled
     canInstall
     slug
+    webhook
   }
 }
     `) as unknown as TypedDocumentString<GithubAppQuery, GithubAppQueryVariables>;

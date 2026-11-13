@@ -22,10 +22,14 @@ them against GitHub.
    GitHub token and keeps the installation only if GitHub lists it among that person's
    installations, so nobody can attach someone else's installation (IDOR). Audited.
    Then they pick repositories from the installation; each becomes a connection.
-3. **GitHub → TaskFlow without a public URL** (polling done; the app-wide webhook is next): with no webhook secret, a poller asks GitHub
+3. **GitHub → TaskFlow without a public URL** (done: polling, and the app webhook): with no webhook secret, a poller asks GitHub
    every minute for pull requests and issues updated since the last look, and feeds them to the
-   same handling as webhooks (each change handled once). With the webhook on, `/api/integrations/
-   github/app-webhook` takes events for all installations (signature checked against the raw body).
+   same handling as webhooks (each change handled once). With `GITHUB_APP_WEBHOOK_SECRET` set,
+   `/api/integrations/github/app-webhook` takes events for all installations at once (signature
+   checked against the raw body, each delivery handled once per connection): pull requests and
+   issues for connected repositories, and an uninstall on GitHub forgets the installation
+   everywhere. The poller stays on as a safety net; settings say which mode is active and show
+   the webhook URL to set on GitHub.
 4. **TaskFlow → GitHub, issues** (done): *Create GitHub issue* from a task links the two. Title and
    open / closed follow each other both ways (done or cancelled closes the issue; reopening
    either reopens the other). Writes go out after the change commits, through an outbox with

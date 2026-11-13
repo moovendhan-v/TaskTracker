@@ -21,6 +21,8 @@ export interface GithubAppInfoResponse {
   enabled: boolean;
   canInstall: boolean;
   slug: string | null;
+  /** The app webhook is on (GITHUB_APP_WEBHOOK_SECRET): GitHub changes arrive at once, not by the minute. */
+  webhook: boolean;
 }
 
 /** A GitHub App installation the workspace may use (an account or organization on GitHub). */
