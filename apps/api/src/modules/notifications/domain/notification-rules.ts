@@ -41,8 +41,20 @@ export const NotificationRules = {
       case 'task.updated':
         if (!facts.assigneeId || facts.assigneeId === facts.previousAssigneeId) return [];
         return to([facts.assigneeId], { kind: 'task_assigned', taskId: event.entityId });
-      case 'comment.created':
-        return to([facts.assigneeId, facts.createdById, ...(facts.watcherIds ?? [])], { kind: 'task_commented', taskId: facts.taskId ?? null });
+      case 'comment.created': {
+        // People the comment @mentions (who can see the task) hear about that instead of a plain "commented".
+        const mentioned = new Set(facts.mentionIds ?? []);
+        return [
+          ...to(mentioned, { kind: 'comment_mention', taskId: facts.taskId ?? null }),
+          ...to(
+            [facts.assigneeId, facts.createdById, ...(facts.watcherIds ?? [])].filter((id) => !id || !mentioned.has(id)),
+            { kind: 'task_commented', taskId: facts.taskId ?? null },
+          ),
+        ];
+      }
+      case 'comment.updated':
+        // An edit notifies only people it newly mentions.
+        return to(facts.mentionIds ?? [], { kind: 'comment_mention', taskId: facts.taskId ?? null });
       case 'leave_request.created':
         return facts.status === 'pending' ? to(context.approverIds, { kind: 'leave_requested' }) : [];
       case 'leave_request.updated':

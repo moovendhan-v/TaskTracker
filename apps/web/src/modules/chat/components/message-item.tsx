@@ -10,7 +10,7 @@ import { MarkdownPreview, useDocWorkspace } from '@/modules/documents';
 import { useMemberName } from '@/modules/members';
 import { timeAgo } from '@/lib/relative-time';
 import { timeOfDay } from '../lib/chat-display';
-import { tokensToNames } from '../lib/chat-mentions';
+import { tokensToNames } from '@/lib/mentions';
 import { formatBytes } from '@/lib/upload';
 import { Composer } from './composer';
 

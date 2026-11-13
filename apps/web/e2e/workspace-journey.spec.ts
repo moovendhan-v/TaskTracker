@@ -133,6 +133,15 @@ test('edits a task and renders comments as text, never HTML', async () => {
   await expect(panel.getByLabel('New comment')).toHaveValue('');
   expect(await page.locator('ol script').count()).toBe(0);
 
+  // @mentions: typing @ suggests teammates, and the comment shows the name.
+  const box = panel.getByLabel('New comment');
+  await box.click();
+  await box.pressSequentially('Thanks @Dan');
+  await panel.getByRole('listbox', { name: 'People' }).getByRole('option', { name: 'Dana Reyes' }).click();
+  await box.pressSequentially('for checking');
+  await panel.getByRole('button', { name: 'Comment', exact: true }).click();
+  await expect(panel.getByRole('listitem').filter({ hasText: 'Thanks @Dana Reyes for checking' })).toBeVisible();
+
   // Attach an image: it's uploaded, checked, and shown on the task.
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
   await panel.getByLabel('Attach files to this task').setInputFiles({ name: 'release.png', mimeType: 'image/png', buffer: png });

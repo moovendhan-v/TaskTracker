@@ -482,6 +482,7 @@ export type NotificationKind =
   | 'access_requested'
   | 'automation'
   | 'chat_mention'
+  | 'comment_mention'
   | 'leave_decided'
   | 'leave_requested'
   | 'member_added'

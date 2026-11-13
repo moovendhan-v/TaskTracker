@@ -43,6 +43,7 @@ import { UploadPreviews1730030000000 } from './1730030000000-upload-previews.js'
 import { TeamLayouts1730040000000 } from './1730040000000-team-layouts.js';
 import { DashboardVersions1730050000000 } from './1730050000000-dashboard-versions.js';
 import { TaskChecklists1730060000000 } from './1730060000000-task-checklists.js';
+import { CommentMentions1730070000000 } from './1730070000000-comment-mentions.js';
 import { GithubConflicts1729950000000 } from './1729950000000-github-conflicts.js';
 import { ChatRetention1729940000000 } from './1729940000000-chat-retention.js';
 import { DashboardTeams1729930000000 } from './1729930000000-dashboard-teams.js';
@@ -107,4 +108,5 @@ export const MIGRATIONS = [
   TeamLayouts1730040000000,
   DashboardVersions1730050000000,
   TaskChecklists1730060000000,
+  CommentMentions1730070000000,
 ];

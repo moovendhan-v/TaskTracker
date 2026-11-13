@@ -8,7 +8,7 @@ import { useMembers } from '@/modules/members';
 import { notify } from '@/components/kit/notify';
 import { formatBytes, UPLOAD_ACCEPT } from '@/lib/upload';
 import { discardChatFile, uploadChatFile } from '../api/chat.api';
-import { namesToTokens, personAt, type Person } from '../lib/chat-mentions';
+import { namesToTokens, personAt, type Person } from '@/lib/mentions';
 
 interface ComposerProps {
   placeholder: string;
