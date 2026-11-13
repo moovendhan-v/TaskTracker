@@ -18,3 +18,13 @@ export function downloadCsv(filename: string, header: readonly string[], rows: r
   link.click();
   URL.revokeObjectURL(url);
 }
+
+/** Downloads text the server made (e.g. a chat export) as a file. */
+export function downloadText(filename: string, content: string, contentType: string): void {
+  const url = URL.createObjectURL(new Blob([content], { type: `${contentType};charset=utf-8` }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}

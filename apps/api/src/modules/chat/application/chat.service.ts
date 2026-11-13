@@ -39,6 +39,7 @@ import { TasksService } from '../../tasks/application/tasks.service.js';
 import { randomUUID } from 'node:crypto';
 import { FileStorage } from '../../../core/storage/file-storage.port.js';
 import { FileScanner } from '../../../core/scanning/file-scanner.port.js';
+import { formatChatExport, type ChatExport, type ChatExportFormat, type ChatExportMessage } from '../domain/chat-export.js';
 import { cleanFileName, isAllowedExtension } from '../../../core/storage/file-types.js';
 import { deleteUpload, downloadUrl, inspectUpload, thumbnailKey, UPLOAD_REFUSALS } from '../../../core/storage/upload-checks.js';
 import { StorageTokens } from '../../../core/storage/storage-tokens.js';
@@ -64,6 +65,9 @@ function toChannel(record: ChatChannelRecord, dmMembers: { id: string; name: str
     createdAt: record.createdAt.toISOString(),
   };
 }
+
+/** Exports carry at most this many messages (the most recent), replies included. */
+const CHAT_EXPORT_MAX = 5_000;
 
 function toMessage(record: ChatMessageRecord, reactions: ChatReactionSummary[] = [], attachments: ChatAttachmentResponse[] = []): ChatMessageResponse {
   return {
@@ -272,6 +276,58 @@ export class ChatService {
     await this.readable(access, actor, channelId);
     const limit = clampPage(first, CHAT_PAGE_MAX);
     return this.page(access, actor, await this.chat.listChannelMessages(access.workspaceId, channelId, this.cursor(before), limit), limit);
+  }
+
+  /**
+   * A channel's history as a file (Markdown or JSON): what you can read there, oldest first,
+   * with thread replies; at most CHAT_EXPORT_MAX messages (the most recent). Audited.
+   */
+  async exportChannel(actor: Actor, access: WorkspaceAccess, channelId: string, format: ChatExportFormat): Promise<ChatExport & { messages: number; truncated: boolean }> {
+    const channel = await this.readable(access, actor, channelId);
+    const roots: ChatMessageRecord[] = [];
+    let total = 0;
+    let before: MessagePosition | null = null;
+    let truncated = false;
+    while (!truncated) {
+      const page = await this.chat.listChannelMessages(access.workspaceId, channel.id, before, CHAT_PAGE_MAX);
+      for (const record of page) {
+        if (total >= CHAT_EXPORT_MAX) {
+          truncated = true;
+          break;
+        }
+        roots.push(record);
+        total += 1 + record.replyCount;
+      }
+      if (page.length < CHAT_PAGE_MAX) break;
+      before = page[page.length - 1]!.position;
+    }
+    roots.reverse();
+    const messages: ChatExportMessage[] = [];
+    for (const root of roots) {
+      const replies: ChatMessageRecord[] = [];
+      let after: MessagePosition | null = null;
+      while (root.replyCount > 0 && replies.length < CHAT_EXPORT_MAX) {
+        const page = await this.chat.listThread(access.workspaceId, root.id, after, CHAT_THREAD_PAGE_MAX);
+        replies.push(...page.filter((reply) => reply.id !== root.id));
+        if (page.length < CHAT_THREAD_PAGE_MAX) break;
+        after = page[page.length - 1]!.position;
+      }
+      messages.push({ record: root, files: [], replies: replies.filter((reply) => !reply.deletedAt).map((record) => ({ record, files: [] })) });
+    }
+    const live = messages.filter((message) => !message.record.deletedAt || message.replies.length);
+    const files = await this.chat.attachmentsFor(access.workspaceId, live.flatMap((message) => [message.record.id, ...message.replies.map((reply) => reply.record.id)]));
+    const named = (id: string) => (files.get(id) ?? []).map((file) => file.fileName);
+    for (const message of live) {
+      message.files = named(message.record.id);
+      for (const reply of message.replies) reply.files = named(reply.record.id);
+      // A deleted message that still has replies stays as a placeholder, so the replies make sense.
+      if (message.record.deletedAt) message.record = { ...message.record, body: '(deleted)', authorName: message.record.authorName };
+    }
+    const title = channel.kind === 'dm' ? 'Direct message' : `#${channel.name ?? 'channel'}`;
+    const exported = formatChatExport({ title }, live, format, new Date(), truncated);
+    const count = live.reduce((sum, message) => sum + 1 + message.replies.length, 0);
+    await this.auditLogger.record(actor, { action: 'chat.export', targetType: 'chat_channel', targetId: channel.id, workspaceId: access.workspaceId, metadata: { format, messages: count, truncated } });
+    return { ...exported, messages: count, truncated };
   }
 
   async message(access: WorkspaceAccess, actor: Actor, messageId: string): Promise<ChatMessageResponse> {

@@ -2,6 +2,7 @@ import type { ChatAttachmentResponse, ChatChannelKind, ChatSearchHit, ChatChanne
 import {
   AddChatChannelMembersDocument,
   ArchiveChatChannelDocument,
+  ExportChatChannelDocument,
   BrowseChatChannelsDocument,
   ChatChannelDocument,
   ChatChannelMembersDocument,
@@ -53,6 +54,7 @@ export const chatApi = {
   openDm: async (workspaceId: string, userIds: string[]) => channel((await graphql(OpenDirectMessageDocument, { workspaceId, userIds })).openDirectMessage),
   updateChannel: async (workspaceId: string, channelId: string, input: { name?: string; topic?: string }) =>
     channel((await graphql(UpdateChatChannelDocument, { workspaceId, channelId, input })).updateChatChannel),
+  exportHistory: async (workspaceId: string, channelId: string, format: 'markdown' | 'json') => (await graphql(ExportChatChannelDocument, { workspaceId, channelId, format })).exportChatChannel,
   archive: async (workspaceId: string, channelId: string, archived: boolean) => channel((await graphql(ArchiveChatChannelDocument, { workspaceId, channelId, archived })).archiveChatChannel),
   join: async (workspaceId: string, channelId: string) => channel((await graphql(JoinChatChannelDocument, { workspaceId, channelId })).joinChatChannel),
   leave: async (workspaceId: string, channelId: string) => (await graphql(LeaveChatChannelDocument, { workspaceId, channelId })).leaveChatChannel,
