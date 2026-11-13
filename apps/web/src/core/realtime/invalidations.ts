@@ -46,6 +46,8 @@ export function keysToRefresh(workspaceId: string, entityType: RealtimeEntityTyp
       return [queryKeys.chatRoot(workspaceId)];
     case 'task_attachment':
       return [[...queryKeys.tasksRoot(workspaceId), 'attachments']];
+    case 'task_checklist':
+      return [[...queryKeys.tasksRoot(workspaceId), 'checklist']];
     case 'office_presence':
       return [[...queryKeys.workspace(workspaceId), 'office']];
     case 'chat_typing':

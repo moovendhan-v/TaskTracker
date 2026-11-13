@@ -140,6 +140,18 @@ test('edits a task and renders comments as text, never HTML', async () => {
   await expect(thumbnail).toBeVisible();
   await expect.poll(() => thumbnail.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(1);
 
+  // A checklist: steps added in order, ticked off, and the progress shown.
+  const newStep = panel.getByLabel('New step');
+  for (const step of ['Draft the notes', 'Get a review', 'Publish']) {
+    await newStep.fill(step);
+    await newStep.press('Enter');
+    await expect(panel.getByRole('list', { name: 'Steps' }).getByText(step)).toBeVisible();
+  }
+  await panel.getByRole('checkbox', { name: 'Tick “Draft the notes”' }).click();
+  await expect(panel.getByLabel('1 of 3 steps done')).toBeVisible();
+  await panel.getByRole('button', { name: 'Move “Publish” up' }).click();
+  await expect(panel.getByRole('list', { name: 'Steps' }).getByRole('listitem').nth(1)).toContainText('Publish');
+
   await page.keyboard.press('Escape');
   await expect(page).not.toHaveURL(/task=/);
 });
