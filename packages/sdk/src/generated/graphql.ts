@@ -553,6 +553,7 @@ export type RealtimeEntityType =
   | 'status'
   | 'task'
   | 'task_attachment'
+  | 'task_checklist'
   | 'time_entry'
   | 'workspace';
 
@@ -768,6 +769,11 @@ export type UpdateAdminUserInput = {
 export type UpdateChatChannelInput = {
   name?: string | null | undefined;
   topic?: string | null | undefined;
+};
+
+export type UpdateChecklistItemInput = {
+  done?: boolean | null | undefined;
+  title?: string | null | undefined;
 };
 
 export type UpdateCustomFieldInput = {
@@ -1051,6 +1057,51 @@ export type DeleteTaskAttachmentMutationVariables = Exact<{
 
 
 export type DeleteTaskAttachmentMutation = { deleteTaskAttachment: boolean };
+
+export type ChecklistItemFieldsFragment = { id: string, taskId: string, title: string, done: boolean, doneAt: string | null, doneByName: string | null, position: number, createdAt: string };
+
+export type TaskChecklistQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type TaskChecklistQuery = { taskChecklist: Array<{ id: string, taskId: string, title: string, done: boolean, doneAt: string | null, doneByName: string | null, position: number, createdAt: string }> };
+
+export type AddChecklistItemMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+  title: string;
+}>;
+
+
+export type AddChecklistItemMutation = { addChecklistItem: { id: string, taskId: string, title: string, done: boolean, doneAt: string | null, doneByName: string | null, position: number, createdAt: string } };
+
+export type UpdateChecklistItemMutationVariables = Exact<{
+  workspaceId: string;
+  itemId: string;
+  input: UpdateChecklistItemInput;
+}>;
+
+
+export type UpdateChecklistItemMutation = { updateChecklistItem: { id: string, taskId: string, title: string, done: boolean, doneAt: string | null, doneByName: string | null, position: number, createdAt: string } };
+
+export type MoveChecklistItemMutationVariables = Exact<{
+  workspaceId: string;
+  itemId: string;
+  beforeId?: string | null | undefined;
+}>;
+
+
+export type MoveChecklistItemMutation = { moveChecklistItem: Array<{ id: string, taskId: string, title: string, done: boolean, doneAt: string | null, doneByName: string | null, position: number, createdAt: string }> };
+
+export type DeleteChecklistItemMutationVariables = Exact<{
+  workspaceId: string;
+  itemId: string;
+}>;
+
+
+export type DeleteChecklistItemMutation = { deleteChecklistItem: boolean };
 
 export type WorkspaceAuditLogQueryVariables = Exact<{
   workspaceId: string;
@@ -3209,6 +3260,18 @@ export const TaskAttachmentFieldsFragmentDoc = new TypedDocumentString(`
   createdAt
 }
     `, {"fragmentName":"TaskAttachmentFields"}) as unknown as TypedDocumentString<TaskAttachmentFieldsFragment, unknown>;
+export const ChecklistItemFieldsFragmentDoc = new TypedDocumentString(`
+    fragment ChecklistItemFields on ChecklistItem {
+  id
+  taskId
+  title
+  done
+  doneAt
+  doneByName
+  position
+  createdAt
+}
+    `, {"fragmentName":"ChecklistItemFields"}) as unknown as TypedDocumentString<ChecklistItemFieldsFragment, unknown>;
 export const AutomationRuleFieldsFragmentDoc = new TypedDocumentString(`
     fragment AutomationRuleFields on AutomationRule {
   id
@@ -4313,6 +4376,79 @@ export const DeleteTaskAttachmentDocument = new TypedDocumentString(`
   deleteTaskAttachment(workspaceId: $workspaceId, attachmentId: $attachmentId)
 }
     `) as unknown as TypedDocumentString<DeleteTaskAttachmentMutation, DeleteTaskAttachmentMutationVariables>;
+export const TaskChecklistDocument = new TypedDocumentString(`
+    query TaskChecklist($workspaceId: ID!, $taskId: ID!) {
+  taskChecklist(workspaceId: $workspaceId, taskId: $taskId) {
+    ...ChecklistItemFields
+  }
+}
+    fragment ChecklistItemFields on ChecklistItem {
+  id
+  taskId
+  title
+  done
+  doneAt
+  doneByName
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<TaskChecklistQuery, TaskChecklistQueryVariables>;
+export const AddChecklistItemDocument = new TypedDocumentString(`
+    mutation AddChecklistItem($workspaceId: ID!, $taskId: ID!, $title: String!) {
+  addChecklistItem(workspaceId: $workspaceId, taskId: $taskId, title: $title) {
+    ...ChecklistItemFields
+  }
+}
+    fragment ChecklistItemFields on ChecklistItem {
+  id
+  taskId
+  title
+  done
+  doneAt
+  doneByName
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<AddChecklistItemMutation, AddChecklistItemMutationVariables>;
+export const UpdateChecklistItemDocument = new TypedDocumentString(`
+    mutation UpdateChecklistItem($workspaceId: ID!, $itemId: ID!, $input: UpdateChecklistItemInput!) {
+  updateChecklistItem(workspaceId: $workspaceId, itemId: $itemId, input: $input) {
+    ...ChecklistItemFields
+  }
+}
+    fragment ChecklistItemFields on ChecklistItem {
+  id
+  taskId
+  title
+  done
+  doneAt
+  doneByName
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<UpdateChecklistItemMutation, UpdateChecklistItemMutationVariables>;
+export const MoveChecklistItemDocument = new TypedDocumentString(`
+    mutation MoveChecklistItem($workspaceId: ID!, $itemId: ID!, $beforeId: ID) {
+  moveChecklistItem(
+    workspaceId: $workspaceId
+    itemId: $itemId
+    beforeId: $beforeId
+  ) {
+    ...ChecklistItemFields
+  }
+}
+    fragment ChecklistItemFields on ChecklistItem {
+  id
+  taskId
+  title
+  done
+  doneAt
+  doneByName
+  position
+  createdAt
+}`) as unknown as TypedDocumentString<MoveChecklistItemMutation, MoveChecklistItemMutationVariables>;
+export const DeleteChecklistItemDocument = new TypedDocumentString(`
+    mutation DeleteChecklistItem($workspaceId: ID!, $itemId: ID!) {
+  deleteChecklistItem(workspaceId: $workspaceId, itemId: $itemId)
+}
+    `) as unknown as TypedDocumentString<DeleteChecklistItemMutation, DeleteChecklistItemMutationVariables>;
 export const WorkspaceAuditLogDocument = new TypedDocumentString(`
     query WorkspaceAuditLog($workspaceId: ID!, $action: String, $actorId: ID, $page: Int, $pageSize: Int) {
   workspaceAuditLog(

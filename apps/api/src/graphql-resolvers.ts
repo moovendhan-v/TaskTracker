@@ -14,6 +14,7 @@ import { LeaveResolver } from './modules/hr/leave/presentation/graphql/leave.res
 import { AccessReviewResolver } from './modules/access-review/presentation/graphql/access-review.resolver.js';
 import { AttendanceResolver } from './modules/hr/attendance/presentation/graphql/attendance.resolver.js';
 import { FoldersResolver } from './modules/lists/presentation/graphql/folders.resolver.js';
+import { ChecklistsResolver } from './modules/checklists/presentation/graphql/checklists.resolver.js';
 import { GithubAppResolver } from './modules/integrations/presentation/graphql/github-app.resolver.js';
 import { GithubResolver } from './modules/integrations/presentation/graphql/github.resolver.js';
 import { AutomationsResolver } from './modules/automations/presentation/graphql/automations.resolver.js';
@@ -55,6 +56,7 @@ export const RESOLVERS = [
   FoldersResolver,
   TemplatesResolver,
   AutomationsResolver,
+  ChecklistsResolver,
   GithubAppResolver,
   GithubResolver,
   TasksResolver,

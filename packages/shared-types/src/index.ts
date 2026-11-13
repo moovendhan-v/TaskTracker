@@ -46,6 +46,7 @@ export * from './domain/automation.js';
 export * from './domain/automation-flow.js';
 export * from './contracts/automation.contract.js';
 export * from './domain/github.js';
+export * from './domain/checklist.js';
 export * from './contracts/github.contract.js';
 export * from './domain/layout.js';
 export * from './domain/chat.js';

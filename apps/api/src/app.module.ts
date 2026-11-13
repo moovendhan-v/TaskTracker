@@ -41,6 +41,7 @@ import { FormsModule } from './modules/forms/forms.module.js';
 import { LayoutsModule } from './modules/layouts/layouts.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
 import { AttachmentsModule } from './modules/attachments/attachments.module.js';
+import { ChecklistsModule } from './modules/checklists/checklists.module.js';
 import { StorageModule } from './core/storage/storage.module.js';
 import { PreferencesModule } from './modules/preferences/preferences.module.js';
 import { StatusesModule } from './modules/statuses/statuses.module.js';
@@ -101,6 +102,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     StorageModule,
     ChatModule,
     AttachmentsModule,
+    ChecklistsModule,
     StatusesModule,
     CustomFieldsModule,
     TimeTrackingModule,

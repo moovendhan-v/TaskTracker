@@ -23,3 +23,34 @@ mutation CompleteTaskUpload($workspaceId: ID!, $attachmentId: ID!) {
 }
 
 mutation DeleteTaskAttachment($workspaceId: ID!, $attachmentId: ID!) { deleteTaskAttachment(workspaceId: $workspaceId, attachmentId: $attachmentId) }
+
+fragment ChecklistItemFields on ChecklistItem {
+  id
+  taskId
+  title
+  done
+  doneAt
+  doneByName
+  position
+  createdAt
+}
+
+query TaskChecklist($workspaceId: ID!, $taskId: ID!) {
+  taskChecklist(workspaceId: $workspaceId, taskId: $taskId) { ...ChecklistItemFields }
+}
+
+mutation AddChecklistItem($workspaceId: ID!, $taskId: ID!, $title: String!) {
+  addChecklistItem(workspaceId: $workspaceId, taskId: $taskId, title: $title) { ...ChecklistItemFields }
+}
+
+mutation UpdateChecklistItem($workspaceId: ID!, $itemId: ID!, $input: UpdateChecklistItemInput!) {
+  updateChecklistItem(workspaceId: $workspaceId, itemId: $itemId, input: $input) { ...ChecklistItemFields }
+}
+
+mutation MoveChecklistItem($workspaceId: ID!, $itemId: ID!, $beforeId: ID) {
+  moveChecklistItem(workspaceId: $workspaceId, itemId: $itemId, beforeId: $beforeId) { ...ChecklistItemFields }
+}
+
+mutation DeleteChecklistItem($workspaceId: ID!, $itemId: ID!) {
+  deleteChecklistItem(workspaceId: $workspaceId, itemId: $itemId)
+}

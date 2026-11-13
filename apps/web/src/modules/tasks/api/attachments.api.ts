@@ -1,5 +1,5 @@
 import type { TaskAttachmentResponse } from '@taskflow/shared-types';
-import { CompleteTaskUploadDocument, DeleteTaskAttachmentDocument, RequestTaskUploadDocument, TaskAttachmentsDocument } from '@taskflow/sdk';
+import { AddChecklistItemDocument, CompleteTaskUploadDocument, DeleteChecklistItemDocument, DeleteTaskAttachmentDocument, MoveChecklistItemDocument, RequestTaskUploadDocument, TaskAttachmentsDocument, TaskChecklistDocument, UpdateChecklistItemDocument } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
 import { uploadWith } from '@/lib/upload';
 
@@ -17,4 +17,13 @@ export const attachmentsApi = {
       file,
       onProgress,
     ),
+};
+
+/** A task's checklist (C2). */
+export const checklistApi = {
+  list: async (workspaceId: string, taskId: string) => (await graphql(TaskChecklistDocument, { workspaceId, taskId })).taskChecklist,
+  add: async (workspaceId: string, taskId: string, title: string) => (await graphql(AddChecklistItemDocument, { workspaceId, taskId, title })).addChecklistItem,
+  update: async (workspaceId: string, itemId: string, input: { title?: string; done?: boolean }) => (await graphql(UpdateChecklistItemDocument, { workspaceId, itemId, input })).updateChecklistItem,
+  move: async (workspaceId: string, itemId: string, beforeId: string | null) => (await graphql(MoveChecklistItemDocument, { workspaceId, itemId, beforeId })).moveChecklistItem,
+  remove: async (workspaceId: string, itemId: string) => (await graphql(DeleteChecklistItemDocument, { workspaceId, itemId })).deleteChecklistItem,
 };
