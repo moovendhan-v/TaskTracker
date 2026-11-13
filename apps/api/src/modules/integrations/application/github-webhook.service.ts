@@ -62,7 +62,8 @@ export class GithubWebhookService {
 
     return this.unitOfWork.runInScope({ kind: 'workspace', workspaceId, userId: null }, async () => {
       const connection = await this.github.findInWorkspace(workspaceId, delivery.connectionId);
-      if (!connection) return 'invalid';
+      // Repositories connected through the GitHub App have no webhook of their own.
+      if (!connection?.secretSealed) return 'invalid';
       let secret: string;
       try {
         secret = this.secretBox.open(connection.secretSealed);
@@ -102,17 +103,32 @@ export class GithubWebhookService {
         await this.note(connection, `ignored: from ${pr.repo.slice(0, 50)}`, { event, prNumber: pr.number });
         return 'ignored';
       }
-      // Everything a delivery does is limited to what the connection's owner can see now.
-      const access = connection.createdById ? await this.accessService.resolveMember(connection.createdById, workspaceId) : null;
-      if (!access) {
-        await this.note(connection, 'ignored: the owner left; save the connection again', { event, prNumber: pr.number });
-        return 'ignored';
-      }
-      const { linked, conflicts } = await this.handlePullRequest(connection, access, pr);
-      const asked = conflicts ? `, ${conflicts} left as ${conflicts === 1 ? 'a conflict' : 'conflicts'} (changed in TaskFlow)` : '';
-      await this.note(connection, `ok: #${pr.number} ${pr.action}, ${linked.length} linked${linked.length ? '' : ' (in the pull request inbox)'}${asked}`, { event, prNumber: pr.number, taskNumbers: linked });
-      return 'ok';
+      return this.applyPullRequest(connection, pr, event);
     });
+  }
+
+  /**
+   * Applies one pull request change to the connection's tasks, as the connection's owner (with
+   * their access now), and records it in the sync log. Used by webhooks and by the GitHub App
+   * poller. Runs in the workspace's scope.
+   */
+  async applyPullRequest(connection: GithubConnection, pr: PullRequestEvent, event: string): Promise<'ok' | 'ignored'> {
+    const { workspaceId } = connection;
+    // Everything a delivery does is limited to what the connection's owner can see now.
+    const access = connection.createdById ? await this.accessService.resolveMember(connection.createdById, workspaceId) : null;
+    if (!access) {
+      await this.note(connection, 'ignored: the owner left; save the connection again', { event, prNumber: pr.number });
+      return 'ignored';
+    }
+    const { linked, conflicts } = await this.handlePullRequest(connection, access, pr);
+    const asked = conflicts ? `, ${conflicts} left as ${conflicts === 1 ? 'a conflict' : 'conflicts'} (changed in TaskFlow)` : '';
+    await this.note(connection, `ok: #${pr.number} ${pr.action}, ${linked.length} linked${linked.length ? '' : ' (in the pull request inbox)'}${asked}`, { event, prNumber: pr.number, taskNumbers: linked });
+    return 'ok';
+  }
+
+  /** Records something the GitHub App poller did, in the connection's sync log. */
+  noteSync(connection: GithubConnection, status: string, details: { event?: string; prNumber?: number; taskNumbers?: number[] } = {}): Promise<void> {
+    return this.note(connection, status, details);
   }
 
   /**
@@ -214,7 +230,8 @@ export class GithubWebhookService {
 
   /** The connection's last status, and a sync log entry with our own short text (never payload content). */
   private async note(connection: GithubConnection, status: string, details: { event?: string; prNumber?: number; taskNumbers?: number[] } = {}): Promise<void> {
-    await this.github.save({ ...connection, lastDeliveryAt: this.clock.now(), lastDeliveryStatus: status.slice(0, 80) });
+    // Only the delivery columns: the poller keeps its cursors on the same row.
+    await this.github.noteDelivery(connection.workspaceId, connection.id, this.clock.now(), status.slice(0, 80));
     const outcome = status.startsWith('ok') ? 'ok' : status.startsWith('ignored') ? 'ignored' : 'error';
     await this.github.logEvent({
       workspaceId: connection.workspaceId,

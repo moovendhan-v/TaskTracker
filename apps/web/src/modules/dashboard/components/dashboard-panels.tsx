@@ -1,7 +1,7 @@
 import { ClipboardListIcon, ClockIcon, FolderIcon, ListChecksIcon, TriangleAlertIcon, CalendarClockIcon, UserXIcon } from 'lucide-react';
-import type { BlockChart, DashboardResponse } from '@taskflow/shared-types';
+import type { BlockBreakdownChart, BlockChart, DashboardResponse } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
-import { BarList, ColumnChart, GroupedColumnChart, Legend, LineChart, Sparkline, StackedBar } from '@/components/kit/charts';
+import { BarList, ColumnChart, GroupedColumnChart, Legend, LineChart, PieChart, Sparkline, StackedBar } from '@/components/kit/charts';
 import { StatCard } from '@/components/kit/stat-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatMonthDay, formatNumericDate } from '@/lib/periods';
@@ -63,12 +63,34 @@ export function KpiRowSkeleton({ tiles }: { tiles: number }) {
   );
 }
 
-export function StatusBreakdown({ data, openOnly }: { data: Dashboard; openOnly: boolean }) {
+export function StatusBreakdown({ data, openOnly, chart }: { data: Dashboard; openOnly: boolean; chart?: BlockBreakdownChart }) {
   const rows = data.byStatus.filter((row) => !openOnly || (row.category !== 'done' && row.category !== 'cancelled'));
+  if (chart === 'donut' || chart === 'pie') {
+    return <PieChart variant={chart} label="Tasks by status" totalLabel="tasks" slices={rows.map((row) => ({ key: row.name, label: row.name, value: row.count, color: row.color }))} empty="No tasks." />;
+  }
   return <StackedBar label="Tasks by status" showPercent={openOnly} segments={rows.map((row) => ({ key: row.name, label: row.name, value: row.count, color: row.color }))} />;
 }
 
-export function PriorityPanel({ data }: { data: Dashboard }) {
+const PRIORITY_COLOR: Record<string, string> = { urgent: 'var(--priority-urgent)', high: 'var(--priority-high)', normal: 'var(--priority-normal)', low: 'var(--priority-low)', none: 'var(--chart-other)' };
+
+export function PriorityPanel({ data, chart }: { data: Dashboard; chart?: BlockBreakdownChart }) {
+  if (chart === 'donut' || chart === 'pie') {
+    return (
+      <PieChart
+        variant={chart}
+        label="Open tasks by priority"
+        totalLabel="open"
+        empty="No open tasks."
+        slices={data.byPriority.map((row) => ({
+          key: row.priority,
+          label: row.priority === 'none' ? 'No priority' : row.priority[0]!.toUpperCase() + row.priority.slice(1),
+          value: row.open,
+          color: PRIORITY_COLOR[row.priority],
+          display: row.overdue ? `${row.open} (${row.overdue} late)` : String(row.open),
+        }))}
+      />
+    );
+  }
   const max = Math.max(1, ...data.byPriority.map((row) => row.open));
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
@@ -199,8 +221,22 @@ export function HoursPerDay({ data, height = 160, chart = 'bar' }: { data: Dashb
   );
 }
 
-export function HoursByPerson({ data }: { data: Dashboard }) {
+export function HoursByPerson({ data, chart }: { data: Dashboard; chart?: BlockBreakdownChart }) {
   const pick = useSelectable('person');
+  if (chart === 'donut' || chart === 'pie') {
+    return (
+      <PieChart
+        variant={chart}
+        label="Hours by person"
+        totalLabel="logged"
+        formatValue={formatMinutes}
+        empty="No time logged."
+        slices={data.minutesByPerson.map((row) => ({ key: row.userId, label: row.name, value: row.minutes }))}
+        onPick={pick ? (slice) => pick.select(slice.key, slice.label) : undefined}
+        isPicked={pick ? (slice) => pick.isSelected(slice.key) : undefined}
+      />
+    );
+  }
   return (
     <BarList
       label="Hours by person"
@@ -212,10 +248,24 @@ export function HoursByPerson({ data }: { data: Dashboard }) {
   );
 }
 
-export function HoursByProject({ data }: { data: Dashboard }) {
+export function HoursByProject({ data, chart }: { data: Dashboard; chart?: BlockBreakdownChart }) {
   const pick = useSelectable('project');
   // "No project" time isn't a project you can narrow to.
   const pickable = (key: string) => key !== 'none';
+  if (chart === 'donut' || chart === 'pie') {
+    return (
+      <PieChart
+        variant={chart}
+        label="Hours by project"
+        totalLabel="logged"
+        formatValue={formatMinutes}
+        empty="No time logged."
+        slices={data.minutesByProject.map((row) => ({ key: row.spaceId ?? 'none', label: row.name, value: row.minutes }))}
+        onPick={pick ? (slice) => pickable(slice.key) && pick.select(slice.key, slice.label) : undefined}
+        isPicked={pick ? (slice) => pick.isSelected(slice.key) : undefined}
+      />
+    );
+  }
   return (
     <BarList
       label="Hours by project"
@@ -228,7 +278,19 @@ export function HoursByProject({ data }: { data: Dashboard }) {
   );
 }
 
-export function HoursByTask({ data }: { data: Dashboard }) {
+export function HoursByTask({ data, chart }: { data: Dashboard; chart?: BlockBreakdownChart }) {
+  if (chart === 'donut' || chart === 'pie') {
+    return (
+      <PieChart
+        variant={chart}
+        label="Where the time went"
+        totalLabel="logged"
+        formatValue={formatMinutes}
+        empty="No time logged."
+        slices={data.minutesByTask.map((row) => ({ key: row.taskId, label: row.title, value: row.minutes }))}
+      />
+    );
+  }
   return <BarList label="Where the time went" color="var(--primary)" rows={data.minutesByTask.map((row) => ({ key: row.taskId, label: row.title, value: row.minutes, display: formatMinutes(row.minutes) }))} empty="No time logged." />;
 }
 

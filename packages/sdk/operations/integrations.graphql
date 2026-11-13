@@ -7,6 +7,7 @@ fragment GithubConnectionFields on GithubConnection {
   createdById
   lastDeliveryAt
   lastDeliveryStatus
+  viaApp
   createdAt
 }
 
@@ -50,4 +51,40 @@ query GithubConflicts($workspaceId: ID!, $taskId: ID!) {
 
 mutation ResolveGithubConflict($workspaceId: ID!, $conflictId: ID!, $useGithub: Boolean!) {
   resolveGithubConflict(workspaceId: $workspaceId, conflictId: $conflictId, useGithub: $useGithub) { id status { id name } }
+}
+
+query GithubApp($workspaceId: ID!) {
+  githubApp(workspaceId: $workspaceId) { enabled canInstall slug }
+}
+
+mutation GithubAppInstallUrl($workspaceId: ID!) {
+  githubAppInstallUrl(workspaceId: $workspaceId)
+}
+
+query GithubInstallations($workspaceId: ID!) {
+  githubInstallations(workspaceId: $workspaceId) { id accountLogin accountType createdAt }
+}
+
+query GithubInstallationRepositories($workspaceId: ID!, $installationId: ID!) {
+  githubInstallationRepositories(workspaceId: $workspaceId, installationId: $installationId)
+}
+
+mutation ConnectGithubRepository($workspaceId: ID!, $input: ConnectGithubRepositoryInput!) {
+  connectGithubRepository(workspaceId: $workspaceId, input: $input) { ...GithubConnectionFields }
+}
+
+mutation RemoveGithubInstallation($workspaceId: ID!, $installationId: ID!) {
+  removeGithubInstallation(workspaceId: $workspaceId, installationId: $installationId)
+}
+
+query TaskGithubIssues($workspaceId: ID!, $taskId: ID!) {
+  taskGithubIssues(workspaceId: $workspaceId, taskId: $taskId) { id connectionId repo number url closed pending lastError }
+}
+
+mutation CreateGithubIssue($workspaceId: ID!, $taskId: ID!, $connectionId: ID!) {
+  createGithubIssue(workspaceId: $workspaceId, taskId: $taskId, connectionId: $connectionId) { id connectionId repo number url closed pending lastError }
+}
+
+query GithubIssueRepositories($workspaceId: ID!) {
+  githubIssueRepositories(workspaceId: $workspaceId) { connectionId repo }
 }

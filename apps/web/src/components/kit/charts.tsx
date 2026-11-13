@@ -431,3 +431,155 @@ export function Sparkline({ points, label, formatValue = String }: { points: rea
     </div>
   );
 }
+
+/** Categorical slots in their validated order; slices past the last fold into "Other". */
+export const CATEGORICAL = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)'] as const;
+const OTHER_KEY = '__other';
+
+export interface Slice {
+  key: string;
+  label: string;
+  value: number;
+  /** The entity's own colour (a status, a priority); otherwise its categorical slot. */
+  color?: string;
+  /** The value as text, e.g. "22 h". */
+  display?: string;
+}
+
+/**
+ * The slices a pie shows: empty ones dropped, at most `max` named ones (the largest, keeping
+ * their order) and the rest folded into one grey "Other". A slice keeps its own colour (a
+ * status, a priority); the others take the categorical slots in order, so no two visible
+ * slices share a colour.
+ */
+export function foldSlices(slices: readonly Slice[], max = CATEGORICAL.length): (Slice & { color: string })[] {
+  const present = slices.filter((slice) => slice.value > 0);
+  let named = present;
+  let other: Slice | null = null;
+  if (present.length > max + 1) {
+    const keep = new Set([...present].sort((a, b) => b.value - a.value).slice(0, max).map((slice) => slice.key));
+    named = present.filter((slice) => keep.has(slice.key));
+    const rest = present.filter((slice) => !keep.has(slice.key));
+    other = { key: OTHER_KEY, label: `Other (${rest.length})`, value: rest.reduce((sum, slice) => sum + slice.value, 0), color: 'var(--chart-other)' };
+  }
+  const coloured = named.map((slice, index) => ({ ...slice, color: slice.color ?? CATEGORICAL[index % CATEGORICAL.length]! }));
+  return other ? [...coloured, { ...other, color: 'var(--chart-other)' }] : coloured;
+}
+
+/** An SVG path for one slice, from `start` to `end` (fractions of the circle, clockwise from 12 o'clock). */
+export function slicePath(start: number, end: number, radius: number, inner: number, center: number): string {
+  const point = (fraction: number, r: number) => {
+    const angle = fraction * 2 * Math.PI - Math.PI / 2;
+    return `${(center + r * Math.cos(angle)).toFixed(3)} ${(center + r * Math.sin(angle)).toFixed(3)}`;
+  };
+  // A whole circle can't be one arc: draw it as two halves.
+  if (end - start >= 0.9999) return `${slicePath(0, 0.5, radius, inner, center)} ${slicePath(0.5, 1, radius, inner, center)}`;
+  const large = end - start > 0.5 ? 1 : 0;
+  const outer = `M ${point(start, radius)} A ${radius} ${radius} 0 ${large} 1 ${point(end, radius)}`;
+  if (inner <= 0) return `${outer} L ${center} ${center} Z`;
+  return `${outer} L ${point(end, inner)} A ${inner} ${inner} 0 ${large} 0 ${point(start, inner)} Z`;
+}
+
+/**
+ * Parts of one whole as a pie or a donut (B3). The legend beside it carries every number and
+ * share (so nothing depends on colour alone, and it doubles as the table); hovering a slice or
+ * a legend row lifts it and shows a tooltip. A donut shows the total in its middle. Slices can
+ * be pickable (a page selection), from the slice or its legend row.
+ */
+export function PieChart({
+  slices,
+  label,
+  variant = 'donut',
+  totalLabel,
+  formatValue = String,
+  onPick,
+  isPicked,
+  empty = 'Nothing to show.',
+}: {
+  slices: readonly Slice[];
+  label: string;
+  variant?: 'pie' | 'donut';
+  totalLabel?: string;
+  formatValue?: (value: number) => string;
+  onPick?: (slice: Slice) => void;
+  isPicked?: (slice: Slice) => boolean;
+  empty?: string;
+}) {
+  const [active, setActive] = useState<string | null>(null);
+  const shown = foldSlices(slices);
+  const total = shown.reduce((sum, slice) => sum + slice.value, 0);
+  if (total === 0) return <p className="py-6 text-center text-sm text-muted-foreground">{empty}</p>;
+  const size = 160;
+  const radius = 76;
+  const inner = variant === 'donut' ? 48 : 0;
+  const percent = (value: number) => `${Math.round((value / total) * 100)}%`;
+  const text = (slice: Slice) => slice.display ?? formatValue(slice.value);
+  const pickable = (slice: Slice) => Boolean(onPick) && slice.key !== OTHER_KEY;
+  // Each slice starts where the ones before it end.
+  const arcs = shown.map((slice, index) => {
+    const start = shown.slice(0, index).reduce((sum, before) => sum + before.value, 0) / total;
+    return { slice, start, end: start + slice.value / total };
+  });
+  const hovered = shown.find((slice) => slice.key === active);
+
+  return (
+    <figure className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+      <div className="relative size-36 shrink-0">
+        <svg role="img" aria-label={`${label}: ${shown.map((slice) => `${slice.label} ${text(slice)} (${percent(slice.value)})`).join(', ')}`} viewBox={`0 0 ${size} ${size}`} className="size-full overflow-visible">
+          {arcs.map(({ slice, start, end }) => (
+            <path
+              key={slice.key}
+              d={slicePath(start, end, radius, inner, size / 2)}
+              fill={slice.color}
+              // A 2px gap in the card's colour between slices.
+              stroke="var(--card)"
+              strokeWidth={shown.length > 1 ? 2 : 0}
+              strokeLinejoin="round"
+              className={cn('transition-[opacity,transform] duration-200 ease-out', pickable(slice) && 'cursor-pointer', active && active !== slice.key && 'opacity-40')}
+              style={{ transformOrigin: 'center', transform: active === slice.key ? 'scale(1.04)' : undefined }}
+              onMouseEnter={() => setActive(slice.key)}
+              onMouseLeave={() => setActive(null)}
+              onClick={pickable(slice) ? () => onPick?.(slice) : undefined}
+            />
+          ))}
+        </svg>
+        {variant === 'donut' ? (
+          <div aria-hidden className="pointer-events-none absolute inset-0 grid place-content-center text-center">
+            <span className="text-xl font-semibold tabular-nums">{hovered ? text(hovered) : formatValue(total)}</span>
+            <span className="max-w-20 truncate text-[11px] text-muted-foreground">{hovered ? hovered.label : (totalLabel ?? 'Total')}</span>
+          </div>
+        ) : hovered ? (
+          <div role="tooltip" className="pointer-events-none absolute -top-2 left-1/2 z-10 -translate-x-1/2 -translate-y-full rounded-md border bg-popover px-2 py-1 text-xs whitespace-nowrap shadow-md">
+            {hovered.label}: <span className="font-medium tabular-nums">{text(hovered)}</span> · {percent(hovered.value)}
+          </div>
+        ) : null}
+      </div>
+      <figcaption className="min-w-48 flex-1">
+        <ul aria-label={label} className="grid gap-1 text-sm">
+          {shown.map((slice) => {
+            const row = (
+              <>
+                <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: slice.color }} />
+                <span className="min-w-0 flex-1 truncate text-left">{slice.label}</span>
+                <span className="font-medium tabular-nums">{text(slice)}</span>
+                <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{percent(slice.value)}</span>
+              </>
+            );
+            const classes = cn('flex w-full items-center gap-2 rounded-md px-1.5 py-0.5 transition-colors', active === slice.key && 'bg-muted', isPicked?.(slice) && 'bg-primary-soft');
+            return (
+              <li key={slice.key} onMouseEnter={() => setActive(slice.key)} onMouseLeave={() => setActive(null)}>
+                {pickable(slice) ? (
+                  <button type="button" aria-pressed={isPicked?.(slice) ?? false} onClick={() => onPick?.(slice)} onFocus={() => setActive(slice.key)} onBlur={() => setActive(null)} className={cn(classes, 'hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none')}>
+                    {row}
+                  </button>
+                ) : (
+                  <span className={classes}>{row}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </figcaption>
+    </figure>
+  );
+}

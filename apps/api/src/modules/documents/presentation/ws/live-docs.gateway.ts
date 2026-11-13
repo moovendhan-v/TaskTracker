@@ -101,7 +101,7 @@ export class LiveDocsGateway implements OnApplicationBootstrap, OnModuleDestroy 
   }
 
   private async connected(ws: WebSocket, request: IncomingMessage, session: LiveSession, opened: Awaited<ReturnType<LiveDocsService['authorize']>>): Promise<void> {
-    const { content, canEdit, live } = opened;
+    const { content, title, canEdit, live } = opened;
     ws.binaryType = 'nodebuffer';
     const peer: LivePeer = {
       userId: session.user.id,
@@ -112,13 +112,16 @@ export class LiveDocsGateway implements OnApplicationBootstrap, OnModuleDestroy 
       },
       close: (code, reason) => ws.close(code, reason.slice(0, 120)),
     };
-    let state: Awaited<ReturnType<LiveDocsService['join']>>;
-    try {
-      state = await this.live.join(session, peer, content, live);
-    } catch (error) {
-      ws.close(4429, error instanceof DomainError ? error.message.slice(0, 120) : 'Could not open the page');
-      return;
-    }
+    // Messages that arrive while the room opens (it may ask other instances first) wait their turn.
+    let state: Awaited<ReturnType<LiveDocsService['join']>> | null = null;
+    const early: Uint8Array[] = [];
+    const deliver = (message: Uint8Array) => {
+      try {
+        state!.room.receive(peer, message);
+      } catch {
+        ws.close(4400, 'Malformed message');
+      }
+    };
 
     // A small token bucket per connection.
     let tokens = MESSAGES_PER_SECOND * 3;
@@ -129,12 +132,24 @@ export class LiveDocsGateway implements OnApplicationBootstrap, OnModuleDestroy 
       refilled = now;
       if (--tokens < 0) return ws.close(4429, 'Too many changes at once');
       if (!isBinary) return ws.close(4400, 'Binary messages only');
-      try {
-        state.room.receive(peer, new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
-      } catch {
-        ws.close(4400, 'Malformed message');
-      }
+      const message = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+      if (state) deliver(message);
+      else if (early.push(message) > EARLY_MESSAGES_MAX) ws.close(4429, 'Too many changes at once');
     });
+
+    try {
+      state = await this.live.join(session, peer, { content, title }, live);
+    } catch (error) {
+      ws.close(4429, error instanceof DomainError ? error.message.slice(0, 120) : 'Could not open the page');
+      return;
+    }
+    // Closed while the room was opening: leave at once.
+    if (ws.readyState !== ws.OPEN) {
+      void this.live.leave(state, peer);
+      return;
+    }
+    for (const message of early.splice(0)) deliver(message);
+    const joined = state;
 
     // Signed out, suspended, removed or no longer allowed: the socket closes. Edit rights follow role changes.
     const recheck = setInterval(() => {
@@ -155,10 +170,13 @@ export class LiveDocsGateway implements OnApplicationBootstrap, OnModuleDestroy 
     recheck.unref();
     ws.once('close', () => {
       clearInterval(recheck);
-      void this.live.leave(state, peer);
+      void this.live.leave(joined, peer);
     });
   }
 }
+
+/** Messages kept while a room opens; a browser sends two or three. */
+const EARLY_MESSAGES_MAX = 16;
 
 function refuse(socket: Duplex, status: number): void {
   const text = { 400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 429: 'Too Many Requests', 500: 'Internal Server Error' }[status] ?? 'Error';

@@ -15,6 +15,7 @@ export const GithubMapper = {
       createdById: connection.createdById,
       lastDeliveryAt: connection.lastDeliveryAt?.toISOString() ?? null,
       lastDeliveryStatus: connection.lastDeliveryStatus,
+      viaApp: connection.installationRef !== null,
       createdAt: connection.createdAt.toISOString(),
     };
   },

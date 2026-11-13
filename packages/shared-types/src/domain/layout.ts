@@ -124,6 +124,8 @@ export interface BlockConfig {
   categories?: StatusCategory[];
   /** View: bars or a line, for blocks that chart over time. */
   chart?: BlockChart;
+  /** View: bars, a donut or a pie, for blocks that split one whole (B3). */
+  breakdownChart?: BlockBreakdownChart;
   /** Data: only tasks assigned to these people (task lists). Can't be combined with `mine`. */
   assigneeIds?: string[];
   /** Data: narrow to the person or project picked elsewhere on the page (the page's selection). */
@@ -140,6 +142,12 @@ export const BLOCK_CHARTS = ['bar', 'line'] as const;
 export type BlockChart = (typeof BLOCK_CHARTS)[number];
 /** Blocks that chart something over time, and so offer bars or a line. */
 const CHART_BLOCKS = ['hours-per-day', 'created-closed'];
+
+/** How a breakdown block (parts of one whole) draws. */
+export const BLOCK_BREAKDOWN_CHARTS = ['bars', 'donut', 'pie'] as const;
+export type BlockBreakdownChart = (typeof BLOCK_BREAKDOWN_CHARTS)[number];
+/** Blocks that split one whole, and so offer bars, a donut or a pie. */
+const BREAKDOWN_BLOCKS = ['status', 'status-breakdown', 'priority', 'hours-by-person', 'hours-by-project', 'hours-by-task'];
 /** Status meanings a task list can narrow to (closed ones aren't in these lists). */
 export const OPEN_STATUS_CATEGORIES = ['unstarted', 'started', 'review', 'blocked'] as const satisfies readonly StatusCategory[];
 
@@ -157,6 +165,7 @@ export function blockConfigKeys(pageKey: LayoutPage, type: string): BlockConfigK
   if (pageKey === 'home' && !['hours-by-project'].includes(type)) keys.push('spaceId');
   if (TASK_LISTS.includes(type)) keys.push('limit', 'mine', 'assigneeIds', 'priorities', 'categories', 'fields');
   if (CHART_BLOCKS.includes(type)) keys.push('chart');
+  if (BREAKDOWN_BLOCKS.includes(type)) keys.push('breakdownChart');
   if (type === 'status' || type === 'status-breakdown') keys.push('includeClosed');
   return keys;
 }
@@ -188,6 +197,7 @@ export function validateBlockConfig(pageKey: LayoutPage, type: string, config: B
   if (config.fields !== undefined && !isSubsetOf(config.fields, TASK_LIST_FIELDS)) problems.push('fields: pick from the list, each once');
   if (config.categories !== undefined && !isSubsetOf(config.categories, OPEN_STATUS_CATEGORIES)) problems.push('categories: pick from the list, each once');
   if (config.chart !== undefined && !(BLOCK_CHARTS as readonly string[]).includes(config.chart)) problems.push('chart must be bar or line');
+  if (config.breakdownChart !== undefined && !(BLOCK_BREAKDOWN_CHARTS as readonly string[]).includes(config.breakdownChart)) problems.push('breakdownChart must be bars, donut or pie');
   if (config.followContext !== undefined && typeof config.followContext !== 'boolean') problems.push('followContext must be true or false');
   if (config.assigneeIds !== undefined) {
     const ids = config.assigneeIds as unknown;

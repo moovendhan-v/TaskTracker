@@ -94,7 +94,7 @@ function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectCont
       category: 'Insights',
       skeleton: 'rows',
       size: { w: 12, h: 3 },
-      render: (data, config) => <StatusBreakdown data={data} openOnly={config.includeClosed === false} />,
+      render: (data, config) => <StatusBreakdown data={data} openOnly={config.includeClosed === false} chart={config.breakdownChart} />,
     },
     'hours-per-day': {
       title: 'Hours per day',
@@ -113,7 +113,7 @@ function projectRegistry({ space, attributes, openTask, weekAhead }: ProjectCont
       skeleton: 'rows',
       size: { w: 6, h: 6 },
       aside: 'top tasks',
-      render: (data) => <HoursByTask data={data} />,
+      render: (data, config) => <HoursByTask data={data} chart={config.breakdownChart} />,
     },
     phases: {
       title: 'Phases',

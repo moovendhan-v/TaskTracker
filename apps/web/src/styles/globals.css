@@ -52,9 +52,15 @@
   --priority-normal: #2563eb;
   --priority-low: #a1a1aa;
 
-  /* Chart roles (categorical slots 1 and 2 of the validated chart palette). */
+  /* Chart roles: categorical slots 1-6 of the validated chart palette, in this fixed order
+     (adjacent pairs pass the colourblind and normal-vision checks), and grey for "Other". */
   --chart-1: #2a78d6;
   --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  --chart-other: #a1a1aa;
   --chart-grid: #e4e4e7;
   --good: #16a34a;
   --warning: #d97706;
@@ -97,6 +103,11 @@
 
   --chart-1: #3987e5;
   --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #008300;
+  --chart-other: #71717a;
   --chart-grid: #27272a;
   --good: #22c55e;
   --warning: #f59e0b;
@@ -164,6 +175,11 @@
   --color-priority-low: var(--priority-low);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-other: var(--chart-other);
   --color-chart-grid: var(--chart-grid);
   --color-good: var(--good);
   --color-warning: var(--warning);

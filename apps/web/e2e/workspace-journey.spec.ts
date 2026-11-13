@@ -239,11 +239,62 @@ test('edits a page together, live, in two tabs', async () => {
   // The first tab shows it without a reload, in its Preview.
   await expect(page.getByRole('article', { name: 'Preview' }).getByText('Written in the other tab.')).toBeVisible();
   await expect(other.getByText('Live · saved')).toBeVisible({ timeout: 10_000 });
+
+  // The other tab's cursor shows exactly where it is, with a name, in this tab's markdown.
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Markdown' }).click();
+  await source.press('ControlOrMeta+Home');
+  const caret = page.getByTestId('remote-carets-markdown').locator('[data-name="Dana Reyes"]');
+  await expect(caret).toBeVisible();
+  const field = (await page.getByLabel('Page content (markdown)').boundingBox())!;
+  const caretTop = async () => (await caret.boundingBox())?.y ?? -1;
+  await expect.poll(caretTop).toBeLessThan(field.y + 60);
+  await source.press('ControlOrMeta+End');
+  await expect.poll(caretTop).toBeGreaterThan(field.y + 200);
+
+  // The title is shared too: typed in one tab, it changes in the other (and its cursor shows there).
+  const otherTitle = other.getByLabel('Document title');
+  await otherTitle.click();
+  await otherTitle.press('End');
+  await otherTitle.pressSequentially(' v2');
+  await expect(page.getByLabel('Document title')).toHaveValue('Team handbook v2');
+  await expect(page.getByTestId('remote-carets-title').locator('[data-name="Dana Reyes"]')).toBeVisible();
+  await expect(other.getByText('Live · saved')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('treeitem', { name: /Team handbook v2/ })).toBeVisible({ timeout: 10_000 });
+  await otherTitle.press('Backspace');
+  await otherTitle.press('Backspace');
+  await otherTitle.press('Backspace');
+  await expect(page.getByLabel('Document title')).toHaveValue('Team handbook');
+  await expect(other.getByText('Live · saved')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Preview' }).click();
+
   await other.close();
   await expect(page.getByRole('list', { name: 'Also on this page' })).toHaveCount(0);
   await page.reload();
   await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Preview' }).click();
   await expect(page.getByRole('article', { name: 'Preview' }).getByText('Written in the other tab.')).toBeVisible();
+});
+
+test('presents a page with speaker notes that show tasks', async () => {
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Markdown' }).click();
+  const source = page.getByLabel('Page content (markdown)');
+  await source.click();
+  await source.press('ControlOrMeta+End');
+  await source.pressSequentially('\n\n---\n\n## Release plan\n\nShip on Friday\n\nNote: check #1 before saying a date');
+  await expect(page.getByText('Live · saved')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Present Slides' }).click();
+  const show = page.getByRole('dialog', { name: 'Presentation' });
+  await show.getByRole('button', { name: 'Go to slide 2' }).click();
+  // The audience doesn't see the notes…
+  await expect(show.getByRole('heading', { name: 'Release plan' })).toBeVisible();
+  await expect(show.getByText('before saying a date')).toBeHidden();
+  // …the presenter does (N), with the task reference shown as the task.
+  await page.keyboard.press('n');
+  const notes = show.getByRole('region', { name: 'Speaker notes' });
+  await expect(notes.getByText('before saying a date')).toBeVisible();
+  await expect(notes.getByRole('button', { name: /#1\s*Write release notes/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(show).toBeHidden();
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Preview' }).click();
 });
 
 test('adds a sub-page that survives a reload', async () => {
@@ -503,6 +554,27 @@ test('draws Hours per day as a line instead of bars', async () => {
   await drawer.getByRole('radiogroup', { name: 'Chart' }).getByRole('radio', { name: 'Line' }).click();
   await drawer.getByRole('button', { name: 'Done' }).click();
   await expect(block.getByText('8 h day')).toBeVisible();
+});
+
+test('draws a breakdown as a donut, with the numbers beside it', async () => {
+  const block = page.locator('section', { has: page.getByRole('heading', { name: 'Team status', exact: true }) }).last();
+  await block.hover();
+  await block.getByRole('button', { name: 'Block options' }).click();
+  await page.getByRole('menuitem', { name: 'Configure…' }).click();
+  const drawer = page.getByRole('dialog', { name: /Configure/ });
+  await drawer.getByRole('radiogroup', { name: 'Chart' }).getByRole('radio', { name: 'Donut' }).click();
+  await drawer.getByRole('button', { name: 'Done' }).click();
+  // The chart names every slice with its number and share; the legend carries the same.
+  await expect(block.getByRole('img', { name: /^Tasks by status: .*\(\d+%\)/ })).toBeVisible();
+  const legend = block.getByRole('list', { name: 'Tasks by status' });
+  await expect(legend.getByRole('listitem').first()).toContainText('%');
+  // Back to bars.
+  await block.hover();
+  await block.getByRole('button', { name: 'Block options' }).click();
+  await page.getByRole('menuitem', { name: 'Configure…' }).click();
+  await page.getByRole('dialog', { name: /Configure/ }).getByRole('radiogroup', { name: 'Chart' }).getByRole('radio', { name: 'Bars' }).click();
+  await page.getByRole('dialog', { name: /Configure/ }).getByRole('button', { name: 'Done' }).click();
+  await expect(block.getByRole('img', { name: /^Tasks by status/ })).toHaveCount(0);
 });
 
 test('a block follows the person picked on the page, and another narrows to chosen people', async () => {

@@ -6,6 +6,8 @@ import { LiveDocClient } from './support/live-doc-client.js';
 
 const CREATE = 'mutation($w: ID!, $input: CreateDocumentInput!) { createDocument(workspaceId: $w, input: $input) { id } }';
 const READ = 'query($w: ID!, $d: ID!) { document(workspaceId: $w, documentId: $d) { content } }';
+const READ_TITLED = 'query($w: ID!, $d: ID!) { document(workspaceId: $w, documentId: $d) { title content } }';
+const RENAME = 'mutation($w: ID!, $d: ID!, $input: UpdateDocumentInput!) { updateDocument(workspaceId: $w, documentId: $d, input: $input) { id } }';
 
 async function open(user: TestUser | null, w: string, d: string, options?: { origin?: string | null }): Promise<LiveDocClient> {
   const client = await LiveDocClient.open(user, w, d, options);
@@ -31,6 +33,7 @@ describe('live pages', () => {
 
   const newPage = async (content: string, user = ws.owner) => (await user.data<{ createDocument: { id: string } }>(CREATE, { w, input: { title: 'Live', content } })).createDocument.id;
   const stored = async (d: string) => (await ws.owner.data<{ document: { content: string } }>(READ, { w, d })).document;
+  const titled = async (d: string) => (await ws.owner.data<{ document: { title: string; content: string } }>(READ_TITLED, { w, d })).document;
   const updatedBy = (d: string) =>
     withScope(runtimeDatabase(), { workspaceId: w }, async (client) => (await client.query<{ id: string }>('SELECT updated_by_id AS id FROM document WHERE id = $1', [d])).rows[0]?.id);
 
@@ -48,6 +51,58 @@ describe('live pages', () => {
     await b.until(() => b.text === '# Hello world');
     await a.until(() => a.notices.some((notice) => notice.type === 'saved'));
     expect((await stored(d)).content).toBe('# Hello world');
+    await a.close();
+    await b.close();
+  });
+
+  it('edits the title live, and saves it as one line', async () => {
+    const d = await newPage('Body');
+    const a = await open(ws.owner, w, d);
+    const b = await open(ws.owner, w, d);
+    expect(a.title).toBe('Live');
+    a.insertTitle(4, ' notes');
+    await b.until(() => b.title === 'Live notes');
+    await a.until(() => a.notices.some((notice) => notice.type === 'saved'));
+    expect((await titled(d)).title).toBe('Live notes');
+
+    // A line break (which the title field can't type) becomes a space, for everyone.
+    b.insertTitle(4, '\n');
+    await a.until(() => a.title === 'Live  notes', 10_000);
+    await b.until(() => b.title === 'Live  notes');
+    await new Promise((done) => setTimeout(done, 1_500));
+    expect((await titled(d)).title).toBe('Live  notes');
+    await a.close();
+    await b.close();
+  });
+
+  it('keeps a rename made elsewhere when only the text changes live', async () => {
+    const d = await newPage('Text');
+    const a = await open(ws.owner, w, d);
+    await ws.owner.data(RENAME, { w, d, input: { title: 'Renamed in the tree' } });
+    a.insert(4, '!');
+    await a.until(() => a.notices.some((notice) => notice.type === 'saved'));
+    expect(await titled(d)).toEqual({ title: 'Renamed in the tree', content: 'Text!' });
+    await a.close();
+  });
+
+  it('shares exact cursor positions, and only the fields browsers need', async () => {
+    const d = await newPage('Cursor here');
+    const a = await open(ws.owner, w, d);
+    const b = await open(writer, w, d);
+    b.setPresence({ cursor: { field: 'markdown', line: 1, anchor: b.position(7), head: b.position(11), html: '<img src=x onerror=alert(1)>' }, extra: true });
+    await a.until(() => a.peers().some((peer) => peer.cursor?.['anchor']));
+    const cursor = a.peers()[0]!.cursor!;
+    expect(Object.keys(cursor).sort()).toEqual(['anchor', 'field', 'head', 'line']);
+    expect(a.indexOf(cursor['anchor'])).toBe(7);
+    expect(a.indexOf(cursor['head'])).toBe(11);
+    // Positions follow the text as it changes.
+    a.insert(0, '>> ');
+    await a.until(() => a.indexOf(cursor['anchor']) === 10);
+
+    // Malformed positions are dropped, not passed on.
+    b.setPresence({ cursor: { field: 'title', line: -3, anchor: { item: { client: 'x', clock: 1 } }, head: { tname: '__proto__' } } });
+    await a.until(() => a.peers()[0]?.cursor?.['field'] === 'title');
+    expect(a.peers()[0]!.cursor).toEqual({ field: 'title', line: null, anchor: null, head: null });
     await a.close();
     await b.close();
   });

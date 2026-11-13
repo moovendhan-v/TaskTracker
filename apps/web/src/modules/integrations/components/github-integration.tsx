@@ -1,5 +1,5 @@
-import { ArrowRightIcon, CopyIcon, ExternalLinkIcon, GitPullRequestIcon, HistoryIcon, InboxIcon, KeyRoundIcon, LinkIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowRightIcon, BlocksIcon, CopyIcon, ExternalLinkIcon, GitPullRequestIcon, HistoryIcon, InboxIcon, KeyRoundIcon, LinkIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import {
   DEFAULT_GITHUB_SYNC,
   DEFAULT_TASK_PREFIX,
@@ -17,7 +17,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/components/ui/sonner';
 import { formatLongDate } from '@/lib/dates';
 import { getErrorMessage } from '@/lib/errors';
-import { useGithubConnections, useGithubInbox, useGithubInboxMutations, useGithubMutations, useGithubSyncLog } from '../hooks/use-integrations';
+import {
+  useGithubApp,
+  useGithubAppMutations,
+  useGithubConnections,
+  useGithubInbox,
+  useGithubInboxMutations,
+  useGithubMutations,
+  useGithubSyncLog,
+  useInstallationRepositories,
+} from '../hooks/use-integrations';
 
 const NONE = 'none';
 const CATEGORY_LABELS: Record<StatusCategory, string> = {
@@ -46,6 +55,7 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
   const [adding, setAdding] = useState(false);
   const [secret, setSecret] = useState<Secret | null>(null);
   const [logFor, setLogFor] = useState<GithubConnectionResponse | null>(null);
+  useGithubInstallResult();
   const showSecret = (result: { webhookSecret: string; connection: GithubConnectionResponse }) =>
     setSecret({ url: `${window.location.origin}${result.connection.webhookPath}`, secret: result.webhookSecret, repo: result.connection.repo });
 
@@ -53,6 +63,7 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
 
   return (
     <div className="grid gap-3">
+      <GithubAppPanel workspaceId={workspaceId} />
       {connections.data?.length === 0 ? <p className="text-sm text-muted-foreground">No repositories connected.</p> : null}
       <ul className="grid grid-cols-[minmax(0,1fr)] gap-2">
         {connections.data?.map((connection) => (
@@ -60,18 +71,27 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
             <div className="flex flex-wrap items-start gap-3">
               <GitPullRequestIcon className="mt-0.5 size-4 text-muted-foreground" />
               <div className="min-w-0 flex-1">
-                <p className="font-medium">{connection.repo}</p>
+                <p className="font-medium">
+                  {connection.repo}
+                  {connection.viaApp ? <span className="ml-2 rounded-full bg-selected px-2 py-0.5 text-[11px] font-medium text-muted-foreground">GitHub App · two-way</span> : null}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   Tasks are mentioned as {connection.taskPrefix}-42 ·{' '}
-                  {connection.lastDeliveryAt ? `last delivery ${formatLongDate(connection.lastDeliveryAt)}: ${connection.lastDeliveryStatus}` : 'nothing received yet'}
+                  {connection.lastDeliveryAt
+                    ? `${connection.viaApp ? 'last sync' : 'last delivery'} ${formatLongDate(connection.lastDeliveryAt)}: ${connection.lastDeliveryStatus}`
+                    : connection.viaApp
+                      ? 'first sync within a minute'
+                      : 'nothing received yet'}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setLogFor(connection)}>
                 <HistoryIcon /> Sync log
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => mutations.rotate.mutate(connection.id, { onSuccess: showSecret })}>
-                <KeyRoundIcon /> New secret
-              </Button>
+              {connection.viaApp ? null : (
+                <Button variant="ghost" size="sm" onClick={() => mutations.rotate.mutate(connection.id, { onSuccess: showSecret })}>
+                  <KeyRoundIcon /> New secret
+                </Button>
+              )}
               <ConfirmDialog
                 trigger={
                   <Button variant="ghost" size="icon-sm" aria-label={`Disconnect ${connection.repo}`}>
@@ -79,7 +99,11 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
                   </Button>
                 }
                 title={`Disconnect ${connection.repo}?`}
-                description="Deliveries stop being accepted and its pull request links are removed. Remove the webhook in GitHub too."
+                description={
+                  connection.viaApp
+                    ? 'Sync with this repository stops, and its pull request and issue links are removed. The app stays installed on GitHub.'
+                    : 'Deliveries stop being accepted and its pull request links are removed. Remove the webhook in GitHub too.'
+                }
                 confirmLabel="Disconnect"
                 onConfirm={() => mutations.disconnect.mutateAsync(connection.id)}
               />
@@ -105,6 +129,153 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
       {logFor ? <SyncLog workspaceId={workspaceId} connection={logFor} onClose={() => setLogFor(null)} /> : null}
       {connections.data?.length ? <PullRequestInbox workspaceId={workspaceId} /> : null}
     </div>
+  );
+}
+
+const INSTALL_RESULTS: Record<string, { ok: boolean; text: string }> = {
+  installed: { ok: true, text: 'The GitHub App is installed. Connect a repository to start syncing.' },
+  updated: { ok: true, text: 'GitHub saved your changes to the app.' },
+  'not-yours': { ok: false, text: 'GitHub doesn’t list that installation as one you can reach, or the link expired. Start again from here.' },
+  failed: { ok: false, text: 'GitHub couldn’t confirm the installation. Try again.' },
+  incomplete: { ok: false, text: 'GitHub didn’t finish the installation. Try again.' },
+};
+
+/** After GitHub sends you back (?github=…): says how it went, once, and tidies the address. */
+function useGithubInstallResult() {
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const result = INSTALL_RESULTS[url.searchParams.get('github') ?? ''];
+    if (!result) return;
+    if (result.ok) toast.success(result.text);
+    else toast.error(result.text);
+    url.searchParams.delete('github');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+}
+
+/**
+ * The TaskFlow GitHub App: install it on a GitHub account or organization, then connect its
+ * repositories. Those sync both ways (pull requests and issues), with no webhook to set up.
+ */
+function GithubAppPanel({ workspaceId }: { workspaceId: string }) {
+  const { info, installations } = useGithubApp(workspaceId, true);
+  const mutations = useGithubAppMutations(workspaceId);
+  const [connectFor, setConnectFor] = useState<{ id: string; accountLogin: string } | null>(null);
+  if (!info.data?.enabled) return null;
+  return (
+    <section aria-label="GitHub App" className="grid gap-3 rounded-lg border bg-muted/30 p-3">
+      <div className="flex flex-wrap items-start gap-3">
+        <BlocksIcon className="mt-0.5 size-4 text-muted-foreground" />
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">TaskFlow GitHub App</p>
+          <p className="text-xs text-muted-foreground">Two-way sync: pull requests move tasks, and issues opened from tasks keep their title and open / closed state in step. No webhook to set up.</p>
+        </div>
+        <Button size="sm" disabled={!info.data.canInstall || mutations.install.isPending} onClick={() => mutations.install.mutate()}>
+          <ExternalLinkIcon /> Install on GitHub
+        </Button>
+      </div>
+      {!info.data.canInstall ? <p className="text-xs text-muted-foreground">Installing from TaskFlow needs the app&rsquo;s client secret on the server (GITHUB_APP_CLIENT_SECRET).</p> : null}
+      {installations.data?.length ? (
+        <ul aria-label="Installations" className="grid gap-2">
+          {installations.data.map((installation) => (
+            <li key={installation.id} className="flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm">
+              <span className="min-w-0 flex-1 truncate">
+                <span className="font-medium">{installation.accountLogin}</span>
+                <span className="text-muted-foreground"> · {installation.accountType === 'Organization' ? 'organization' : 'account'}</span>
+              </span>
+              <Button variant="outline" size="sm" onClick={() => setConnectFor(installation)}>
+                <PlusIcon /> Connect a repository
+              </Button>
+              <ConfirmDialog
+                trigger={
+                  <Button variant="ghost" size="icon-sm" aria-label={`Remove ${installation.accountLogin}`}>
+                    <TrashIcon />
+                  </Button>
+                }
+                title={`Remove ${installation.accountLogin}?`}
+                description="Its repositories stop syncing here and their links are removed. To uninstall the app itself, use GitHub's settings."
+                confirmLabel="Remove"
+                onConfirm={() => mutations.remove.mutateAsync(installation.id)}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {connectFor ? (
+        <ConnectAppRepositoryDialog
+          workspaceId={workspaceId}
+          installation={connectFor}
+          onClose={() => setConnectFor(null)}
+          onConnect={async (repo, taskPrefix) => {
+            const connection = await mutations.connect.mutateAsync({ installationId: connectFor.id, repo, taskPrefix });
+            toast.success(`Connected ${connection.repo}; the first sync runs within a minute`);
+            setConnectFor(null);
+          }}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+function ConnectAppRepositoryDialog({
+  workspaceId,
+  installation,
+  onClose,
+  onConnect,
+}: {
+  workspaceId: string;
+  installation: { id: string; accountLogin: string };
+  onClose: () => void;
+  onConnect: (repo: string, taskPrefix: string) => Promise<void>;
+}) {
+  const repositories = useInstallationRepositories(workspaceId, installation.id);
+  const [repo, setRepo] = useState('');
+  const [prefix, setPrefix] = useState(DEFAULT_TASK_PREFIX);
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    setBusy(true);
+    try {
+      await onConnect(repo, prefix.trim().toUpperCase());
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => !open && onClose()}
+      title={`Connect a repository from ${installation.accountLogin}`}
+      description="Only repositories you gave the app access to on GitHub are listed."
+      footer={
+        <Button disabled={busy || !repo} onClick={() => void submit()}>
+          Connect
+        </Button>
+      }
+    >
+      <div className="grid gap-4 p-5">
+        <FormField id="github-app-repo" label="Repository">
+          <Select value={repo} onValueChange={setRepo} disabled={!repositories.data?.length}>
+            <SelectTrigger id="github-app-repo" aria-label="Repository">
+              <SelectValue placeholder={repositories.isLoading ? 'Loading…' : repositories.data?.length ? 'Choose a repository' : 'No repositories: give the app access on GitHub'} />
+            </SelectTrigger>
+            <SelectContent>
+              {repositories.data?.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        {repositories.isError ? <p className="text-sm text-critical">{getErrorMessage(repositories.error)}</p> : null}
+        <FormField id="github-app-prefix" label="Task prefix" hint={`Mention tasks in titles, descriptions or branch names as ${prefix || 'TF'}-42`}>
+          <Input id="github-app-prefix" value={prefix} maxLength={10} onChange={(event) => setPrefix(event.target.value.toUpperCase())} />
+        </FormField>
+        <p className="text-xs text-muted-foreground">Tasks are moved as you, with your permissions. Change what opened, merged and closed pull requests do after connecting.</p>
+      </div>
+    </Modal>
   );
 }
 

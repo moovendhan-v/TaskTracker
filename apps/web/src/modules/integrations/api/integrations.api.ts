@@ -2,6 +2,15 @@ import type { PullRequestState } from '@taskflow/shared-types';
 import type { SaveGithubConnectionRequest } from '@taskflow/shared-types';
 import {
   ConnectGithubDocument,
+  ConnectGithubRepositoryDocument,
+  CreateGithubIssueDocument,
+  GithubAppDocument,
+  GithubAppInstallUrlDocument,
+  GithubInstallationRepositoriesDocument,
+  GithubInstallationsDocument,
+  GithubIssueRepositoriesDocument,
+  RemoveGithubInstallationDocument,
+  TaskGithubIssuesDocument,
   DismissInboxPullRequestDocument,
   DisconnectGithubDocument,
   GithubPullRequestInboxDocument,
@@ -31,5 +40,17 @@ export const integrationsApi = {
   /** GitHub moves left for a person: the task was changed in TaskFlow since sync last moved it. */
   conflicts: async (workspaceId: string, taskId: string) =>
     (await graphql(GithubConflictsDocument, { workspaceId, taskId })).githubConflicts.map((conflict) => ({ ...conflict, event: conflict.event as PullRequestState })),
+  // ── The TaskFlow GitHub App (two-way sync) ──
+  githubApp: async (workspaceId: string) => (await graphql(GithubAppDocument, { workspaceId })).githubApp,
+  installUrl: async (workspaceId: string) => (await graphql(GithubAppInstallUrlDocument, { workspaceId })).githubAppInstallUrl,
+  installations: async (workspaceId: string) => (await graphql(GithubInstallationsDocument, { workspaceId })).githubInstallations,
+  installationRepositories: async (workspaceId: string, installationId: string) =>
+    (await graphql(GithubInstallationRepositoriesDocument, { workspaceId, installationId })).githubInstallationRepositories,
+  connectRepository: async (workspaceId: string, input: { installationId: string; repo: string; taskPrefix?: string }) =>
+    (await graphql(ConnectGithubRepositoryDocument, { workspaceId, input })).connectGithubRepository,
+  removeInstallation: async (workspaceId: string, installationId: string) => (await graphql(RemoveGithubInstallationDocument, { workspaceId, installationId })).removeGithubInstallation,
+  issueRepositories: async (workspaceId: string) => (await graphql(GithubIssueRepositoriesDocument, { workspaceId })).githubIssueRepositories,
+  taskIssues: async (workspaceId: string, taskId: string) => (await graphql(TaskGithubIssuesDocument, { workspaceId, taskId })).taskGithubIssues,
+  createIssue: async (workspaceId: string, taskId: string, connectionId: string) => (await graphql(CreateGithubIssueDocument, { workspaceId, taskId, connectionId })).createGithubIssue,
   resolveConflict: async (workspaceId: string, conflictId: string, useGithub: boolean) => (await graphql(ResolveGithubConflictDocument, { workspaceId, conflictId, useGithub })).resolveGithubConflict,
 };

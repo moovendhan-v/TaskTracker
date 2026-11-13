@@ -6,7 +6,10 @@ import {
   REPO_PATTERN,
   STATUS_CATEGORIES,
   TASK_PREFIX_PATTERN,
+  type GithubAppInfoResponse,
   type GithubConnectionResponse,
+  type GithubInstallationResponse,
+  type GithubIssueLinkResponse,
   type GithubSecretResponse,
   type GithubSyncSettings,
   type GithubSyncConflictResponse,
@@ -69,6 +72,7 @@ export class GithubConnectionGql implements GithubConnectionResponse {
   @Field(() => String, { nullable: true, description: 'Linked tasks are moved as this person' }) createdById: string | null;
   @Field(() => String, { nullable: true }) lastDeliveryAt: string | null;
   @Field(() => String, { nullable: true }) lastDeliveryStatus: string | null;
+  @Field({ description: 'Connected through the TaskFlow GitHub App: no webhook of its own' }) viaApp: boolean;
   @Field() createdAt: string;
 }
 
@@ -130,4 +134,45 @@ export class GithubSyncConflictGql implements GithubSyncConflictResponse {
   @Field(() => String, { description: 'open, merged or closed' }) event: PullRequestState;
   @Field(() => GithubConflictStatusGql, { description: 'The status the mapping would have set' }) wantedStatus: GithubConflictStatusGql;
   @Field() createdAt: string;
+}
+
+@ObjectType('GithubAppInfo', { description: 'Whether this server has the TaskFlow GitHub App' })
+export class GithubAppInfoGql implements GithubAppInfoResponse {
+  @Field() enabled: boolean;
+  @Field({ description: 'People can install it from TaskFlow (the server has its client secret)' }) canInstall: boolean;
+  @Field(() => String, { nullable: true }) slug: string | null;
+}
+
+@ObjectType('GithubInstallation', { description: 'A GitHub account or organization where the app is installed for this workspace' })
+export class GithubInstallationGql implements GithubInstallationResponse {
+  @Field(() => ID) id: string;
+  @Field() accountLogin: string;
+  @Field(() => String, { description: 'User or Organization' }) accountType: 'User' | 'Organization';
+  @Field() createdAt: string;
+}
+
+@ObjectType('GithubIssueLink', { description: "A task's GitHub issue: title and open / closed follow each other both ways" })
+export class GithubIssueLinkGql implements GithubIssueLinkResponse {
+  @Field(() => ID) id: string;
+  @Field(() => ID) connectionId: string;
+  @Field() repo: string;
+  @Field(() => Int) number: number;
+  @Field() url: string;
+  @Field() closed: boolean;
+  @Field({ description: 'A change in TaskFlow is on its way to GitHub' }) pending: boolean;
+  @Field(() => String, { nullable: true }) lastError: string | null;
+}
+
+@InputType('ConnectGithubRepositoryInput')
+export class ConnectGithubRepositoryInput {
+  @Field(() => ID) @IsString() @Matches(/^[0-9a-f-]{36}$/i, { message: 'Choose an installation' }) installationId: string;
+  @Field({ description: 'owner/name, one the installation can reach' }) @IsString() @MaxLength(201) @Matches(new RegExp(REPO_PATTERN), { message: 'Use the repository as owner/name, like acme/web' }) repo: string;
+  @Field({ nullable: true }) @IsOmittable() @IsString() @Matches(new RegExp(TASK_PREFIX_PATTERN), { message: 'Letters and digits, starting with a letter, like TF' }) taskPrefix?: string;
+  @Field(() => GithubSyncInput, { nullable: true }) @IsOmittable() @ValidateNested() @Type(() => GithubSyncInput) sync?: GithubSyncInput;
+}
+
+@ObjectType('GithubIssueRepository', { description: 'A repository connected through the GitHub App, where issues can be opened for tasks' })
+export class GithubIssueRepositoryGql {
+  @Field(() => ID) connectionId: string;
+  @Field() repo: string;
 }

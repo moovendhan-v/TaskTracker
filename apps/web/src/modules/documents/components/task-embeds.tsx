@@ -182,8 +182,15 @@ export function TaskMentionTextarea({
   onBlur,
   ref: forwardedRef,
   suggestionsAbove = false,
+  overlay,
   ...props
-}: Omit<ComponentProps<'textarea'>, 'value' | 'onChange'> & { value: string; onValueChange: (value: string) => void; suggestionsAbove?: boolean }) {
+}: Omit<ComponentProps<'textarea'>, 'value' | 'onChange'> & {
+  value: string;
+  onValueChange: (value: string) => void;
+  suggestionsAbove?: boolean;
+  /** Drawn over the field (e.g. other people's cursors); it doesn't take clicks. */
+  overlay?: ReactNode;
+}) {
   const workspaceId = useDocWorkspace();
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const setRef = (element: HTMLTextAreaElement | null) => {
@@ -254,6 +261,7 @@ export function TaskMentionTextarea({
           setTimeout(() => setMention(null), 150);
         }}
       />
+      {overlay}
       {options.length ? (
         <ul role="listbox" aria-label="Tasks" className={cn('absolute left-0 z-30 w-80 overflow-hidden rounded-lg border bg-popover p-1 text-sm shadow-popover', suggestionsAbove ? 'bottom-full mb-1' : 'top-full mt-1')}>
           {options.map((task, position) => (

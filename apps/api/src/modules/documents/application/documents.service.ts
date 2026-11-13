@@ -138,13 +138,14 @@ export class DocumentsService {
     access: WorkspaceAccess,
     userId: string,
     documentId: string,
-  ): Promise<{ content: string; canEdit: boolean; live: { state: Uint8Array; lineage: string } | null }> {
+  ): Promise<{ content: string; title: string; canEdit: boolean; live: { state: Uint8Array; lineage: string } | null }> {
     const document = await this.getInWorkspace(access.workspaceId, documentId);
     if (document.kind === 'folder') throw DomainError.invalid('A folder has no content');
     const held = inSpace(access.permissions, document.spaceId);
     if (!held.has('doc.view')) throw DomainError.forbidden('You can’t read pages in this space');
     return {
       content: document.content,
+      title: document.title,
       canEdit: DocumentAccessPolicy.canEdit(document, userId, held),
       live: await this.documents.findLiveState(access.workspaceId, documentId),
     };
