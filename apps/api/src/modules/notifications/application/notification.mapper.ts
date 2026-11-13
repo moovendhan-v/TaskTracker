@@ -14,6 +14,7 @@ export const NotificationMapper = {
       subject: notification.subject,
       excerpt: notification.excerpt,
       readAt: notification.readAt?.toISOString() ?? null,
+      snoozedUntil: notification.snoozedUntil && notification.snoozedUntil > new Date() ? notification.snoozedUntil.toISOString() : null,
       createdAt: notification.createdAt.toISOString(),
     };
   },

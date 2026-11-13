@@ -1,5 +1,5 @@
-query Notifications($workspaceId: ID!, $unreadOnly: Boolean, $page: Int, $pageSize: Int) {
-  notifications(workspaceId: $workspaceId, unreadOnly: $unreadOnly, page: $page, pageSize: $pageSize) {
+query Notifications($workspaceId: ID!, $unreadOnly: Boolean, $kinds: [NotificationKind!], $snoozed: Boolean, $page: Int, $pageSize: Int) {
+  notifications(workspaceId: $workspaceId, unreadOnly: $unreadOnly, kinds: $kinds, snoozed: $snoozed, page: $page, pageSize: $pageSize) {
     items { ...NotificationFields }
     page
     pageSize
@@ -12,6 +12,8 @@ query UnreadNotificationCount($workspaceId: ID!) { unreadNotificationCount(works
 mutation MarkNotificationsRead($workspaceId: ID!, $ids: [ID!]!) { markNotificationsRead(workspaceId: $workspaceId, ids: $ids) }
 
 mutation MarkAllNotificationsRead($workspaceId: ID!) { markAllNotificationsRead(workspaceId: $workspaceId) }
+
+mutation SnoozeNotifications($workspaceId: ID!, $ids: [ID!]!, $until: String) { snoozeNotifications(workspaceId: $workspaceId, ids: $ids, until: $until) }
 
 subscription WorkspaceEvents($workspaceId: ID!) {
   workspaceEvents(workspaceId: $workspaceId) { type entityType entityId actorId occurredAt }

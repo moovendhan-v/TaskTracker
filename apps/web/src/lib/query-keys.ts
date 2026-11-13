@@ -57,7 +57,7 @@ export const queryKeys = {
   myBalances: (workspaceId: string, year: number) => ['workspaces', workspaceId, 'hr', 'leave', 'balances', year] as const,
   workspaceAudit: (workspaceId: string, query: object) => ['workspaces', workspaceId, 'audit-log', query] as const,
   notificationsRoot: (workspaceId: string) => ['workspaces', workspaceId, 'notifications'] as const,
-  notifications: (workspaceId: string, unreadOnly: boolean) => ['workspaces', workspaceId, 'notifications', 'list', unreadOnly] as const,
+  notifications: (workspaceId: string, view: unknown) => ['workspaces', workspaceId, 'notifications', 'list', view] as const,
   unreadNotifications: (workspaceId: string) => ['workspaces', workspaceId, 'notifications', 'unread-count'] as const,
   adminRoot: ['admin'] as const,
   adminUsers: (query: object) => ['admin', 'users', query] as const,

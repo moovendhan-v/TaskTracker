@@ -29,6 +29,42 @@ test.afterAll(async () => {
   await context.close();
 });
 
+/** Saves a screenshot for the docs when E2E_SCREENSHOTS is set (docs/screenshots/v2/<name>.png). */
+async function shot(name: string, locator?: Locator): Promise<void> {
+  if (!process.env['E2E_SCREENSHOTS']) return;
+  await page.waitForTimeout(300);
+  const path = `../../docs/screenshots/v2/${name}.png`;
+  if (locator) await locator.screenshot({ path });
+  else await page.screenshot({ path });
+}
+
+/**
+ * Puts two inbox items in Dana's inbox from a teammate, straight into the test database (the
+ * journey has one person, and nobody is notified about their own actions).
+ */
+function seedInbox(): void {
+  const script = `
+    const { Client } = require('pg');
+    (async () => {
+      const db = new Client({ connectionString: process.env.MIGRATION_DATABASE_URL });
+      await db.connect();
+      await db.query('BEGIN');
+      await db.query("SELECT set_config('app.scope', 'platform', true)");
+      const { rows: [dana] } = await db.query('SELECT id FROM "user" WHERE email = $1', [process.argv[1]]);
+      const { rows: [jordan] } = await db.query(
+        'INSERT INTO "user" (id, name, email, "emailVerified") VALUES (gen_random_uuid()::text, $1, $2, true) RETURNING id',
+        ['Jordan Patel', 'jordan+' + Date.now() + '@example.com'],
+      );
+      const { rows: [task] } = await db.query("SELECT t.id, t.workspace_id FROM task t WHERE t.title = 'Write release notes' ORDER BY t.created_at DESC LIMIT 1");
+      const insert = 'INSERT INTO notification (workspace_id, recipient_id, actor_id, kind, entity_type, entity_id, task_id, subject, excerpt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)';
+      await db.query(insert, [task.workspace_id, dana.id, jordan.id, 'task_commented', 'comment', task.id, task.id, 'Write release notes', 'The changelog draft is in the doc']);
+      await db.query(insert, [task.workspace_id, dana.id, jordan.id, 'comment_mention', 'comment', task.id, task.id, 'Write release notes', '@Dana Reyes can you check the numbers before Friday?']);
+      await db.query('COMMIT');
+      await db.end();
+    })().catch((error) => { console.error(error.message); process.exit(1); });`;
+  execFileSync('node', ['-e', script, email], { cwd: API_DIR, env: apiEnv() });
+}
+
 test('redirects to sign-in when signed out', async () => {
   await page.goto('/');
   await expect(page).toHaveURL(/\/sign-in$/);
@@ -137,10 +173,13 @@ test('edits a task and renders comments as text, never HTML', async () => {
   const box = panel.getByLabel('New comment');
   await box.click();
   await box.pressSequentially('Thanks @Dan');
+  await expect(panel.getByRole('listbox', { name: 'People' })).toBeVisible();
+  await shot('c6-mention-suggestions', panel);
   await panel.getByRole('listbox', { name: 'People' }).getByRole('option', { name: 'Dana Reyes' }).click();
   await box.pressSequentially('for checking');
   await panel.getByRole('button', { name: 'Comment', exact: true }).click();
   await expect(panel.getByRole('listitem').filter({ hasText: 'Thanks @Dana Reyes for checking' })).toBeVisible();
+  await shot('c6-comment-mention', panel.getByRole('listitem').filter({ hasText: 'Thanks @Dana Reyes for checking' }));
 
   // Attach an image: it's uploaded, checked, and shown on the task.
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
@@ -160,6 +199,7 @@ test('edits a task and renders comments as text, never HTML', async () => {
   await expect(panel.getByLabel('1 of 3 steps done')).toBeVisible();
   await panel.getByRole('button', { name: 'Move “Publish” up' }).click();
   await expect(panel.getByRole('list', { name: 'Steps' }).getByRole('listitem').nth(1)).toContainText('Publish');
+  await shot('c2-checklist', panel.getByRole('list', { name: 'Steps' }).locator('xpath=ancestor::section[1]'));
 
   await page.keyboard.press('Escape');
   await expect(page).not.toHaveURL(/task=/);
@@ -922,6 +962,42 @@ test('docks the inbox as a side panel from the rail', async () => {
   await panel.getByRole('radio', { name: 'All' }).click();
   await panel.getByRole('button', { name: 'Close inbox' }).click();
   await expect(panel).toBeHidden();
+});
+
+test('filters the inbox and snoozes an item until later', async () => {
+  seedInbox();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
+  // Written straight to the database, so no live event announced them: load the page afresh.
+  await page.reload();
+  const list = page.getByRole('list', { name: 'Notifications' });
+  await expect(list.getByRole('listitem')).toHaveCount(2);
+  await expect(list.getByText('Jordan Patel mentioned you on Write release notes')).toBeVisible();
+  await shot('c6-inbox-filters');
+
+  // Only mentions.
+  const show = page.getByRole('group', { name: 'Show' });
+  await show.getByRole('button', { name: 'Mentions' }).click();
+  await expect(list.getByRole('listitem')).toHaveCount(1);
+  await show.getByRole('button', { name: 'Everything' }).click();
+
+  // Snooze the comment until tomorrow morning: it leaves the inbox and waits under Snoozed.
+  const comment = list.getByRole('listitem').filter({ hasText: 'commented' });
+  await comment.hover();
+  await comment.getByRole('button', { name: /^Snooze/ }).click();
+  await expect(page.getByRole('menuitem', { name: /Tomorrow morning/ })).toBeVisible();
+  await shot('c6-inbox-snooze-menu');
+  await page.getByRole('menuitem', { name: /Tomorrow morning/ }).click();
+  await expect(list.getByRole('listitem')).toHaveCount(1);
+  await page.getByRole('tab', { name: 'Snoozed' }).click();
+  const snoozed = list.getByRole('listitem');
+  await expect(snoozed).toHaveCount(1);
+  await snoozed.hover();
+  await expect(snoozed.getByText(/^Back /)).toBeVisible();
+  await shot('c6-inbox-snoozed');
+  await snoozed.getByRole('button', { name: 'Unsnooze' }).click();
+  await expect(page.getByText('Nothing snoozed')).toBeVisible();
+  await page.getByRole('tab', { name: 'All' }).click();
+  await expect(list.getByRole('listitem')).toHaveCount(2);
 });
 
 test('chats in a channel, replies in a thread and turns a message into a task', async () => {

@@ -98,7 +98,7 @@ fragment AdminUserFields on AdminUser { id name email platformRole suspended wor
 fragment AdminWorkspaceFields on AdminWorkspace { id name ownerId ownerName memberCount createdAt }
 
 fragment NotificationFields on Notification {
-  id kind actorId actorName entityType entityId taskId subject excerpt readAt createdAt
+  id kind actorId actorName entityType entityId taskId subject excerpt readAt snoozedUntil createdAt
 }
 
 fragment ResourceSchemaFields on ResourceSchema {

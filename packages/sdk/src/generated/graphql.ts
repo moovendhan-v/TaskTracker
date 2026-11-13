@@ -1702,7 +1702,7 @@ export type AdminUserFieldsFragment = { id: string, name: string, email: string,
 
 export type AdminWorkspaceFieldsFragment = { id: string, name: string, ownerId: string, ownerName: string, memberCount: number, createdAt: string };
 
-export type NotificationFieldsFragment = { id: string, kind: NotificationKind, actorId: string | null, actorName: string | null, entityType: string, entityId: string, taskId: string | null, subject: string, excerpt: string, readAt: string | null, createdAt: string };
+export type NotificationFieldsFragment = { id: string, kind: NotificationKind, actorId: string | null, actorName: string | null, entityType: string, entityId: string, taskId: string | null, subject: string, excerpt: string, readAt: string | null, snoozedUntil: string | null, createdAt: string };
 
 export type ResourceSchemaFieldsFragment = { resource: string, label: string, logic: Array<LogicOperator>, searchable: boolean, defaultPageSize: number, maxPageSize: number, defaultSort: Array<{ field: string, direction: SortDirection }>, limits: { maxDepth: number, maxConditions: number, maxListValues: number, maxSortFields: number }, fields: Array<{ name: string, label: string, type: FieldType, operators: Array<FilterOperator>, sortable: boolean, defaultVisible: boolean, keyed: boolean, display: string | null, width: number | null, options: Array<{ value: string, label: string, color: string | null }> | null }> };
 
@@ -2366,12 +2366,14 @@ export type LeaveWorkspaceMutation = { leaveWorkspace: boolean };
 export type NotificationsQueryVariables = Exact<{
   workspaceId: string;
   unreadOnly?: boolean | null | undefined;
+  kinds?: Array<NotificationKind> | NotificationKind | null | undefined;
+  snoozed?: boolean | null | undefined;
   page?: number | null | undefined;
   pageSize?: number | null | undefined;
 }>;
 
 
-export type NotificationsQuery = { notifications: { page: number, pageSize: number, total: number, items: Array<{ id: string, kind: NotificationKind, actorId: string | null, actorName: string | null, entityType: string, entityId: string, taskId: string | null, subject: string, excerpt: string, readAt: string | null, createdAt: string }> } };
+export type NotificationsQuery = { notifications: { page: number, pageSize: number, total: number, items: Array<{ id: string, kind: NotificationKind, actorId: string | null, actorName: string | null, entityType: string, entityId: string, taskId: string | null, subject: string, excerpt: string, readAt: string | null, snoozedUntil: string | null, createdAt: string }> } };
 
 export type UnreadNotificationCountQueryVariables = Exact<{
   workspaceId: string;
@@ -2394,6 +2396,15 @@ export type MarkAllNotificationsReadMutationVariables = Exact<{
 
 
 export type MarkAllNotificationsReadMutation = { markAllNotificationsRead: number };
+
+export type SnoozeNotificationsMutationVariables = Exact<{
+  workspaceId: string;
+  ids: Array<string> | string;
+  until?: string | null | undefined;
+}>;
+
+
+export type SnoozeNotificationsMutation = { snoozeNotifications: number };
 
 export type WorkspaceEventsSubscriptionVariables = Exact<{
   workspaceId: string;
@@ -3713,6 +3724,7 @@ export const NotificationFieldsFragmentDoc = new TypedDocumentString(`
   subject
   excerpt
   readAt
+  snoozedUntil
   createdAt
 }
     `, {"fragmentName":"NotificationFields"}) as unknown as TypedDocumentString<NotificationFieldsFragment, unknown>;
@@ -7103,10 +7115,12 @@ export const LeaveWorkspaceDocument = new TypedDocumentString(`
 }
     `) as unknown as TypedDocumentString<LeaveWorkspaceMutation, LeaveWorkspaceMutationVariables>;
 export const NotificationsDocument = new TypedDocumentString(`
-    query Notifications($workspaceId: ID!, $unreadOnly: Boolean, $page: Int, $pageSize: Int) {
+    query Notifications($workspaceId: ID!, $unreadOnly: Boolean, $kinds: [NotificationKind!], $snoozed: Boolean, $page: Int, $pageSize: Int) {
   notifications(
     workspaceId: $workspaceId
     unreadOnly: $unreadOnly
+    kinds: $kinds
+    snoozed: $snoozed
     page: $page
     pageSize: $pageSize
   ) {
@@ -7129,6 +7143,7 @@ export const NotificationsDocument = new TypedDocumentString(`
   subject
   excerpt
   readAt
+  snoozedUntil
   createdAt
 }`) as unknown as TypedDocumentString<NotificationsQuery, NotificationsQueryVariables>;
 export const UnreadNotificationCountDocument = new TypedDocumentString(`
@@ -7146,6 +7161,11 @@ export const MarkAllNotificationsReadDocument = new TypedDocumentString(`
   markAllNotificationsRead(workspaceId: $workspaceId)
 }
     `) as unknown as TypedDocumentString<MarkAllNotificationsReadMutation, MarkAllNotificationsReadMutationVariables>;
+export const SnoozeNotificationsDocument = new TypedDocumentString(`
+    mutation SnoozeNotifications($workspaceId: ID!, $ids: [ID!]!, $until: String) {
+  snoozeNotifications(workspaceId: $workspaceId, ids: $ids, until: $until)
+}
+    `) as unknown as TypedDocumentString<SnoozeNotificationsMutation, SnoozeNotificationsMutationVariables>;
 export const WorkspaceEventsDocument = new TypedDocumentString(`
     subscription WorkspaceEvents($workspaceId: ID!) {
   workspaceEvents(workspaceId: $workspaceId) {

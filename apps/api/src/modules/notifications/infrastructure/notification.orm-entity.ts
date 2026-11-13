@@ -36,6 +36,9 @@ export class NotificationOrmEntity implements Notification {
   @Column({ type: 'timestamptz', nullable: true })
   readAt: Date | null;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  snoozedUntil: Date | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

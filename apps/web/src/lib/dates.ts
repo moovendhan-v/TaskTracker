@@ -5,6 +5,13 @@ export function formatShortDate(iso: string | null | undefined): string {
   return iso ? shortDate.format(new Date(iso)) : '';
 }
 
+const dayAndTime = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+/** e.g. "Thu, Nov 12, 9:00 AM": for times that matter to the minute (snoozes). */
+export function formatDayAndTime(iso: string | null | undefined): string {
+  return iso ? dayAndTime.format(new Date(iso)) : '';
+}
+
 export function formatLongDate(iso: string | null | undefined): string {
   return iso ? longDate.format(new Date(iso)) : '';
 }
