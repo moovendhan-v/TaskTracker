@@ -132,6 +132,26 @@ export interface AttendanceShiftResponse {
   onBreak: boolean;
   /** Worked so far: length minus breaks, as of the server's now. */
   workedMinutes: number;
+  /** Set when HR corrected the times (with who and why). */
+  correctedAt: string | null;
+  correctedById: string | null;
+  correctionReason: string | null;
+}
+
+/** HR's fix to a shift's times. The server keeps breaks inside the new times. */
+export interface CorrectAttendanceShiftInput {
+  startedAt: string;
+  endedAt: string;
+  /** Why (shown on the shift and kept in the audit log). */
+  reason: string;
+}
+
+/** The team's shifts as a CSV file, made on the server. */
+export interface AttendanceExportResponse {
+  fileName: string;
+  content: string;
+  shifts: number;
+  truncated: boolean;
 }
 
 export interface MyAttendanceResponse {

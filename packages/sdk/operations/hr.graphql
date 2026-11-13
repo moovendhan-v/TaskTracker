@@ -77,6 +77,9 @@ fragment AttendanceShiftFields on AttendanceShift {
   onBreak
   workedMinutes
   breaks { start end }
+  correctedAt
+  correctedById
+  correctionReason
 }
 
 query MyAttendance($workspaceId: ID!) {
@@ -91,3 +94,11 @@ mutation ClockIn($workspaceId: ID!) { clockIn(workspaceId: $workspaceId) { ...At
 mutation ClockOut($workspaceId: ID!) { clockOut(workspaceId: $workspaceId) { ...AttendanceShiftFields } }
 mutation StartBreak($workspaceId: ID!) { startBreak(workspaceId: $workspaceId) { ...AttendanceShiftFields } }
 mutation EndBreak($workspaceId: ID!) { endBreak(workspaceId: $workspaceId) { ...AttendanceShiftFields } }
+
+mutation ExportAttendance($workspaceId: ID!, $from: String!, $to: String!, $timeZone: String!) {
+  exportAttendance(workspaceId: $workspaceId, from: $from, to: $to, timeZone: $timeZone) { fileName content shifts truncated }
+}
+
+mutation CorrectAttendanceShift($workspaceId: ID!, $shiftId: ID!, $input: CorrectAttendanceShiftInput!) {
+  correctAttendanceShift(workspaceId: $workspaceId, shiftId: $shiftId, input: $input) { ...AttendanceShiftFields }
+}

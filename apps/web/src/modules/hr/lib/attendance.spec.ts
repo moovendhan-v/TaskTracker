@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatWorked, localDate, teamWeek } from './attendance';
+import { formatWorked, fromLocalInput, localDate, teamWeek, toLocalInput } from './attendance';
 
 describe('attendance view helpers', () => {
   const day = (offset: number, hour: number) => new Date(2026, 10, 2 + offset, hour).toISOString();
@@ -27,5 +27,13 @@ describe('attendance view helpers', () => {
   it('formats worked time', () => {
     expect(formatWorked(425)).toBe('7h 05m');
     expect(formatWorked(45)).toBe('45m');
+  });
+
+  it('round-trips datetime-local values in your time zone', () => {
+    const iso = new Date(2026, 10, 10, 8, 5).toISOString();
+    expect(toLocalInput(iso)).toBe('2026-11-10T08:05');
+    expect(fromLocalInput('2026-11-10T08:05')).toBe(iso);
+    expect(fromLocalInput('')).toBeNull();
+    expect(fromLocalInput('yesterday')).toBeNull();
   });
 });

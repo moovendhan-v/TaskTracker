@@ -36,6 +36,7 @@ describe('GitHub App sync', () => {
   let guest: TestUser;
   let installationId: string;
   let connectionId: string;
+  let oldTask: { id: string; number: number };
   const w = () => ws.workspaceId;
   const newTask = async (title: string) => (await ws.owner.data<{ createTask: { id: string; number: number } }>(CREATE_TASK, { w: w(), l: ws.listId, t: title })).createTask;
   const task = async (t: string) => (await ws.owner.data<{ task: { title: string; status: { name: string } } }>(TASK, { w: w(), t })).task;
@@ -90,6 +91,9 @@ describe('GitHub App sync', () => {
     expect((await ws.owner.error(CONNECT, { w: w(), input: { installationId, repo: 'other/secret' } })).message).toMatch(/can’t reach that repository/);
     expect((await member.error(REPOS, { w: w(), i: installationId })).code).toBe('FORBIDDEN');
 
+    // Already open before the repository is connected (opened here, so the poller's first look always sees it).
+    oldTask = await newTask('Old work');
+    github.pull('acme/app', { number: 5, title: `TF-${oldTask.number}: old work` });
     const { connectGithubRepository } = await ws.owner.data<{ connectGithubRepository: { id: string; repo: string; viaApp: boolean; webhookPath: string } }>(CONNECT, {
       w: w(),
       input: { installationId, repo: 'ACME/app' },
@@ -101,11 +105,10 @@ describe('GitHub App sync', () => {
   });
 
   it('reads pull requests by polling: the first look links without moving, later changes move tasks', async () => {
-    const old = await newTask('Old work');
+    const old = oldTask;
     const fresh = await newTask('Fresh work');
     const log = async () => (await ws.owner.data<{ githubSyncLog: { detail: string }[] }>(LOG, { w: w(), c: connectionId })).githubSyncLog.map((entry) => entry.detail);
-    // Already open before the repository was connected: linked on the first look, not moved.
-    github.pull('acme/app', { number: 5, title: `TF-${old.number}: old work` });
+    // PR #5 was already open before the repository was connected: linked on the first look, not moved.
     await eventually(log, (details) => details.some((detail) => detail.includes('connected through the GitHub App')));
     expect((await ws.owner.data<{ taskPullRequests: { number: number }[] }>(LINKS, { w: w(), t: old.id })).taskPullRequests.map((link) => link.number)).toEqual([5]);
     expect((await task(old.id)).status.name).toBe('To do');

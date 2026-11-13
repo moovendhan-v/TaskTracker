@@ -119,9 +119,22 @@ type AttendanceBreak {
   start: String!
 }
 
+"""The team’s shifts as a CSV file"""
+type AttendanceExport {
+  content: String!
+  fileName: String!
+  shifts: Int!
+  truncated: Boolean!
+}
+
 """One clocked shift: in, breaks, out. Times are the server’s"""
 type AttendanceShift {
   breaks: [AttendanceBreak!]!
+
+  """When HR corrected the times"""
+  correctedAt: String
+  correctedById: ID
+  correctionReason: String
 
   """Null while clocked in"""
   endedAt: String
@@ -574,6 +587,15 @@ input ConnectGithubRepositoryInput {
   repo: String!
   sync: GithubSyncInput
   taskPrefix: String
+}
+
+input CorrectAttendanceShiftInput {
+  """ISO date-time; not in the future"""
+  endedAt: String!
+  reason: String!
+
+  """ISO date-time"""
+  startedAt: String!
 }
 
 input CreateChatChannelInput {
@@ -1587,6 +1609,9 @@ type Mutation {
 
   """Connects a repository through the app; linked tasks are moved as you"""
   connectGithubRepository(input: ConnectGithubRepositoryInput!, workspaceId: ID!): GithubConnection!
+
+  """HR fixes a shift’s times, saying why. Audited"""
+  correctAttendanceShift(input: CorrectAttendanceShiftInput!, shiftId: ID!, workspaceId: ID!): AttendanceShift!
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
   createChatChannel(input: CreateChatChannelInput!, workspaceId: ID!): ChatChannel!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
@@ -1691,6 +1716,21 @@ type Mutation {
   dismissInboxPullRequest(itemId: ID!, workspaceId: ID!): Boolean!
   editChatMessage(body: String!, messageId: ID!, workspaceId: ID!): ChatMessage!
   endBreak(workspaceId: ID!): AttendanceShift!
+
+  """
+  Everyone’s shifts in the range as CSV, in your time zone (at most 31 days). Audited
+  """
+  exportAttendance(
+    """ISO date-time"""
+    from: String!
+
+    """IANA time zone, e.g. Europe/Berlin"""
+    timeZone: String!
+
+    """ISO date-time, exclusive"""
+    to: String!
+    workspaceId: ID!
+  ): AttendanceExport!
 
   """Downloads a channel's history you can read (Markdown or JSON). Audited"""
   exportChatChannel(
@@ -2553,7 +2593,7 @@ type Query {
   taskWatchers(taskId: ID!, workspaceId: ID!): [ID!]!
 
   """
-  Everyone’s shifts that overlap the range (at most 31 days and 500 shifts)
+  Everyone’s shifts that overlap the range (at most 31 days and 400 shifts)
   """
   teamAttendance(
     """ISO date-time"""
