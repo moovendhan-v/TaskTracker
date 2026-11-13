@@ -667,6 +667,13 @@ test('goes back through layout versions and publishes the workspace default', as
   await page.getByRole('button', { name: 'Layout' }).click();
   await page.getByRole('menuitem', { name: 'Make this the workspace default' }).click();
   await expect(page.getByText('This is now the workspace default')).toBeVisible();
+  // A team (the Product department) can have its own starting point too.
+  await page.getByRole('button', { name: 'Layout' }).click();
+  await page.getByRole('menuitem', { name: 'Make this the Product default' }).click();
+  await expect(page.getByText('This is now the Product team’s default')).toBeVisible();
+  await page.getByRole('button', { name: 'Layout' }).click();
+  await page.getByRole('menuitem', { name: 'Remove the Product default' }).click();
+  await expect(page.getByText('Removed the Product team’s default')).toBeVisible();
   await page.getByRole('button', { name: /^Done/ }).click();
 });
 

@@ -234,4 +234,46 @@ describe('dashboard layouts', () => {
     expect((await bad([{ ...layout[1], tabs: ['phases'] }])).message).toMatch(/stacked tabs must be other blocks of this page/);
     expect((await bad([{ id: 'status', type: 'status', x: 0, y: 0, w: 6, h: 1 }])).message).toMatch(/size out of range/);
   });
+
+  it('gives a team its own starting layout, set by layout managers or the team head, audited', async () => {
+    const ws = await createWorkspace('Team layouts');
+    const w = ws.workspaceId;
+    const [designer, seller, lead, admin] = await Promise.all([TestUser.signUp('Team designer'), TestUser.signUp('Team seller'), TestUser.signUp('Design lead'), TestUser.signUp('Team layouts admin')]);
+    for (const user of [designer, seller, lead]) await addMember(ws, user, 'Member');
+    await addMember(ws, admin, 'Admin');
+    const DEPARTMENT = 'mutation($w: ID!, $input: CreateDepartmentInput!) { createDepartment(workspaceId: $w, input: $input) { id } }';
+    const PROFILE = 'mutation($w: ID!, $u: ID!, $input: EmployeeProfileInput!) { upsertEmployeeProfile(workspaceId: $w, userId: $u, input: $input) { userId } }';
+    const MINE = 'query($w: ID!, $p: String!) { myTeamLayout(workspaceId: $w, pageKey: $p) { departmentName items { id } updatedByName } }';
+    const TARGETS = 'query($w: ID!, $p: String!) { teamLayoutTargets(workspaceId: $w, pageKey: $p) { departmentId name hasDefault } }';
+    const SET = 'mutation($w: ID!, $input: SetTeamLayoutInput!) { setTeamLayout(workspaceId: $w, input: $input) { name hasDefault } }';
+    const CLEAR = 'mutation($w: ID!, $d: ID!, $p: String!) { clearTeamLayout(workspaceId: $w, departmentId: $d, pageKey: $p) }';
+    const design = (await ws.owner.data<{ createDepartment: { id: string } }>(DEPARTMENT, { w, input: { name: 'Design', headUserId: lead.id } })).createDepartment.id;
+    const sales = (await ws.owner.data<{ createDepartment: { id: string } }>(DEPARTMENT, { w, input: { name: 'Sales' } })).createDepartment.id;
+    await ws.owner.data(PROFILE, { w, u: designer.id, input: { departmentId: design } });
+    await ws.owner.data(PROFILE, { w, u: seller.id, input: { departmentId: sales } });
+    const layout = [{ id: 'workload', type: 'workload', x: 0, y: 0, w: 6, h: 7 }];
+    const targets = async (user: TestUser) => (await user.data<{ teamLayoutTargets: { name: string; hasDefault: boolean }[] }>(TARGETS, { w, p: 'home' })).teamLayoutTargets;
+
+    // Who may set which team's default.
+    expect(await targets(designer)).toEqual([]);
+    expect((await targets(lead)).map((team) => team.name)).toEqual(['Design']);
+    expect((await targets(admin)).map((team) => team.name)).toEqual(['Design', 'Sales']);
+    expect((await designer.error(SET, { w, input: { departmentId: design, pageKey: 'home', items: layout } })).code).toBe('FORBIDDEN');
+    expect((await lead.error(SET, { w, input: { departmentId: sales, pageKey: 'home', items: layout } })).code).toBe('FORBIDDEN');
+    expect((await lead.error(SET, { w, input: { departmentId: design, pageKey: 'home', items: [{ ...layout[0]!, type: 'phases' }] } })).message).toMatch(/unknown block type/);
+
+    // The head sets Design's: Design's people start from it; Sales's don't.
+    expect((await lead.data<{ setTeamLayout: unknown }>(SET, { w, input: { departmentId: design, pageKey: 'home', items: layout } })).setTeamLayout).toEqual({ name: 'Design', hasDefault: true });
+    expect((await designer.data<{ myTeamLayout: unknown }>(MINE, { w, p: 'home' })).myTeamLayout).toEqual({ departmentName: 'Design', items: [{ id: 'workload' }], updatedByName: 'Design lead' });
+    expect((await seller.data<{ myTeamLayout: unknown }>(MINE, { w, p: 'home' })).myTeamLayout).toBeNull();
+    expect((await targets(admin)).find((team) => team.name === 'Design')?.hasDefault).toBe(true);
+    // Another workspace can't touch it.
+    const other = await createWorkspace('Team layouts other');
+    expect((await other.owner.error(CLEAR, { w: other.workspaceId, d: design, p: 'home' })).code).toBe('NOT_FOUND');
+
+    expect((await admin.data<{ clearTeamLayout: boolean }>(CLEAR, { w, d: design, p: 'home' })).clearTeamLayout).toBe(true);
+    expect((await designer.data<{ myTeamLayout: unknown }>(MINE, { w, p: 'home' })).myTeamLayout).toBeNull();
+    const audit = (await ws.owner.data<{ workspaceAuditLog: { items: { action: string }[] } }>('query($w: ID!) { workspaceAuditLog(workspaceId: $w) { items { action } } }', { w })).workspaceAuditLog.items.map((entry) => entry.action);
+    expect(audit).toEqual(expect.arrayContaining(['layout.team_default.set', 'layout.team_default.clear']));
+  });
 });

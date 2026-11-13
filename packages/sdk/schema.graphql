@@ -1534,6 +1534,11 @@ type Mutation {
   chatTyping(channelId: ID!, workspaceId: ID!): Boolean!
 
   """
+  Removes a team's default for a page (layout managers or the team's head; audited)
+  """
+  clearTeamLayout(departmentId: ID!, pageKey: String!, workspaceId: ID!): Boolean!
+
+  """
   Back to the built-in default for everyone who has not arranged the page (audited)
   """
   clearWorkspaceLayout(pageKey: String!, workspaceId: ID!): Boolean!
@@ -1838,6 +1843,11 @@ type Mutation {
 
   """Replaces the open tabs of the multi-tab workspace"""
   setTabs(input: SetTabsInput!): Preferences!
+
+  """
+  Makes a layout a team's starting point for a page (layout managers or the team's head; audited)
+  """
+  setTeamLayout(input: SetTeamLayoutInput!, workspaceId: ID!): TeamLayoutTarget!
   setTwoStepRequirement(require: String!, workspaceId: ID!): TwoStepPolicy!
 
   """Makes a layout the workspace default for a page (audited)"""
@@ -2365,6 +2375,9 @@ type Query {
   """
   myPreferences: Preferences!
 
+  """Your team's default for a page (your HR department's), if it has one"""
+  myTeamLayout(pageKey: String!, workspaceId: ID!): TeamLayout
+
   """Your notifications in this workspace, newest first"""
   notifications(
     page: Int
@@ -2505,6 +2518,11 @@ type Query {
     to: String!
     workspaceId: ID!
   ): [TeamAbsence!]!
+
+  """
+  Teams whose default you may set for a page (layout managers: all; department heads: theirs)
+  """
+  teamLayoutTargets(pageKey: String!, workspaceId: ID!): [TeamLayoutTarget!]!
 
   """
   Entries started in [from, to), oldest first, at most 1000. Without time.view_all, only your own.
@@ -2761,6 +2779,12 @@ input SendChatMessageInput {
 
 input SetTabsInput {
   tabs: [WorkspaceTabInput!]!
+}
+
+input SetTeamLayoutInput {
+  departmentId: ID!
+  items: [LayoutItemInput!]!
+  pageKey: String!
 }
 
 input SetWorkspaceLayoutInput {
@@ -3077,6 +3101,25 @@ type TeamAbsence {
   """yyyy-mm-dd"""
   startDate: String!
   userId: ID!
+}
+
+"""
+A team's (HR department's) default for a page: its people start from it, before the workspace default
+"""
+type TeamLayout {
+  departmentId: ID!
+  departmentName: String!
+  items: [LayoutItem!]!
+  pageKey: String!
+  updatedAt: String!
+  updatedByName: String
+}
+
+"""A team whose default you may set"""
+type TeamLayoutTarget {
+  departmentId: ID!
+  hasDefault: Boolean!
+  name: String!
 }
 
 enum TemplateCategory {

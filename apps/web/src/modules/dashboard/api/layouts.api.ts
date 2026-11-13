@@ -13,7 +13,11 @@ import {
   WorkspaceLayoutDocument,
   SetWorkspaceLayoutDocument,
   SetWorkspaceLayoutLockedDocument,
+  ClearTeamLayoutDocument,
   ClearWorkspaceLayoutDocument,
+  MyTeamLayoutDocument,
+  SetTeamLayoutDocument,
+  TeamLayoutTargetsDocument,
 } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
 
@@ -44,6 +48,12 @@ export const layoutsApi = {
   setWorkspaceDefaultLocked: async (workspaceId: string, pageKey: LayoutPage, locked: boolean) =>
     (await graphql(SetWorkspaceLayoutLockedDocument, { workspaceId, pageKey, locked })).setWorkspaceLayoutLocked,
   clearWorkspaceDefault: async (workspaceId: string, pageKey: LayoutPage) => (await graphql(ClearWorkspaceLayoutDocument, { workspaceId, pageKey })).clearWorkspaceLayout,
+  /** Your team's (HR department's) default for a page, if it has one. */
+  teamDefault: async (workspaceId: string, pageKey: LayoutPage) => withItems((await graphql(MyTeamLayoutDocument, { workspaceId, pageKey })).myTeamLayout),
+  teamTargets: async (workspaceId: string, pageKey: LayoutPage) => (await graphql(TeamLayoutTargetsDocument, { workspaceId, pageKey })).teamLayoutTargets,
+  setTeamDefault: async (workspaceId: string, departmentId: string, pageKey: LayoutPage, items: LayoutItem[]) =>
+    (await graphql(SetTeamLayoutDocument, { workspaceId, input: { departmentId, pageKey, items: items.map(toInput) } })).setTeamLayout,
+  clearTeamDefault: async (workspaceId: string, departmentId: string, pageKey: LayoutPage) => (await graphql(ClearTeamLayoutDocument, { workspaceId, departmentId, pageKey })).clearTeamLayout,
 };
 
 const itemsOnly = (items: readonly LayoutItem[]) => items.map(toInput);

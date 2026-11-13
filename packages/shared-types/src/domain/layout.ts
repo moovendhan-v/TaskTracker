@@ -394,6 +394,24 @@ export interface WorkspaceLayout {
   locked: boolean;
 }
 
+/** A team's (HR department's) default for a page: what its people start from, before the workspace default. */
+export interface TeamLayout {
+  departmentId: string;
+  departmentName: string;
+  pageKey: LayoutPage;
+  items: LayoutItem[];
+  updatedAt: string;
+  updatedByName: string | null;
+}
+
+/** A team whose default you may set (layout managers: every team; a department head: theirs). */
+export interface TeamLayoutTarget {
+  departmentId: string;
+  name: string;
+  /** It has a default for this page already. */
+  hasDefault: boolean;
+}
+
 export interface LayoutVersion {
   version: number;
   savedAt: string;
