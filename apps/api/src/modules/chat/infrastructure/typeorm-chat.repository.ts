@@ -113,11 +113,12 @@ interface AttachmentRow {
   declared_size: string;
   size: string | null;
   storage_key: string;
+  has_thumbnail: boolean;
   status: 'pending' | 'ready';
   created_at: Date;
 }
 
-const ATTACHMENT_SELECT = `SELECT id, channel_id, uploader_id, message_id, file_name, content_type, declared_size, size, storage_key, status, created_at FROM chat_attachment`;
+const ATTACHMENT_SELECT = `SELECT id, channel_id, uploader_id, message_id, file_name, content_type, declared_size, size, storage_key, has_thumbnail, status, created_at FROM chat_attachment`;
 
 const toAttachment = (row: AttachmentRow): ChatAttachmentRecord => ({
   id: row.id,
@@ -129,6 +130,7 @@ const toAttachment = (row: AttachmentRow): ChatAttachmentRecord => ({
   declaredSize: Number(row.declared_size),
   size: row.size === null ? null : Number(row.size),
   storageKey: row.storage_key,
+  hasThumbnail: row.has_thumbnail === true,
   status: row.status,
   createdAt: new Date(row.created_at),
 });
@@ -375,10 +377,10 @@ export class TypeOrmChatRepository extends ChatRepository {
     return row ? toAttachment(row) : null;
   }
 
-  async markAttachmentReady(workspaceId: string, id: string, contentType: string, size: number): Promise<boolean> {
+  async markAttachmentReady(workspaceId: string, id: string, contentType: string, size: number, hasThumbnail = false): Promise<boolean> {
     const rows = await this.query(
-      `UPDATE chat_attachment SET status = 'ready', content_type = $3, size = $4 WHERE workspace_id = $1 AND id = $2 AND status = 'pending' RETURNING id`,
-      [workspaceId, id, contentType, size],
+      `UPDATE chat_attachment SET status = 'ready', content_type = $3, size = $4, has_thumbnail = $5 WHERE workspace_id = $1 AND id = $2 AND status = 'pending' RETURNING id`,
+      [workspaceId, id, contentType, size, hasThumbnail],
     );
     return rows.length > 0;
   }

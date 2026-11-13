@@ -8,6 +8,8 @@ export interface TaskAttachmentRecord {
   declaredSize: number;
   size: number | null;
   storageKey: string;
+  /** An image preview is stored at `<storageKey>-thumb`. */
+  hasThumbnail: boolean;
   status: 'pending' | 'ready';
   createdAt: Date;
 }
@@ -22,6 +24,6 @@ export abstract class TaskAttachmentRepository {
   abstract countPending(workspaceId: string, uploaderId: string): Promise<number>;
   abstract stale(workspaceId: string, uploaderId: string, before: Date): Promise<TaskAttachmentRecord[]>;
   abstract insert(input: { workspaceId: string; taskId: string; uploaderId: string; fileName: string; declaredSize: number; storageKey: string }): Promise<string>;
-  abstract markReady(workspaceId: string, id: string, contentType: string, size: number): Promise<boolean>;
+  abstract markReady(workspaceId: string, id: string, contentType: string, size: number, hasThumbnail?: boolean): Promise<boolean>;
   abstract remove(workspaceId: string, id: string): Promise<boolean>;
 }

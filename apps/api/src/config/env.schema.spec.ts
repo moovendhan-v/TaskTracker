@@ -16,7 +16,7 @@ describe('loadEnv', () => {
     expect(env.TURNSTILE_SECRET_KEY).toBeUndefined();
   });
 
-  const production = { ...base, NODE_ENV: 'production', SMTP_URL: 'smtps://user:pw@smtp.example.com:465', MAIL_FROM: 'TaskFlow <no-reply@example.com>', REDIS_URL: 'redis://:pw@redis:6379/0', STORAGE_DRIVER: 's3', S3_BUCKET: 'taskflow-uploads' };
+  const production = { ...base, NODE_ENV: 'production', SMTP_URL: 'smtps://user:pw@smtp.example.com:465', MAIL_FROM: 'TaskFlow <no-reply@example.com>', REDIS_URL: 'redis://:pw@redis:6379/0', STORAGE_DRIVER: 's3', S3_BUCKET: 'taskflow-uploads', FILE_SCANNER: 'none' };
 
   it('requires a CAPTCHA secret in production', () => {
     expect(() => loadEnv(production)).toThrow(/TURNSTILE_SECRET_KEY is required/);
@@ -58,5 +58,13 @@ describe('loadEnv', () => {
     const live = { ...production, TURNSTILE_SECRET_KEY: 'secret' };
     expect(() => loadEnv({ ...live, ...livekit })).toThrow(/wss:\/\/ in production/);
     expect(loadEnv({ ...live, ...livekit, LIVEKIT_URL: 'wss://media.example.com' }).LIVEKIT_URL).toBe('wss://media.example.com');
+  });
+
+  it('scans uploads with a real scanner or none in production, never the mock', () => {
+    const complete = { ...production, TURNSTILE_SECRET_KEY: 'secret' };
+    expect(loadEnv(base).FILE_SCANNER).toBe('mock');
+    expect(() => loadEnv({ ...complete, FILE_SCANNER: 'mock' })).toThrow(/clamav \(recommended\) or none/);
+    expect(() => loadEnv({ ...complete, FILE_SCANNER: 'clamav' })).toThrow(/CLAMAV_HOST is required/);
+    expect(loadEnv({ ...complete, FILE_SCANNER: 'clamav', CLAMAV_HOST: 'clamav' })).toMatchObject({ FILE_SCANNER: 'clamav', CLAMAV_HOST: 'clamav', CLAMAV_PORT: 3310 });
   });
 });

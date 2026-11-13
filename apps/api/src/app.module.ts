@@ -9,6 +9,7 @@ import { AuthModule } from './core/auth/auth.module.js';
 import { CacheModule } from './core/cache/cache.module.js';
 import { CryptoModule } from './core/crypto/crypto.module.js';
 import { GithubAppModule } from './core/github-app/github-app.module.js';
+import { ScanningModule } from './core/scanning/scanning.module.js';
 import { QueryModule } from './core/query/query.module.js';
 import { SessionGuard } from './core/auth/session.guard.js';
 import { DatabaseModule } from './core/database/database.module.js';
@@ -64,6 +65,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     CacheModule,
     CryptoModule,
     GithubAppModule,
+    ScanningModule,
     QueryModule,
     GraphqlApiModule,
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),

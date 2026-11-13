@@ -100,6 +100,8 @@ export interface ChatAttachmentResponse {
   isImage: boolean;
   /** A short-lived signed link (minutes). Ask again for a fresh one. */
   url: string;
+  /** A small preview of an image (WebP, at most 480 px), when one was made; signed like `url`. */
+  thumbnailUrl: string | null;
 }
 
 export interface ChatUploadTicket {

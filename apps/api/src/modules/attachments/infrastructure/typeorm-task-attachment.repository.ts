@@ -12,12 +12,13 @@ interface Row {
   declared_size: string;
   size: string | null;
   storage_key: string;
+  has_thumbnail: boolean;
   status: 'pending' | 'ready';
   created_at: Date;
 }
 
 const SELECT = `
-  SELECT a.id, a.task_id, a.uploader_id, u.name AS uploader_name, a.file_name, a.content_type, a.declared_size, a.size, a.storage_key, a.status, a.created_at
+  SELECT a.id, a.task_id, a.uploader_id, u.name AS uploader_name, a.file_name, a.content_type, a.declared_size, a.size, a.storage_key, a.has_thumbnail, a.status, a.created_at
   FROM task_attachment a LEFT JOIN "user" u ON u.id = a.uploader_id`;
 
 const toRecord = (row: Row): TaskAttachmentRecord => ({
@@ -30,6 +31,7 @@ const toRecord = (row: Row): TaskAttachmentRecord => ({
   declaredSize: Number(row.declared_size),
   size: row.size === null ? null : Number(row.size),
   storageKey: row.storage_key,
+  hasThumbnail: row.has_thumbnail === true,
   status: row.status,
   createdAt: new Date(row.created_at),
 });
@@ -84,8 +86,8 @@ export class TypeOrmTaskAttachmentRepository extends TaskAttachmentRepository {
     return row!.id;
   }
 
-  async markReady(workspaceId: string, id: string, contentType: string, size: number): Promise<boolean> {
-    const rows = await this.query(`UPDATE task_attachment SET status = 'ready', content_type = $3, size = $4 WHERE workspace_id = $1 AND id = $2 AND status = 'pending' RETURNING id`, [workspaceId, id, contentType, size]);
+  async markReady(workspaceId: string, id: string, contentType: string, size: number, hasThumbnail = false): Promise<boolean> {
+    const rows = await this.query(`UPDATE task_attachment SET status = 'ready', content_type = $3, size = $4, has_thumbnail = $5 WHERE workspace_id = $1 AND id = $2 AND status = 'pending' RETURNING id`, [workspaceId, id, contentType, size, hasThumbnail]);
     return rows.length > 0;
   }
 

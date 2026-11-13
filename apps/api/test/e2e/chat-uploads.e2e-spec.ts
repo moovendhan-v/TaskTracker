@@ -1,9 +1,10 @@
+import sharp from 'sharp';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { TestUser } from './support/api-client.js';
 import { addMember, createWorkspace, type WorkspaceFixture } from './support/fixtures.js';
 
 const REQUEST = 'mutation($w: ID!, $input: RequestChatUploadInput!) { requestChatUpload(workspaceId: $w, input: $input) { attachmentId uploadUrl maxBytes } }';
-const COMPLETE = 'mutation($w: ID!, $a: ID!) { completeChatUpload(workspaceId: $w, attachmentId: $a) { error attachment { id fileName contentType size isImage url } } }';
+const COMPLETE = 'mutation($w: ID!, $a: ID!) { completeChatUpload(workspaceId: $w, attachmentId: $a) { error attachment { id fileName contentType size isImage url thumbnailUrl } } }';
 const DISCARD = 'mutation($w: ID!, $a: ID!) { discardChatUpload(workspaceId: $w, attachmentId: $a) }';
 const SEND = 'mutation($w: ID!, $input: SendChatMessageInput!) { sendChatMessage(workspaceId: $w, input: $input) { id body attachments { id fileName url isImage } } }';
 const MESSAGE = 'query($w: ID!, $m: ID!) { chatMessage(workspaceId: $w, messageId: $m) { attachments { url } } }';
@@ -116,5 +117,33 @@ describe('chat file uploads', () => {
     expect((await member.error(SEND, { w, input: { channelId, body: '  ' } })).code).toBe('BAD_USER_INPUT');
     const sent = (await member.data<{ sendChatMessage: { attachments: { fileName: string; isImage: boolean }[] } }>(SEND, { w, input: { channelId, body: 'here it is', attachmentIds: [mine.attachmentId] } })).sendChatMessage;
     expect(sent.attachments).toEqual([{ fileName: 'plan.txt', isImage: false, id: mine.attachmentId, url: expect.stringMatching(/^\/api\/storage\/files\//) }]);
+  });
+
+  it('makes a small preview of a real image, served like the file', async () => {
+    const photo = await sharp({ create: { width: 1600, height: 1200, channels: 3, background: '#cc6633' } }).jpeg().toBuffer();
+    const ticket = await upload(ws.owner, 'holiday.jpg', photo);
+    const { attachment } = (await ws.owner.data<{ completeChatUpload: { attachment: { thumbnailUrl: string | null; url: string } } }>(COMPLETE, { w, a: ticket.attachmentId })).completeChatUpload;
+    expect(attachment.thumbnailUrl).toMatch(/^\/api\/storage\/files\//);
+    const preview = await download(ws.owner, attachment.thumbnailUrl!);
+    expect(preview.status).toBe(200);
+    expect(preview.headers.get('content-type')).toBe('image/webp');
+    expect(preview.headers.get('x-content-type-options')).toBe('nosniff');
+    const meta = await sharp(Buffer.from(await preview.arrayBuffer())).metadata();
+    expect([meta.format, meta.width, meta.height]).toEqual(['webp', 480, 360]);
+    // Files that aren't images get none.
+    const notes = await upload(ws.owner, 'notes.txt', Buffer.from('plain notes'));
+    expect((await ws.owner.data<{ completeChatUpload: { attachment: { thumbnailUrl: string | null } } }>(COMPLETE, { w, a: notes.attachmentId })).completeChatUpload.attachment.thumbnailUrl).toBeNull();
+    await ws.owner.data(DISCARD, { w, a: ticket.attachmentId });
+    await ws.owner.data(DISCARD, { w, a: notes.attachmentId });
+  });
+
+  it('refuses a file the virus scan flags, and deletes it', async () => {
+    // The EICAR antivirus test file: harmless, and flagged by every scanner (the tests use the mock).
+    const eicar = Buffer.from('X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*');
+    const ticket = await upload(member, 'invoice.txt', eicar);
+    const { completeChatUpload } = await member.data<{ completeChatUpload: { error: string | null; attachment: unknown } }>(COMPLETE, { w, a: ticket.attachmentId });
+    expect(completeChatUpload).toEqual({ attachment: null, error: 'This file looks harmful (the virus scan flagged it), so it wasn’t added' });
+    // Gone: it can't be completed again or sent.
+    expect((await member.error(COMPLETE, { w, a: ticket.attachmentId })).code).toBe('NOT_FOUND');
   });
 });

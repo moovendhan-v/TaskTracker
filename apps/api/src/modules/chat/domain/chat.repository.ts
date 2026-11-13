@@ -57,6 +57,8 @@ export interface ChatAttachmentRecord {
   declaredSize: number;
   size: number | null;
   storageKey: string;
+  /** An image preview is stored at `<storageKey>-thumb`. */
+  hasThumbnail: boolean;
   status: 'pending' | 'ready';
   createdAt: Date;
 }
@@ -108,7 +110,7 @@ export abstract class ChatRepository {
 
   abstract insertAttachment(input: { workspaceId: string; channelId: string; uploaderId: string; fileName: string; declaredSize: number; storageKey: string }): Promise<string>;
   abstract findAttachment(workspaceId: string, id: string): Promise<ChatAttachmentRecord | null>;
-  abstract markAttachmentReady(workspaceId: string, id: string, contentType: string, size: number): Promise<boolean>;
+  abstract markAttachmentReady(workspaceId: string, id: string, contentType: string, size: number, hasThumbnail?: boolean): Promise<boolean>;
   abstract deleteAttachment(workspaceId: string, id: string): Promise<boolean>;
   /** Puts ready, unattached files of this uploader in this channel on a message; returns how many. */
   abstract attach(workspaceId: string, ids: string[], uploaderId: string, channelId: string, messageId: string): Promise<number>;

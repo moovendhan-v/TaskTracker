@@ -9,7 +9,8 @@ import type { Actor, WorkspaceAccess } from '../../../core/http/types/authentica
 import { FileStorage } from '../../../core/storage/file-storage.port.js';
 import { cleanFileName, isAllowedExtension } from '../../../core/storage/file-types.js';
 import { StorageTokens } from '../../../core/storage/storage-tokens.js';
-import { downloadUrl, inspectUpload, uploadUrl } from '../../../core/storage/upload-checks.js';
+import { FileScanner } from '../../../core/scanning/file-scanner.port.js';
+import { deleteUpload, downloadUrl, inspectUpload, thumbnailKey, UPLOAD_REFUSALS, uploadUrl } from '../../../core/storage/upload-checks.js';
 import { TaskAttachmentRepository, type TaskAttachmentRecord } from '../domain/task-attachment.repository.js';
 
 const STALE_UPLOAD_MS = 24 * 60 * 60_000;
@@ -28,6 +29,7 @@ export class TaskAttachmentsService {
     private readonly storage: FileStorage,
     private readonly tokens: StorageTokens,
     private readonly events: EventBus,
+    private readonly scanner: FileScanner,
   ) {}
 
   async list(access: WorkspaceAccess, taskId: string): Promise<TaskAttachmentResponse[]> {
@@ -53,15 +55,15 @@ export class TaskAttachmentsService {
   async complete(actor: Actor, access: WorkspaceAccess, attachmentId: string): Promise<TaskUploadResult> {
     const file = await this.own(actor, access, attachmentId);
     if (file.status === 'ready') return { attachment: this.toResponse(file), error: null };
-    const checked = await inspectUpload(this.storage, file.storageKey, file.declaredSize, file.fileName);
+    const checked = await inspectUpload(this.storage, this.scanner, file.storageKey, file.declaredSize, file.fileName);
     if (checked === 'missing') throw DomainError.invalid("The file hasn't been uploaded yet");
-    if (checked === 'refused') {
+    if (typeof checked === 'string') {
       await this.removeFile(access, file);
-      return { attachment: null, error: "This file's contents don't match an allowed type" };
+      return { attachment: null, error: UPLOAD_REFUSALS[checked] };
     }
-    await this.attachments.markReady(access.workspaceId, file.id, checked.contentType, checked.size);
+    await this.attachments.markReady(access.workspaceId, file.id, checked.contentType, checked.size, checked.thumbnail);
     await this.announce(actor, access, file.taskId, 'created');
-    return { attachment: this.toResponse({ ...file, status: 'ready', contentType: checked.contentType, size: checked.size }), error: null };
+    return { attachment: this.toResponse({ ...file, status: 'ready', contentType: checked.contentType, size: checked.size, hasThumbnail: checked.thumbnail }), error: null };
   }
 
   async remove(actor: Actor, access: WorkspaceAccess, attachmentId: string): Promise<boolean> {
@@ -90,7 +92,7 @@ export class TaskAttachmentsService {
 
   private async removeFile(access: WorkspaceAccess, file: TaskAttachmentRecord): Promise<void> {
     await this.attachments.remove(access.workspaceId, file.id);
-    await this.storage.delete(file.storageKey).catch(() => undefined);
+    await deleteUpload(this.storage, file.storageKey);
   }
 
   private toResponse(file: TaskAttachmentRecord): TaskAttachmentResponse {
@@ -103,6 +105,7 @@ export class TaskAttachmentsService {
       size: file.size ?? file.declaredSize,
       isImage: contentType.startsWith('image/'),
       url: downloadUrl(this.tokens, file.storageKey, contentType, file.fileName),
+      thumbnailUrl: file.hasThumbnail ? downloadUrl(this.tokens, thumbnailKey(file.storageKey), 'image/webp', `${file.fileName}.webp`) : null,
       uploaderId: file.uploaderId,
       uploaderName: file.uploaderName,
       createdAt: file.createdAt.toISOString(),

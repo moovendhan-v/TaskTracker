@@ -38,7 +38,9 @@ import { MembersService } from '../../members/application/members.service.js';
 import { TasksService } from '../../tasks/application/tasks.service.js';
 import { randomUUID } from 'node:crypto';
 import { FileStorage } from '../../../core/storage/file-storage.port.js';
-import { cleanFileName, detectFileType, isAllowedExtension, SNIFF_BYTES } from '../../../core/storage/file-types.js';
+import { FileScanner } from '../../../core/scanning/file-scanner.port.js';
+import { cleanFileName, isAllowedExtension } from '../../../core/storage/file-types.js';
+import { deleteUpload, downloadUrl, inspectUpload, thumbnailKey, UPLOAD_REFUSALS } from '../../../core/storage/upload-checks.js';
 import { StorageTokens } from '../../../core/storage/storage-tokens.js';
 import { ChatRepository, type ChatAttachmentRecord, type ChatChannelRecord, type ChatMessageRecord, type MessagePosition } from '../domain/chat.repository.js';
 import { decodeCursor, encodeCursor } from '../domain/cursor.js';
@@ -114,6 +116,7 @@ export class ChatService {
     private readonly workspaceMembers: MembersService,
     private readonly storage: FileStorage,
     private readonly storageTokens: StorageTokens,
+    private readonly scanner: FileScanner,
   ) {}
 
   // ── Channels ────────────────────────────────────────────────────────────
@@ -376,15 +379,14 @@ export class ChatService {
   async completeUpload(actor: Actor, access: WorkspaceAccess, attachmentId: string): Promise<ChatUploadResult> {
     const file = await this.ownPendingFile(actor, access, attachmentId);
     if (file.status === 'ready') return { attachment: this.toAttachment(file), error: null };
-    const size = await this.storage.size(file.storageKey);
-    if (size === null) throw DomainError.invalid("The file hasn't been uploaded yet");
-    const detected = size > 0 && size <= file.declaredSize ? detectFileType(await this.storage.head(file.storageKey, SNIFF_BYTES), file.fileName) : null;
-    if (!detected) {
+    const checked = await inspectUpload(this.storage, this.scanner, file.storageKey, file.declaredSize, file.fileName);
+    if (checked === 'missing') throw DomainError.invalid("The file hasn't been uploaded yet");
+    if (typeof checked === 'string') {
       await this.removeFile(access, file);
-      return { attachment: null, error: "This file's contents don't match an allowed type" };
+      return { attachment: null, error: UPLOAD_REFUSALS[checked] };
     }
-    await this.chat.markAttachmentReady(access.workspaceId, file.id, detected.contentType, size);
-    return { attachment: this.toAttachment({ ...file, status: 'ready', contentType: detected.contentType, size }), error: null };
+    await this.chat.markAttachmentReady(access.workspaceId, file.id, checked.contentType, checked.size, checked.thumbnail);
+    return { attachment: this.toAttachment({ ...file, status: 'ready', contentType: checked.contentType, size: checked.size, hasThumbnail: checked.thumbnail }), error: null };
   }
 
   /** Removes a file you added but haven't sent. */
@@ -403,7 +405,7 @@ export class ChatService {
   private async removeFile(access: WorkspaceAccess, file: ChatAttachmentRecord): Promise<void> {
     await this.chat.deleteAttachment(access.workspaceId, file.id);
     // The bytes go after the row; if this fails, the object is unreachable anyway (no row, no link).
-    await this.storage.delete(file.storageKey).catch(() => undefined);
+    await deleteUpload(this.storage, file.storageKey);
   }
 
   /**
@@ -472,7 +474,8 @@ export class ChatService {
     const contentType = file.contentType ?? 'application/octet-stream';
     const isImage = contentType.startsWith('image/');
     const token = this.storageTokens.sign({ op: 'get', key: file.storageKey, type: contentType, name: file.fileName, inline: isImage, exp: Date.now() + DOWNLOAD_TTL_MS });
-    return { id: file.id, fileName: file.fileName, contentType, size: file.size ?? file.declaredSize, isImage, url: `/api/storage/files/${token}` };
+    const thumbnailUrl = file.hasThumbnail ? downloadUrl(this.storageTokens, thumbnailKey(file.storageKey), 'image/webp', `${file.fileName}.webp`) : null;
+    return { id: file.id, fileName: file.fileName, contentType, size: file.size ?? file.declaredSize, isImage, url: `/api/storage/files/${token}`, thumbnailUrl };
   }
 
     private async page(access: WorkspaceAccess, actor: Actor, items: ChatMessageRecord[], limit: number): Promise<ChatMessagePage> {

@@ -381,6 +381,9 @@ type ChatAttachment {
   isImage: Boolean!
   size: Int!
 
+  """A small WebP preview of an image, signed like url"""
+  thumbnailUrl: String
+
   """
   Short-lived signed link on this origin; read the message again for a fresh one
   """
@@ -2937,6 +2940,9 @@ type TaskAttachment {
   isImage: Boolean!
   size: Int!
   taskId: ID!
+
+  """A small WebP preview of an image, signed like url"""
+  thumbnailUrl: String
   uploaderId: ID
   uploaderName: String
 

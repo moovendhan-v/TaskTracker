@@ -246,7 +246,7 @@ function Attachments({ files }: { files: ChatAttachmentResponse[] }) {
           {images.map((file) => (
             <li key={file.id}>
               <a href={file.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg border bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-                <img src={file.url} alt={file.fileName} loading="lazy" className="max-h-60 max-w-80 object-contain" />
+                <img src={file.thumbnailUrl ?? file.url} alt={file.fileName} loading="lazy" className="max-h-60 max-w-80 object-contain" />
               </a>
             </li>
           ))}
