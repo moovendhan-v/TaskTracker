@@ -16,6 +16,8 @@ describe('SecretBox', () => {
     const sealed = box('x'.repeat(40)).seal('webhook-secret');
     expect(() => box('y'.repeat(40)).open(sealed)).toThrow();
     const [v, iv, tag, data] = sealed.split('.');
-    expect(() => box('x'.repeat(40)).open([v, iv, tag, `A${data?.slice(1)}`].join('.'))).toThrow();
+    // Change the first character for sure (setting it to a fixed one did nothing when it already was that one).
+    const tampered = `${data![0] === 'A' ? 'B' : 'A'}${data!.slice(1)}`;
+    expect(() => box('x'.repeat(40)).open([v, iv, tag, tampered].join('.'))).toThrow();
   });
 });
