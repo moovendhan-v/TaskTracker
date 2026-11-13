@@ -15,7 +15,31 @@ export const ATTENDANCE_LIMITS = {
   rangeDaysMax: 31,
   /** Your own recent shifts shown on the page. */
   recentShifts: 20,
+  /** A corrected shift is at most this long. */
+  shiftHoursMax: 24,
+  /** Length of the reason HR gives for a correction. */
+  correctionReasonMax: 300,
+  /** Shifts in one CSV export. */
+  exportShiftsMax: 2000,
 } as const;
+
+/**
+ * Breaks kept inside a shift whose times changed: a break that ends before the
+ * shift starts or starts after it ends goes, one that sticks out is cut to fit,
+ * and a running break ends with the shift.
+ */
+export function clipBreaks(breaks: readonly AttendanceBreak[], startedAt: string, endedAt: string): AttendanceBreak[] {
+  const start = Date.parse(startedAt);
+  const end = Date.parse(endedAt);
+  const kept: AttendanceBreak[] = [];
+  for (const item of breaks) {
+    const from = Math.max(Date.parse(item.start), start);
+    const to = Math.min(item.end === null ? end : Date.parse(item.end), end);
+    if (to <= from) continue;
+    kept.push({ start: new Date(from).toISOString(), end: new Date(to).toISOString() });
+  }
+  return kept;
+}
 
 /** Minutes between two instants (or until `now` while still open), never negative. */
 function minutesBetween(start: string, end: string | null, now: Date): number {

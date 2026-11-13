@@ -1,17 +1,32 @@
-import { ChevronLeftIcon, ChevronRightIcon, CoffeeIcon, LogInIcon, LogOutIcon, TimerIcon } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, CoffeeIcon, DownloadIcon, LogInIcon, LogOutIcon, PencilIcon, TimerIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/common/page-header';
 import { UserAvatar } from '@/components/common/user-avatar';
+import { notify } from '@/components/kit/notify';
 import { Button } from '@/components/ui/button';
 import { usePreferences } from '@/core/preferences/use-preferences';
 import { cn } from '@/lib/cn';
+import { downloadText } from '@/lib/export-csv';
 import { addDays, startOfWeek } from '@/lib/periods';
 import { useMemberName } from '@/modules/members';
 import { usePermissions } from '@/modules/workspaces';
+import { attendanceApi } from '../api/attendance.api';
+import { CorrectShiftDialog } from '../components/correct-shift-dialog';
 import { useClock, useMyAttendance, useTeamAttendance } from '../hooks/use-attendance';
-import { formatWorked, localDate, teamWeek } from '../lib/attendance';
+import { formatWorked, localDate, teamWeek, viewerTimeZone } from '../lib/attendance';
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+const shortDay = (iso: string) => new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+
+/** Marks a shift HR corrected; the reason shows on hover. */
+function CorrectedBadge({ reason }: { reason: string | null }) {
+  if (!reason) return null;
+  return (
+    <span title={`Corrected: ${reason}`} className="rounded-full bg-muted px-1.5 py-0.5 text-[10.5px] font-medium text-muted-foreground">
+      Corrected
+    </span>
+  );
+}
 
 /** A clock that re-renders every 30 seconds, so running totals move. */
 function useNow(): Date {
@@ -92,13 +107,14 @@ function MyClock({ workspaceId }: { workspaceId: string }) {
         <ul aria-label="Your recent shifts" className="divide-y rounded-xl border bg-card">
           {data?.recent.map((shift) => (
             <li key={shift.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
-              <span className="w-28 font-medium">{new Date(shift.startedAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+              <span className="w-28 font-medium">{shortDay(shift.startedAt)}</span>
               <span className="tabular-nums text-muted-foreground">
                 {time(shift.startedAt)} – {shift.endedAt ? time(shift.endedAt) : 'now'}
               </span>
               <span className="text-xs text-muted-foreground">
                 {shift.breaks.length ? `${shift.breaks.length} break${shift.breaks.length === 1 ? '' : 's'}` : 'no breaks'}
               </span>
+              <CorrectedBadge reason={shift.correctionReason} />
               <span className="flex-1" />
               <span className="tabular-nums">{formatWorked(shift.workedMinutes)}</span>
             </li>
@@ -121,6 +137,20 @@ function TeamWeek({ workspaceId }: { workspaceId: string }) {
   const { data: shifts = [], isLoading } = useTeamAttendance(workspaceId, start.toISOString(), end.toISOString(), true);
   const rows = teamWeek(shifts, dayKeys, now).sort((a, b) => (nameOf(a.userId) ?? '').localeCompare(nameOf(b.userId) ?? ''));
   const label = `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${addDays(end, -1).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+  const [exporting, setExporting] = useState(false);
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const file = await attendanceApi.export(workspaceId, start.toISOString(), end.toISOString(), viewerTimeZone());
+      downloadText(file.fileName, file.content, 'text/csv');
+      if (file.truncated) notify.info(`Only the first ${file.shifts} shifts were exported`);
+    } catch (error) {
+      notify.error(error);
+    } finally {
+      setExporting(false);
+    }
+  };
+  const listed = [...shifts].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 
   return (
     <section aria-labelledby="team-week" className="grid gap-3">
@@ -138,6 +168,9 @@ function TeamWeek({ workspaceId }: { workspaceId: string }) {
         </span>
         <Button variant="ghost" size="icon-sm" aria-label="Next week" disabled={offset >= 0} onClick={() => setOffset(offset + 1)}>
           <ChevronRightIcon />
+        </Button>
+        <Button variant="outline" size="sm" disabled={exporting} onClick={() => void exportCsv()}>
+          <DownloadIcon /> Export CSV
         </Button>
       </div>
       <div className={cn('overflow-x-auto rounded-xl border bg-card', isLoading && 'opacity-60')}>
@@ -192,6 +225,41 @@ function TeamWeek({ workspaceId }: { workspaceId: string }) {
           </tbody>
         </table>
       </div>
+      {listed.length ? (
+        <details className="group rounded-xl border bg-card">
+          <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium select-none">Shifts this week ({listed.length})</summary>
+          <ul aria-label="Shifts this week" className="divide-y border-t">
+            {listed.map((shift) => {
+              const name = nameOf(shift.userId) ?? 'Former member';
+              return (
+                <li key={shift.id} className="flex flex-wrap items-center gap-3 px-4 py-2 text-sm">
+                  <span className="flex w-44 min-w-0 items-center gap-2">
+                    <UserAvatar name={name} className="size-5 text-[9px]" />
+                    <span className="truncate">{name}</span>
+                  </span>
+                  <span className="w-28 text-muted-foreground">{shortDay(shift.startedAt)}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {time(shift.startedAt)} – {shift.endedAt ? time(shift.endedAt) : 'now'}
+                  </span>
+                  <CorrectedBadge reason={shift.correctionReason} />
+                  <span className="flex-1" />
+                  <span className="tabular-nums">{formatWorked(shift.workedMinutes)}</span>
+                  <CorrectShiftDialog
+                    workspaceId={workspaceId}
+                    shift={shift}
+                    personName={name}
+                    trigger={
+                      <Button variant="ghost" size="sm" aria-label={`Correct ${name}’s shift on ${shortDay(shift.startedAt)}`}>
+                        <PencilIcon /> Correct
+                      </Button>
+                    }
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      ) : null}
     </section>
   );
 }

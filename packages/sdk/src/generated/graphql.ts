@@ -115,6 +115,14 @@ export type ConnectGithubRepositoryInput = {
   taskPrefix?: string | null | undefined;
 };
 
+export type CorrectAttendanceShiftInput = {
+  /** ISO date-time; not in the future */
+  endedAt: string;
+  reason: string;
+  /** ISO date-time */
+  startedAt: string;
+};
+
 export type CreateChatChannelInput = {
   kind?: string;
   memberIds?: Array<string> | null | undefined;
@@ -1868,14 +1876,14 @@ export type LeaveCalendarQueryVariables = Exact<{
 
 export type LeaveCalendarQuery = { leaveCalendar: Array<{ userId: string, startDate: string, endDate: string }> };
 
-export type AttendanceShiftFieldsFragment = { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> };
+export type AttendanceShiftFieldsFragment = { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> };
 
 export type MyAttendanceQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type MyAttendanceQuery = { myAttendance: { current: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } | null, recent: Array<{ id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> }> } };
+export type MyAttendanceQuery = { myAttendance: { current: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> } | null, recent: Array<{ id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> }> } };
 
 export type TeamAttendanceQueryVariables = Exact<{
   workspaceId: string;
@@ -1884,35 +1892,54 @@ export type TeamAttendanceQueryVariables = Exact<{
 }>;
 
 
-export type TeamAttendanceQuery = { teamAttendance: Array<{ id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> }> };
+export type TeamAttendanceQuery = { teamAttendance: Array<{ id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> }> };
 
 export type ClockInMutationVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type ClockInMutation = { clockIn: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } };
+export type ClockInMutation = { clockIn: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> } };
 
 export type ClockOutMutationVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type ClockOutMutation = { clockOut: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } };
+export type ClockOutMutation = { clockOut: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> } };
 
 export type StartBreakMutationVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type StartBreakMutation = { startBreak: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } };
+export type StartBreakMutation = { startBreak: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> } };
 
 export type EndBreakMutationVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type EndBreakMutation = { endBreak: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, breaks: Array<{ start: string, end: string | null }> } };
+export type EndBreakMutation = { endBreak: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> } };
+
+export type ExportAttendanceMutationVariables = Exact<{
+  workspaceId: string;
+  from: string;
+  to: string;
+  timeZone: string;
+}>;
+
+
+export type ExportAttendanceMutation = { exportAttendance: { fileName: string, content: string, shifts: number, truncated: boolean } };
+
+export type CorrectAttendanceShiftMutationVariables = Exact<{
+  workspaceId: string;
+  shiftId: string;
+  input: CorrectAttendanceShiftInput;
+}>;
+
+
+export type CorrectAttendanceShiftMutation = { correctAttendanceShift: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> } };
 
 export type GithubConnectionFieldsFragment = { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null } };
 
@@ -3865,6 +3892,9 @@ export const AttendanceShiftFieldsFragmentDoc = new TypedDocumentString(`
     start
     end
   }
+  correctedAt
+  correctedById
+  correctionReason
 }
     `, {"fragmentName":"AttendanceShiftFields"}) as unknown as TypedDocumentString<AttendanceShiftFieldsFragment, unknown>;
 export const GithubConnectionFieldsFragmentDoc = new TypedDocumentString(`
@@ -6074,6 +6104,9 @@ export const MyAttendanceDocument = new TypedDocumentString(`
     start
     end
   }
+  correctedAt
+  correctedById
+  correctionReason
 }`) as unknown as TypedDocumentString<MyAttendanceQuery, MyAttendanceQueryVariables>;
 export const TeamAttendanceDocument = new TypedDocumentString(`
     query TeamAttendance($workspaceId: ID!, $from: String!, $to: String!) {
@@ -6092,6 +6125,9 @@ export const TeamAttendanceDocument = new TypedDocumentString(`
     start
     end
   }
+  correctedAt
+  correctedById
+  correctionReason
 }`) as unknown as TypedDocumentString<TeamAttendanceQuery, TeamAttendanceQueryVariables>;
 export const ClockInDocument = new TypedDocumentString(`
     mutation ClockIn($workspaceId: ID!) {
@@ -6110,6 +6146,9 @@ export const ClockInDocument = new TypedDocumentString(`
     start
     end
   }
+  correctedAt
+  correctedById
+  correctionReason
 }`) as unknown as TypedDocumentString<ClockInMutation, ClockInMutationVariables>;
 export const ClockOutDocument = new TypedDocumentString(`
     mutation ClockOut($workspaceId: ID!) {
@@ -6128,6 +6167,9 @@ export const ClockOutDocument = new TypedDocumentString(`
     start
     end
   }
+  correctedAt
+  correctedById
+  correctionReason
 }`) as unknown as TypedDocumentString<ClockOutMutation, ClockOutMutationVariables>;
 export const StartBreakDocument = new TypedDocumentString(`
     mutation StartBreak($workspaceId: ID!) {
@@ -6146,6 +6188,9 @@ export const StartBreakDocument = new TypedDocumentString(`
     start
     end
   }
+  correctedAt
+  correctedById
+  correctionReason
 }`) as unknown as TypedDocumentString<StartBreakMutation, StartBreakMutationVariables>;
 export const EndBreakDocument = new TypedDocumentString(`
     mutation EndBreak($workspaceId: ID!) {
@@ -6164,7 +6209,50 @@ export const EndBreakDocument = new TypedDocumentString(`
     start
     end
   }
+  correctedAt
+  correctedById
+  correctionReason
 }`) as unknown as TypedDocumentString<EndBreakMutation, EndBreakMutationVariables>;
+export const ExportAttendanceDocument = new TypedDocumentString(`
+    mutation ExportAttendance($workspaceId: ID!, $from: String!, $to: String!, $timeZone: String!) {
+  exportAttendance(
+    workspaceId: $workspaceId
+    from: $from
+    to: $to
+    timeZone: $timeZone
+  ) {
+    fileName
+    content
+    shifts
+    truncated
+  }
+}
+    `) as unknown as TypedDocumentString<ExportAttendanceMutation, ExportAttendanceMutationVariables>;
+export const CorrectAttendanceShiftDocument = new TypedDocumentString(`
+    mutation CorrectAttendanceShift($workspaceId: ID!, $shiftId: ID!, $input: CorrectAttendanceShiftInput!) {
+  correctAttendanceShift(
+    workspaceId: $workspaceId
+    shiftId: $shiftId
+    input: $input
+  ) {
+    ...AttendanceShiftFields
+  }
+}
+    fragment AttendanceShiftFields on AttendanceShift {
+  id
+  userId
+  startedAt
+  endedAt
+  onBreak
+  workedMinutes
+  breaks {
+    start
+    end
+  }
+  correctedAt
+  correctedById
+  correctionReason
+}`) as unknown as TypedDocumentString<CorrectAttendanceShiftMutation, CorrectAttendanceShiftMutationVariables>;
 export const GithubConnectionsDocument = new TypedDocumentString(`
     query GithubConnections($workspaceId: ID!) {
   githubConnections(workspaceId: $workspaceId) {

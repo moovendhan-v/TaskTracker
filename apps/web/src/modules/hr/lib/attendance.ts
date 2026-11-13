@@ -43,3 +43,27 @@ export function formatWorked(minutes: number): string {
   const rest = minutes % 60;
   return hours ? `${hours}h ${String(rest).padStart(2, '0')}m` : `${rest}m`;
 }
+
+const pad = (value: number) => String(value).padStart(2, '0');
+
+/** An instant as a `datetime-local` input value, in the viewer's time zone. */
+export function toLocalInput(iso: string): string {
+  const date = new Date(iso);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** A `datetime-local` value (the viewer's time zone) as an ISO instant, or null when empty or invalid. */
+export function fromLocalInput(value: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+/** The viewer's IANA time zone, for exports; UTC when the browser won't say. */
+export function viewerTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}

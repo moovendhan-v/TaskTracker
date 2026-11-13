@@ -492,6 +492,35 @@ test('clocks in, takes a break, clocks out, and shows on the team week', async (
   await expect(team.getByText('In now')).toHaveCount(0);
 });
 
+test('corrects a shift as HR, with a reason, and exports the week as CSV', async () => {
+  await page.getByText(/^Shifts this week/).click();
+  await page.getByRole('button', { name: /^Correct .+’s shift on / }).click();
+  const dialog = page.getByRole('dialog', { name: /^Correct .+’s shift$/ });
+  // Two hours before the clock-out, in the browser's own time zone.
+  const end = await dialog.getByLabel('Clocked out').inputValue();
+  const start = new Date(new Date(end).getTime() - 2 * 3_600_000);
+  const pad = (value: number) => String(value).padStart(2, '0');
+  await dialog.getByLabel('Clocked in').fill(`${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}T${pad(start.getHours())}:${pad(start.getMinutes())}`);
+  await expect(dialog.getByRole('button', { name: 'Save correction' })).toBeDisabled();
+  await dialog.getByLabel('Reason').fill('Clocked in late from the train');
+  await shot('e4-attendance-correct', dialog);
+  await dialog.getByRole('button', { name: 'Save correction' }).click();
+  await expect(dialog).toBeHidden();
+  const shifts = page.getByRole('list', { name: 'Shifts this week' });
+  await expect(shifts.getByText('Corrected')).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Your recent shifts' }).getByText('Corrected')).toBeVisible();
+  await expect(shifts).toContainText(/2h|1h 59m/);
+  await shot('e4-attendance-team', page.locator('section[aria-labelledby="team-week"]'));
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export CSV' }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^attendance-.+\.csv$/);
+  const csv = (await import('node:fs')).readFileSync((await file.path())!, 'utf8');
+  expect(csv).toContain('"Person","Date","Clock in","Clock out"');
+  expect(csv).toContain('"Clocked in late from the train"');
+});
+
 test('creates a custom role and lists members', async () => {
   await page.getByRole('link', { name: 'Roles' }).click();
   await page.getByRole('button', { name: 'New role' }).click();
