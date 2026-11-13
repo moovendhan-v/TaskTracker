@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { namesToTokens, personAt, tokensToNames } from './chat-mentions';
+import { namesToTokens, personAt, tokensToNames } from './mentions';
 
 describe('chat mentions in the composer', () => {
   it('finds the name being typed', () => {

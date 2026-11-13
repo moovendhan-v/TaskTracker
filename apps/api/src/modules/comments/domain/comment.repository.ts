@@ -7,4 +7,6 @@ export abstract class CommentRepository {
   abstract create(comment: NewComment): Promise<Comment>;
   abstract save(comment: Comment): Promise<Comment>;
   abstract delete(workspaceId: string, commentId: string): Promise<void>;
+  /** Names of these workspace members (others are left out), for mention previews. */
+  abstract memberNames(workspaceId: string, userIds: readonly string[]): Promise<Map<string, string>>;
 }

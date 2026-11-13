@@ -21,6 +21,8 @@ export function describeNotification(notification: Describable): string {
       return `${who} asked for access: ${notification.subject}${notification.excerpt ? ` (“${notification.excerpt}”)` : ''}`;
     case 'access_decided':
       return `${who} answered your access request: ${notification.subject}`;
+    case 'comment_mention':
+      return `${who} mentioned you on ${notification.subject || 'a task'}`;
     case 'chat_mention':
       return `${who} mentioned you in ${notification.subject || 'chat'}`;
     case 'automation':

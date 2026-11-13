@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { COMMENT_BODY_MAX, type Permission } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useCurrentUser } from '@/core/auth/use-current-user';
 import { formatLongDate } from '@/lib/dates';
 import { usePermissions } from '@/modules/workspaces';
+import { namesToTokens, type Person } from '@/lib/mentions';
 import { useCommentMutations, useComments } from '../hooks/use-comments';
+import { CommentBody, MentionTextarea } from './comment-mentions';
 
 interface CommentThreadProps {
   workspaceId: string;
@@ -18,19 +19,26 @@ interface CommentThreadProps {
   heading?: boolean;
 }
 
-/** Comments are plain text and rendered as text (whitespace-pre-wrap), so no HTML from users reaches the DOM. */
+/** Comments are plain text and rendered as text (whitespace-pre-wrap), so no HTML from users reaches the DOM. @mentions show as names and notify the person. */
 export function CommentThread({ workspaceId, taskId, spaceId, heading = true }: CommentThreadProps) {
   const [draft, setDraft] = useState('');
+  const [people, setPeople] = useState<Person[]>([]);
   const { data: comments = [] } = useComments(workspaceId, taskId);
   const { data: me } = useCurrentUser();
   const { canIn } = usePermissions(workspaceId);
   const can = (permission: Permission) => canIn(spaceId, permission);
   const mutations = useCommentMutations(workspaceId, taskId);
 
-  function submit(event: { preventDefault: () => void }) {
-    event.preventDefault();
+  function submit(event?: { preventDefault: () => void }) {
+    event?.preventDefault();
     if (!draft.trim()) return;
-    mutations.create.mutate(draft, { onSuccess: () => setDraft('') });
+    // Picked @names go to the server as mention tokens.
+    mutations.create.mutate(namesToTokens(draft.trim(), people), {
+      onSuccess: () => {
+        setDraft('');
+        setPeople([]);
+      },
+    });
   }
 
   return (
@@ -61,21 +69,22 @@ export function CommentThread({ workspaceId, taskId, spaceId, heading = true }: 
                   </button>
                 ) : null}
               </div>
-              <p className="mt-1.5 text-sm break-words whitespace-pre-wrap">{comment.body}</p>
+              <CommentBody workspaceId={workspaceId} body={comment.body} />
             </div>
           </li>
         ))}
       </ol>
       {can('task.update') ? (
         <form onSubmit={submit} className="grid gap-2">
-          <Textarea
+          <MentionTextarea
+            workspaceId={workspaceId}
             value={draft}
+            onChange={setDraft}
+            people={people}
+            onPeopleChange={setPeople}
+            onSubmit={() => submit()}
             maxLength={COMMENT_BODY_MAX}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') submit(event);
-            }}
-            placeholder="Write a comment…"
+            placeholder="Write a comment… (@ to mention someone)"
             aria-label="New comment"
             rows={3}
             className="resize-none bg-background"

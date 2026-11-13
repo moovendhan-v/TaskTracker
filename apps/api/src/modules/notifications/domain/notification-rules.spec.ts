@@ -23,6 +23,13 @@ describe('NotificationRules', () => {
     expect(notification).toMatchObject({ taskId: 't1', excerpt: 'Looks good' });
   });
 
+  it('tells people a comment mentions about the mention instead, and an edit only those it newly mentions', () => {
+    const comment = event('comment', 'created', { taskId: 't1', assigneeId: 'sam', createdById: 'kai', watcherIds: ['lee'], mentionIds: ['sam', 'rio'], excerpt: '@Sam @Rio look' }, 'jordan');
+    expect(recipients(comment)).toEqual(['sam:comment_mention', 'rio:comment_mention', 'kai:task_commented', 'lee:task_commented']);
+    expect(recipients(event('comment', 'updated', { taskId: 't1', mentionIds: ['rio', 'jordan'] }, 'jordan'))).toEqual(['rio:comment_mention']);
+    expect(recipients(event('comment', 'updated', { taskId: 't1' }, 'jordan'))).toEqual([]);
+  });
+
   it('tells the people a chat message mentions, never the author', () => {
     const message = event('chat_message', 'created', { mentionIds: ['sam', 'avery', 'sam'], title: '#platform', excerpt: '@Sam can you look?' });
     expect(recipients(message)).toEqual(['sam:chat_mention']);

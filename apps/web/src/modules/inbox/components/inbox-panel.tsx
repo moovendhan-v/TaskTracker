@@ -147,7 +147,7 @@ export function InboxPanel({ workspaceId, onOpenTask }: InboxPanelProps) {
                           )}
                           <span className="min-w-0 flex-1">
                             <span className={cn('block text-[13px] leading-snug', unread && 'font-medium')}>{describeNotification(notification)}</span>
-                            {(notification.kind === 'task_commented' || notification.kind === 'chat_mention') && notification.excerpt ? (
+                            {(notification.kind === 'task_commented' || notification.kind === 'chat_mention' || notification.kind === 'comment_mention') && notification.excerpt ? (
                               <span className="mt-0.5 block truncate text-xs text-muted-foreground">“{notification.excerpt}”</span>
                             ) : null}
                             {notification.kind === 'automation' ? (

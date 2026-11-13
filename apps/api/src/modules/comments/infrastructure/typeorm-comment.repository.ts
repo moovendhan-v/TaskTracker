@@ -26,6 +26,15 @@ export class TypeOrmCommentRepository extends CommentRepository {
     return this.transactional.repository(CommentOrmEntity);
   }
 
+  async memberNames(workspaceId: string, userIds: readonly string[]): Promise<Map<string, string>> {
+    if (userIds.length === 0) return new Map();
+    const rows: { id: string; name: string }[] = await this.transactional.manager.query(
+      `SELECT u.id, u.name FROM "user" u JOIN workspace_member m ON m.user_id = u.id AND m.workspace_id = $1 WHERE u.id = ANY($2::text[])`,
+      [workspaceId, [...userIds]],
+    );
+    return new Map(rows.map((row) => [row.id, row.name]));
+  }
+
   async listForTask(workspaceId: string, taskId: string, limit: number): Promise<CommentWithAuthor[]> {
     const rows = await this.withAuthor()
       .where('comment.workspace_id = :workspaceId AND comment.task_id = :taskId', { workspaceId, taskId })

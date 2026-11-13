@@ -24,7 +24,7 @@ export function NotificationItem({ workspaceId, notification, onOpen }: Notifica
       <UserAvatar name={notification.actorName ?? '?'} />
       <span className="min-w-0 flex-1">
         <span className={cn('block text-sm', unread && 'font-medium')}>{describeNotification(notification)}</span>
-        {(notification.kind === 'task_commented' || notification.kind === 'chat_mention') && notification.excerpt ? (
+        {(notification.kind === 'task_commented' || notification.kind === 'chat_mention' || notification.kind === 'comment_mention') && notification.excerpt ? (
           <span className="mt-0.5 block truncate text-sm text-muted-foreground">{notification.excerpt}</span>
         ) : null}
         {notification.kind === 'automation' ? (
