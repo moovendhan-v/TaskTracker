@@ -54,7 +54,7 @@ mutation ResolveGithubConflict($workspaceId: ID!, $conflictId: ID!, $useGithub: 
 }
 
 query GithubApp($workspaceId: ID!) {
-  githubApp(workspaceId: $workspaceId) { enabled canInstall slug }
+  githubApp(workspaceId: $workspaceId) { enabled canInstall slug webhook }
 }
 
 mutation GithubAppInstallUrl($workspaceId: ID!) {

@@ -39,6 +39,7 @@ import { Organizations1729990000000 } from './1729990000000-organizations.js';
 import { Calls1730000000000 } from './1730000000000-calls.js';
 import { Office1730010000000 } from './1730010000000-office.js';
 import { GithubApp1730020000000 } from './1730020000000-github-app.js';
+import { UploadPreviews1730030000000 } from './1730030000000-upload-previews.js';
 import { GithubConflicts1729950000000 } from './1729950000000-github-conflicts.js';
 import { ChatRetention1729940000000 } from './1729940000000-chat-retention.js';
 import { DashboardTeams1729930000000 } from './1729930000000-dashboard-teams.js';
@@ -99,4 +100,5 @@ export const MIGRATIONS = [
   Calls1730000000000,
   Office1730010000000,
   GithubApp1730020000000,
+  UploadPreviews1730030000000,
 ];

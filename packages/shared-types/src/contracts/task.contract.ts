@@ -102,6 +102,8 @@ export interface TaskAttachmentResponse {
   isImage: boolean;
   /** A short-lived signed link (minutes); read the list again for fresh ones. */
   url: string;
+  /** A small preview of an image (WebP, at most 480 px), when one was made; signed like `url`. */
+  thumbnailUrl: string | null;
   uploaderId: string | null;
   uploaderName: string | null;
   createdAt: string;

@@ -162,8 +162,8 @@ export class GithubAppSync implements OnApplicationBootstrap, OnModuleDestroy {
     });
   }
 
-  /** A linked issue changed on GitHub: its title and open / closed state move the task. */
-  private async applyIssue(connection: GithubConnection, issue: PolledIssue): Promise<void> {
+  /** A linked issue changed on GitHub: its title and open / closed state move the task. Runs in the workspace's scope. */
+  async applyIssue(connection: GithubConnection, issue: PolledIssue): Promise<void> {
     const { workspaceId } = connection;
     const link = await this.apps.findIssueLink(workspaceId, connection.id, issue.number);
     if (!link) return;

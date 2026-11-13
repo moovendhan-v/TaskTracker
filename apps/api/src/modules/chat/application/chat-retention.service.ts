@@ -1,3 +1,4 @@
+import { deleteUpload } from '../../../core/storage/upload-checks.js';
 import { Inject, Injectable, Logger, type OnApplicationBootstrap, type OnModuleDestroy } from '@nestjs/common';
 import { type ChatRetentionDays, type ChatRetentionResponse } from '@taskflow/shared-types';
 import { Audited } from '../../../core/audit/audited.decorator.js';
@@ -72,7 +73,7 @@ export class ChatRetentionService implements OnApplicationBootstrap, OnModuleDes
             return threads.flatMap((thread) => thread.storageKeys);
           });
           // The files go after the rows have committed; a file left behind has no row and no link.
-          for (const key of keys) await this.storage.delete(key).catch(() => undefined);
+          for (const key of keys) await deleteUpload(this.storage, key);
         } catch (error) {
           this.logger.error('Chat retention sweep failed for a workspace', error instanceof Error ? error.stack : undefined);
         }

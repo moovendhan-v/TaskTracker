@@ -12,6 +12,7 @@ export class TaskAttachmentGql implements TaskAttachmentResponse {
   @Field(() => Int) size: number;
   @Field() isImage: boolean;
   @Field({ description: 'Short-lived signed link on this origin; list again for a fresh one' }) url: string;
+  @Field(() => String, { nullable: true, description: 'A small WebP preview of an image, signed like url' }) thumbnailUrl: string | null;
   @Field(() => ID, { nullable: true }) uploaderId: string | null;
   @Field(() => String, { nullable: true }) uploaderName: string | null;
   @Field() createdAt: string;

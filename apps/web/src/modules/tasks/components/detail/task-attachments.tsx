@@ -92,7 +92,7 @@ export function TaskAttachments({ workspaceId, task }: { workspaceId: string; ta
             {images.map((file) => (
               <li key={file.id} className="group/file relative">
                 <a href={file.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg border bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-                  <img src={file.url} alt={file.fileName} loading="lazy" className="h-24 max-w-48 object-cover" />
+                  <img src={file.thumbnailUrl ?? file.url} alt={file.fileName} loading="lazy" className="h-24 max-w-48 object-cover" />
                 </a>
                 {removable(file) ? <RemoveButton name={file.fileName} onClick={() => void remove(file)} className="absolute top-1 right-1 hidden bg-card group-hover/file:grid group-focus-within/file:grid" /> : null}
               </li>

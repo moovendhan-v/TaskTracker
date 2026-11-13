@@ -103,6 +103,14 @@ const envSchema = z.object({
   REDIS_URL: optionalString(z.string().url().refine((url) => /^rediss?:\/\//.test(url), 'REDIS_URL must start with redis:// or rediss://')),
   /** Where uploads go: `local` (disk, one instance only) or `s3` (AWS S3, Cloudflare R2, MinIO). */
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  /**
+   * Malware scanning of uploads: `clamav` (CLAMAV_HOST / CLAMAV_PORT, a clamd server), `mock`
+   * (development and tests: flags only the EICAR test file) or `none`. Production must choose
+   * clamav or none; the mock isn't allowed there.
+   */
+  FILE_SCANNER: z.enum(['clamav', 'mock', 'none']).default('mock'),
+  CLAMAV_HOST: optionalString(z.string().trim().min(1).max(253)),
+  CLAMAV_PORT: z.coerce.number().int().min(1).max(65_535).default(3310),
   /** For `local`: a directory the API can write to. */
   STORAGE_LOCAL_DIR: z.string().min(1).default('.data/uploads'),
   /** How often the automation scheduler wakes (waits, due soon, overdue). 0 turns it off in this process. */
@@ -184,6 +192,14 @@ const envSchema = z.object({
   .refine((env) => env.NODE_ENV === 'test' || !env.AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS, {
     path: ['AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS'],
     message: 'AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS is only allowed when NODE_ENV=test',
+  })
+  .refine((env) => env.FILE_SCANNER !== 'clamav' || env.CLAMAV_HOST !== undefined, {
+    path: ['CLAMAV_HOST'],
+    message: 'CLAMAV_HOST is required when FILE_SCANNER=clamav',
+  })
+  .refine((env) => env.NODE_ENV !== 'production' || env.FILE_SCANNER !== 'mock', {
+    path: ['FILE_SCANNER'],
+    message: 'FILE_SCANNER must be clamav (recommended) or none in production; the mock only flags a test file',
   })
   .refine((env) => env.NODE_ENV !== 'production' || env.REDIS_URL !== undefined, {
     path: ['REDIS_URL'],

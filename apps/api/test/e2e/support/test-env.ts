@@ -14,7 +14,7 @@ export const E2E_LIVEKIT_SECRET = 'e2e-livekit-secret-0123456789abcdef';
 /** The test GitHub (support/fake-github.ts) and the TaskFlow GitHub App settings that point at it. */
 export const FAKE_GITHUB_PORT = 7791;
 export const FAKE_GITHUB_URL = `http://127.0.0.1:${FAKE_GITHUB_PORT}`;
-export const E2E_GITHUB_APP = { id: '424242', slug: 'taskflow-e2e', clientId: 'Iv1e2eclient', clientSecret: 'e2e-github-app-client-secret' };
+export const E2E_GITHUB_APP = { id: '424242', slug: 'taskflow-e2e', clientId: 'Iv1e2eclient', clientSecret: 'e2e-github-app-client-secret', webhookSecret: 'e2e-github-app-webhook-secret-0123' };
 
 /** The origin the API trusts for browser calls during the tests. */
 export const TEST_ORIGIN = 'http://localhost:5173';
@@ -74,6 +74,7 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     GITHUB_API_URL: FAKE_GITHUB_URL,
     GITHUB_OAUTH_URL: FAKE_GITHUB_URL,
     GITHUB_SYNC_POLL_SECONDS: '1',
+    GITHUB_APP_WEBHOOK_SECRET: E2E_GITHUB_APP.webhookSecret,
     // Optional: run the suite against a real Redis (CI does) instead of the in-process cache.
     ...(process.env['E2E_REDIS_URL'] ? { REDIS_URL: process.env['E2E_REDIS_URL'] } : {}),
     // Uploads: a throwaway directory, or an S3-compatible service (MinIO, moto) when E2E_S3_ENDPOINT is set.

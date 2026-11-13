@@ -80,7 +80,7 @@ export class GithubAppService {
   }
 
   info(): GithubAppInfoResponse {
-    return { enabled: this.client.enabled, canInstall: this.client.canInstall, slug: this.client.enabled ? (this.env.GITHUB_APP_SLUG ?? null) : null };
+    return { enabled: this.client.enabled, canInstall: this.client.canInstall, slug: this.client.enabled ? (this.env.GITHUB_APP_SLUG ?? null) : null, webhook: this.client.enabled && this.env.GITHUB_APP_WEBHOOK_SECRET !== undefined };
   }
 
   /** Where to send a person to install the app for this workspace; the link carries a signed state bound to them. */

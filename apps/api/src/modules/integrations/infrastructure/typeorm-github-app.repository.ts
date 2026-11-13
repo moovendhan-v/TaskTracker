@@ -83,6 +83,21 @@ export class TypeOrmGithubAppRepository extends GithubAppRepository {
     await this.query(`DELETE FROM github_installation WHERE workspace_id = $1 AND id = $2`, [workspaceId, id]);
   }
 
+  async connectionsForRepo(installationId: number, repo: string): Promise<{ workspaceId: string; connectionId: string }[]> {
+    const rows = await this.query(
+      `SELECT c.id, c.workspace_id FROM github_connection c
+         JOIN github_installation i ON i.id = c.installation_ref AND i.workspace_id = c.workspace_id
+        WHERE i.installation_id = $1 AND lower(c.repo) = lower($2)
+        LIMIT 100`,
+      [installationId, repo],
+    );
+    return rows.map((row) => ({ workspaceId: String(row['workspace_id']), connectionId: String(row['id']) }));
+  }
+
+  async deleteInstallationEverywhere(installationId: number): Promise<number> {
+    return (await this.query(`DELETE FROM github_installation WHERE installation_id = $1 RETURNING id`, [installationId])).length;
+  }
+
   async workspacesToSync(now: Date, polledBefore: Date, limit: number): Promise<string[]> {
     const rows = await this.query(
       `SELECT workspace_id FROM github_connection WHERE installation_ref IS NOT NULL AND (polled_at IS NULL OR polled_at < $2)

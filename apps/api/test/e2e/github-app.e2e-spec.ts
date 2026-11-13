@@ -1,12 +1,12 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { TestUser } from './support/api-client.js';
 import { FakeGithub } from './support/fake-github.js';
 import { addMember, createWorkspace, type WorkspaceFixture } from './support/fixtures.js';
-import { FAKE_GITHUB_URL } from './support/test-env.js';
+import { E2E_GITHUB_APP, FAKE_GITHUB_URL } from './support/test-env.js';
 
 const INSTALL_URL = 'mutation($w: ID!) { githubAppInstallUrl(workspaceId: $w) }';
-const INFO = 'query($w: ID!) { githubApp(workspaceId: $w) { enabled canInstall slug } }';
+const INFO = 'query($w: ID!) { githubApp(workspaceId: $w) { enabled canInstall slug webhook } }';
 const INSTALLATIONS = 'query($w: ID!) { githubInstallations(workspaceId: $w) { id accountLogin accountType } }';
 const REPOS = 'query($w: ID!, $i: ID!) { githubInstallationRepositories(workspaceId: $w, installationId: $i) }';
 const CONNECT = 'mutation($w: ID!, $input: ConnectGithubRepositoryInput!) { connectGithubRepository(workspaceId: $w, input: $input) { id repo viaApp webhookPath } }';
@@ -55,12 +55,13 @@ describe('GitHub App sync', () => {
 
   afterAll(async () => {
     // Stop polling the fake GitHub for the rest of the suite.
-    if (installationId) await ws.owner.data('mutation($w: ID!, $i: ID!) { removeGithubInstallation(workspaceId: $w, installationId: $i) }', { w: w(), i: installationId });
+    // (The last test uninstalls the app on GitHub, which already removed it.)
+    if (installationId) await ws.owner.gql('mutation($w: ID!, $i: ID!) { removeGithubInstallation(workspaceId: $w, installationId: $i) }', { w: w(), i: installationId });
     await github.stop();
   });
 
   it('installs only for someone GitHub lists as able to reach the installation', async () => {
-    expect((await ws.owner.data<{ githubApp: unknown }>(INFO, { w: w() })).githubApp).toEqual({ enabled: true, canInstall: true, slug: 'taskflow-e2e' });
+    expect((await ws.owner.data<{ githubApp: unknown }>(INFO, { w: w() })).githubApp).toEqual({ enabled: true, canInstall: true, slug: 'taskflow-e2e', webhook: true });
     expect((await member.error(INSTALL_URL, { w: w() })).code).toBe('FORBIDDEN');
     const url = new URL((await ws.owner.data<{ githubAppInstallUrl: string }>(INSTALL_URL, { w: w() })).githubAppInstallUrl);
     expect(`${url.origin}${url.pathname}`).toBe(`${FAKE_GITHUB_URL}/apps/taskflow-e2e/installations/new`);
@@ -146,5 +147,56 @@ describe('GitHub App sync', () => {
     const t = await newTask('Owner only');
     expect((await guest.error(CREATE_ISSUE, { w: w(), t: t.id, c: connectionId })).code).toBe('FORBIDDEN');
     expect((await ws.owner.error(CREATE_ISSUE, { w: w(), t: t.id, c: randomUUID() })).code).toBe('NOT_FOUND');
+  });
+
+  describe('the app webhook', () => {
+    const send = (event: string, body: unknown, secret = E2E_GITHUB_APP.webhookSecret, delivery = randomUUID()) => {
+      const raw = JSON.stringify(body);
+      return fetch(`${inject('apiUrl')}/api/integrations/github/app-webhook`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-github-event': event, 'x-github-delivery': delivery, 'x-hub-signature-256': `sha256=${createHmac('sha256', secret).update(raw).digest('hex')}` },
+        body: raw,
+      });
+    };
+    const repository = { full_name: 'acme/app' };
+    const installation = { id: 100 };
+
+    it('refuses unsigned or wrongly signed deliveries', async () => {
+      expect((await send('ping', { installation }, 'not-the-secret')).status).toBe(401);
+      const unsigned = await fetch(`${inject('apiUrl')}/api/integrations/github/app-webhook`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-github-event': 'ping' }, body: '{}' });
+      expect(unsigned.status).toBe(401);
+      expect((await send('ping', { installation })).status).toBe(202);
+    });
+
+    it('moves tasks at once for a pull request, and handles a redelivery once', async () => {
+      const t = await newTask('Webhook work');
+      // Only in the delivery, not on the fake GitHub, so the poller can't be what moved it.
+      const body = {
+        action: 'opened',
+        installation,
+        repository,
+        pull_request: { number: 77, title: `TF-${t.number}: webhook`, body: '', html_url: 'https://github.com/acme/app/pull/77', state: 'open', merged: false, head: { ref: 'hook' }, user: { login: 'octocat' } },
+      };
+      const delivery = randomUUID();
+      expect(await (await send('pull_request', body, undefined, delivery)).json()).toEqual({ result: 'ok' });
+      expect((await task(t.id)).status.name).toBe('In review');
+      expect(await (await send('pull_request', body, undefined, delivery)).json()).toEqual({ result: 'duplicate' });
+      // Another installation's delivery for a repository it doesn't connect here does nothing.
+      expect(await (await send('pull_request', { ...body, installation: { id: 200 } })).json()).toEqual({ result: 'ignored' });
+    });
+
+    it('applies a linked issue change at once', async () => {
+      const t = await newTask('Hooked issue');
+      const { createGithubIssue } = await ws.owner.data<{ createGithubIssue: { number: number; url: string } }>(CREATE_ISSUE, { w: w(), t: t.id, c: connectionId });
+      const issue = { number: createGithubIssue.number, title: 'Hooked issue, renamed', state: 'closed', html_url: createGithubIssue.url, updated_at: new Date(Date.now() + 60_000).toISOString() };
+      expect((await send('issues', { action: 'closed', installation, repository, issue })).status).toBe(202);
+      expect(await task(t.id)).toMatchObject({ title: 'Hooked issue, renamed', status: { name: 'Done' } });
+    });
+
+    it('forgets the installation when the app is uninstalled on GitHub', async () => {
+      expect((await send('installation', { action: 'deleted', installation })).status).toBe(202);
+      expect((await ws.owner.data<{ githubInstallations: unknown[] }>(INSTALLATIONS, { w: w() })).githubInstallations).toEqual([]);
+      expect((await ws.owner.data<{ githubConnections: unknown[] }>('query($w: ID!) { githubConnections(workspaceId: $w) { id } }', { w: w() })).githubConnections).toEqual([]);
+    });
   });
 });

@@ -24,6 +24,10 @@ x-api-env: &api-env
   REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379/0
   # Uploads go to the private MinIO bucket below (S3-compatible). For AWS S3 or R2, point these at it instead.
   STORAGE_DRIVER: s3
+  # Malware scanning of uploads: `none` by default; run with `--profile clamav` and set
+  # FILE_SCANNER=clamav to scan every upload with ClamAV.
+  FILE_SCANNER: ${FILE_SCANNER:-none}
+  CLAMAV_HOST: clamav
   S3_ENDPOINT: http://minio:9000
   S3_FORCE_PATH_STYLE: "true"
   S3_REGION: us-east-1
@@ -59,6 +63,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    networks: [backend]
+
+  # Optional virus scanning (`docker compose --profile clamav up`, with FILE_SCANNER=clamav).
+  # Downloads its signature database on start and keeps it fresh; needs about 1 GB of memory.
+  clamav:
+    image: clamav/clamav:1.5.4-debian
+    profiles: [clamav]
+    restart: unless-stopped
+    volumes:
+      - clamavdata:/var/lib/clamav
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
     networks: [backend]
 
   # Shared cache. Memory only (no snapshots), password protected, reachable only on the backend network.
@@ -190,6 +211,7 @@ services:
 volumes:
   pgdata:
   miniodata:
+  clamavdata:
 
 networks:
   backend:

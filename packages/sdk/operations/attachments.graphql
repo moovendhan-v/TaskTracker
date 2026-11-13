@@ -5,6 +5,7 @@ fragment TaskAttachmentFields on TaskAttachment {
   contentType
   size
   isImage
+  thumbnailUrl
   url
   uploaderId
   uploaderName

@@ -68,6 +68,7 @@ export class ChatAttachmentGql implements ChatAttachmentResponse {
   @Field(() => Int) size: number;
   @Field() isImage: boolean;
   @Field({ description: 'Short-lived signed link on this origin; read the message again for a fresh one' }) url: string;
+  @Field(() => String, { nullable: true, description: 'A small WebP preview of an image, signed like url' }) thumbnailUrl: string | null;
 }
 
 @ObjectType('ChatUploadTicket')
