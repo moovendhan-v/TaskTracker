@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { BLOCK_TYPES_BY_PAGE, cleanLayoutItem, DEFAULT_LAYOUTS, validateLayoutItems, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
+import { BLOCK_TYPES_BY_PAGE, cleanLayoutItem, DEFAULT_LAYOUTS, validateLayoutItems, withPinnedBlocks, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage, isConflict } from '@/lib/errors';
@@ -25,9 +25,11 @@ interface SavedLayout {
   items: LayoutItem[];
   /** Not yours: the workspace default, shown until you arrange the page yourself. */
   fromWorkspace?: boolean;
+  /** Not yours: your team's default (named), shown until you arrange the page yourself. */
+  fromTeam?: string;
   /** The workspace default is locked: only layout managers arrange the page. */
   locked?: boolean;
-  /** What Reset goes back to: the workspace default, or (null) the built-in layout. */
+  /** What Reset goes back to: your team's default, the workspace default, or (null) the built-in layout. */
   resetTo?: LayoutItem[] | null;
 }
 
@@ -47,11 +49,15 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
   return useArrangeableLayout({
     key: queryKeys.layout(workspaceId, pageKey),
     pageKey,
-    // Yours, else the workspace default, else (null) the built-in layout.
+    // Yours, else your team's default, else the workspace default, else (null) the built-in layout.
     fetch: async () => {
-      const [mine, workspace] = await Promise.all([layoutsApi.get(workspaceId, pageKey), layoutsApi.workspaceDefault(workspaceId, pageKey)]);
-      const extra = { locked: workspace?.locked ?? false, resetTo: workspace?.items ?? null };
-      return mine ? { ...mine, ...extra } : workspace ? { version: null, items: workspace.items, fromWorkspace: true, ...extra } : null;
+      const [mine, team, workspace] = await Promise.all([layoutsApi.get(workspaceId, pageKey), layoutsApi.teamDefault(workspaceId, pageKey), layoutsApi.workspaceDefault(workspaceId, pageKey)]);
+      // A locked workspace default is what everyone sees; blocks it pins stay in a team's default too.
+      const teamItems = team && !workspace?.locked ? withPinnedBlocks(team.items, workspace?.items) : null;
+      const extra = { locked: workspace?.locked ?? false, resetTo: teamItems ?? workspace?.items ?? null };
+      if (mine) return { ...mine, ...extra };
+      if (teamItems) return { version: null, items: teamItems, fromTeam: team!.departmentName, ...extra };
+      return workspace ? { version: null, items: workspace.items, fromWorkspace: true, ...extra } : null;
     },
     save: (baseVersion, items) => layoutsApi.save(workspaceId, pageKey, baseVersion, items),
     reset: async () => {
@@ -212,12 +218,14 @@ function useArrangeableLayout(source: LayoutSource) {
     canUndo: undoable > 0,
     reset,
     saving,
-    isCustom: Boolean(query.data) && !query.data?.fromWorkspace,
+    isCustom: Boolean(query.data) && !query.data?.fromWorkspace && !query.data?.fromTeam,
     locked: query.data?.locked ?? false,
     /** The blocks Reset would bring back, for its preview. */
     resetTo: query.data?.resetTo ?? DEFAULT_LAYOUTS[pageKey],
     /** Where the shown arrangement comes from. */
-    origin: (query.data?.fromWorkspace ? 'workspace' : query.data ? 'mine' : 'builtin') as 'mine' | 'workspace' | 'builtin',
+    origin: (query.data?.fromTeam ? 'team' : query.data?.fromWorkspace ? 'workspace' : query.data ? 'mine' : 'builtin') as 'mine' | 'team' | 'workspace' | 'builtin',
+    /** The team whose default is shown, when it's a team's. */
+    team: query.data?.fromTeam ?? null,
   };
 }
 

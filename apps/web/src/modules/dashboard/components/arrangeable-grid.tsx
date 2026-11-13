@@ -133,6 +133,8 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <LockIcon className="size-3.5" /> Your workspace admins set and locked this layout.
             </span>
+          ) : personal && layout.origin === 'team' ? (
+            <span className="text-xs text-muted-foreground">Showing the {layout.team} team&rsquo;s default. Arrange it to make it yours.</span>
           ) : personal && layout.origin === 'workspace' ? (
             <span className="text-xs text-muted-foreground">Showing the workspace default. Arrange it to make it yours.</span>
           ) : null}

@@ -1,4 +1,4 @@
-import type { DashboardLayout, LayoutItem, LayoutPage, LayoutVersion, WorkspaceLayout } from '@taskflow/shared-types';
+import type { DashboardLayout, LayoutItem, LayoutPage, LayoutVersion, TeamLayout, TeamLayoutTarget, WorkspaceLayout } from '@taskflow/shared-types';
 
 export interface LayoutKey {
   workspaceId: string;
@@ -25,4 +25,12 @@ export abstract class LayoutRepository {
   /** False when the page has no workspace default to lock. */
   abstract setDefaultLocked(workspaceId: string, pageKey: LayoutPage, locked: boolean): Promise<boolean>;
   abstract removeDefault(workspaceId: string, pageKey: LayoutPage): Promise<boolean>;
+
+  /** The default of the team (HR department) this person is in, for a page; null when there's none. */
+  abstract findTeamDefaultFor(workspaceId: string, userId: string, pageKey: LayoutPage): Promise<TeamLayout | null>;
+  abstract findDepartment(workspaceId: string, departmentId: string): Promise<{ id: string; name: string; headUserId: string | null } | null>;
+  /** Teams whose default this person may set: all of them, or only those they head. */
+  abstract teamTargets(workspaceId: string, userId: string, allTeams: boolean, pageKey: LayoutPage): Promise<TeamLayoutTarget[]>;
+  abstract saveTeamDefault(workspaceId: string, departmentId: string, pageKey: LayoutPage, items: LayoutItem[], userId: string): Promise<void>;
+  abstract removeTeamDefault(workspaceId: string, departmentId: string, pageKey: LayoutPage): Promise<boolean>;
 }

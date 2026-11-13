@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { cleanLayoutItem, LAYOUT_VERSIONS_KEPT, validateLayoutItems, withPinnedBlocks, type DashboardLayout, type LayoutItem, type LayoutPage, type LayoutVersion, type WorkspaceLayout } from '@taskflow/shared-types';
+import { cleanLayoutItem, LAYOUT_VERSIONS_KEPT, validateLayoutItems, withPinnedBlocks, type DashboardLayout, type LayoutItem, type LayoutPage, type LayoutVersion, type TeamLayout, type TeamLayoutTarget, type WorkspaceLayout } from '@taskflow/shared-types';
 import { AuditLogger } from '../../../core/audit/audit-logger.port.js';
-import type { Actor } from '../../../core/http/types/authenticated-request.js';
+import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { LayoutRepository } from '../domain/layout.repository.js';
 
@@ -68,6 +68,41 @@ export class LayoutsService {
     if (!(await this.repository.setDefaultLocked(workspaceId, pageKey, locked))) throw DomainError.invalid('Make a workspace default for this page before locking it');
     await this.auditLogger.record(actor, { action: locked ? 'layout.default.lock' : 'layout.default.unlock', targetType: 'layout_default', targetId: pageKey, workspaceId, metadata: { pageKey } });
     return (await this.repository.findDefault(workspaceId, pageKey))!;
+  }
+
+  /** Your team's default for a page (your HR department's), if it has one: your starting point before the workspace default. */
+  myTeamDefault(workspaceId: string, userId: string, pageKey: LayoutPage): Promise<TeamLayout | null> {
+    return this.repository.findTeamDefaultFor(workspaceId, userId, pageKey);
+  }
+
+  /** Teams whose default you may set: every team with layout.manage, otherwise the ones you head. */
+  teamTargets(access: WorkspaceAccess, userId: string, pageKey: LayoutPage): Promise<TeamLayoutTarget[]> {
+    return this.repository.teamTargets(access.workspaceId, userId, access.permissions.has('layout.manage'), pageKey);
+  }
+
+  /** Makes a layout a team's starting point for a page. Layout managers, or the team's head; audited. */
+  async setTeamDefault(actor: Actor, access: WorkspaceAccess, departmentId: string, pageKey: LayoutPage, items: LayoutItem[]): Promise<TeamLayoutTarget> {
+    const team = await this.manageableTeam(actor, access, departmentId);
+    const clean = items.map(cleanLayoutItem);
+    const problems = validateLayoutItems(pageKey, clean);
+    if (problems.length) throw DomainError.invalid(`Invalid layout: ${problems.join('; ')}`);
+    await this.repository.saveTeamDefault(access.workspaceId, team.id, pageKey, clean, actor.userId);
+    await this.auditLogger.record(actor, { action: 'layout.team_default.set', targetType: 'department', targetId: team.id, workspaceId: access.workspaceId, metadata: { pageKey, team: team.name, blocks: clean.length } });
+    return { departmentId: team.id, name: team.name, hasDefault: true };
+  }
+
+  async clearTeamDefault(actor: Actor, access: WorkspaceAccess, departmentId: string, pageKey: LayoutPage): Promise<boolean> {
+    const team = await this.manageableTeam(actor, access, departmentId);
+    const removed = await this.repository.removeTeamDefault(access.workspaceId, team.id, pageKey);
+    if (removed) await this.auditLogger.record(actor, { action: 'layout.team_default.clear', targetType: 'department', targetId: team.id, workspaceId: access.workspaceId, metadata: { pageKey, team: team.name } });
+    return removed;
+  }
+
+  private async manageableTeam(actor: Actor, access: WorkspaceAccess, departmentId: string): Promise<{ id: string; name: string }> {
+    const team = await this.repository.findDepartment(access.workspaceId, departmentId);
+    if (!team) throw DomainError.notFound('Team');
+    if (!access.permissions.has('layout.manage') && team.headUserId !== actor.userId) throw DomainError.forbidden('Only layout managers and the team’s head can set its default');
+    return team;
   }
 
   async clearWorkspaceDefault(actor: Actor, workspaceId: string, pageKey: LayoutPage): Promise<boolean> {

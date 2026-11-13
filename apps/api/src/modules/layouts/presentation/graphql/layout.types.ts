@@ -16,6 +16,8 @@ import {
   type LayoutItem,
   type LayoutVersion,
   type WorkspaceLayout,
+  type TeamLayout,
+  type TeamLayoutTarget,
   type BlockAccent,
   type BlockConfig,
   BLOCK_ACCENTS,
@@ -203,4 +205,26 @@ export class SetWorkspaceLayoutInput {
   @ValidateNested({ each: true })
   @Type(() => LayoutItemInput)
   items: LayoutItemInput[];
+}
+
+@ObjectType('TeamLayout', { description: "A team's (HR department's) default for a page: its people start from it, before the workspace default" })
+export class TeamLayoutGql implements TeamLayout {
+  @Field(() => ID) departmentId: string;
+  @Field() departmentName: string;
+  @Field(() => String) pageKey: LayoutPage;
+  @Field(() => [LayoutItemGql]) items: LayoutItemGql[];
+  @Field() updatedAt: string;
+  @Field(() => String, { nullable: true }) updatedByName: string | null;
+}
+
+@ObjectType('TeamLayoutTarget', { description: 'A team whose default you may set' })
+export class TeamLayoutTargetGql implements TeamLayoutTarget {
+  @Field(() => ID) departmentId: string;
+  @Field() name: string;
+  @Field() hasDefault: boolean;
+}
+
+@InputType('SetTeamLayoutInput')
+export class SetTeamLayoutInput extends SetWorkspaceLayoutInput {
+  @Field(() => ID) @IsUUID() departmentId: string;
 }

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { cleanLayoutItem, validateLayoutItems, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
-import { BuildingIcon, ChevronDownIcon, DownloadIcon, HistoryIcon, LockIcon, LockOpenIcon, Undo2Icon, UploadIcon } from 'lucide-react';
+import { BuildingIcon, ChevronDownIcon, DownloadIcon, HistoryIcon, LockIcon, LockOpenIcon, Undo2Icon, UploadIcon, UsersIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { downloadTflow, readTflow, TFLOW_ACCEPT } from '@/lib/tflow';
 import { notify } from '@/components/kit/notify';
@@ -35,6 +35,31 @@ export function LayoutMenu({ workspaceId, layout }: { workspaceId: string; layou
   const pageKey = layout.pageKey as LayoutPage;
   const manage = can('layout.manage');
   const workspace = useQuery({ queryKey: ['workspaces', workspaceId, 'layouts', 'workspace-default', pageKey], queryFn: () => layoutsApi.workspaceDefault(workspaceId, pageKey), enabled: manage });
+  // Teams whose starting layout you may set (all with layout.manage; the ones you head otherwise).
+  const teams = useQuery({ queryKey: ['workspaces', workspaceId, 'layouts', 'team-targets', pageKey], queryFn: () => layoutsApi.teamTargets(workspaceId, pageKey) });
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId, 'layouts'] });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.layout(workspaceId, pageKey) });
+  };
+  const publishForTeam = async (team: { departmentId: string; name: string }) => {
+    if (!layout.items) return;
+    try {
+      await layoutsApi.setTeamDefault(workspaceId, team.departmentId, pageKey, layout.items);
+      notify.success(`This is now the ${team.name} team’s default`);
+      refresh();
+    } catch (error) {
+      notify.error(error);
+    }
+  };
+  const clearForTeam = async (team: { departmentId: string; name: string }) => {
+    try {
+      await layoutsApi.clearTeamDefault(workspaceId, team.departmentId, pageKey);
+      notify.success(`Removed the ${team.name} team’s default`);
+      refresh();
+    } catch (error) {
+      notify.error(error);
+    }
+  };
 
   const publish = async () => {
     if (!layout.items) return;
@@ -123,6 +148,24 @@ export function LayoutMenu({ workspaceId, layout }: { workspaceId: string; layou
                   <Undo2Icon /> Remove the workspace default
                 </DropdownMenuItem>
               ) : null}
+            </>
+          ) : null}
+          {teams.data?.length ? (
+            <>
+              <DropdownMenuSeparator />
+              {teams.data.slice(0, 12).map((team) => (
+                <DropdownMenuItem key={team.departmentId} onSelect={() => void publishForTeam(team)} disabled={!layout.items}>
+                  <UsersIcon /> Make this the {team.name} default
+                </DropdownMenuItem>
+              ))}
+              {teams.data
+                .filter((team) => team.hasDefault)
+                .slice(0, 12)
+                .map((team) => (
+                  <DropdownMenuItem key={`clear-${team.departmentId}`} onSelect={() => void clearForTeam(team)}>
+                    <Undo2Icon /> Remove the {team.name} default
+                  </DropdownMenuItem>
+                ))}
             </>
           ) : null}
         </DropdownMenuContent>

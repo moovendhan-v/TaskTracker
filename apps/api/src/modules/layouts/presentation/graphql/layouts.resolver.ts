@@ -3,11 +3,11 @@ import { isLayoutPage, type LayoutPage } from '@taskflow/shared-types';
 import { CurrentAccess } from '../../../../core/access/current-access.decorator.js';
 import { RequirePermissions } from '../../../../core/access/require-permissions.decorator.js';
 import { DomainError } from '../../../../core/domain/domain-error.js';
-import { WorkspaceIdArg } from '../../../../core/graphql/args.js';
+import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { LayoutsService } from '../../application/layouts.service.js';
-import { DashboardLayoutGql, LayoutVersionGql, SaveLayoutInput, SetWorkspaceLayoutInput, WorkspaceLayoutGql } from './layout.types.js';
+import { DashboardLayoutGql, LayoutVersionGql, SaveLayoutInput, SetTeamLayoutInput, SetWorkspaceLayoutInput, TeamLayoutGql, TeamLayoutTargetGql, WorkspaceLayoutGql } from './layout.types.js';
 
 function page(value: string): LayoutPage {
   if (!isLayoutPage(value)) throw DomainError.invalid('Unknown page');
@@ -91,5 +91,36 @@ export class LayoutsResolver {
   @RequirePermissions('layout.manage')
   clearWorkspaceLayout(@WorkspaceIdArg() _workspaceId: string, @Args('pageKey') pageKey: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
     return this.layouts.clearWorkspaceDefault(actor, access.workspaceId, page(pageKey));
+  }
+
+  @Query(() => TeamLayoutGql, { nullable: true, description: "Your team's default for a page (your HR department's), if it has one" })
+  @RequirePermissions('task.view')
+  myTeamLayout(@WorkspaceIdArg() _workspaceId: string, @Args('pageKey') pageKey: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<TeamLayoutGql | null> {
+    return this.layouts.myTeamDefault(access.workspaceId, actor.userId, page(pageKey));
+  }
+
+  @Query(() => [TeamLayoutTargetGql], { description: 'Teams whose default you may set for a page (layout managers: all; department heads: theirs)' })
+  @RequirePermissions('task.view')
+  teamLayoutTargets(@WorkspaceIdArg() _workspaceId: string, @Args('pageKey') pageKey: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<TeamLayoutTargetGql[]> {
+    return this.layouts.teamTargets(access, actor.userId, page(pageKey));
+  }
+
+  @Mutation(() => TeamLayoutTargetGql, { description: "Makes a layout a team's starting point for a page (layout managers or the team's head; audited)" })
+  // Who may is decided per team (layout.manage, or heading it) by the service.
+  @RequirePermissions('task.view')
+  setTeamLayout(@WorkspaceIdArg() _workspaceId: string, @Args('input') input: SetTeamLayoutInput, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<TeamLayoutTargetGql> {
+    return this.layouts.setTeamDefault(actor, access, input.departmentId, input.pageKey, input.items);
+  }
+
+  @Mutation(() => Boolean, { description: "Removes a team's default for a page (layout managers or the team's head; audited)" })
+  @RequirePermissions('task.view')
+  clearTeamLayout(
+    @WorkspaceIdArg() _workspaceId: string,
+    @UuidArg('departmentId') departmentId: string,
+    @Args('pageKey') pageKey: string,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<boolean> {
+    return this.layouts.clearTeamDefault(actor, access, departmentId, page(pageKey));
   }
 }

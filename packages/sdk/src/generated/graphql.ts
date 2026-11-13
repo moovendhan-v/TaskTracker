@@ -656,6 +656,12 @@ export type SetTabsInput = {
   tabs: Array<WorkspaceTabInput>;
 };
 
+export type SetTeamLayoutInput = {
+  departmentId: string;
+  items: Array<LayoutItemInput>;
+  pageKey: string;
+};
+
 export type SetWorkspaceLayoutInput = {
   items: Array<LayoutItemInput>;
   pageKey: string;
@@ -2140,6 +2146,39 @@ export type SetWorkspaceLayoutLockedMutationVariables = Exact<{
 
 
 export type SetWorkspaceLayoutLockedMutation = { setWorkspaceLayoutLocked: { pageKey: string, locked: boolean } };
+
+export type MyTeamLayoutQueryVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+}>;
+
+
+export type MyTeamLayoutQuery = { myTeamLayout: { departmentId: string, departmentName: string, pageKey: string, updatedAt: string, updatedByName: string | null, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, pinned: boolean | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, breakdownChart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> } | null };
+
+export type TeamLayoutTargetsQueryVariables = Exact<{
+  workspaceId: string;
+  pageKey: string;
+}>;
+
+
+export type TeamLayoutTargetsQuery = { teamLayoutTargets: Array<{ departmentId: string, name: string, hasDefault: boolean }> };
+
+export type SetTeamLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  input: SetTeamLayoutInput;
+}>;
+
+
+export type SetTeamLayoutMutation = { setTeamLayout: { departmentId: string, name: string, hasDefault: boolean } };
+
+export type ClearTeamLayoutMutationVariables = Exact<{
+  workspaceId: string;
+  departmentId: string;
+  pageKey: string;
+}>;
+
+
+export type ClearTeamLayoutMutation = { clearTeamLayout: boolean };
 
 export type ListsQueryVariables = Exact<{
   workspaceId: string;
@@ -6639,6 +6678,69 @@ export const SetWorkspaceLayoutLockedDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<SetWorkspaceLayoutLockedMutation, SetWorkspaceLayoutLockedMutationVariables>;
+export const MyTeamLayoutDocument = new TypedDocumentString(`
+    query MyTeamLayout($workspaceId: ID!, $pageKey: String!) {
+  myTeamLayout(workspaceId: $workspaceId, pageKey: $pageKey) {
+    departmentId
+    departmentName
+    pageKey
+    updatedAt
+    updatedByName
+    items {
+      id
+      type
+      x
+      y
+      w
+      h
+      tabs
+      pinned
+      config {
+        title
+        accent
+        spaceId
+        limit
+        includeClosed
+        mine
+        priorities
+        fields
+        categories
+        chart
+        breakdownChart
+        assigneeIds
+        followContext
+      }
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<MyTeamLayoutQuery, MyTeamLayoutQueryVariables>;
+export const TeamLayoutTargetsDocument = new TypedDocumentString(`
+    query TeamLayoutTargets($workspaceId: ID!, $pageKey: String!) {
+  teamLayoutTargets(workspaceId: $workspaceId, pageKey: $pageKey) {
+    departmentId
+    name
+    hasDefault
+  }
+}
+    `) as unknown as TypedDocumentString<TeamLayoutTargetsQuery, TeamLayoutTargetsQueryVariables>;
+export const SetTeamLayoutDocument = new TypedDocumentString(`
+    mutation SetTeamLayout($workspaceId: ID!, $input: SetTeamLayoutInput!) {
+  setTeamLayout(workspaceId: $workspaceId, input: $input) {
+    departmentId
+    name
+    hasDefault
+  }
+}
+    `) as unknown as TypedDocumentString<SetTeamLayoutMutation, SetTeamLayoutMutationVariables>;
+export const ClearTeamLayoutDocument = new TypedDocumentString(`
+    mutation ClearTeamLayout($workspaceId: ID!, $departmentId: ID!, $pageKey: String!) {
+  clearTeamLayout(
+    workspaceId: $workspaceId
+    departmentId: $departmentId
+    pageKey: $pageKey
+  )
+}
+    `) as unknown as TypedDocumentString<ClearTeamLayoutMutation, ClearTeamLayoutMutationVariables>;
 export const ListsDocument = new TypedDocumentString(`
     query Lists($workspaceId: ID!) {
   lists(workspaceId: $workspaceId) {

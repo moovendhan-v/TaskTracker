@@ -58,3 +58,19 @@ mutation ClearWorkspaceLayout($workspaceId: ID!, $pageKey: String!) { clearWorks
 mutation SetWorkspaceLayoutLocked($workspaceId: ID!, $pageKey: String!, $locked: Boolean!) {
   setWorkspaceLayoutLocked(workspaceId: $workspaceId, pageKey: $pageKey, locked: $locked) { pageKey locked }
 }
+
+query MyTeamLayout($workspaceId: ID!, $pageKey: String!) {
+  myTeamLayout(workspaceId: $workspaceId, pageKey: $pageKey) { departmentId departmentName pageKey updatedAt updatedByName items { id type x y w h tabs pinned config { title accent spaceId limit includeClosed mine priorities fields categories chart breakdownChart assigneeIds followContext } } }
+}
+
+query TeamLayoutTargets($workspaceId: ID!, $pageKey: String!) {
+  teamLayoutTargets(workspaceId: $workspaceId, pageKey: $pageKey) { departmentId name hasDefault }
+}
+
+mutation SetTeamLayout($workspaceId: ID!, $input: SetTeamLayoutInput!) {
+  setTeamLayout(workspaceId: $workspaceId, input: $input) { departmentId name hasDefault }
+}
+
+mutation ClearTeamLayout($workspaceId: ID!, $departmentId: ID!, $pageKey: String!) {
+  clearTeamLayout(workspaceId: $workspaceId, departmentId: $departmentId, pageKey: $pageKey)
+}
