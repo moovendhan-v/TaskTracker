@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { DashboardPeriod, DashboardTeam, DashboardVisibility, LayoutItem } from '@taskflow/shared-types';
+import type { DashboardPeriod, DashboardTeam, DashboardVisibility, LayoutItem, LayoutVersion } from '@taskflow/shared-types';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import { DashboardRepository, type DashboardRecord } from '../domain/dashboard.repository.js';
 
@@ -98,6 +98,23 @@ export class TypeOrmDashboardRepository extends DashboardRepository {
       [workspaceId, ownerId, id, baseVersion, JSON.stringify(items)],
     );
     return row ? toRecord(row) : null;
+  }
+
+  async addVersion(workspaceId: string, dashboardId: string, version: number, items: LayoutItem[], keep: number): Promise<void> {
+    await this.query(`INSERT INTO dashboard_version (workspace_id, dashboard_id, version, items) VALUES ($1, $2, $3, $4::jsonb)`, [workspaceId, dashboardId, version, JSON.stringify(items)]);
+    await this.query(
+      `DELETE FROM dashboard_version WHERE id IN (
+         SELECT id FROM dashboard_version WHERE workspace_id = $1 AND dashboard_id = $2 ORDER BY saved_at DESC, version DESC OFFSET $3)`,
+      [workspaceId, dashboardId, keep],
+    );
+  }
+
+  async listVersions(workspaceId: string, dashboardId: string, limit: number): Promise<LayoutVersion[]> {
+    const rows = (await this.query(
+      `SELECT version, items, saved_at FROM dashboard_version WHERE workspace_id = $1 AND dashboard_id = $2 ORDER BY saved_at DESC, version DESC LIMIT $3`,
+      [workspaceId, dashboardId, limit],
+    )) as unknown as { version: number; items: LayoutItem[]; saved_at: Date }[];
+    return rows.map((row) => ({ version: row.version, items: row.items, savedAt: new Date(row.saved_at).toISOString() }));
   }
 
   async teamsOf(workspaceId: string, userId: string): Promise<DashboardTeam[]> {

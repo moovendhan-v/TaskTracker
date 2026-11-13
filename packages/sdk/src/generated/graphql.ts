@@ -2180,6 +2180,14 @@ export type ClearTeamLayoutMutationVariables = Exact<{
 
 export type ClearTeamLayoutMutation = { clearTeamLayout: boolean };
 
+export type DashboardVersionsQueryVariables = Exact<{
+  workspaceId: string;
+  dashboardId: string;
+}>;
+
+
+export type DashboardVersionsQuery = { dashboardVersions: Array<{ version: number, savedAt: string, items: Array<{ id: string, type: string, x: number, y: number, w: number, h: number, tabs: Array<string> | null, pinned: boolean | null, config: { title: string | null, accent: string | null, spaceId: string | null, limit: number | null, includeClosed: boolean | null, mine: boolean | null, priorities: Array<TaskPriority> | null, fields: Array<string> | null, categories: Array<StatusCategory> | null, chart: string | null, breakdownChart: string | null, assigneeIds: Array<string> | null, followContext: boolean | null } | null }> }> };
+
 export type ListsQueryVariables = Exact<{
   workspaceId: string;
 }>;
@@ -6741,6 +6749,39 @@ export const ClearTeamLayoutDocument = new TypedDocumentString(`
   )
 }
     `) as unknown as TypedDocumentString<ClearTeamLayoutMutation, ClearTeamLayoutMutationVariables>;
+export const DashboardVersionsDocument = new TypedDocumentString(`
+    query DashboardVersions($workspaceId: ID!, $dashboardId: ID!) {
+  dashboardVersions(workspaceId: $workspaceId, dashboardId: $dashboardId) {
+    version
+    savedAt
+    items {
+      id
+      type
+      x
+      y
+      w
+      h
+      tabs
+      pinned
+      config {
+        title
+        accent
+        spaceId
+        limit
+        includeClosed
+        mine
+        priorities
+        fields
+        categories
+        chart
+        breakdownChart
+        assigneeIds
+        followContext
+      }
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<DashboardVersionsQuery, DashboardVersionsQueryVariables>;
 export const ListsDocument = new TypedDocumentString(`
     query Lists($workspaceId: ID!) {
   lists(workspaceId: $workspaceId) {

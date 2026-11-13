@@ -1,4 +1,4 @@
-import type { DashboardPeriod, DashboardTeam, DashboardVisibility, LayoutItem } from '@taskflow/shared-types';
+import type { DashboardPeriod, DashboardTeam, DashboardVisibility, LayoutItem, LayoutVersion } from '@taskflow/shared-types';
 
 export interface DashboardRecord {
   id: string;
@@ -24,6 +24,9 @@ export abstract class DashboardRepository {
   /** Saves items only if the stored version is still `baseVersion`; null when it changed (or isn't theirs). */
   abstract saveItemsIfVersion(workspaceId: string, ownerId: string, id: string, baseVersion: number, items: LayoutItem[]): Promise<DashboardRecord | null>;
   abstract remove(workspaceId: string, ownerId: string, id: string): Promise<boolean>;
+  /** Keeps a copy of a save, and only the newest `keep` copies of that dashboard. */
+  abstract addVersion(workspaceId: string, dashboardId: string, version: number, items: LayoutItem[], keep: number): Promise<void>;
+  abstract listVersions(workspaceId: string, dashboardId: string, limit: number): Promise<LayoutVersion[]>;
   /** Departments the user belongs to (HR profile) or heads: the teams they may share with. */
   abstract teamsOf(workspaceId: string, userId: string): Promise<DashboardTeam[]>;
 }

@@ -607,6 +607,7 @@ test('a block follows the person picked on the page, and another narrows to chos
 });
 
 test('a named dashboard remembers its date range, and tiles show trends', async () => {
+  test.setTimeout(60_000);
   await expect(page.getByRole('img', { name: /^Tasks created per week, last 8 weeks: Week of/ })).toBeVisible();
   await page.getByRole('button', { name: 'New dashboard' }).click();
   const dialog = page.getByRole('dialog', { name: 'New dashboard' });
@@ -648,6 +649,20 @@ test('a named dashboard remembers its date range, and tiles show trends', async 
   await page.getByRole('button', { name: 'Monthly review options' }).click();
   await expect(page.getByRole('menuitemradio', { name: 'Team: Product' })).toHaveAttribute('aria-checked', 'true');
   await page.keyboard.press('Escape');
+
+  // Its owner can go back to an earlier arrangement.
+  await page.getByRole('button', { name: /Arrange/ }).click();
+  await page.getByRole('group', { name: /block, column/ }).first().focus();
+  await page.keyboard.press('Alt+ArrowDown');
+  await page.waitForTimeout(1_500);
+  await page.getByRole('button', { name: 'Version history' }).click();
+  const history = page.getByRole('dialog', { name: 'Version history' });
+  await expect(history.getByText(/only for you/)).toBeVisible();
+  await expect(history.getByRole('listitem').first()).toContainText('current');
+  await history.getByRole('button', { name: 'Close' }).click();
+  await expect(history).toBeHidden();
+  const done = page.getByRole('button', { name: /^Done/ });
+  if (await done.isVisible()) await done.click();
   await page.getByRole('navigation', { name: 'Dashboards' }).getByText('Overview').click();
 });
 

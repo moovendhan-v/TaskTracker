@@ -41,6 +41,7 @@ import { Office1730010000000 } from './1730010000000-office.js';
 import { GithubApp1730020000000 } from './1730020000000-github-app.js';
 import { UploadPreviews1730030000000 } from './1730030000000-upload-previews.js';
 import { TeamLayouts1730040000000 } from './1730040000000-team-layouts.js';
+import { DashboardVersions1730050000000 } from './1730050000000-dashboard-versions.js';
 import { GithubConflicts1729950000000 } from './1729950000000-github-conflicts.js';
 import { ChatRetention1729940000000 } from './1729940000000-chat-retention.js';
 import { DashboardTeams1729930000000 } from './1729930000000-dashboard-teams.js';
@@ -103,4 +104,5 @@ export const MIGRATIONS = [
   GithubApp1730020000000,
   UploadPreviews1730030000000,
   TeamLayouts1730040000000,
+  DashboardVersions1730050000000,
 ];

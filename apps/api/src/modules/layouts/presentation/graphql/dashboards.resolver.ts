@@ -5,7 +5,7 @@ import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { DashboardsService } from '../../application/dashboards.service.js';
-import { CreateDashboardInput, DashboardTeamGql, NamedDashboardGql, SaveDashboardLayoutInput, UpdateDashboardInput } from './layout.types.js';
+import { CreateDashboardInput, DashboardTeamGql, LayoutVersionGql, NamedDashboardGql, SaveDashboardLayoutInput, UpdateDashboardInput } from './layout.types.js';
 
 /** Home dashboard tabs. Same access as the dashboard itself; ownership is checked per dashboard. */
 @Resolver(() => NamedDashboardGql)
@@ -57,6 +57,12 @@ export class DashboardsResolver {
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<NamedDashboardGql> {
     return this.service.saveLayout(access.workspaceId, actor.userId, dashboardId, input.baseVersion, input.items);
+  }
+
+  @Query(() => [LayoutVersionGql], { description: 'Recent saves of one of your dashboards, newest first' })
+  @RequirePermissions('task.view')
+  dashboardVersions(@WorkspaceIdArg() _workspaceId: string, @UuidArg('dashboardId') dashboardId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<LayoutVersionGql[]> {
+    return this.service.versions(access.workspaceId, actor.userId, dashboardId);
   }
 
   @Mutation(() => Boolean)

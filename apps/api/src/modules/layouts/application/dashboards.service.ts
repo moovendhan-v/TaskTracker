@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { cleanLayoutItem, CUSTOM_PERIOD_DAYS_MAX, DASHBOARD_LIMITS, isDashboardPeriod, DEFAULT_LAYOUTS, validateLayoutItems, type NamedDashboardResponse, type DashboardPeriod, type DashboardTeam, type DashboardVisibility, type LayoutItem } from '@taskflow/shared-types';
+import { cleanLayoutItem, CUSTOM_PERIOD_DAYS_MAX, DASHBOARD_LIMITS, isDashboardPeriod, DEFAULT_LAYOUTS, validateLayoutItems, LAYOUT_VERSIONS_KEPT, type LayoutVersion, type NamedDashboardResponse, type DashboardPeriod, type DashboardTeam, type DashboardVisibility, type LayoutItem } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { DashboardRepository, type DashboardRecord } from '../domain/dashboard.repository.js';
 
@@ -80,7 +80,14 @@ export class DashboardsService {
     this.assertValid(cleaned);
     const saved = await this.dashboards.saveItemsIfVersion(workspaceId, userId, id, baseVersion, cleaned);
     if (!saved) throw DomainError.conflict('This dashboard was changed on another device');
+    await this.dashboards.addVersion(workspaceId, id, saved.version, cleaned, LAYOUT_VERSIONS_KEPT);
     return toResponse(saved, userId);
+  }
+
+  /** Your dashboard's recent saves, newest first (yours only). Restoring one is saving its blocks again. */
+  async versions(workspaceId: string, userId: string, id: string): Promise<LayoutVersion[]> {
+    await this.assertOwner(workspaceId, userId, id);
+    return this.dashboards.listVersions(workspaceId, id, LAYOUT_VERSIONS_KEPT);
   }
 
   async remove(workspaceId: string, userId: string, id: string): Promise<boolean> {

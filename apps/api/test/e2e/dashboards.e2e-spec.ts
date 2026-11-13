@@ -151,4 +151,36 @@ describe('dashboards shared with a team', () => {
     expect(after).toEqual({ id: d, visibility: 'department', departmentName: null });
     expect(await sees(outsider)).toBe(false);
   });
+
+  it('keeps recent saves of a dashboard for its owner only, and forgets them with it', async () => {
+    const VERSIONS = 'query($w: ID!, $d: ID!) { dashboardVersions(workspaceId: $w, dashboardId: $d) { version items { id } savedAt } }';
+    const ws = await createWorkspace('Dashboard versions');
+    const w = ws.workspaceId;
+    const viewer = await TestUser.signUp('Dashboard versions viewer');
+    await addMember(ws, viewer, 'Member');
+    const d = (await ws.owner.data<{ createDashboard: { id: string } }>(CREATE, { w, input: { name: 'Weekly', visibility: 'workspace', items: one } })).createDashboard.id;
+    const two = [...one, { id: 'workload', type: 'workload', x: 6, y: 0, w: 6, h: 7 }];
+    await ws.owner.data(SAVE, { w, d, input: { baseVersion: 1, items: two } });
+    await ws.owner.data(SAVE, { w, d, input: { baseVersion: 2, items: one } });
+    const versions = (await ws.owner.data<{ dashboardVersions: { version: number; items: { id: string }[] }[] }>(VERSIONS, { w, d })).dashboardVersions;
+    expect(versions.map((version) => [version.version, version.items.length])).toEqual([
+      [3, 1],
+      [2, 2],
+    ]);
+    // Shared with the workspace: others see the dashboard, never its history.
+    expect((await viewer.error(VERSIONS, { w, d })).code).toBe('FORBIDDEN');
+    const other = await createWorkspace('Dashboard versions other');
+    expect((await other.owner.error(VERSIONS, { w: other.workspaceId, d })).code).toBe('NOT_FOUND');
+    // And in the database, not even through a direct read as the viewer.
+    const pool = runtimeDatabase();
+    try {
+      const rows = (userId: string) => withScope(pool, { workspaceId: w, userId }, async (client) => (await client.query('SELECT 1 FROM dashboard_version WHERE dashboard_id = $1', [d])).rowCount);
+      expect(await rows(viewer.id)).toBe(0);
+      expect(await rows(ws.owner.id)).toBe(2);
+      await ws.owner.data(DELETE, { w, d });
+      expect(await rows(ws.owner.id)).toBe(0);
+    } finally {
+      await pool.end();
+    }
+  });
 });

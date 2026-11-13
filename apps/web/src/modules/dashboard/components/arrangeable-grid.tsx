@@ -1,5 +1,5 @@
-import { canStack, cleanLayoutItem, LAYOUT_LIMITS, SECTION_BLOCK, type DashboardResponse, type LayoutItem } from '@taskflow/shared-types';
-import { LayoutDashboardIcon, LockIcon, PlusIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react';
+import { canStack, cleanLayoutItem, LAYOUT_LIMITS, SECTION_BLOCK, type DashboardResponse, type LayoutItem, type LayoutVersion } from '@taskflow/shared-types';
+import { HistoryIcon, LayoutDashboardIcon, LockIcon, PlusIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import type { BlockState } from '@/components/kit/block-state';
@@ -12,7 +12,7 @@ import { addItem, collapseSections, moveItem, removeItem } from '../lib/grid';
 import { BlockConfigDrawer } from './block-config-drawer';
 import { BlockGrid } from './block-grid';
 import { ConfiguredBlock, type BlockScope } from './configured-block';
-import { LayoutMenu } from './layout-menu';
+import { LayoutMenu, VersionHistory } from './layout-menu';
 import { BlockLibrary } from './block-library';
 import { WidgetTray } from './widget-tray';
 import { HOME_REGISTRY, type BlockRegistry } from './home-blocks';
@@ -36,13 +36,16 @@ interface ArrangeableGridProps {
   workspaceId?: string;
   /** A personal page layout: offers version history and, for layout managers, the workspace default. */
   personal?: boolean;
+  /** For a named dashboard: where its owner's recent saves come from (shown as Version history). */
+  history?: { queryKey: readonly unknown[]; load: () => Promise<LayoutVersion[]> };
 }
 
 /**
  * Home blocks on the grid, with arrange mode for whoever may change the layout:
  * E arranges, A adds a block, ⌘/Ctrl+Z undoes, Esc finishes.
  */
-export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, state, leading, registry = HOME_REGISTRY, scope, workspaceId, personal = false }: ArrangeableGridProps) {
+export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, state, leading, registry = HOME_REGISTRY, scope, workspaceId, personal = false, history }: ArrangeableGridProps) {
+  const [showHistory, setShowHistory] = useState(false);
   const { can } = usePermissions(workspaceId ?? scope?.workspaceId ?? '');
   // A locked workspace layout: only layout managers arrange the page (the server refuses the others' saves too).
   const lockedOut = personal && layout.locked && !can('layout.manage');
@@ -126,6 +129,9 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+      {showHistory && history ? (
+        <VersionHistory layout={layout} queryKey={history.queryKey} load={history.load} description="The last 20 saves of this dashboard, only for you. Restoring one saves it as a new version, so you can undo it." onClose={() => setShowHistory(false)} />
+      ) : null}
       <div className="flex min-h-9 flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
           {leading}
@@ -164,6 +170,11 @@ export function ArrangeableGrid({ layout, canArrange: ownerMayArrange, data, sta
               <LayoutPreview items={layout.resetTo} titleOf={(type) => registry.blocks[type]?.title ?? type} label="What Reset brings back" />
             </ConfirmDialog>
             {personal && (workspaceId ?? scope?.workspaceId) ? <LayoutMenu workspaceId={(workspaceId ?? scope?.workspaceId)!} layout={layout} /> : null}
+            {!personal && history ? (
+              <Button variant="outline" size="sm" onClick={() => setShowHistory(true)}>
+                <HistoryIcon /> Version history
+              </Button>
+            ) : null}
             <Button size="sm" onClick={() => setArranging(false)}>
               Done <kbd className="ml-1 font-mono text-[10.5px] opacity-70">E</kbd>
             </Button>

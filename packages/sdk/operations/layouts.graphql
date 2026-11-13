@@ -74,3 +74,7 @@ mutation SetTeamLayout($workspaceId: ID!, $input: SetTeamLayoutInput!) {
 mutation ClearTeamLayout($workspaceId: ID!, $departmentId: ID!, $pageKey: String!) {
   clearTeamLayout(workspaceId: $workspaceId, departmentId: $departmentId, pageKey: $pageKey)
 }
+
+query DashboardVersions($workspaceId: ID!, $dashboardId: ID!) {
+  dashboardVersions(workspaceId: $workspaceId, dashboardId: $dashboardId) { version savedAt items { id type x y w h tabs pinned config { title accent spaceId limit includeClosed mine priorities fields categories chart breakdownChart assigneeIds followContext } } }
+}

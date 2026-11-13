@@ -9,6 +9,7 @@ import {
   SaveDashboardLayoutDocument,
   SaveLayoutDocument,
   UpdateDashboardDocument,
+  DashboardVersionsDocument,
   MyLayoutVersionsDocument,
   WorkspaceLayoutDocument,
   SetWorkspaceLayoutDocument,
@@ -67,6 +68,9 @@ const asDashboard = (fields: { visibility: string; period?: string | null; items
 
 /** Named Home dashboards (tabs): yours plus the ones shared with the workspace or a team you're in. */
 export const dashboardsApi = {
+  /** Recent saves of one of your dashboards, newest first. */
+  versions: async (workspaceId: string, dashboardId: string) =>
+    (await graphql(DashboardVersionsDocument, { workspaceId, dashboardId })).dashboardVersions.map((version) => ({ ...version, items: fromApiItems(version.items) })),
   list: async (workspaceId: string) => (await graphql(DashboardsDocument, { workspaceId })).dashboards.map(asDashboard),
   create: async (workspaceId: string, input: { name: string; visibility: DashboardVisibility; items?: LayoutItem[] }) =>
     asDashboard((await graphql(CreateDashboardDocument, { workspaceId, input: { ...input, items: input.items ? itemsOnly(input.items) : null } })).createDashboard),
