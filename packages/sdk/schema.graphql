@@ -416,6 +416,19 @@ type ChatChannel {
   unreadCount: Int!
 }
 
+"""A channel's history as a file: Markdown to read or JSON to process"""
+type ChatExport {
+  content: String!
+  contentType: String!
+  fileName: String!
+
+  """Messages included, replies counted"""
+  messages: Int!
+
+  """Older messages were left out (an export holds at most 5,000)"""
+  truncated: Boolean!
+}
+
 type ChatMember {
   joinedAt: String!
   name: String!
@@ -1657,6 +1670,15 @@ type Mutation {
   dismissInboxPullRequest(itemId: ID!, workspaceId: ID!): Boolean!
   editChatMessage(body: String!, messageId: ID!, workspaceId: ID!): ChatMessage!
   endBreak(workspaceId: ID!): AttendanceShift!
+
+  """Downloads a channel's history you can read (Markdown or JSON). Audited"""
+  exportChatChannel(
+    channelId: ID!
+
+    """markdown or json"""
+    format: String! = "markdown"
+    workspaceId: ID!
+  ): ChatExport!
 
   """
   Where to send you to install the app on GitHub for this workspace; the link works for ten minutes, for you only

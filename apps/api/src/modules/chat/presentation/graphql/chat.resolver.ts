@@ -8,7 +8,9 @@ import { CurrentActor } from '../../../../core/http/decorators/current-actor.dec
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { DomainError } from '../../../../core/domain/domain-error.js';
 import { ChatService } from '../../application/chat.service.js';
+import { CHAT_EXPORT_FORMATS, type ChatExportFormat } from '../../domain/chat-export.js';
 import {
+  ChatExportGql,
   ChatChannelGql,
   ChatMemberGql,
   ChatMessageGql,
@@ -103,6 +105,20 @@ export class ChatResolver {
     @CurrentAccess() access: WorkspaceAccess,
   ): Promise<ChatMessagePageGql> {
     return this.service.thread(access, actor, messageId, after, first);
+  }
+
+  @Mutation(() => ChatExportGql, { description: "Downloads a channel's history you can read (Markdown or JSON). Audited" })
+  @RequirePermissions('chat.use')
+  @Throttle(PER_MINUTE(5))
+  exportChatChannel(
+    @WorkspaceIdArg() _w: string,
+    @UuidArg('channelId') channelId: string,
+    @Args('format', { type: () => String, defaultValue: 'markdown', description: 'markdown or json' }) format: string,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<ChatExportGql> {
+    if (!(CHAT_EXPORT_FORMATS as readonly string[]).includes(format)) throw DomainError.invalid('Export as markdown or json');
+    return this.service.exportChannel(actor, access, channelId, format as ChatExportFormat);
   }
 
   @Query(() => [ChatSearchHitGql], { description: 'Messages you can read that match every word (as a prefix), newest first' })

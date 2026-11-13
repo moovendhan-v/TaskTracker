@@ -972,6 +972,14 @@ test('chats in a channel, replies in a thread and turns a message into a task', 
   await expect(edit).toBeHidden();
   await expect(page.getByRole('heading', { name: 'release-crew', level: 2 })).toBeVisible();
   await expect(page.getByText('· Ship notes every Friday')).toBeVisible();
+
+  // Anyone who can read it can take the history with them.
+  await page.getByRole('button', { name: 'Channel options' }).click();
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('menuitem', { name: 'Export history' }).click()]);
+  expect(download.suggestedFilename()).toMatch(/^release-crew-\d{4}-\d{2}-\d{2}\.md$/);
+  const exported = readFileSync((await download.path())!, 'utf8');
+  expect(exported).toContain('# #release-crew');
+  expect(exported).toContain('📎 diagram.png');
 });
 
 test('starts a huddle from a channel, keeps it in a dock across pages, and leaves', async () => {

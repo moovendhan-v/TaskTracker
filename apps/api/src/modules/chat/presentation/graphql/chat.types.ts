@@ -156,3 +156,12 @@ export class ChatSearchHitGql implements ChatSearchHit {
   @Field(() => String) channelKind: ChatChannelKind;
   @Field(() => String, { nullable: true }) channelName: string | null;
 }
+
+@ObjectType('ChatExport', { description: "A channel's history as a file: Markdown to read or JSON to process" })
+export class ChatExportGql {
+  @Field() fileName: string;
+  @Field() contentType: string;
+  @Field() content: string;
+  @Field(() => Int, { description: 'Messages included, replies counted' }) messages: number;
+  @Field({ description: 'Older messages were left out (an export holds at most 5,000)' }) truncated: boolean;
+}

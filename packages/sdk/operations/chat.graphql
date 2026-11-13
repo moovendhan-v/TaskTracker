@@ -139,3 +139,7 @@ mutation SetOfficeStatus($workspaceId: ID!, $status: String!) { setOfficeStatus(
 mutation OfficeHeartbeat($workspaceId: ID!) { officeHeartbeat(workspaceId: $workspaceId) { ...OfficePersonFields } }
 mutation LeaveOffice($workspaceId: ID!) { leaveOffice(workspaceId: $workspaceId) }
 mutation OfficeMeetingRoom($workspaceId: ID!, $zoneId: String!) { officeMeetingRoom(workspaceId: $workspaceId, zoneId: $zoneId) }
+
+mutation ExportChatChannel($workspaceId: ID!, $channelId: ID!, $format: String!) {
+  exportChatChannel(workspaceId: $workspaceId, channelId: $channelId, format: $format) { fileName contentType content messages truncated }
+}

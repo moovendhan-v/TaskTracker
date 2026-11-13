@@ -1449,6 +1449,15 @@ export type OfficeMeetingRoomMutationVariables = Exact<{
 
 export type OfficeMeetingRoomMutation = { officeMeetingRoom: string };
 
+export type ExportChatChannelMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+  format: string;
+}>;
+
+
+export type ExportChatChannelMutation = { exportChatChannel: { fileName: string, contentType: string, content: string, messages: number, truncated: boolean } };
+
 export type CommentsQueryVariables = Exact<{
   workspaceId: string;
   taskId: string;
@@ -5254,6 +5263,21 @@ export const OfficeMeetingRoomDocument = new TypedDocumentString(`
   officeMeetingRoom(workspaceId: $workspaceId, zoneId: $zoneId)
 }
     `) as unknown as TypedDocumentString<OfficeMeetingRoomMutation, OfficeMeetingRoomMutationVariables>;
+export const ExportChatChannelDocument = new TypedDocumentString(`
+    mutation ExportChatChannel($workspaceId: ID!, $channelId: ID!, $format: String!) {
+  exportChatChannel(
+    workspaceId: $workspaceId
+    channelId: $channelId
+    format: $format
+  ) {
+    fileName
+    contentType
+    content
+    messages
+    truncated
+  }
+}
+    `) as unknown as TypedDocumentString<ExportChatChannelMutation, ExportChatChannelMutationVariables>;
 export const CommentsDocument = new TypedDocumentString(`
     query Comments($workspaceId: ID!, $taskId: ID!) {
   comments(workspaceId: $workspaceId, taskId: $taskId) {

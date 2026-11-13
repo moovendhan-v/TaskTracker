@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import type { ChatChannelResponse, ChatMessageResponse } from '@taskflow/shared-types';
-import { ArchiveIcon, BellIcon, BellOffIcon, HashIcon, LockIcon, LogOutIcon, MessagesSquareIcon, MoreHorizontalIcon, PencilIcon, UserPlusIcon, UsersIcon, XIcon } from 'lucide-react';
+import { ArchiveIcon, BellIcon, BellOffIcon, DownloadIcon, HashIcon, LockIcon, LogOutIcon, MessagesSquareIcon, MoreHorizontalIcon, PencilIcon, UserPlusIcon, UsersIcon, XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSwipeDismiss } from '@/lib/swipe';
 import { EmptyState } from '@/components/common/empty-state';
@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentUser } from '@/core/auth/use-current-user';
 import { isNotFound } from '@/lib/errors';
+import { downloadText } from '@/lib/export-csv';
 import { DocTasksProvider } from '@/modules/documents';
 import { useOpenTask } from '@/modules/tasks';
 import { usePermissions } from '@/modules/workspaces';
@@ -283,6 +284,17 @@ function ChannelHeader({ workspaceId, channel }: { workspaceId: string; channel:
   const owner = channel.myRole === 'owner';
   const canManage = channel.kind !== 'dm' && (owner || (channel.kind === 'public' && can('chat.manage')));
   const fail = (error: unknown) => notify.error(error);
+  /** The channel's history you can read, as a file (Markdown to read, JSON to process). */
+  const exportHistory = async (format: 'markdown' | 'json') => {
+    if (!channel) return;
+    try {
+      const file = await chatApi.exportHistory(workspaceId, channel.id, format);
+      downloadText(file.fileName, file.content, file.contentType);
+      if (file.truncated) notify.info(`Exported the latest ${file.messages.toLocaleString('en')} messages; older ones weren’t included`);
+    } catch (error) {
+      fail(error);
+    }
+  };
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
       {channel.kind === 'dm' ? (
@@ -327,6 +339,12 @@ function ChannelHeader({ workspaceId, channel }: { workspaceId: string; channel:
               <PencilIcon /> Edit name and topic
             </DropdownMenuItem>
           ) : null}
+          <DropdownMenuItem onSelect={() => void exportHistory('markdown')}>
+            <DownloadIcon /> Export history
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => void exportHistory('json')}>
+            <DownloadIcon /> Export as JSON
+          </DropdownMenuItem>
           {canManage ? (
             <DropdownMenuItem onSelect={() => mutations.archive.mutate({ channelId: channel.id, archived: !channel.archived }, { onError: fail })}>
               <ArchiveIcon /> {channel.archived ? 'Unarchive' : 'Archive'}
