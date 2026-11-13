@@ -2265,6 +2265,9 @@ type Query {
   """
   dashboardTeams(workspaceId: ID!): [DashboardTeam!]!
 
+  """Recent saves of one of your dashboards, newest first"""
+  dashboardVersions(dashboardId: ID!, workspaceId: ID!): [LayoutVersion!]!
+
   """
   Your dashboards, and the ones shared with the workspace or with a team you are in
   """

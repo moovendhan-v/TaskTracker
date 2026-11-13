@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { cleanLayoutItem, validateLayoutItems, type LayoutItem, type LayoutPage } from '@taskflow/shared-types';
+import { cleanLayoutItem, validateLayoutItems, type LayoutItem, type LayoutPage, type LayoutVersion } from '@taskflow/shared-types';
 import { BuildingIcon, ChevronDownIcon, DownloadIcon, HistoryIcon, LockIcon, LockOpenIcon, Undo2Icon, UploadIcon, UsersIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { downloadTflow, readTflow, TFLOW_ACCEPT } from '@/lib/tflow';
@@ -182,19 +182,40 @@ export function LayoutMenu({ workspaceId, layout }: { workspaceId: string; layou
           if (file) void importLayout(file);
         }}
       />
-      {history ? <VersionHistory workspaceId={workspaceId} layout={layout} pageKey={pageKey} onClose={() => setHistory(false)} /> : null}
+      {history ? (
+        <VersionHistory
+          layout={layout}
+          queryKey={['workspaces', workspaceId, 'layouts', 'versions', pageKey]}
+          load={() => layoutsApi.versions(workspaceId, pageKey)}
+          description="Your last 20 saves of this page. Restoring one saves it as a new version, so you can undo it."
+          onClose={() => setHistory(false)}
+        />
+      ) : null}
     </>
   );
 }
 
-function VersionHistory({ workspaceId, layout, pageKey, onClose }: { workspaceId: string; layout: ArrangeableLayout; pageKey: LayoutPage; onClose: () => void }) {
-  const versions = useQuery({ queryKey: ['workspaces', workspaceId, 'layouts', 'versions', pageKey], queryFn: () => layoutsApi.versions(workspaceId, pageKey), staleTime: 0 });
+/** Recent saves of a layout (a page's, or a named dashboard's); restoring one puts its blocks back, saved as a new version. */
+export function VersionHistory({
+  layout,
+  queryKey,
+  load,
+  description,
+  onClose,
+}: {
+  layout: ArrangeableLayout;
+  queryKey: readonly unknown[];
+  load: () => Promise<LayoutVersion[]>;
+  description: string;
+  onClose: () => void;
+}) {
+  const versions = useQuery({ queryKey, queryFn: load, staleTime: 0 });
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Version history</DialogTitle>
-          <DialogDescription>Your last 20 saves of this page. Restoring one saves it as a new version, so you can undo it.</DialogDescription>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <ul aria-label="Versions" className="max-h-80 divide-y overflow-y-auto rounded-lg border">
           {(versions.data ?? []).map((version, index) => (

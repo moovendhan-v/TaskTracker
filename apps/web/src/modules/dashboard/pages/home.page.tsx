@@ -23,6 +23,7 @@ import { ProjectsTable } from '../components/projects-table';
 import { useDashboard } from '../hooks/use-dashboard';
 import { HOME_SELECTION_KINDS, PageSelectionProvider } from '../lib/page-selection';
 import { PageSelectionBar } from '../components/page-selection-bar';
+import { dashboardsApi } from '../api/layouts.api';
 import { useDashboardLayout, useLayout } from '../hooks/use-layout';
 import { useDashboardTeams, useNamedDashboardMutations, useNamedDashboards } from '../hooks/use-named-dashboards';
 import { dashboardInput } from '../lib/dashboard-input';
@@ -56,7 +57,8 @@ function NamedGrid({ workspaceId, dashboard, ownerName, ...props }: GridProps & 
         {dashboard.mine ? 'Shared with the workspace. Only you can change it.' : `Shared by ${ownerName}. Numbers show what you have access to.`}
       </span>
     );
-  return <ArrangeableGrid key={dashboard.id} layout={layout} canArrange={dashboard.mine} leading={note} {...props} />;
+  const history = dashboard.mine ? { queryKey: ['workspaces', workspaceId, 'dashboards', dashboard.id, 'versions'], load: () => dashboardsApi.versions(workspaceId, dashboard.id) } : undefined;
+  return <ArrangeableGrid key={dashboard.id} layout={layout} canArrange={dashboard.mine} leading={note} history={history} {...props} />;
 }
 
 /** Everything across the workspace's projects, plus named dashboards the team can share. */
