@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { PROJECT_BLOCK_TYPES, type DashboardResponse, type ProjectBlockType, type SpaceResponse } from '@taskflow/shared-types';
-import { CalendarClockIcon, ChartBarStackedIcon, ClockIcon, GaugeIcon, HistoryIcon, InfoIcon, ListTreeIcon, TimerIcon, TriangleAlertIcon, UsersRoundIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { PROJECT_BLOCK_TYPES, type DashboardResponse, type NamedDashboardResponse, type ProjectBlockType, type SpaceResponse } from '@taskflow/shared-types';
+import { CalendarClockIcon, ChartBarStackedIcon, ClockIcon, GaugeIcon, HistoryIcon, InfoIcon, ListTreeIcon, TimerIcon, TriangleAlertIcon, UsersRoundIcon, LockIcon, UsersIcon } from 'lucide-react';
+import { useMemo, useState, type ComponentProps } from 'react';
 import { ErrorState } from '@/components/common/error-state';
 import { Meter } from '@/components/kit/charts';
 import { blockStateOf } from '@/components/kit/block-state';
@@ -9,13 +9,17 @@ import { usePreferences } from '@/core/preferences/use-preferences';
 import { queryKeys } from '@/lib/query-keys';
 import { formatNumericDate, type Period } from '@/lib/periods';
 import { useCustomFields } from '@/modules/spaces';
+import { useMemberName } from '@/modules/members';
 import { useOpenTask } from '@/modules/tasks';
 import { formatMinutes } from '@/modules/time';
 import { useDashboard } from '../hooks/use-dashboard';
-import { useLayout } from '../hooks/use-layout';
+import { dashboardsApi } from '../api/layouts.api';
+import { useDashboardLayout, useLayout } from '../hooks/use-layout';
+import { useDashboardTeams, useNamedDashboardMutations, useNamedDashboards } from '../hooks/use-named-dashboards';
 import { dashboardInput } from '../lib/dashboard-input';
 import { ArrangeableGrid } from './arrangeable-grid';
 import { DashboardFilters } from './dashboard-filters';
+import { DashboardTabs, type HomeTab } from './dashboard-tabs';
 import { HoursByTask, HoursPerDay, KpiRow, StatusBreakdown, Workload } from './dashboard-panels';
 import { DashboardTaskList } from './dashboard-task-list';
 import { PageSelectionBar } from './page-selection-bar';
@@ -210,6 +214,23 @@ function Phases({ data, openTask }: { data: DashboardResponse; openTask: (taskId
  * One project at a glance, on the arrangeable block grid (E arranges, A adds a block).
  * Your arrangement is yours, and the same for every project.
  */
+/** A named project dashboard: its owner arranges it, everyone else sees it with their own data. */
+function NamedProjectGrid({ workspaceId, spaceId, dashboard, ownerName, ...props }: { workspaceId: string; spaceId: string; dashboard: NamedDashboardResponse; ownerName: string } & Omit<ComponentProps<typeof ArrangeableGrid>, 'layout' | 'canArrange'>) {
+  const layout = useDashboardLayout(workspaceId, dashboard.id, spaceId);
+  const note = (
+    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      {dashboard.visibility === 'private' ? <LockIcon className="size-3.5" /> : <UsersIcon className="size-3.5" />}
+      {dashboard.visibility === 'private'
+        ? 'Private: only you can see this dashboard.'
+        : dashboard.mine
+          ? 'Shared with everyone who can see this project. Only you can change it.'
+          : `Shared by ${ownerName}. Numbers show what you have access to.`}
+    </span>
+  );
+  const history = dashboard.mine ? { queryKey: ['workspaces', workspaceId, 'dashboards', dashboard.id, 'versions'], load: () => dashboardsApi.versions(workspaceId, dashboard.id) } : undefined;
+  return <ArrangeableGrid key={dashboard.id} layout={layout} canArrange={dashboard.mine} leading={note} history={history} {...props} />;
+}
+
 export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; space: SpaceResponse }) {
   const { weekStart } = usePreferences();
   const queryClient = useQueryClient();
@@ -219,6 +240,17 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   const dashboard = useDashboard(workspaceId, dashboardInput(period, weekStart, { spaceId: space.id }));
   const state = blockStateOf(dashboard, { what: 'this project' });
   const layout = useLayout(workspaceId, 'project');
+  const memberName = useMemberName(workspaceId);
+  const [tab, setTab] = useState<HomeTab>('overview');
+  const named = useNamedDashboards(workspaceId, space.id);
+  const { data: teams = [] } = useDashboardTeams(workspaceId);
+  const mutations = useNamedDashboardMutations(workspaceId, space.id);
+  const dashboards = named.data ?? [];
+  const active = dashboards.find((item) => `dashboard:${item.id}` === tab);
+  // A dashboard that went away falls back to the overview once the list has loaded.
+  const waiting = tab.startsWith('dashboard:') && !active && named.isFetching;
+  const current: HomeTab = tab.startsWith('dashboard:') && !active && !waiting ? 'overview' : tab;
+  const nameOf = (userId: string) => memberName(userId) ?? 'a teammate';
   // A task list set to "mine" or some priorities asks for the same period and project, narrowed.
   const scope: BlockScope = { workspaceId, inputFor: ({ mine, userIds, priorities, categories }) => dashboardInput(period, weekStart, { spaceId: space.id, mine, userIds, priorities, categories }) };
   const { data: fields = [] } = useCustomFields(workspaceId, 'space');
@@ -237,6 +269,21 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   return (
     <PageSelectionProvider kinds={PROJECT_SELECTION_KINDS}>
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+      <DashboardTabs
+        showMine={false}
+        tab={current}
+        onTab={setTab}
+        dashboards={dashboards}
+        ownerName={nameOf}
+        onCreate={(name) => mutations.create.mutateAsync({ name, visibility: 'private' })}
+        onRename={(target, name) => mutations.update.mutateAsync({ id: target.id, name })}
+        teams={teams}
+        onShare={(target, to) => mutations.update.mutate({ id: target.id, ...to })}
+        onDuplicate={(target) =>
+          void mutations.create.mutateAsync({ name: `${target.name} (copy)`.slice(0, 60), visibility: 'private', items: target.items }).then((copy) => setTab(`dashboard:${copy.id}`))
+        }
+        onDelete={(target) => mutations.remove.mutateAsync(target.id).then(() => setTab('overview'))}
+      />
       <DashboardFilters
         period={period}
         onPeriod={setPeriod}
@@ -247,7 +294,11 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
       />
       {dashboard.isError ? <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} /> : null}
       <PageSelectionBar />
-      {!dashboard.isError ? <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} scope={scope} workspaceId={workspaceId} personal /> : null}
+      {dashboard.isError || waiting ? null : active ? (
+        <NamedProjectGrid workspaceId={workspaceId} spaceId={space.id} dashboard={active} ownerName={nameOf(active.ownerId)} data={dashboard.data} state={state} registry={registry} scope={scope} />
+      ) : (
+        <ArrangeableGrid layout={layout} canArrange data={dashboard.data} state={state} registry={registry} scope={scope} workspaceId={workspaceId} personal />
+      )}
     </div>
     </PageSelectionProvider>
   );

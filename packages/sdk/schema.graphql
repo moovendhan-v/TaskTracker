@@ -653,9 +653,12 @@ input CreateCustomFieldInput {
 }
 
 input CreateDashboardInput {
-  """Start from these blocks; the default Home layout when omitted"""
+  """Start from these blocks; the page’s default layout when omitted"""
   items: [LayoutItemInput!]
   name: String!
+
+  """A project: the dashboard goes on its page and holds project blocks"""
+  spaceId: ID
   visibility: String! = "private"
 }
 
@@ -2075,6 +2078,9 @@ type NamedDashboard {
   The date range it opens with (this_week, last_30, …); null for the page’s own
   """
   period: String
+
+  """The project it belongs to; null for a Home dashboard"""
+  spaceId: ID
   updatedAt: String!
   version: Int!
   visibility: String!
@@ -2397,9 +2403,13 @@ type Query {
   dashboardVersions(dashboardId: ID!, workspaceId: ID!): [LayoutVersion!]!
 
   """
-  Your dashboards, and the ones shared with the workspace or with a team you are in
+  Your dashboards, and the ones shared with the workspace or with a team you are in: Home’s, or one project’s
   """
-  dashboards(workspaceId: ID!): [NamedDashboard!]!
+  dashboards(
+    """A project: its dashboards instead of Home’s"""
+    spaceId: ID
+    workspaceId: ID!
+  ): [NamedDashboard!]!
   departments(workspaceId: ID!): [Department!]!
   document(documentId: ID!, workspaceId: ID!): Document!
 

@@ -357,6 +357,8 @@ export interface NamedDashboardResponse {
   name: string;
   visibility: DashboardVisibility;
   ownerId: string;
+  /** The project it belongs to (its blocks are project blocks); null for a Home dashboard. */
+  spaceId: string | null;
   /** True when the signed-in user owns it (and so may edit, share or delete it). */
   mine: boolean;
   version: number;
