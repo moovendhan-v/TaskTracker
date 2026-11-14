@@ -15,6 +15,8 @@ import { UnitOfWork } from '../../../core/database/unit-of-work.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { found } from '../../../core/domain/found.js';
 import { Announces } from '../../../core/events/announces.decorator.js';
+import { domainEvent } from '../../../core/events/domain-event.js';
+import { EventBus } from '../../../core/events/event-bus.port.js';
 import type { Actor } from '../../../core/http/types/authenticated-request.js';
 import { workspaceFromArg } from '../../../core/runtime/change-target.js';
 import { Clock } from '../../../core/time/clock.port.js';
@@ -36,7 +38,15 @@ export class SprintsService {
     private readonly unitOfWork: UnitOfWork,
     private readonly auditLogger: AuditLogger,
     private readonly clock: Clock,
+    private readonly eventBus: EventBus,
   ) {}
+
+  /** Tells in-process listeners (sprint automations) inside the same transaction. */
+  private announceTransition(actor: Actor, sprint: Sprint, sprintTransition: 'started' | 'completed'): Promise<void> {
+    return this.eventBus.publish(
+      domainEvent('sprint', 'updated', { workspaceId: sprint.workspaceId, entityId: sprint.id, actorId: actor.userId, facts: { spaceId: sprint.spaceId, title: sprint.name, sprintTransition } }),
+    );
+  }
 
   @Cached({ entities: ['sprint', 'task'], shared: true })
   async listInSpace(workspaceId: string, spaceId: string): Promise<SprintResponse[]> {
@@ -99,7 +109,7 @@ export class SprintsService {
 
   @Audited('sprint.start', change)
   @Announces('sprint.updated', workspaceFromArg)
-  async start(_actor: Actor, workspaceId: string, sprintId: string): Promise<SprintResponse> {
+  async start(actor: Actor, workspaceId: string, sprintId: string): Promise<SprintResponse> {
     await this.unitOfWork.run(async () => {
       const sprint = await this.getInWorkspace(workspaceId, sprintId);
       SpaceGuard.assert(sprint.spaceId, 'sprint.manage');
@@ -107,6 +117,7 @@ export class SprintsService {
       await this.sprints.save({ ...toSprint(sprint), status: 'active', startedAt: this.clock.now() });
       // What the sprint commits to, for the report: what was added or removed later shows against it.
       await this.sprints.snapshot(workspaceId, sprint.id, 'start');
+      await this.announceTransition(actor, sprint, 'started');
     });
     return this.get(workspaceId, sprintId);
   }
@@ -154,6 +165,7 @@ export class SprintsService {
         workspaceId,
         metadata: { name: sprint.name, spaceId: sprint.spaceId, movedTasks: moved, movedTo: target?.id ?? 'backlog', destinations },
       });
+      await this.announceTransition(actor, sprint, 'completed');
     });
     return this.get(workspaceId, sprintId);
   }

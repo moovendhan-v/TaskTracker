@@ -4,18 +4,22 @@ import {
   FLOW_CONDITION_FIELDS,
   FLOW_LIMITS,
   NOTIFY_AUDIENCES,
+  SCHEDULE_FREQUENCIES,
   STATUS_CATEGORIES,
   TASK_PRIORITIES,
   TASK_TYPES,
   type AutomationAction,
+  type AutomationSchedule,
   type FlowCondition,
+  type ScheduleFrequency,
 } from '@taskflow/shared-types';
 import type { ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/cn';
-import { ACTION_LABELS, AUDIENCE_LABELS, CATEGORY_LABELS, PRIORITY_LABELS } from '../lib/describe-rule';
+import { knownTimeZones, viewerTimeZone } from '@/lib/time-zone';
+import { ACTION_LABELS, AUDIENCE_LABELS, CATEGORY_LABELS, PRIORITY_LABELS, WEEKDAY_SHORT } from '../lib/describe-rule';
 
 export interface Choices {
   statuses: { id: string; name: string; color: string }[];
@@ -335,6 +339,78 @@ export function ConditionFields({ condition, onChange, choices }: { condition: F
           <Input value={condition.contains} maxLength={FLOW_LIMITS.titleMax} onChange={(event) => onChange({ ...condition, contains: event.target.value })} aria-label="Title contains" />
         </Field>
       ) : null}
+    </div>
+  );
+}
+
+const FREQUENCY_LABELS: Record<ScheduleFrequency, string> = {
+  daily: 'Every day',
+  weekdays: 'Weekdays (Mon–Fri)',
+  weekly: 'Certain days of the week',
+  monthly: 'Once a month',
+};
+
+/** A new schedule: weekdays at 09:00 in the viewer's time zone. */
+export const defaultSchedule = (): AutomationSchedule => ({ frequency: 'weekdays', time: '09:00', timeZone: viewerTimeZone() });
+
+/** When an on_schedule rule runs: how often, which days, what time, in which time zone. */
+export function ScheduleFields({ schedule, onChange }: { schedule: AutomationSchedule; onChange: (schedule: AutomationSchedule) => void }) {
+  return (
+    <div className="grid gap-3">
+      <Field label="How often">
+        <Select
+          value={schedule.frequency}
+          onValueChange={(frequency: ScheduleFrequency) =>
+            onChange({ ...schedule, frequency, weekdays: frequency === 'weekly' ? (schedule.weekdays?.length ? schedule.weekdays : [1]) : null, monthDay: frequency === 'monthly' ? (schedule.monthDay ?? 1) : null })
+          }
+        >
+          <SelectTrigger aria-label="How often">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SCHEDULE_FREQUENCIES.map((frequency) => (
+              <SelectItem key={frequency} value={frequency}>
+                {FREQUENCY_LABELS[frequency]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+      {schedule.frequency === 'weekly' ? (
+        <Field label="On">
+          <Chips
+            options={[1, 2, 3, 4, 5, 6, 0].map((day) => ({ value: String(day), label: WEEKDAY_SHORT[day]! }))}
+            value={(schedule.weekdays ?? []).map(String)}
+            onChange={(days) => onChange({ ...schedule, weekdays: days.map(Number).sort() })}
+          />
+        </Field>
+      ) : null}
+      {schedule.frequency === 'monthly' ? (
+        <Field label="Day of the month (1–28)">
+          <Input
+            type="number"
+            min={1}
+            max={28}
+            aria-label="Day of the month"
+            value={schedule.monthDay ?? 1}
+            onChange={(event) => onChange({ ...schedule, monthDay: Math.min(28, Math.max(1, Math.round(Number(event.target.value) || 1))) })}
+            className="w-24"
+          />
+        </Field>
+      ) : null}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+        <Field label="At">
+          <Input type="time" aria-label="Time of day" value={schedule.time} required onChange={(event) => event.target.value && onChange({ ...schedule, time: event.target.value.slice(0, 5) })} className="w-28" />
+        </Field>
+        <Field label="Time zone">
+          <Input aria-label="Time zone" list="automation-time-zones" value={schedule.timeZone} maxLength={64} onChange={(event) => onChange({ ...schedule, timeZone: event.target.value.trim() })} />
+          <datalist id="automation-time-zones">
+            {knownTimeZones().map((zone) => (
+              <option key={zone} value={zone} />
+            ))}
+          </datalist>
+        </Field>
+      </div>
     </div>
   );
 }

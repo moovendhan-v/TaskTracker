@@ -284,12 +284,41 @@ type AutomationRunStep {
   stepId: String!
 }
 
+"""When an on_schedule rule runs"""
+type AutomationSchedule {
+  """daily, weekdays, weekly or monthly"""
+  frequency: String!
+
+  """monthly: 1–28"""
+  monthDay: Int
+
+  """24-hour HH:MM"""
+  time: String!
+
+  """IANA time zone, e.g. Europe/Berlin"""
+  timeZone: String!
+
+  """weekly: 0 = Sunday … 6 = Saturday"""
+  weekdays: [Int!]
+}
+
+input AutomationScheduleInput {
+  frequency: String!
+  monthDay: Int
+  time: String!
+  timeZone: String!
+  weekdays: [Int!]
+}
+
 type AutomationTrigger {
   categories: [StatusCategory!]
 
   """task_due_soon: days ahead (0 = due today)"""
   days: Int
   priorities: [TaskPriority!]
+
+  """on_schedule: when it runs"""
+  schedule: AutomationSchedule
   statusIds: [ID!]
   type: AutomationTriggerType!
 }
@@ -298,6 +327,7 @@ input AutomationTriggerInput {
   categories: [StatusCategory!]
   days: Int
   priorities: [TaskPriority!]
+  schedule: AutomationScheduleInput
   statusIds: [ID!]
   type: AutomationTriggerType!
 }
@@ -306,6 +336,9 @@ enum AutomationTriggerType {
   github_pull_request_closed
   github_pull_request_merged
   github_pull_request_opened
+  on_schedule
+  sprint_completed
+  sprint_started
   task_assigned
   task_commented
   task_created

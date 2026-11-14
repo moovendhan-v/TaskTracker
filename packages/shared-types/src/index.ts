@@ -43,6 +43,7 @@ export * from './domain/template.js';
 export * from './domain/template-automations.js';
 export * from './contracts/template.contract.js';
 export * from './domain/automation.js';
+export * from './domain/time-zone.js';
 export * from './domain/automation-flow.js';
 export * from './contracts/automation.contract.js';
 export * from './domain/github.js';

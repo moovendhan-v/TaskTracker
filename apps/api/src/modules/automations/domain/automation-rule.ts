@@ -43,6 +43,7 @@ export type NewAutomationRun = Omit<AutomationRun, 'id' | 'createdAt' | 'resumes
 export interface AutomationJobContext {
   actorId: string | null;
   pr?: string;
+  sprint?: string;
 }
 
 /** A run paused at a wait step. */

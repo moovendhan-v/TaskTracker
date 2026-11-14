@@ -1,4 +1,4 @@
-import { describeWait, type AutomationAction, type AutomationConditions, type AutomationFlow, type AutomationTrigger, type AutomationTriggerType, type FlowCondition, type NotifyAudience, type StatusCategory, type TaskPriority } from '@taskflow/shared-types';
+import { describeWait, type AutomationAction, type AutomationSchedule, type AutomationConditions, type AutomationFlow, type AutomationTrigger, type AutomationTriggerType, type FlowCondition, type NotifyAudience, type StatusCategory, type TaskPriority } from '@taskflow/shared-types';
 
 export const TRIGGER_LABELS: Record<AutomationTriggerType, string> = {
   task_created: 'A task is created',
@@ -12,7 +12,32 @@ export const TRIGGER_LABELS: Record<AutomationTriggerType, string> = {
   github_pull_request_closed: 'A linked pull request is closed without merging',
   task_due_soon: 'A task is due soon',
   task_overdue: 'A task becomes overdue',
+  on_schedule: 'On a schedule',
+  sprint_started: 'A sprint starts',
+  sprint_completed: 'A sprint is completed',
 };
+
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+export const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** "09:00 on weekdays (Europe/Berlin)", "17:30 every Monday and Friday (UTC)". */
+export function describeSchedule(schedule: AutomationSchedule): string {
+  const days =
+    schedule.frequency === 'daily'
+      ? 'every day'
+      : schedule.frequency === 'weekdays'
+        ? 'on weekdays'
+        : schedule.frequency === 'monthly'
+          ? `on day ${schedule.monthDay ?? '…'} of each month`
+          : (schedule.weekdays ?? []).length
+            ? `every ${listWords((schedule.weekdays ?? []).map((day) => WEEKDAY_NAMES[day] ?? '?'))}`
+            : 'on … ';
+  return `${schedule.time} ${days} (${schedule.timeZone})`;
+}
+
+function listWords(words: string[]): string {
+  return words.length <= 1 ? (words[0] ?? '') : `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
+}
 
 export const ACTION_LABELS: Record<AutomationAction['type'], string> = {
   set_status: 'Change the status',
@@ -56,7 +81,11 @@ export interface Names {
 /** The rule as one sentence: "When status changes to Done in Bugs, then notify the creator." */
 export function describeRule(rule: { trigger: AutomationTrigger; conditions: AutomationConditions; actions: AutomationAction[] }, names: Names): string {
   const { trigger, conditions } = rule;
-  let when = TRIGGER_LABELS[trigger.type].replace(/^A /, 'a ').replace(/^([A-Z])/, (letter) => letter.toLowerCase());
+  let when =
+    trigger.type === 'on_schedule' && trigger.schedule
+      ? `it's ${describeSchedule(trigger.schedule)}, for each open task`
+      : TRIGGER_LABELS[trigger.type].replace(/^A /, 'a ').replace(/^([A-Z])/, (letter) => letter.toLowerCase());
+  if (trigger.type === 'sprint_started' || trigger.type === 'sprint_completed') when += ', for each task in it';
   const targets = [...(trigger.statusIds ?? []).map(names.status), ...(trigger.categories ?? []).map((category) => `any ${CATEGORY_LABELS[category]} status`)];
   if (targets.length) when += ` to ${targets.join(' or ')}`;
   if (trigger.priorities?.length) when += ` to ${trigger.priorities.map((priority) => PRIORITY_LABELS[priority]).join(' or ')}`;

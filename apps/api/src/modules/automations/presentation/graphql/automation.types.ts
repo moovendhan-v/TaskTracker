@@ -6,6 +6,7 @@ import {
   AUTOMATION_LIMITS,
   AUTOMATION_TRIGGERS,
   NOTIFY_AUDIENCES,
+  SCHEDULE_FREQUENCIES,
   STATUS_CATEGORIES,
   TASK_PRIORITIES,
   TASK_TYPES,
@@ -15,6 +16,8 @@ import {
   type AutomationRuleResponse,
   type AutomationRunResponse,
   type AutomationRunStatus,
+  type AutomationSchedule,
+  type ScheduleFrequency,
   type AutomationTrigger,
   type AutomationTriggerType,
   type NotifyAudience,
@@ -41,6 +44,24 @@ import { IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js'
 
 const IDS = AUTOMATION_LIMITS.idsMax;
 
+@ObjectType('AutomationSchedule', { description: 'When an on_schedule rule runs' })
+export class AutomationScheduleGql implements AutomationSchedule {
+  @Field(() => String, { description: 'daily, weekdays, weekly or monthly' }) frequency: ScheduleFrequency;
+  @Field({ description: '24-hour HH:MM' }) time: string;
+  @Field({ description: 'IANA time zone, e.g. Europe/Berlin' }) timeZone: string;
+  @Field(() => [Int], { nullable: true, description: 'weekly: 0 = Sunday … 6 = Saturday' }) weekdays?: number[] | null;
+  @Field(() => Int, { nullable: true, description: 'monthly: 1–28' }) monthDay?: number | null;
+}
+
+@InputType('AutomationScheduleInput')
+export class AutomationScheduleInput implements AutomationSchedule {
+  @Field(() => String) @IsIn(SCHEDULE_FREQUENCIES) frequency: ScheduleFrequency;
+  @Field() @IsString() @MaxLength(5) time: string;
+  @Field() @IsString() @MaxLength(64) timeZone: string;
+  @Field(() => [Int], { nullable: true }) @IsOptional() @IsArray() @ArrayMaxSize(7) @IsInt({ each: true }) @Min(0, { each: true }) @Max(6, { each: true }) weekdays?: number[] | null;
+  @Field(() => Int, { nullable: true }) @IsOptional() @IsInt() @Min(1) @Max(28) monthDay?: number | null;
+}
+
 @ObjectType('AutomationTrigger')
 export class AutomationTriggerGql implements AutomationTrigger {
   @Field(() => AutomationTriggerEnum) type: AutomationTriggerType;
@@ -48,6 +69,7 @@ export class AutomationTriggerGql implements AutomationTrigger {
   @Field(() => [StatusCategoryEnum], { nullable: true }) categories?: StatusCategory[] | null;
   @Field(() => [TaskPriorityEnum], { nullable: true }) priorities?: TaskPriority[] | null;
   @Field(() => Int, { nullable: true, description: 'task_due_soon: days ahead (0 = due today)' }) days?: number | null;
+  @Field(() => AutomationScheduleGql, { nullable: true, description: 'on_schedule: when it runs' }) schedule?: AutomationScheduleGql | null;
 }
 
 @ObjectType('AutomationConditions')
@@ -115,6 +137,7 @@ export class AutomationTriggerInput implements AutomationTrigger {
   @Field(() => [StatusCategoryEnum], { nullable: true }) @IsOptional() @IsArray() @ArrayMaxSize(IDS) @IsIn(STATUS_CATEGORIES, { each: true }) categories?: StatusCategory[] | null;
   @Field(() => [TaskPriorityEnum], { nullable: true }) @IsOptional() @IsArray() @ArrayMaxSize(IDS) @IsIn(TASK_PRIORITIES, { each: true }) priorities?: TaskPriority[] | null;
   @Field(() => Int, { nullable: true }) @IsOptional() @IsInt() @Min(0) @Max(AUTOMATION_LIMITS.dueSoonDaysMax) days?: number | null;
+  @Field(() => AutomationScheduleInput, { nullable: true }) @IsOptional() @ValidateNested() @Type(() => AutomationScheduleInput) schedule?: AutomationScheduleInput | null;
 }
 
 @InputType('AutomationConditionsInput')

@@ -1032,6 +1032,35 @@ test('builds a move-to-list automation, then turns it off', async () => {
   await expect(page.getByRole('switch', { name: 'File finished work is off' })).not.toBeChecked();
 });
 
+test('builds a repeating schedule and a sprint automation', async () => {
+  await page.getByRole('button', { name: 'New automation' }).click();
+  const builder = page.getByRole('dialog', { name: 'New automation' });
+  await builder.getByLabel('Automation name').fill('Monday and Thursday stand-up nudge');
+  await builder.getByLabel('Trigger').click();
+  await page.getByRole('option', { name: 'On a schedule' }).click();
+  await builder.getByLabel('How often').click();
+  await page.getByRole('option', { name: 'Certain days of the week' }).click();
+  await builder.getByRole('button', { name: 'Thu', exact: true }).click();
+  await builder.getByLabel('Time of day').fill('09:30');
+  await builder.getByLabel('Time zone').fill('Europe/Berlin');
+  await expect(page.getByText(/When it's 09:30 every Monday and Thursday \(Europe\/Berlin\), for each open task, then notify/)).toBeVisible();
+  await shot('e1-automation-schedule', builder);
+  await builder.getByRole('button', { name: 'Create automation' }).click();
+  await expect(builder).toBeHidden();
+  await page.getByRole('switch', { name: 'Monday and Thursday stand-up nudge is on' }).click({ force: true });
+  await expect(page.getByRole('switch', { name: 'Monday and Thursday stand-up nudge is off' })).not.toBeChecked();
+
+  // Sprint triggers run for each task in the sprint.
+  await page.getByRole('button', { name: 'New automation' }).click();
+  const sprintRule = page.getByRole('dialog', { name: 'New automation' });
+  await sprintRule.getByLabel('Trigger').click();
+  await page.getByRole('option', { name: 'A sprint is completed' }).click();
+  await expect(sprintRule.getByText(/the tasks it held when it was completed/)).toBeVisible();
+  await expect(page.getByText(/When a sprint is completed, for each task in it, then/)).toBeVisible();
+  await sprintRule.getByRole('button', { name: 'Cancel' }).click();
+  await expect(sprintRule).toBeHidden();
+});
+
 test('opens an empty inbox', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
   await expect(page).toHaveURL(/\/inbox$/);

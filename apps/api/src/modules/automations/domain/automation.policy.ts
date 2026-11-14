@@ -16,7 +16,7 @@ import {
   type TaskType,
 } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
-import { FLOW_LIMITS, flowActions, flowSteps, validateFlowShape, type AutomationFlow, type FlowStep } from '@taskflow/shared-types';
+import { FLOW_LIMITS, flowActions, flowSteps, isTimeZone, SCHEDULE_FREQUENCIES, validateFlowShape, type AutomationFlow, type AutomationSchedule, type FlowStep } from '@taskflow/shared-types';
 
 /** The task an automation looks at, after the change that triggered it. */
 export interface TaskFacts {
@@ -70,7 +70,26 @@ export const AutomationPolicy = {
         : {}),
       ...(trigger.type === 'task_priority_changed' ? { priorities: list(trigger.priorities, TASK_PRIORITIES, 'priorities') } : {}),
       ...(trigger.type === 'task_due_soon' ? { days: AutomationPolicy.dueSoonDays(trigger.days) } : {}),
+      ...(trigger.type === 'on_schedule' ? { schedule: AutomationPolicy.normalizeSchedule(trigger.schedule) } : {}),
     };
+  },
+
+  /** A schedule checked and cleaned: a real time and time zone, and the days its frequency needs. */
+  normalizeSchedule(schedule: AutomationSchedule | null | undefined): AutomationSchedule {
+    if (!schedule || !(SCHEDULE_FREQUENCIES as readonly string[]).includes(schedule.frequency)) throw DomainError.invalid('Choose how often it runs');
+    if (typeof schedule.time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(schedule.time)) throw DomainError.invalid('Set the time as HH:MM (24-hour)');
+    if (!isTimeZone(schedule.timeZone)) throw DomainError.invalid('Unknown time zone');
+    const base = { frequency: schedule.frequency, time: schedule.time, timeZone: schedule.timeZone };
+    if (schedule.frequency === 'weekly') {
+      const weekdays = [...new Set(schedule.weekdays ?? [])].filter((day) => Number.isInteger(day) && day >= 0 && day <= 6).sort();
+      if (weekdays.length === 0) throw DomainError.invalid('Pick at least one day of the week');
+      return { ...base, weekdays };
+    }
+    if (schedule.frequency === 'monthly') {
+      if (!Number.isInteger(schedule.monthDay) || schedule.monthDay! < 1 || schedule.monthDay! > 28) throw DomainError.invalid('Pick a day of the month from 1 to 28');
+      return { ...base, monthDay: schedule.monthDay! };
+    }
+    return base;
   },
 
   /** How far ahead "due soon" looks: 0 (due today) to 30 days, 1 when not set. */

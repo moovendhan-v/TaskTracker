@@ -3,7 +3,7 @@ fragment AutomationRuleFields on AutomationRule {
   spaceId
   name
   enabled
-  trigger { type statusIds categories priorities days }
+  trigger { type statusIds categories priorities days schedule { frequency time timeZone weekdays monthDay } }
   conditions { listIds priorities types }
   actions { type statusId priority userId audiences userIds message days channelId url listId }
   flowJson
