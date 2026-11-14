@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { HistoryIcon, PlusIcon, RocketIcon } from 'lucide-react';
+import { FileBarChartIcon, HistoryIcon, PlusIcon, RocketIcon } from 'lucide-react';
 import { ErrorState } from '@/components/common/error-state';
 import { FullPageSpinner } from '@/components/common/full-page-spinner';
 import { GroupedColumnChart } from '@/components/kit/charts';
+import { SprintReportDialog } from '../components/sprint-report-dialog';
 import { Section } from '@/components/kit/section';
 import { Button } from '@/components/ui/button';
 import { useOpenTask } from '@/modules/tasks';
@@ -121,9 +122,11 @@ export function SprintsPage({ workspaceId, spaceId }: SprintsPageProps) {
           <div className="grid gap-6 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
             <div className="grid content-start gap-2">
               <h3 className="text-sm font-semibold">Velocity</h3>
-              <p className="text-xs text-muted-foreground">Tasks committed and done in the last {history.rows.length} sprints · average {history.average} done.</p>
+              <p className="text-xs text-muted-foreground">
+                {history.unit === 'points' ? 'Story points' : 'Tasks'} committed and done in the last {history.rows.length} sprints · average {history.average} done.
+              </p>
               <GroupedColumnChart
-                label="Tasks committed and done per completed sprint"
+                label={`${history.unit === 'points' ? 'Story points' : 'Tasks'} committed and done per completed sprint`}
                 series={[
                   { key: 'committed', label: 'Committed', color: 'var(--subtle-foreground)' },
                   { key: 'done', label: 'Done', color: 'var(--ring)' },
@@ -139,8 +142,19 @@ export function SprintsPage({ workspaceId, spaceId }: SprintsPageProps) {
                   </Link>
                   <span className="text-xs text-muted-foreground">{formatSprintRange(sprint.startDate, sprint.endDate)}</span>
                   <span className="w-24 text-right text-xs tabular-nums">
-                    {sprint.doneTasks}/{sprint.committedTasks ?? sprint.totalTasks} done
+                    {(sprint.committedPoints ?? sprint.totalPoints) > 0
+                      ? `${sprint.donePoints}/${sprint.committedPoints ?? sprint.totalPoints} pts`
+                      : `${sprint.doneTasks}/${sprint.committedTasks ?? sprint.totalTasks} done`}
                   </span>
+                  <SprintReportDialog
+                    workspaceId={workspaceId}
+                    sprintId={sprint.id}
+                    trigger={
+                      <Button variant="ghost" size="sm" aria-label={`${sprint.name} report`}>
+                        <FileBarChartIcon /> Report
+                      </Button>
+                    }
+                  />
                 </li>
               ))}
             </ul>

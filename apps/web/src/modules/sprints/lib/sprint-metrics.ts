@@ -70,11 +70,14 @@ export interface SprintSummary {
   /** Estimated minutes on all tasks and on finished ones. */
   estimateMinutes: number;
   doneEstimateMinutes: number;
+  /** Story points on all tasks and on done ones (cancelled work isn't done). */
+  points: number;
+  donePoints: number;
   /** 0–100 */
   donePercent: number;
 }
 
-export function summarize(tasks: readonly Pick<TaskResponse, 'status' | 'estimateMinutes'>[]): SprintSummary {
+export function summarize(tasks: readonly Pick<TaskResponse, 'status' | 'estimateMinutes' | 'storyPoints'>[]): SprintSummary {
   const count = (test: (category: string) => boolean) => tasks.filter((task) => test(task.status.category)).length;
   const done = count((category) => isClosedCategory(category as never));
   const estimateMinutes = tasks.reduce((sum, task) => sum + (task.estimateMinutes ?? 0), 0);
@@ -87,6 +90,8 @@ export function summarize(tasks: readonly Pick<TaskResponse, 'status' | 'estimat
     blocked: count((category) => category === 'blocked'),
     estimateMinutes,
     doneEstimateMinutes,
+    points: tasks.reduce((sum, task) => sum + (task.storyPoints ?? 0), 0),
+    donePoints: tasks.filter((task) => task.status.category === 'done').reduce((sum, task) => sum + (task.storyPoints ?? 0), 0),
     donePercent: tasks.length ? Math.round((done / tasks.length) * 100) : 0,
   };
 }
@@ -135,11 +140,21 @@ export function forecast(summary: Pick<SprintSummary, 'done' | 'total'>, timing:
 }
 
 /**
- * Committed (tasks in the sprint when it closed) vs done, oldest first, for the last `limit`
- * completed sprints. Sprints completed before that was recorded fall back to their current count.
+ * Committed (what was in the sprint when it closed) vs done, oldest first, for the last `limit`
+ * completed sprints. In story points once the team uses them (any of those sprints has points),
+ * otherwise in tasks. Sprints completed before that was recorded fall back to their current count.
  */
-export function velocity(completed: readonly Pick<SprintResponse, 'id' | 'name' | 'endDate' | 'totalTasks' | 'doneTasks' | 'committedTasks'>[], limit = 8) {
+export function velocity(
+  completed: readonly Pick<SprintResponse, 'id' | 'name' | 'endDate' | 'totalTasks' | 'doneTasks' | 'committedTasks' | 'totalPoints' | 'donePoints' | 'committedPoints'>[],
+  limit = 8,
+) {
   const rows = [...completed].sort((a, b) => a.endDate.localeCompare(b.endDate)).slice(-limit);
-  const average = rows.length ? Math.round(rows.reduce((sum, row) => sum + row.doneTasks, 0) / rows.length) : 0;
-  return { rows: rows.map((row) => ({ key: row.id, label: row.name, committed: row.committedTasks ?? row.totalTasks, done: row.doneTasks })), average };
+  const unit: 'points' | 'tasks' = rows.some((row) => (row.committedPoints ?? row.totalPoints) > 0) ? 'points' : 'tasks';
+  const mapped = rows.map((row) =>
+    unit === 'points'
+      ? { key: row.id, label: row.name, committed: row.committedPoints ?? row.totalPoints, done: row.donePoints }
+      : { key: row.id, label: row.name, committed: row.committedTasks ?? row.totalTasks, done: row.doneTasks },
+  );
+  const average = mapped.length ? Math.round(mapped.reduce((sum, row) => sum + row.done, 0) / mapped.length) : 0;
+  return { unit, rows: mapped, average };
 }

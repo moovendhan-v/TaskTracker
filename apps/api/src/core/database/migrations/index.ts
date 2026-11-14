@@ -46,6 +46,7 @@ import { TaskChecklists1730060000000 } from './1730060000000-task-checklists.js'
 import { CommentMentions1730070000000 } from './1730070000000-comment-mentions.js';
 import { NotificationSnooze1730080000000 } from './1730080000000-notification-snooze.js';
 import { AttendanceCorrections1730090000000 } from './1730090000000-attendance-corrections.js';
+import { StoryPointsSprintReport1730100000000 } from './1730100000000-story-points-sprint-report.js';
 import { GithubConflicts1729950000000 } from './1729950000000-github-conflicts.js';
 import { ChatRetention1729940000000 } from './1729940000000-chat-retention.js';
 import { DashboardTeams1729930000000 } from './1729930000000-dashboard-teams.js';
@@ -113,4 +114,5 @@ export const MIGRATIONS = [
   CommentMentions1730070000000,
   NotificationSnooze1730080000000,
   AttendanceCorrections1730090000000,
+  StoryPointsSprintReport1730100000000,
 ];

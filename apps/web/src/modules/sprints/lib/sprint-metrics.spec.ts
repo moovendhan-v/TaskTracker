@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { StatusCategory } from '@taskflow/shared-types';
 import { burndown, forecast, formatMinutes, sprintTiming, summarize, velocity, workload } from './sprint-metrics';
 
-const task = (category: StatusCategory, extra: { completedAt?: string | null; estimateMinutes?: number | null; assigneeId?: string | null } = {}) => ({
+const task = (category: StatusCategory, extra: { completedAt?: string | null; estimateMinutes?: number | null; assigneeId?: string | null; storyPoints?: number | null } = {}) => ({
   status: { id: category, spaceId: 's', name: category, color: '#000000', category, position: 0 },
   completedAt: extra.completedAt ?? null,
   estimateMinutes: extra.estimateMinutes ?? null,
   assigneeId: extra.assigneeId ?? null,
+  storyPoints: extra.storyPoints ?? null,
 });
 
 describe('sprint metrics', () => {
@@ -28,6 +29,10 @@ describe('sprint metrics', () => {
   it('summarizes progress and estimates', () => {
     const summary = summarize([task('done', { estimateMinutes: 60 }), task('review', { estimateMinutes: 30 }), task('blocked'), task('unstarted')]);
     expect(summary).toMatchObject({ total: 4, done: 1, inProgress: 1, blocked: 1, notStarted: 1, estimateMinutes: 90, doneEstimateMinutes: 60, donePercent: 25 });
+  });
+
+  it('adds up story points, counting only done work as done', () => {
+    expect(summarize([task('done', { storyPoints: 5 }), task('cancelled', { storyPoints: 3 }), task('started', { storyPoints: 2 }), task('unstarted')])).toMatchObject({ points: 10, donePoints: 5 });
   });
 
   it('ranks open work per person', () => {
@@ -54,11 +59,23 @@ describe('forecast', () => {
 
 describe('velocity', () => {
   it('keeps the last sprints, oldest first, with the average done', () => {
-    const sprint = (id: string, endDate: string, doneTasks: number, committedTasks: number | null) => ({ id, name: id, endDate, totalTasks: doneTasks, doneTasks, committedTasks });
+    const sprint = (id: string, endDate: string, doneTasks: number, committedTasks: number | null) => ({ id, name: id, endDate, totalTasks: doneTasks, doneTasks, committedTasks, totalPoints: 0, donePoints: 0, committedPoints: null });
     const result = velocity([sprint('c', '2026-03-01', 9, 12), sprint('a', '2026-01-01', 4, 8), sprint('b', '2026-02-01', 5, null)], 2);
     expect(result.rows).toEqual([
       { key: 'b', label: 'b', committed: 5, done: 5 },
       { key: 'c', label: 'c', committed: 12, done: 9 },
+    ]);
+    expect(result.average).toBe(7);
+    expect(result.unit).toBe('tasks');
+  });
+
+  it('counts story points once the team uses them', () => {
+    const sprint = (id: string, endDate: string, donePoints: number, committedPoints: number | null) => ({ id, name: id, endDate, totalTasks: 3, doneTasks: 2, committedTasks: 4, totalPoints: donePoints, donePoints, committedPoints });
+    const result = velocity([sprint('a', '2026-01-01', 13, 21), sprint('b', '2026-02-01', 0, null)]);
+    expect(result.unit).toBe('points');
+    expect(result.rows).toEqual([
+      { key: 'a', label: 'a', committed: 21, done: 13 },
+      { key: 'b', label: 'b', committed: 0, done: 0 },
     ]);
     expect(result.average).toBe(7);
   });

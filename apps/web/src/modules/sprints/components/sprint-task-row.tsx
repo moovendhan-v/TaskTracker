@@ -4,7 +4,7 @@ import type { TaskResponse } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/cn';
-import { PriorityIcon, StatusDot, isClosed } from '@/modules/tasks';
+import { formatPoints, PriorityIcon, StatusDot, isClosed } from '@/modules/tasks';
 import { formatMinutes } from '../lib/sprint-metrics';
 
 /** What a dragged planning row carries: the task id. */
@@ -42,6 +42,11 @@ export function SprintTaskRow({ task, assigneeName, draggable, onOpen, selected,
         {task.title}
       </button>
       {task.priority !== 'none' ? <PriorityIcon priority={task.priority} /> : null}
+      {task.storyPoints !== null ? (
+        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground" title="Story points" aria-label={formatPoints(task.storyPoints)}>
+          {task.storyPoints}
+        </span>
+      ) : null}
       <span className="w-14 shrink-0 text-right text-xs tabular-nums text-muted-foreground" title="Estimate">
         {formatMinutes(task.estimateMinutes ?? 0)}
       </span>

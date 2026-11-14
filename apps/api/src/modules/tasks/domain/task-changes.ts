@@ -35,6 +35,7 @@ export function describeChanges(before: Task, after: Task, names: Names): TaskCh
   add('start date', day(before.startDate), day(after.startDate));
   add('due date', day(before.dueDate), day(after.dueDate));
   add('estimate', text(before.estimateMinutes), text(after.estimateMinutes));
+  add('story points', text(before.storyPoints), text(after.storyPoints));
   add('progress', text(before.progress), text(after.progress));
   add('sprint', before.sprintId ? 'planned' : null, after.sprintId ? 'planned' : null);
   const changedKeys = (a: object, b: object) => [...new Set([...Object.keys(a), ...Object.keys(b)])].filter((key) => JSON.stringify((a as never)[key]) !== JSON.stringify((b as never)[key]));

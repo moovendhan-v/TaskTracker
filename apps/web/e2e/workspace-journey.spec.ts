@@ -238,9 +238,29 @@ test('plans, starts and completes a sprint', async () => {
   await backlog.getByRole('button', { name: 'Move 1 to…' }).click();
   await page.getByRole('menuitem', { name: /Sprint 1/ }).click();
   await expect(lane.getByRole('button', { name: 'Write release notes', exact: true })).toBeVisible();
+
+  // Estimate it in story points from the task panel; the lane adds them up.
+  await lane.getByRole('button', { name: 'Write release notes', exact: true }).click();
+  const points = page.getByLabel('Story points');
+  await points.fill('5');
+  await points.press('Tab');
+  await expect(points).toHaveValue('5');
+  await page.keyboard.press('Escape');
+  await expect(page).not.toHaveURL(/task=/);
+  await expect(lane).toContainText('5 pts');
+
   await lane.getByRole('button', { name: 'Start' }).click();
   const activePanel = page.getByRole('region', { name: 'Active sprint: Sprint 1' });
   await expect(activePanel).toBeVisible();
+  await expect(activePanel.getByText('0 / 5')).toBeVisible();
+
+  // The report is live while the sprint runs.
+  await activePanel.getByRole('button', { name: 'Report' }).click();
+  const liveReport = page.getByRole('dialog', { name: 'Sprint 1 report' });
+  await expect(liveReport.getByText('Live: updates as the sprint goes', { exact: false })).toBeVisible();
+  await expect(liveReport.getByRole('meter', { name: 'Commitment delivered' })).toHaveAttribute('aria-valuenow', '0');
+  await expect(liveReport.getByRole('table', { name: 'Tasks in the sprint' })).toContainText('Write release notes');
+  await liveReport.getByRole('button', { name: 'Close' }).click();
 
   await lane.getByRole('link', { name: 'Board' }).click();
   await expect(page).toHaveURL(/\/sprints\/[0-9a-f-]+/);
@@ -258,6 +278,17 @@ test('plans, starts and completes a sprint', async () => {
   await expect(page.getByText('Completed sprints')).toBeVisible();
   // The unfinished task went back to the backlog.
   await expect(page.getByRole('region', { name: 'Backlog' }).getByRole('button', { name: 'Write release notes', exact: true })).toBeVisible();
+
+  // The completed sprint's report: committed 5 points, none done, and where the work went.
+  await page.getByText('Completed sprints').click();
+  await page.getByRole('button', { name: 'Sprint 1 report' }).click();
+  const report = page.getByRole('dialog', { name: 'Sprint 1 report' });
+  await expect(report.getByText('Completed', { exact: false }).first()).toBeVisible();
+  const row = report.getByRole('row').filter({ hasText: 'Write release notes' });
+  await expect(row).toContainText('Not done');
+  await expect(row).toContainText('Moved to Backlog');
+  await shot('c3-sprint-report', report);
+  await report.getByRole('button', { name: 'Close' }).click();
 });
 
 test('writes a doc with autosave and a preview that drops unsafe markup', async () => {

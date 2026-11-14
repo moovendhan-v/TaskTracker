@@ -12,7 +12,7 @@ export { tasksApi } from './api/tasks.api';
 export { StatusLabel, StatusDot } from './components/shared/status-picker';
 export { PriorityIcon } from './components/shared/priority-picker';
 export { TypeBadge } from './components/shared/type-badge';
-export { isClosed, PRIORITY_META } from './lib/task-meta';
+export { formatPoints, isClosed, PRIORITY_META } from './lib/task-meta';
 export { GROUP_BY, type GroupBy } from './lib/group-tasks';
 export { exportTasks } from './lib/export-tasks';
 export { NewTaskDialog } from './components/new-task-dialog';

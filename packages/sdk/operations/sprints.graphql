@@ -19,3 +19,16 @@ mutation CompleteSprint($workspaceId: ID!, $sprintId: ID!, $moveOpenTasksToSprin
     ...SprintFields
   }
 }
+
+query SprintReport($workspaceId: ID!, $sprintId: ID!) {
+  sprintReport(workspaceId: $workspaceId, sprintId: $sprintId) {
+    sprintId name goal status startDate endDate startedAt completedAt hasStartSnapshot unestimated
+    committed { tasks points }
+    completed { tasks points }
+    cancelled { tasks points }
+    notCompleted { tasks points }
+    added { tasks points }
+    removed { tasks points }
+    items { taskId number title points outcome added removed movedTo }
+  }
+}

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { CheckCheckIcon, KanbanIcon, TargetIcon } from 'lucide-react';
+import { CheckCheckIcon, FileBarChartIcon, KanbanIcon, TargetIcon } from 'lucide-react';
 import type { CompleteSprintRequest, SprintResponse } from '@taskflow/shared-types';
 import { cn } from '@/lib/cn';
 import { UserAvatar } from '@/components/common/user-avatar';
@@ -10,6 +10,7 @@ import { useSprintTasks } from '../hooks/use-sprints';
 import { formatSprintRange } from '../lib/sprint-dates';
 import { burndown, forecast, formatMinutes, localToday, sprintTiming, summarize, workload, type SprintHealth } from '../lib/sprint-metrics';
 import { CompleteSprintDialog } from './complete-sprint-dialog';
+import { SprintReportDialog } from './sprint-report-dialog';
 
 const HEALTH: Record<SprintHealth, { label: string; className: string }> = {
   healthy: { label: 'Healthy', className: 'bg-good/15 text-good' },
@@ -67,6 +68,15 @@ export function ActiveSprintPanel({ workspaceId, sprint, plannedSprints, canMana
               <KanbanIcon /> Open board
             </Link>
           </Button>
+          <SprintReportDialog
+            workspaceId={workspaceId}
+            sprintId={sprint.id}
+            trigger={
+              <Button variant="outline" size="sm">
+                <FileBarChartIcon /> Report
+              </Button>
+            }
+          />
           {canManage ? (
             <CompleteSprintDialog
               trigger={
@@ -113,7 +123,11 @@ export function ActiveSprintPanel({ workspaceId, sprint, plannedSprints, canMana
           <Meter value={timing.elapsedPercent} label="Time gone" color="var(--chart-1)" />
         </Metric>
         <Metric label="Still open" value={String(summary.total - summary.done)} hint={`${summary.inProgress} in progress · ${summary.blocked} blocked`} />
-        <Metric label="Estimated" value={formatMinutes(summary.estimateMinutes)} hint={`${formatMinutes(summary.doneEstimateMinutes)} of it done`} />
+        {summary.points ? (
+          <Metric label="Story points" value={`${summary.donePoints} / ${summary.points}`} hint={`${formatMinutes(summary.estimateMinutes)} estimated`} />
+        ) : (
+          <Metric label="Estimated" value={formatMinutes(summary.estimateMinutes)} hint={`${formatMinutes(summary.doneEstimateMinutes)} of it done`} />
+        )}
       </div>
 
       <div className="grid gap-6 p-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">

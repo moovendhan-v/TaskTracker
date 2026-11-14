@@ -146,6 +146,7 @@ export class TasksService {
       sprintId: null,
       position: (await this.tasks.maxPosition(workspaceId, listId)) + TASK_POSITION_STEP,
       estimateMinutes: request.estimateMinutes ?? null,
+      storyPoints: request.storyPoints ?? null,
       progress: null,
       metadata: mergeMetadata({}, request.metadata ?? {}),
       customFields,
@@ -211,6 +212,7 @@ export class TasksService {
     if (request.dueDate !== undefined) task.dueDate = toDate(request.dueDate);
     TaskStructurePolicy.assertDates(task.startDate, task.dueDate);
     if (request.estimateMinutes !== undefined) task.estimateMinutes = request.estimateMinutes;
+    if (request.storyPoints !== undefined) task.storyPoints = request.storyPoints;
     if (request.progress !== undefined) task.progress = request.progress;
     if (request.position !== undefined) task.position = request.position;
     if (request.metadata !== undefined) task.metadata = mergeMetadata(task.metadata, request.metadata);

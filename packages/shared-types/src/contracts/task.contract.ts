@@ -36,6 +36,8 @@ export interface TaskResponse {
   sprintId: string | null;
   position: number;
   estimateMinutes: number | null;
+  /** Story points (0–100); null when not estimated. */
+  storyPoints: number | null;
   /** 0–100. */
   progress: number | null;
   subtaskCount: number;
@@ -60,6 +62,7 @@ export interface CreateTaskRequest {
   assigneeIds?: string[];
   parentId?: string | null;
   estimateMinutes?: number | null;
+  storyPoints?: number | null;
   metadata?: TaskMetadata;
   customFields?: CustomFieldValues;
 }
