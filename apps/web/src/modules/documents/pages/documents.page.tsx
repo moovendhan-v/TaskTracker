@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Link } from '@tanstack/react-router';
-import { ChevronRightIcon, FilePlusIcon, FileTextIcon, FolderPlusIcon, PanelLeftIcon, SearchIcon } from 'lucide-react';
+import { ChevronRightIcon, FilePlusIcon, FileTextIcon, FolderPlusIcon, LayoutTemplateIcon, PanelLeftIcon, SearchIcon } from 'lucide-react';
 import type { DocKind } from '@taskflow/shared-types';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
@@ -16,6 +16,7 @@ import { useSpaces } from '@/modules/spaces';
 import { usePermissions } from '@/modules/workspaces';
 import { DocEditor } from '../components/doc-editor';
 import { DocTree } from '../components/doc-tree';
+import { TemplateGallery } from '../components/doc-templates';
 import { FolderView } from '../components/folder-view';
 import { useDocument, useDocumentMutations, useDocumentTree } from '../hooks/use-documents';
 import { buildDocumentTree, findNode, pathTo, type DocumentNode } from '../lib/build-tree';
@@ -46,6 +47,8 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
   const open = (id: string) => void navigate({ to: '/w/$workspaceId/docs/$documentId', params: { workspaceId, documentId: id } });
   const createPage = (parentId: string | null, kind: DocKind = 'page') =>
     mutations.create.mutate({ title: kind === 'folder' ? 'New folder' : 'Untitled', kind, parentId }, { onSuccess: (created) => open(created.id) });
+  const createFromTemplate = (page: { title: string; content: string }) =>
+    mutations.create.mutate({ title: page.title, content: page.content, kind: 'page', parentId: null }, { onSuccess: (created) => open(created.id) });
   const rename = (id: string, title: string) => mutations.update.mutate({ documentId: id, body: { title } });
   const titleOf = new Map((tree.data ?? []).map((doc) => [doc.id, doc.title]));
   const deletePage = (node: DocumentNode) =>
@@ -83,6 +86,16 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
               <Button size="icon-sm" variant="outline" onClick={() => createPage(null)} aria-label="New page" title="New page" disabled={mutations.create.isPending}>
                 <FilePlusIcon />
               </Button>
+              <TemplateGallery
+                workspaceId={workspaceId}
+                busy={mutations.create.isPending}
+                onUse={createFromTemplate}
+                trigger={
+                  <Button size="icon-sm" variant="outline" aria-label="New page from a template" title="New page from a template">
+                    <LayoutTemplateIcon />
+                  </Button>
+                }
+              />
             </>
           ) : null}
         </div>
@@ -130,6 +143,16 @@ export function DocumentsPage({ workspaceId, documentId }: DocumentsPageProps) {
                     <Button variant="outline" onClick={() => createPage(null, 'folder')}>
                       <FolderPlusIcon /> New folder
                     </Button>
+                    <TemplateGallery
+                      workspaceId={workspaceId}
+                      busy={mutations.create.isPending}
+                      onUse={createFromTemplate}
+                      trigger={
+                        <Button variant="outline">
+                          <LayoutTemplateIcon /> From a template
+                        </Button>
+                      }
+                    />
                     <Button onClick={() => createPage(null)}>
                       <FilePlusIcon /> New page
                     </Button>

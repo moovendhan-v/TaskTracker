@@ -491,6 +491,44 @@ test('edits a page together, live, in two tabs', async () => {
   await expect(page.getByRole('article', { name: 'Preview' }).getByText('Written in the other tab.')).toBeVisible();
 });
 
+test('starts a page from a template, and saves a page as one', async () => {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const now = new Date();
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  // Back to this page at the end, so the rest of the journey carries on where it was.
+  const handbook = page.url();
+  const handbookTitle = await page.getByLabel('Document title').inputValue();
+  await page.getByRole('button', { name: 'New page from a template' }).click();
+  const gallery = page.getByRole('dialog', { name: 'New page from a template' });
+  await gallery.getByRole('button', { name: /^Retrospective/ }).click();
+  await expect(gallery.getByLabel('Preview of Retrospective')).toContainText('What went well');
+  await gallery.getByRole('button', { name: 'Use “Retrospective”' }).click();
+  await expect(gallery).toBeHidden();
+  await expect(page.getByLabel('Document title')).toHaveValue('Retrospective');
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Markdown' }).click();
+  await expect(page.getByLabel('Page content (markdown)')).toHaveValue(new RegExp(`^# Retrospective, ${today}`));
+
+  // Keep it as the team's own template.
+  await page.getByRole('button', { name: 'Export' }).click();
+  await page.getByRole('menuitem', { name: 'Save as template…' }).click();
+  const save = page.getByRole('dialog', { name: 'Save as template' });
+  await save.getByLabel('Name').fill('Team retro');
+  await save.getByLabel('Description').fill('Our retro, with this sprint’s date');
+  await save.getByRole('button', { name: 'Save template' }).click();
+  await expect(save).toBeHidden();
+
+  await page.getByRole('button', { name: 'New page from a template' }).click();
+  await gallery.getByRole('button', { name: /^Team retro/ }).click();
+  await expect(gallery.getByLabel('Preview of Team retro')).toContainText(`Retrospective, ${today}`);
+  await shot('b5-doc-templates', gallery);
+  await gallery.getByRole('button', { name: 'Delete template' }).click();
+  await expect(gallery.getByRole('button', { name: /^Team retro/ })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(gallery).toBeHidden();
+  await page.goto(handbook);
+  await expect(page.getByLabel('Document title')).toHaveValue(handbookTitle);
+});
+
 test('presents a page with speaker notes that show tasks', async () => {
   await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Markdown' }).click();
   const source = page.getByLabel('Page content (markdown)');
@@ -1044,15 +1082,20 @@ test('drags widgets in from the tray while arranging, and the others make room',
   await expect(sections).toHaveCount(before + 1);
   // Drag: onto the empty rows under the blocks.
   // (The hint itself lets the pointer through to the grid behind it, so drag by coordinates.)
-  await page.getByText('Drag a widget here').evaluate((element) => element.scrollIntoView({ block: 'center' }));
-  const target = (await page.getByText('Drag a widget here').boundingBox())!;
-  await tray.getByRole('button', { name: 'Place Section' }).hover();
-  await page.mouse.down();
-  await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
-  // The others move aside under a still pointer; a real browser keeps sending dragover, headless needs a nudge.
-  await page.mouse.move(target.x + target.width / 2 + 2, target.y + target.height / 2 + 1, { steps: 2 });
-  await page.mouse.up();
-  await expect(sections).toHaveCount(before + 2);
+  // A simulated drag in a headless browser now and then loses its drop: try again until it lands,
+  // never once it has (so it can't add a third).
+  await expect(async () => {
+    if ((await sections.count()) === before + 2) return;
+    await page.getByText('Drag a widget here').evaluate((element) => element.scrollIntoView({ block: 'center' }));
+    const target = (await page.getByText('Drag a widget here').boundingBox())!;
+    await tray.getByRole('button', { name: 'Place Section' }).hover();
+    await page.mouse.down();
+    await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
+    // The others move aside under a still pointer; a real browser keeps sending dragover, headless needs a nudge.
+    await page.mouse.move(target.x + target.width / 2 + 2, target.y + target.height / 2 + 1, { steps: 2 });
+    await page.mouse.up();
+    await expect(sections).toHaveCount(before + 2, { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
   await expect(page.getByRole('status').filter({ hasText: 'Section added' })).toHaveCount(1);
   // Done hides the tray; undo the two new sections so the rest of the journey is unchanged.
   await page.getByRole('button', { name: 'Undo' }).click();

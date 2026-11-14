@@ -1,10 +1,13 @@
-import type { CreateDocumentRequest, MoveDocumentRequest, UpdateDocumentRequest } from '@taskflow/shared-types';
+import type { CreateDocumentRequest, MoveDocumentRequest, SaveDocTemplateRequest, UpdateDocumentRequest } from '@taskflow/shared-types';
 import {
   CreateDocumentDocument,
+  DeleteDocTemplateDocument,
   DeleteDocumentDocument,
+  DocTemplatesDocument,
   DocumentDocument,
   DocumentsDocument,
   MoveDocumentDocument,
+  SaveDocTemplateDocument,
   UpdateDocumentDocument,
 } from '@taskflow/sdk';
 import { graphql } from '@/core/api/graphql-client';
@@ -20,4 +23,11 @@ export const documentsApi = {
   update: async (path: DocPath, input: UpdateDocumentRequest) => (await graphql(UpdateDocumentDocument, { ...path, input })).updateDocument,
   move: async (path: DocPath, move: MoveDocumentRequest) => (await graphql(MoveDocumentDocument, { ...path, ...move })).moveDocument,
   remove: async (path: DocPath) => (await graphql(DeleteDocumentDocument, path)).deleteDocument,
+};
+
+/** Doc templates: the built-in starters, then the workspace's own. */
+export const docTemplatesApi = {
+  list: async (workspaceId: string) => (await graphql(DocTemplatesDocument, { workspaceId })).docTemplates,
+  save: async (workspaceId: string, input: SaveDocTemplateRequest) => (await graphql(SaveDocTemplateDocument, { workspaceId, input })).saveDocTemplate,
+  remove: async (workspaceId: string, templateId: string) => (await graphql(DeleteDocTemplateDocument, { workspaceId, templateId })).deleteDocTemplate,
 };

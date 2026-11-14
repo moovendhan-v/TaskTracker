@@ -46,6 +46,8 @@ import { DocVisualEditor } from './doc-visual-editor';
 import { MarkdownPreview } from './markdown-preview';
 import { TaskMentionTextarea } from './task-embeds';
 import { SlidePresentationModal } from './slide-presentation-modal';
+import { SaveAsTemplateDialog } from './doc-templates';
+import { usePermissions } from '@/modules/workspaces';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { useLiveDoc } from '../live/use-live-doc';
 import { personColor } from '../lib/caret-coordinates';
@@ -72,6 +74,8 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [mode, setMode] = useState<EditorMode>('visual');
   const [fullWidth, setFullWidth] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const canSaveTemplate = usePermissions(workspaceId).can('doc.create') && document.kind === 'page';
   const [presentationOpen, setPresentationOpen] = useState(false);
   const [superView, setSuperView] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -440,6 +444,16 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
                 <span>Print / Save as PDF</span>
               </DropdownMenuItem>
 
+              {canSaveTemplate ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[11px] text-muted-foreground">Templates</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => setSavingTemplate(true)} className="cursor-pointer">
+                    <LayoutTemplateIcon className="size-4 mr-2 text-primary" />
+                    <span>Save as template…</span>
+                  </DropdownMenuItem>
+                </>
+              ) : null}
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[11px] text-muted-foreground">Present Slides</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => setPresentationOpen(true)} className="cursor-pointer">
@@ -543,6 +557,7 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
         documentTitle={title}
         content={content}
       />
+      {savingTemplate ? <SaveAsTemplateDialog workspaceId={workspaceId} title={title} content={content} open onOpenChange={setSavingTemplate} /> : null}
     </div>
   );
 }
