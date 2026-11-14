@@ -47,6 +47,8 @@ export interface DomainEventFacts {
   number?: number;
   listId?: string;
   spaceId?: string;
+  /** Sprint events: the sprint just started or was completed (automations listen for these). */
+  sprintTransition?: 'started' | 'completed';
 }
 
 export function domainEvent(

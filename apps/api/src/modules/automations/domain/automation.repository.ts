@@ -1,3 +1,4 @@
+import type { AutomationConditions } from '@taskflow/shared-types';
 import type { AutomationJob, AutomationRule, AutomationRun, DueTask, NewAutomationJob, NewAutomationRule, NewAutomationRun, WebhookDeliveryJob } from './automation-rule.js';
 
 export abstract class AutomationRepository {
@@ -31,6 +32,13 @@ export abstract class AutomationRepository {
   /** Open tasks of the space due from `from` to `to` (YYYY-MM-DD, inclusive), not yet fired for this rule. */
   abstract dueTasks(workspaceId: string, spaceId: string, ruleId: string, keyPrefix: string, from: string | null, to: string, limit: number): Promise<DueTask[]>;
   /** True when this is the first fire of the rule for this task and key. */
+  /**
+   * Open tasks of the space that match the rule's conditions and have no fire with
+   * this exact key yet (for on_schedule: one fire per task and run date).
+   */
+  abstract openTasksToFire(workspaceId: string, spaceId: string, ruleId: string, key: string, conditions: AutomationConditions, limit: number): Promise<string[]>;
+  /** Tasks in a sprint: those in it now (started), or those it held when it completed (end snapshot), still existing. */
+  abstract sprintTaskIds(workspaceId: string, sprintId: string, phase: 'start' | 'end', limit: number): Promise<string[]>;
   abstract claimFire(workspaceId: string, ruleId: string, taskId: string, key: string): Promise<boolean>;
   /** Takes a transaction-level advisory lock; false when another scheduler holds it. */
   abstract tryLock(key: string): Promise<boolean>;

@@ -10,16 +10,8 @@ export interface ExportShift {
 
 export const ATTENDANCE_CSV_HEADER = ['Person', 'Date', 'Clock in', 'Clock out', 'Breaks (min)', 'Worked', 'Worked (min)', 'Corrected'] as const;
 
-/** An IANA time zone name the runtime knows, e.g. Europe/Berlin. */
-export function isTimeZone(value: string): boolean {
-  if (value.length > 64 || !/^[A-Za-z0-9_+\-/]+$/.test(value)) return false;
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
-}
+/** Re-exported for the attendance service; lives in shared-types. */
+export { isTimeZone } from '@taskflow/shared-types';
 
 /** Quotes a cell and defuses spreadsheet formulas (=, +, -, @, tab or CR at the start). */
 export function csvCell(value: string | number): string {

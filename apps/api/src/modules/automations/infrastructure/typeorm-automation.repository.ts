@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { In } from 'typeorm';
+import type { AutomationConditions } from '@taskflow/shared-types';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import type { AutomationJob, AutomationRule, AutomationRun, DueTask, NewAutomationJob, NewAutomationRule, NewAutomationRun, WebhookDeliveryJob } from '../domain/automation-rule.js';
 import { AutomationRepository } from '../domain/automation.repository.js';
@@ -126,6 +127,35 @@ export class TypeOrmAutomationRepository extends AutomationRepository {
       [workspaceId, spaceId, from, to, ruleId, keyPrefix, limit],
     );
     return rows.map((row) => ({ taskId: row.id, dueDate: row.due }));
+  }
+
+  async openTasksToFire(workspaceId: string, spaceId: string, ruleId: string, key: string, conditions: AutomationConditions, limit: number): Promise<string[]> {
+    const rows: { id: string }[] = await this.transactional.manager.query(
+      `SELECT t.id FROM task t
+         JOIN task_status s ON s.id = t.status_id
+        WHERE t.workspace_id = $1 AND t.space_id = $2
+          AND s.category NOT IN ('done', 'cancelled')
+          AND (cardinality($5::uuid[]) = 0 OR t.list_id = ANY($5::uuid[]))
+          AND (cardinality($6::text[]) = 0 OR t.priority = ANY($6::text[]))
+          AND (cardinality($7::text[]) = 0 OR t.type = ANY($7::text[]))
+          AND NOT EXISTS (SELECT 1 FROM automation_fire f WHERE f.rule_id = $3 AND f.task_id = t.id AND f.fire_key = $4)
+        ORDER BY t.number
+        LIMIT $8`,
+      [workspaceId, spaceId, ruleId, key, conditions.listIds ?? [], conditions.priorities ?? [], conditions.types ?? [], limit],
+    );
+    return rows.map((row) => row.id);
+  }
+
+  async sprintTaskIds(workspaceId: string, sprintId: string, phase: 'start' | 'end', limit: number): Promise<string[]> {
+    const rows: { id: string }[] =
+      phase === 'start'
+        ? await this.transactional.manager.query(`SELECT id FROM task WHERE workspace_id = $1 AND sprint_id = $2 ORDER BY number LIMIT $3`, [workspaceId, sprintId, limit])
+        : await this.transactional.manager.query(
+            `SELECT t.id FROM sprint_task_snapshot snap JOIN task t ON t.id = snap.task_id AND t.workspace_id = snap.workspace_id
+              WHERE snap.workspace_id = $1 AND snap.sprint_id = $2 AND snap.phase = 'end' ORDER BY snap.number LIMIT $3`,
+            [workspaceId, sprintId, limit],
+          );
+    return rows.map((row) => row.id);
   }
 
   async claimFire(workspaceId: string, ruleId: string, taskId: string, key: string): Promise<boolean> {

@@ -59,11 +59,4 @@ export function fromLocalInput(value: string): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-/** The viewer's IANA time zone, for exports; UTC when the browser won't say. */
-export function viewerTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
+export { viewerTimeZone } from '@/lib/time-zone';

@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, type OnApplicationBootstrap, type OnModuleDestroy } from '@nestjs/common';
-import { addDays, SCHEDULED_TRIGGERS, type ScheduledTriggerType } from '@taskflow/shared-types';
+import { addDays, AUTOMATION_LIMITS, dueScheduleDate, scheduleMinutes, SCHEDULED_TRIGGERS, type ScheduledTriggerType } from '@taskflow/shared-types';
 import { ENV } from '../../../config/config.module.js';
 import type { Env } from '../../../config/env.schema.js';
 import { SecretBox } from '../../../core/crypto/secret-box.js';
@@ -22,13 +22,15 @@ const WEBHOOK_RETRY_MS = [60_000, 5 * 60_000];
 const WEBHOOK_TRIES = WEBHOOK_RETRY_MS.length + 1;
 
 /** Fire keys: one fire per rule, task and due date. */
-const KEY_PREFIX: Record<ScheduledTriggerType, string> = { task_due_soon: 'due-soon:', task_overdue: 'overdue:' };
+const KEY_PREFIX: Record<ScheduledTriggerType, string> = { task_due_soon: 'due-soon:', task_overdue: 'overdue:', on_schedule: 'schedule:' };
 
 /**
  * The clock side of automations (E1 phase 2). Every AUTOMATION_TICK_SECONDS it:
  *
  * - resumes runs whose wait is over;
- * - fires "due soon" and "overdue" rules, once per task and due date.
+ * - fires "due soon" and "overdue" rules, once per task and due date;
+ * - fires repeating schedules (on_schedule), once per task and run date, for the
+ *   open tasks that match the rule.
  *
  * Finding which workspaces have work is the only platform-scope read; all the
  * work then runs in that workspace's scope, one transaction per workspace.
@@ -97,7 +99,8 @@ export class AutomationScheduler implements OnApplicationBootstrap, OnModuleDest
     }
     const today = now.toISOString().slice(0, 10);
     for (const rule of await this.automations.listEnabledFor(workspaceId, SCHEDULED_TRIGGERS)) {
-      await this.fire(rule, today);
+      if (rule.triggerType === 'on_schedule') await this.fireSchedule(rule, now);
+      else await this.fire(rule, today);
     }
     return this.automations.leaseWebhooks(workspaceId, now, new Date(now.getTime() + WEBHOOK_LEASE_MS), WEBHOOKS_PER_WORKSPACE);
   }
@@ -123,6 +126,24 @@ export class AutomationScheduler implements OnApplicationBootstrap, OnModuleDest
     });
   }
 
+  /**
+   * A repeating schedule: once its time has passed today (in its time zone), it
+   * runs for each matching open task, at most once per task and date. A rule
+   * saved after today's time waits for the next run day, so saving at 10:00 a
+   * rule set for 09:00 doesn't fire at once. A big backlog drains over ticks.
+   */
+  private async fireSchedule(rule: AutomationRule, now: Date): Promise<void> {
+    const schedule = rule.trigger.schedule;
+    if (!schedule) return;
+    const date = dueScheduleDate(schedule, now);
+    if (!date) return;
+    if (savedAfterRunTime(rule.updatedAt, date, schedule.time, schedule.timeZone)) return;
+    const key = `${KEY_PREFIX.on_schedule}${date}`;
+    for (const taskId of await this.automations.openTasksToFire(rule.workspaceId, rule.spaceId, rule.id, key, rule.conditions, AUTOMATION_LIMITS.tasksPerRun)) {
+      if (await this.automations.claimFire(rule.workspaceId, rule.id, taskId, key)) await this.engine.runScheduled(rule, taskId);
+    }
+  }
+
   private async fire(rule: AutomationRule, today: string): Promise<void> {
     const type = rule.triggerType as ScheduledTriggerType;
     const prefix = KEY_PREFIX[type];
@@ -132,4 +153,16 @@ export class AutomationScheduler implements OnApplicationBootstrap, OnModuleDest
       if (await this.automations.claimFire(rule.workspaceId, rule.id, due.taskId, `${prefix}${due.dueDate}`)) await this.engine.runScheduled(rule, due.taskId);
     }
   }
+}
+
+/** Whether the rule was saved on the run date after the run time (both in the schedule's time zone). */
+export function savedAfterRunTime(savedAt: Date, date: string, time: string, timeZone: string): boolean {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+      .formatToParts(savedAt)
+      .map((part) => [part.type, part.value]),
+  );
+  const savedDate = `${parts['year']}-${parts['month']}-${parts['day']}`;
+  if (savedDate !== date) return savedDate > date;
+  return Number(parts['hour']) * 60 + Number(parts['minute']) >= scheduleMinutes(time);
 }

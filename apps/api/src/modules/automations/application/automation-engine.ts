@@ -7,6 +7,7 @@ import {
   continuationAfter,
   describeWait,
   evaluateCondition,
+  AUTOMATION_LIMITS,
   fillAutomationMessage,
   flowActions,
   flowFromRule,
@@ -41,6 +42,8 @@ export interface RunContext {
   actorId: string | null;
   /** A pull request, for GitHub triggers: "Fix login (#42)". */
   pr?: string;
+  /** The sprint's name, for sprint triggers ({{sprint}}). */
+  sprint?: string;
   /** Webhook calls this run queued, linked to the run once it's recorded. */
   queued?: string[];
 }
@@ -100,6 +103,9 @@ export class AutomationEngine implements OnModuleInit {
 
   private async handle(event: DomainEvent): Promise<void> {
     if (AutomationEngine.running.getStore()) return;
+    if (event.entityType === 'sprint' && event.facts?.sprintTransition && event.facts.spaceId) {
+      return this.runForSprint(event.workspaceId, event.facts.spaceId, event.entityId, event.facts.sprintTransition, { actorId: event.actorId, sprint: event.facts.title ?? '' });
+    }
     if (event.entityType !== 'task' && event.entityType !== 'comment') return;
     const triggers = AutomationPolicy.triggersForTaskEvent(event);
     const taskId = event.entityType === 'comment' ? event.facts?.taskId : event.entityId;
@@ -124,6 +130,36 @@ export class AutomationEngine implements OnModuleInit {
       if (rule.spaceId !== task.spaceId) continue;
       if (!triggers.some((trigger) => AutomationPolicy.matches(rule, trigger, facts))) continue;
       await this.execute(rule, task, context);
+    }
+  }
+
+  /**
+   * A sprint started or was completed: every enabled rule of its space listening
+   * for that runs once for each task in the sprint (those in it at the start, or
+   * those it held when it completed), up to AUTOMATION_LIMITS.tasksPerRun. A fire
+   * key per sprint keeps each task to one run, even if the event came twice.
+   */
+  private async runForSprint(workspaceId: string, spaceId: string, sprintId: string, transition: 'started' | 'completed', context: RunContext): Promise<void> {
+    const trigger: AutomationTriggerType = transition === 'started' ? 'sprint_started' : 'sprint_completed';
+    const rules = (await this.automations.listEnabledFor(workspaceId, [trigger])).filter((rule) => rule.spaceId === spaceId);
+    if (rules.length === 0) return;
+    const taskIds = await this.automations.sprintTaskIds(workspaceId, sprintId, transition === 'started' ? 'start' : 'end', AUTOMATION_LIMITS.tasksPerRun);
+    for (const rule of rules) {
+      for (const taskId of taskIds) {
+        // Fire keys hold 40 characters: a short prefix and the sprint id without dashes.
+        if (!(await this.automations.claimFire(workspaceId, rule.id, taskId, `${transition === 'started' ? 'ss' : 'sc'}:${sprintId.replace(/-/g, '')}`))) continue;
+        let task: TaskResponse;
+        try {
+          task = await this.tasksService.get(workspaceId, taskId);
+        } catch (error) {
+          if (error instanceof DomainError) continue;
+          throw error;
+        }
+        if (task.spaceId !== rule.spaceId) continue;
+        const facts = { listId: task.listId, statusId: task.statusId, statusCategory: task.status.category, priority: task.priority, type: task.type };
+        if (!AutomationPolicy.matches(rule, trigger, facts)) continue;
+        await this.execute(rule, task, context);
+      }
     }
   }
 
@@ -210,7 +246,7 @@ export class AutomationEngine implements OnModuleInit {
           runId,
           stepId: ended.step.id,
           flowHash: flowHash(flow),
-          context: { actorId: context.actorId, ...(context.pr ? { pr: context.pr.slice(0, 300) } : {}) },
+          context: { actorId: context.actorId, ...(context.pr ? { pr: context.pr.slice(0, 300) } : {}), ...(context.sprint ? { sprint: context.sprint.slice(0, 80) } : {}) },
           runAt,
         });
       } else {
@@ -292,7 +328,7 @@ export class AutomationEngine implements OnModuleInit {
         return;
       case 'comment': {
         const task = await this.tasksService.get(rule.workspaceId, taskId);
-        const body = fillAutomationMessage(action.message ?? '', { task: `#${task.number} ${task.title}`, status: task.status.name, actor: 'Automation', pr: context.pr });
+        const body = fillAutomationMessage(action.message ?? '', { task: `#${task.number} ${task.title}`, status: task.status.name, actor: 'Automation', pr: context.pr, sprint: context.sprint });
         await this.commentsService.create(actor, rule.workspaceId, taskId, { body });
         return;
       }
@@ -306,7 +342,7 @@ export class AutomationEngine implements OnModuleInit {
       case 'post_chat': {
         // Posts as the rule's owner, with their channel access as it is now.
         const task = await this.tasksService.get(rule.workspaceId, taskId);
-        const body = fillAutomationMessage(action.message ?? '', { task: `#${task.number} ${task.title}`, status: task.status.name, actor: 'Automation', pr: context.pr });
+        const body = fillAutomationMessage(action.message ?? '', { task: `#${task.number} ${task.title}`, status: task.status.name, actor: 'Automation', pr: context.pr, sprint: context.sprint });
         await this.chatService.send(actor, access, { channelId: action.channelId as string, body });
         return;
       }
@@ -348,6 +384,7 @@ export class AutomationEngine implements OnModuleInit {
       status: task.status.name,
       actor: context.actorId ? (members.get(context.actorId) ?? 'Someone') : 'GitHub',
       pr: context.pr,
+      sprint: context.sprint,
     });
     await this.notificationsService.send(
       [...recipients]

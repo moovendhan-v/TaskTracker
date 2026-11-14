@@ -10,6 +10,7 @@ import {
   describeWait,
   flowFromRule,
   isScheduledTrigger,
+  isSprintTrigger,
   type AutomationAction,
   type AutomationFlow,
   type AutomationRuleResponse,
@@ -33,7 +34,7 @@ import { automationsApi } from '../api/automations.api';
 import { AUTOMATION_TEMPLATES } from '../lib/templates';
 import { CATEGORY_LABELS, describeAction, describeCondition, describeFlow, PRIORITY_LABELS, TRIGGER_LABELS } from '../lib/describe-rule';
 import { findStep, insertStep, newStepId, removeStep, replaceStep, type FlowSlot } from '../lib/flow-edit';
-import { ActionFields, Chips, ConditionFields, Field, type Choices } from './fields';
+import { ActionFields, Chips, ConditionFields, defaultSchedule, Field, ScheduleFields, type Choices } from './fields';
 import { FlowCanvas } from './flow-canvas';
 
 interface AutomationBuilderProps {
@@ -190,7 +191,10 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
             </Select>
           ) : null}
           <Card>
-            <Select value={trigger.type} onValueChange={(type: AutomationTriggerType) => setTrigger(type === 'task_due_soon' ? { type, days: 1 } : { type })}>
+            <Select
+              value={trigger.type}
+              onValueChange={(type: AutomationTriggerType) => setTrigger(type === 'task_due_soon' ? { type, days: 1 } : type === 'on_schedule' ? { type, schedule: defaultSchedule() } : { type })}
+            >
               <SelectTrigger aria-label="Trigger">
                 <SelectValue />
               </SelectTrigger>
@@ -234,8 +238,19 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
                 />
               </Field>
             ) : null}
-            {isScheduledTrigger(trigger.type) ? (
+            {trigger.type === 'on_schedule' ? <ScheduleFields schedule={trigger.schedule ?? defaultSchedule()} onChange={(schedule) => setTrigger({ ...trigger, schedule })} /> : null}
+            {trigger.type === 'on_schedule' ? (
+              <p className="text-xs text-muted-foreground">
+                At that time, runs once for each open task in this project that matches (up to {AUTOMATION_LIMITS.tasksPerRun} a minute until all are done). Finished and cancelled tasks are left alone. Saved after today’s time? It starts on the next run day.
+              </p>
+            ) : isScheduledTrigger(trigger.type) ? (
               <p className="text-xs text-muted-foreground">Checked every minute. Fires once per open task and due date; finished and cancelled tasks are left alone.</p>
+            ) : null}
+            {isSprintTrigger(trigger.type) ? (
+              <p className="text-xs text-muted-foreground">
+                Runs once for each task in the sprint (up to {AUTOMATION_LIMITS.tasksPerRun}):{' '}
+                {trigger.type === 'sprint_started' ? 'the tasks planned in when it starts.' : 'the tasks it held when it was completed, including unfinished ones that moved on.'} Use {'{{sprint}}'} for its name in messages.
+              </p>
             ) : null}
             {trigger.type.startsWith('github_') ? <p className="text-xs text-muted-foreground">Needs a connected GitHub repository (workspace settings → Integrations). Pull requests link to tasks by number, like TF-42.</p> : null}
           </Card>
