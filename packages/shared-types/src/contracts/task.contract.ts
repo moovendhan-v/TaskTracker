@@ -7,13 +7,19 @@ export interface TaskStatusResponse {
   color: string;
   category: StatusCategory;
   position: number;
+  /** Work-in-progress limit for its board column (1–999); null for none. The board warns, nothing is blocked. */
+  wipLimit: number | null;
 }
 
 export interface SaveTaskStatusRequest {
   name: string;
   color: string;
   category: StatusCategory;
+  wipLimit?: number | null;
 }
+
+/** Highest column limit a status can have. */
+export const WIP_LIMIT_MAX = 999;
 
 export interface TaskResponse {
   id: string;

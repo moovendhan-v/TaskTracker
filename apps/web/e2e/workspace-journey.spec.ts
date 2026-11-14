@@ -285,6 +285,39 @@ test('drags a card to Done on the board, and it stays there after reload', async
   await page.getByRole('button', { name: 'Show closed' }).click();
 });
 
+test('limits work in progress per column, and splits the board into swimlanes', async () => {
+  // A limit of 1 on "In progress", set in the project's status settings.
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('button', { name: 'More views and tools' }).click();
+  await page.getByRole('menuitem', { name: /^Settings/ }).click();
+  const limit = page.getByLabel('Board limit for In progress');
+  await limit.fill('1');
+  await limit.press('Enter');
+  await expect(limit).toHaveValue('1');
+
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('link', { name: 'Board', exact: true }).click();
+  const inProgress = page.getByRole('region', { name: 'In progress', exact: true });
+  await expect(inProgress.getByLabel(/^1 of a limit of 1, at the limit$/)).toBeVisible();
+
+  // Swimlanes by priority: one row per priority in use, collapsible.
+  await page.getByLabel('Swimlanes').click();
+  await page.getByRole('option', { name: 'Priority' }).click();
+  const lane = page.getByRole('region', { name: 'Swimlane No priority' });
+  await expect(lane).toBeVisible();
+  await expect(lane.getByRole('region', { name: 'In progress, No priority' })).toContainText('Fix sign-in bug');
+  await shot('c1-board-swimlanes');
+  await lane.getByRole('button', { name: /^No priority/ }).click();
+  await expect(lane.getByRole('button', { name: /^No priority/ })).toHaveAttribute('aria-expanded', 'false');
+  await expect(lane.getByRole('region', { name: 'In progress, No priority' })).toHaveCount(0);
+  await lane.getByRole('button', { name: /^No priority/ }).click();
+
+  // Remembered for this project; back to one row for the rest of the journey.
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Swimlane No priority' })).toBeVisible();
+  await page.getByLabel('Swimlanes').click();
+  await page.getByRole('option', { name: 'None' }).click();
+  await expect(page.getByRole('region', { name: 'Swimlane No priority' })).toHaveCount(0);
+});
+
 test('plans, starts and completes a sprint', async () => {
   // Sprints lives in the "More views" menu next to the core views.
   await page.getByRole('navigation', { name: 'Project views' }).getByRole('button', { name: 'More views and tools' }).click();

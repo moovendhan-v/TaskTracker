@@ -27,7 +27,7 @@ fragment TaskListFields on TaskList { id spaceId folderId name color icon positi
 
 fragment FolderFields on Folder { id spaceId parentId name color icon position createdAt }
 
-fragment TaskStatusFields on TaskStatus { id spaceId name color category position }
+fragment TaskStatusFields on TaskStatus { id spaceId name color category position wipLimit }
 
 fragment TaskFields on Task {
   id

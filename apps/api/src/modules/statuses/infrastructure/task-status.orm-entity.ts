@@ -19,4 +19,7 @@ export class TaskStatusOrmEntity extends TenantOrmEntity implements TaskStatus {
 
   @Column({ type: 'integer' })
   position: number;
+
+  @Column({ type: 'smallint', nullable: true })
+  wipLimit: number | null;
 }

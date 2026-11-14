@@ -3,7 +3,7 @@ import type { StatusCategory } from '@taskflow/shared-types';
 import { burndown, forecast, formatMinutes, sprintTiming, summarize, velocity, workload } from './sprint-metrics';
 
 const task = (category: StatusCategory, extra: { completedAt?: string | null; estimateMinutes?: number | null; assigneeId?: string | null; storyPoints?: number | null } = {}) => ({
-  status: { id: category, spaceId: 's', name: category, color: '#000000', category, position: 0 },
+  status: { id: category, spaceId: 's', name: category, color: '#000000', category, position: 0, wipLimit: null },
   completedAt: extra.completedAt ?? null,
   estimateMinutes: extra.estimateMinutes ?? null,
   assigneeId: extra.assigneeId ?? null,

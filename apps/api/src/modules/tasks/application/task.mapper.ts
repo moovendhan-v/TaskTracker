@@ -8,7 +8,7 @@ export interface TaskContext {
   subtaskCounts: ReadonlyMap<string, number>;
 }
 
-const MISSING_STATUS: Omit<TaskStatusResponse, 'id'> = { spaceId: '', name: 'Unknown', color: '#94a3b8', category: 'unstarted', position: 0 };
+const MISSING_STATUS: Omit<TaskStatusResponse, 'id'> = { spaceId: '', name: 'Unknown', color: '#94a3b8', category: 'unstarted', position: 0, wipLimit: null };
 
 export const TaskMapper = {
   toResponse(task: Task, context: TaskContext): TaskResponse {

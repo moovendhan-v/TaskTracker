@@ -8,8 +8,9 @@ export interface TaskStatus {
   color: string;
   category: StatusCategory;
   position: number;
+  wipLimit: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type NewTaskStatus = Pick<TaskStatus, 'workspaceId' | 'spaceId' | 'name' | 'color' | 'category' | 'position'>;
+export type NewTaskStatus = Pick<TaskStatus, 'workspaceId' | 'spaceId' | 'name' | 'color' | 'category' | 'position'> & Partial<Pick<TaskStatus, 'wipLimit'>>;
