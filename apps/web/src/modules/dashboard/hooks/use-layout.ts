@@ -67,17 +67,18 @@ export function useLayout(workspaceId: string, pageKey: LayoutPage) {
   });
 }
 
-/** One named dashboard's blocks (only its owner edits them). */
-export function useDashboardLayout(workspaceId: string, dashboardId: string) {
-  const find = async () => (await dashboardsApi.list(workspaceId)).find((dashboard) => dashboard.id === dashboardId) ?? null;
+/** One named dashboard's blocks (only its owner edits them): Home blocks, or a project's (`spaceId`). */
+export function useDashboardLayout(workspaceId: string, dashboardId: string, spaceId: string | null = null) {
+  const pageKey = spaceId ? 'project' : 'home';
+  const find = async () => (await dashboardsApi.list(workspaceId, spaceId)).find((dashboard) => dashboard.id === dashboardId) ?? null;
   return useArrangeableLayout({
     key: [...queryKeys.dashboards(workspaceId), dashboardId, 'layout'],
-    pageKey: 'home',
+    pageKey,
     fetch: find,
     save: (baseVersion, items) => dashboardsApi.saveLayout(workspaceId, dashboardId, baseVersion ?? 1, items),
     reset: async () => {
       const current = await find();
-      return (await dashboardsApi.saveLayout(workspaceId, dashboardId, current?.version ?? 1, DEFAULT_LAYOUTS.home)).version;
+      return (await dashboardsApi.saveLayout(workspaceId, dashboardId, current?.version ?? 1, DEFAULT_LAYOUTS[pageKey])).version;
     },
   });
 }

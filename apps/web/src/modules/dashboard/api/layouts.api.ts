@@ -71,8 +71,9 @@ export const dashboardsApi = {
   /** Recent saves of one of your dashboards, newest first. */
   versions: async (workspaceId: string, dashboardId: string) =>
     (await graphql(DashboardVersionsDocument, { workspaceId, dashboardId })).dashboardVersions.map((version) => ({ ...version, items: fromApiItems(version.items) })),
-  list: async (workspaceId: string) => (await graphql(DashboardsDocument, { workspaceId })).dashboards.map(asDashboard),
-  create: async (workspaceId: string, input: { name: string; visibility: DashboardVisibility; items?: LayoutItem[] }) =>
+  /** Home's dashboards, or one project's. */
+  list: async (workspaceId: string, spaceId: string | null = null) => (await graphql(DashboardsDocument, { workspaceId, spaceId })).dashboards.map(asDashboard),
+  create: async (workspaceId: string, input: { name: string; visibility: DashboardVisibility; items?: LayoutItem[]; spaceId?: string | null }) =>
     asDashboard((await graphql(CreateDashboardDocument, { workspaceId, input: { ...input, items: input.items ? itemsOnly(input.items) : null } })).createDashboard),
   update: async (workspaceId: string, dashboardId: string, input: { name?: string; visibility?: DashboardVisibility; departmentId?: string; period?: DashboardPeriod }) =>
     asDashboard((await graphql(UpdateDashboardDocument, { workspaceId, dashboardId, input })).updateDashboard),

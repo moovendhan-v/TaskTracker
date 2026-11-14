@@ -74,10 +74,12 @@ interface DashboardTabsProps {
   onDuplicate: (dashboard: NamedDashboardResponse) => void;
   onDelete: (dashboard: NamedDashboardResponse) => Promise<unknown>;
   aside?: ReactNode;
+  /** Home has a My work tab; a project page doesn't. */
+  showMine?: boolean;
 }
 
 /** Overview, My work and the named dashboards (v2 Features #13b), each marked Private or Workspace. */
-export function DashboardTabs({ tab, onTab, dashboards, ownerName, teams, onCreate, onRename, onShare, onDuplicate, onDelete, aside }: DashboardTabsProps) {
+export function DashboardTabs({ tab, onTab, dashboards, ownerName, teams, onCreate, onRename, onShare, onDuplicate, onDelete, aside, showMine = true }: DashboardTabsProps) {
   const [creating, setCreating] = useState(false);
   const [renaming, setRenaming] = useState<NamedDashboardResponse | null>(null);
   const active = dashboards.find((dashboard) => `dashboard:${dashboard.id}` === tab);
@@ -89,9 +91,11 @@ export function DashboardTabs({ tab, onTab, dashboards, ownerName, teams, onCrea
         <button type="button" aria-current={tab === 'overview' ? 'page' : undefined} className={tabClass(tab === 'overview')} onClick={() => onTab('overview')}>
           <LayoutGridIcon /> Overview
         </button>
-        <button type="button" aria-current={tab === 'mine' ? 'page' : undefined} className={tabClass(tab === 'mine')} onClick={() => onTab('mine')}>
-          <ListTodoIcon /> My work
-        </button>
+        {showMine ? (
+          <button type="button" aria-current={tab === 'mine' ? 'page' : undefined} className={tabClass(tab === 'mine')} onClick={() => onTab('mine')}>
+            <ListTodoIcon /> My work
+          </button>
+        ) : null}
         {dashboards.length ? <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-border-strong" /> : null}
         {dashboards.map((dashboard) => {
           const selected = `dashboard:${dashboard.id}` === tab;
