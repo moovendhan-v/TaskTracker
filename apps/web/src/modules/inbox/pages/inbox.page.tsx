@@ -42,6 +42,8 @@ export function InboxPage({ workspaceId }: { workspaceId: string }) {
 
   // Keys: j / ↓ and k / ↑ move between items, Enter opens, e marks read, s snoozes.
   const list = useRef<HTMLUListElement>(null);
+  /** The item whose snooze menu is open (so the s key can open it too). */
+  const [snoozeMenu, setSnoozeMenu] = useState<string | null>(null);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (!isPlainShortcut(event) || isMenuOpen() || document.querySelector('[role="dialog"]')) return;
@@ -65,7 +67,7 @@ export function InboxPage({ workspaceId }: { workspaceId: string }) {
         markRead.mutate([notification.id]);
       } else if (key === 's' && tab !== 'snoozed') {
         event.preventDefault();
-        rows[current]!.querySelector<HTMLElement>('[data-snooze]')?.click();
+        setSnoozeMenu(notification.id);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -135,9 +137,9 @@ export function InboxPage({ workspaceId }: { workspaceId: string }) {
                       </Button>
                     </>
                   ) : (
-                    <DropdownMenu>
+                    <DropdownMenu open={snoozeMenu === notification.id} onOpenChange={(open) => setSnoozeMenu(open ? notification.id : null)}>
                       <DropdownMenuTrigger asChild>
-                        <Button data-snooze size="icon-sm" variant="outline" className="bg-background" aria-label={`Snooze: ${notification.subject || 'this notification'}`}>
+                        <Button size="icon-sm" variant="outline" className="bg-background" aria-label={`Snooze: ${notification.subject || 'this notification'}`}>
                           <AlarmClockIcon />
                         </Button>
                       </DropdownMenuTrigger>
