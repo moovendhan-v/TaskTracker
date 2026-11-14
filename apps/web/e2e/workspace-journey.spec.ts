@@ -737,6 +737,11 @@ test('checks access and says which policy decides', async () => {
   await page.getByLabel('Permission').selectOption('workspace.manage');
   await expect(result).toContainText('role Owner');
   await expect(result.getByText('Allowed', { exact: true })).toBeVisible();
+  // "Why?" on a refusal opens this checker on the permission the server named.
+  await page.goto(page.url().replace(/\/access.*$/, '/access?permission=task.delete'));
+  await expect(page.getByLabel('Permission')).toHaveValue('task.delete');
+  await expect(result.getByText('Allowed', { exact: true })).toBeVisible();
+  await shot('e3-access-why', page.locator('main'));
 });
 
 test('shows the workspace audit log without IP addresses', async () => {
