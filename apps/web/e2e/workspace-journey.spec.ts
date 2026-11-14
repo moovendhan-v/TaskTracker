@@ -244,9 +244,10 @@ test('plans, starts and completes a sprint', async () => {
   const points = page.getByLabel('Story points');
   await points.fill('5');
   await points.press('Tab');
-  await expect(lane).toContainText('5 pts');
+  await expect(points).toHaveValue('5');
   await page.keyboard.press('Escape');
   await expect(page).not.toHaveURL(/task=/);
+  await expect(lane).toContainText('5 pts');
 
   await lane.getByRole('button', { name: 'Start' }).click();
   const activePanel = page.getByRole('region', { name: 'Active sprint: Sprint 1' });
