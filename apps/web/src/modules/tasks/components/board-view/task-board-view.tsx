@@ -4,6 +4,7 @@ import { usePermissions } from '@/modules/workspaces';
 import { useStatuses } from '../../hooks/use-tasks';
 import { useTaskMutations } from '../../hooks/use-task-mutations';
 import { positionBetween } from '../../lib/task-meta';
+import { useShareTaskOrder } from '../../store/task-sequence.store';
 import { BoardColumn } from './board-column';
 import { TASK_DRAG_TYPE } from './task-card';
 
@@ -25,6 +26,8 @@ export function TaskBoardView({ workspaceId, spaceId, statuses: given, listId, t
   const { data: fetched = [] } = useStatuses(workspaceId, given ? undefined : spaceId);
   const statuses = given ?? fetched;
   const byStatus = (statusId: string) => tasks.filter((task) => task.statusId === statusId).sort((a, b) => a.position - b.position);
+  // The preview steps column by column, top to bottom, as the board reads.
+  useShareTaskOrder(statuses.flatMap((status) => byStatus(status.id).map((task) => task.id)));
 
   function handleDrop(event: DragEvent, status: TaskStatusResponse, beforeTaskId: string | null) {
     event.preventDefault();

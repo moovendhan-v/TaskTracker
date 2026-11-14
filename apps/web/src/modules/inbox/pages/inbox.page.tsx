@@ -1,5 +1,5 @@
 import { AlarmClockIcon, CheckCheckIcon, InboxIcon, Undo2Icon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { INBOX_FILTERS, type InboxFilterKey, type NotificationResponse } from '@taskflow/shared-types';
 import { EmptyState } from '@/components/common/empty-state';
 import { PageHeader } from '@/components/common/page-header';
@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/cn';
 import { formatDayAndTime } from '@/lib/dates';
+import { isMenuOpen, isPlainShortcut, stepIndex } from '@/lib/keys';
 import { snoozeOptions } from '../lib/snooze';
 import { NotificationItem } from '../components/notification-item';
 import { useInboxMutations, useNotifications } from '../hooks/use-inbox';
@@ -33,11 +34,43 @@ export function InboxPage({ workspaceId }: { workspaceId: string }) {
   const unreadOnly = tab === 'unread';
   const { data, isLoading } = useNotifications(workspaceId, { unreadOnly, snoozed: tab === 'snoozed', kinds: filter ? INBOX_FILTERS[filter] : null });
   const { markRead, markAllRead, snooze } = useInboxMutations(workspaceId);
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
 
   const open = (notification: NotificationResponse) => {
     if (notification.readAt === null) markRead.mutate([notification.id]);
   };
+
+  // Keys: j / ↓ and k / ↑ move between items, Enter opens, e marks read, s snoozes.
+  const list = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!isPlainShortcut(event) || isMenuOpen() || document.querySelector('[role="dialog"]')) return;
+      const rows = [...(list.current?.querySelectorAll<HTMLElement>('[data-inbox-item]') ?? [])];
+      if (rows.length === 0) return;
+      const current = rows.findIndex((row) => row.contains(document.activeElement));
+      const key = event.key.toLowerCase();
+      const delta = key === 'j' || event.key === 'ArrowDown' ? 1 : key === 'k' || event.key === 'ArrowUp' ? -1 : 0;
+      if (delta) {
+        event.preventDefault();
+        const row = rows[stepIndex(current, delta, rows.length)]!;
+        row.querySelector<HTMLElement>('a')?.focus();
+        row.scrollIntoView({ block: 'nearest' });
+        return;
+      }
+      if (current === -1) return;
+      const notification = items.find((item) => item.id === rows[current]!.dataset['inboxItem']);
+      if (!notification) return;
+      if (key === 'e' && notification.readAt === null) {
+        event.preventDefault();
+        markRead.mutate([notification.id]);
+      } else if (key === 's' && tab !== 'snoozed') {
+        event.preventDefault();
+        rows[current]!.querySelector<HTMLElement>('[data-snooze]')?.click();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [items, markRead, tab]);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -89,9 +122,9 @@ export function InboxPage({ workspaceId }: { workspaceId: string }) {
             }
           />
         ) : (
-          <ul aria-label="Notifications" className="grid grid-cols-[minmax(0,1fr)] gap-1">
+          <ul ref={list} aria-label="Notifications" className="grid grid-cols-[minmax(0,1fr)] gap-1">
             {items.map((notification) => (
-              <li key={notification.id} className="group/row relative">
+              <li key={notification.id} data-inbox-item={notification.id} className="group/row relative">
                 <NotificationItem workspaceId={workspaceId} notification={notification} onOpen={open} />
                 <div className="absolute top-2.5 right-2 flex items-center gap-1 opacity-0 transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100 has-[[data-state=open]]:opacity-100">
                   {tab === 'snoozed' ? (
@@ -104,7 +137,7 @@ export function InboxPage({ workspaceId }: { workspaceId: string }) {
                   ) : (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button size="icon-sm" variant="outline" className="bg-background" aria-label={`Snooze: ${notification.subject || 'this notification'}`}>
+                        <Button data-snooze size="icon-sm" variant="outline" className="bg-background" aria-label={`Snooze: ${notification.subject || 'this notification'}`}>
                           <AlarmClockIcon />
                         </Button>
                       </DropdownMenuTrigger>
@@ -124,7 +157,16 @@ export function InboxPage({ workspaceId }: { workspaceId: string }) {
             ))}
           </ul>
         )}
+        {items.length ? (
+          <p className="hidden text-xs text-muted-foreground md:block">
+            <Kbd>j</Kbd> <Kbd>k</Kbd> or <Kbd>↓</Kbd> <Kbd>↑</Kbd> to move · <Kbd>Enter</Kbd> to open · <Kbd>e</Kbd> mark read{tab !== 'snoozed' ? <> · <Kbd>s</Kbd> snooze</> : null}
+          </p>
+        ) : null}
       </div>
     </div>
   );
+}
+
+function Kbd({ children }: { children: string }) {
+  return <kbd className="rounded border bg-muted px-1 font-mono text-[10.5px] text-foreground">{children}</kbd>;
 }
