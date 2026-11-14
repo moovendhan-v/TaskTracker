@@ -31,6 +31,7 @@ export const TaskMapper = {
       sprintId: task.sprintId,
       position: task.position,
       estimateMinutes: task.estimateMinutes,
+      storyPoints: task.storyPoints ?? null,
       progress: task.progress,
       subtaskCount: context.subtaskCounts.get(task.id) ?? 0,
       metadata: task.metadata ?? {},

@@ -2,6 +2,7 @@ import { Field, Float, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { IsArray, IsDateString, IsIn, IsInt, IsNumber, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import {
   ESTIMATE_MINUTES_MAX,
+  STORY_POINTS_MAX,
   TASK_DESCRIPTION_MAX,
   TASK_PRIORITIES,
   TASK_TITLE_MAX,
@@ -46,6 +47,7 @@ export class TaskGql implements TaskResponse {
   @Field(() => ID, { nullable: true }) sprintId: string | null;
   @Field(() => Float) position: number;
   @Field(() => Int, { nullable: true }) estimateMinutes: number | null;
+  @Field(() => Int, { nullable: true, description: 'Story points, 0–100' }) storyPoints: number | null;
   @Field(() => Int, { nullable: true, description: '0–100' }) progress: number | null;
   @Field(() => Int) subtaskCount: number;
   @SensitiveField('task.metadata', () => MetadataScalar) metadata: TaskMetadata | null;
@@ -122,6 +124,7 @@ export class CreateTaskInput implements CreateTaskRequest {
   parentId?: string | null;
 
   @Field(() => Int, { nullable: true }) @IsClearable() @IsInt() @Min(0) @Max(ESTIMATE_MINUTES_MAX) estimateMinutes?: number | null;
+  @Field(() => Int, { nullable: true, description: 'Story points, 0–100' }) @IsClearable() @IsInt() @Min(0) @Max(STORY_POINTS_MAX) storyPoints?: number | null;
 
   @Field(() => MetadataScalar, { nullable: true }) @IsOmittable() metadata?: TaskMetadata;
 
@@ -158,6 +161,7 @@ export class UpdateTaskInput implements UpdateTaskRequest {
   @Field(() => ID, { nullable: true, description: 'null moves the task to the backlog; needs sprint.manage' }) @IsClearable() @IsUUID('4') sprintId?: string | null;
 
   @Field(() => Int, { nullable: true }) @IsClearable() @IsInt() @Min(0) @Max(ESTIMATE_MINUTES_MAX) estimateMinutes?: number | null;
+  @Field(() => Int, { nullable: true, description: 'Story points, 0–100' }) @IsClearable() @IsInt() @Min(0) @Max(STORY_POINTS_MAX) storyPoints?: number | null;
 
   @Field(() => Int, { nullable: true, description: '0–100' }) @IsClearable() @IsInt() @Min(0) @Max(100) progress?: number | null;
 

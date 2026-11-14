@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/cn';
 import { useMemberName } from '@/modules/members';
-import { useTaskMutations } from '@/modules/tasks';
+import { formatPoints, useTaskMutations } from '@/modules/tasks';
 import { useSprintTasks } from '../hooks/use-sprints';
 import { formatSprintRange } from '../lib/sprint-dates';
 import { formatMinutes, summarize } from '../lib/sprint-metrics';
@@ -64,7 +64,8 @@ export function SprintLane({ workspaceId, sprint, canManage, canStart, onOpenTas
             <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium', active ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground')}>{active ? 'Active' : 'Planned'}</span>
           </p>
           <p className="truncate text-xs text-muted-foreground">
-            {formatSprintRange(sprint.startDate, sprint.endDate)} · {summary.total} {summary.total === 1 ? 'task' : 'tasks'} · {formatMinutes(summary.estimateMinutes)} estimated
+            {formatSprintRange(sprint.startDate, sprint.endDate)} · {summary.total} {summary.total === 1 ? 'task' : 'tasks'} · {summary.points ? `${formatPoints(summary.points)} · ` : ''}
+            {formatMinutes(summary.estimateMinutes)} estimated
             {sprint.goal ? ` · ${sprint.goal}` : ''}
           </p>
         </div>

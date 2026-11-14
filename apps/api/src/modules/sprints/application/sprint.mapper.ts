@@ -15,6 +15,10 @@ export const SprintMapper = {
       doneTasks: sprint.doneTasks,
       completedAt: sprint.completedAt ? sprint.completedAt.toISOString() : null,
       committedTasks: sprint.committedTasks,
+      totalPoints: sprint.totalPoints,
+      donePoints: sprint.donePoints,
+      committedPoints: sprint.committedPoints,
+      startedAt: sprint.startedAt ? sprint.startedAt.toISOString() : null,
     };
   },
 };

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type {
   CompleteSprintRequest,
   CreateSprintRequest,
+  SprintReportResponse,
   SprintResponse,
   UpdateSprintRequest,
 } from '@taskflow/shared-types';
@@ -20,6 +21,7 @@ import { Clock } from '../../../core/time/clock.port.js';
 import { SpacesService } from '../../spaces/application/spaces.service.js';
 import type { Sprint, SprintWithCounts } from '../domain/sprint.js';
 import { SprintLifecyclePolicy } from '../domain/sprint-lifecycle.policy.js';
+import { buildSprintReport } from '../domain/sprint-report.js';
 import { SprintRolloverPolicy } from '../domain/sprint-rollover.policy.js';
 import { SprintRepository } from '../domain/sprint.repository.js';
 import { SprintMapper } from './sprint.mapper.js';
@@ -102,7 +104,9 @@ export class SprintsService {
       const sprint = await this.getInWorkspace(workspaceId, sprintId);
       SpaceGuard.assert(sprint.spaceId, 'sprint.manage');
       SprintLifecyclePolicy.assertCanStart(sprint, await this.sprints.hasActiveSprint(workspaceId, sprint.spaceId));
-      await this.sprints.save({ ...toSprint(sprint), status: 'active' });
+      await this.sprints.save({ ...toSprint(sprint), status: 'active', startedAt: this.clock.now() });
+      // What the sprint commits to, for the report: what was added or removed later shows against it.
+      await this.sprints.snapshot(workspaceId, sprint.id, 'start');
     });
     return this.get(workspaceId, sprintId);
   }
@@ -121,6 +125,8 @@ export class SprintsService {
         ? await this.getInWorkspace(workspaceId, request.moveOpenTasksToSprintId)
         : null;
       SprintRolloverPolicy.assertValidTarget(sprint, target);
+      // The report's end state, taken before unfinished work leaves; where it went is noted after.
+      await this.sprints.snapshot(workspaceId, sprint.id, 'end');
 
       // Per-task destinations first (each checked like the default target), then everything else.
       const byTarget = new Map<string | null, string[]>();
@@ -136,9 +142,10 @@ export class SprintsService {
       }
       add(target?.id ?? 'backlog', await this.sprints.moveOpenTasks(workspaceId, sprint.id, target?.id ?? null));
       const moved = Object.values(destinations).reduce((sum, count) => sum + count, 0);
+      await this.sprints.noteDestinations(workspaceId, sprint.id);
 
       // Remember what the sprint held before unfinished work left, for velocity (committed vs done).
-      await this.sprints.save({ ...toSprint(sprint), status: 'completed', completedAt: this.clock.now(), committedTasks: sprint.totalTasks });
+      await this.sprints.save({ ...toSprint(sprint), status: 'completed', completedAt: this.clock.now(), committedTasks: sprint.totalTasks, committedPoints: sprint.totalPoints });
       // Audited here rather than with @Audited because the entry records where the tasks went.
       await this.auditLogger.record(actor, {
         action: 'sprint.complete',
@@ -149,6 +156,22 @@ export class SprintsService {
       });
     });
     return this.get(workspaceId, sprintId);
+  }
+
+  /**
+   * Committed vs delivered: live while the sprint is active, fixed once it's
+   * completed. Needs task.view in the sprint's space (snapshots have task titles).
+   */
+  async report(workspaceId: string, sprintId: string): Promise<SprintReportResponse> {
+    const sprint = await this.getInWorkspace(workspaceId, sprintId);
+    SpaceGuard.assert(sprint.spaceId, 'task.view');
+    if (sprint.status === 'planned') throw DomainError.invalid('The report starts when the sprint starts');
+    const start = sprint.startedAt ? await this.sprints.snapshotRows(workspaceId, sprint.id, 'start') : null;
+    const endSnapshot = sprint.status === 'completed' ? await this.sprints.snapshotRows(workspaceId, sprint.id, 'end') : [];
+    // Sprints completed before snapshots were kept still hold their done work.
+    const end = endSnapshot.length ? endSnapshot : await this.sprints.currentRows(workspaceId, sprint.id);
+    const names = new Map((await this.sprints.listInSpace(workspaceId, sprint.spaceId)).map((item) => [item.id, item.name]));
+    return buildSprintReport(sprint, start, end, (id) => names.get(id) ?? null);
   }
 
   /** Used by the tasks module before planning a task into a sprint. */

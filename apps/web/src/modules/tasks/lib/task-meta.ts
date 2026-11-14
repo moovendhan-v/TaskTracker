@@ -1,4 +1,4 @@
-import { isClosedCategory, TASK_PRIORITIES, type TaskPriority, type TaskResponse, type TaskType } from '@taskflow/shared-types';
+import { isClosedCategory, STORY_POINTS_MAX, TASK_PRIORITIES, type TaskPriority, type TaskResponse, type TaskType } from '@taskflow/shared-types';
 
 interface Meta {
   label: string;
@@ -40,3 +40,14 @@ export function positionBetween(before: number | undefined, after: number | unde
   if (after === undefined) return before + POSITION_STEP;
   return (before + after) / 2;
 }
+
+/** What someone typed as story points: a whole number 0–100, or null for empty (or nonsense). */
+export function parseStoryPoints(value: string): number | null {
+  if (value.trim() === '') return null;
+  const number = Number(value);
+  if (!Number.isFinite(number)) return null;
+  return Math.max(0, Math.min(STORY_POINTS_MAX, Math.round(number)));
+}
+
+/** "5 pts", "1 pt". */
+export const formatPoints = (points: number) => `${points} ${points === 1 ? 'pt' : 'pts'}`;

@@ -58,6 +58,9 @@ export class TaskQueryResource {
   @QueryField({ type: 'number', column: 'task.estimate_minutes', label: 'Estimate (min)', sortable: true, display: 'duration', defaultVisible: false })
   estimateMinutes: number;
 
+  @QueryField({ type: 'number', column: 'task.story_points', label: 'Story points', sortable: true, display: 'number', defaultVisible: false })
+  storyPoints: number;
+
   @QueryField({ type: 'number', column: 'task.progress', label: '% complete', sortable: true, display: 'progress', defaultVisible: false })
   progress: number;
 

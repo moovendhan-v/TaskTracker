@@ -16,6 +16,8 @@ import {
 import { useState, type ReactNode } from 'react';
 import {
   isClosedCategory,
+  STORY_POINT_SCALE,
+  STORY_POINTS_MAX,
   TASK_DESCRIPTION_MAX,
   TASK_RELATION_KINDS,
   TASK_TITLE_MAX,
@@ -52,7 +54,7 @@ import { usePermissions } from '@/modules/workspaces';
 import { TaskChat, useTaskChat } from './task-chat';
 import { useSubtasks, useTask, useTaskActivity, useTaskRelations, useTaskWatchers } from '../../hooks/use-tasks';
 import { useTaskMutations } from '../../hooks/use-task-mutations';
-import { TYPE_META } from '../../lib/task-meta';
+import { parseStoryPoints, TYPE_META } from '../../lib/task-meta';
 import { AssigneePicker } from '../shared/assignee-picker';
 import { PriorityPicker } from '../shared/priority-picker';
 import { StatusDot, StatusPicker } from '../shared/status-picker';
@@ -179,6 +181,7 @@ function TaskProperties({ workspaceId, task }: { workspaceId: string; task: Task
   const memberName = useMemberName(workspaceId);
   const [estimate, setEstimate] = useResettableState(task.estimateMinutes === null ? '' : String(task.estimateMinutes / 60));
   const [progress, setProgress] = useResettableState(task.progress === null ? '' : String(task.progress));
+  const [points, setPoints] = useResettableState(task.storyPoints === null ? '' : String(task.storyPoints));
   const save = (body: UpdateTaskRequest) => update.mutate({ taskId: task.id, body });
   const creator = memberName(task.createdById) ?? 'Someone';
 
@@ -215,6 +218,34 @@ function TaskProperties({ workspaceId, task }: { workspaceId: string; task: Task
               className={cn(inputClass, 'w-16 font-mono')}
             />
             <span className="text-muted-foreground">h</span>
+          </span>
+        </Property>
+        <Property label="Points">
+          <span className="flex items-center gap-1.5">
+            <input
+              type="number"
+              min={0}
+              max={STORY_POINTS_MAX}
+              step={1}
+              list="story-point-scale"
+              value={points}
+              disabled={!canEdit}
+              placeholder="Empty"
+              aria-label="Story points"
+              onChange={(event) => setPoints(event.target.value)}
+              onBlur={() => {
+                const next = parseStoryPoints(points);
+                if (next !== task.storyPoints) save({ storyPoints: next });
+                setPoints(next === null ? '' : String(next));
+              }}
+              className={cn(inputClass, 'w-16 font-mono')}
+            />
+            <datalist id="story-point-scale">
+              {STORY_POINT_SCALE.map((value) => (
+                <option key={value} value={value} />
+              ))}
+            </datalist>
+            <span className="text-muted-foreground">pts</span>
           </span>
         </Property>
         <Property label="Complete">

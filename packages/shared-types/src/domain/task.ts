@@ -38,6 +38,10 @@ export const TASK_DESCRIPTION_MAX = 10_000;
 /** Subtasks can nest this deep below a top-level task. */
 export const SUBTASK_DEPTH_MAX = 3;
 export const ESTIMATE_MINUTES_MAX = 100_000;
+/** Story points on one task: a whole number from 0 to this. */
+export const STORY_POINTS_MAX = 100;
+/** The usual scale, offered as quick picks (any whole number up to the max works). */
+export const STORY_POINT_SCALE = [0, 1, 2, 3, 5, 8, 13, 21] as const;
 
 /** Free-form key/value data on a task, e.g. an order id from another system. Filterable as `metadata.<key>`. */
 export type TaskMetadata = Record<string, string | number | boolean | null>;

@@ -13,6 +13,11 @@ export function useSprint(workspaceId: string, sprintId: string) {
   return useQuery({ queryKey: queryKeys.sprint(workspaceId, sprintId), queryFn: () => sprintsApi.get({ workspaceId, sprintId }) });
 }
 
+/** Committed vs delivered; live while the sprint runs (it refreshes with the sprint's tasks). */
+export function useSprintReport(workspaceId: string, sprintId: string, enabled: boolean) {
+  return useQuery({ queryKey: [...queryKeys.sprint(workspaceId, sprintId), 'report'], queryFn: () => sprintsApi.report({ workspaceId, sprintId }), enabled });
+}
+
 export function useSprintTasks(workspaceId: string, sprintId: string) {
   return useQuery({ queryKey: queryKeys.sprintTasks(workspaceId, sprintId), queryFn: () => sprintsApi.tasks({ workspaceId, sprintId }) });
 }

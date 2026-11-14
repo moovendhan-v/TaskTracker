@@ -5,7 +5,7 @@ import { OptionalUuidArg, UuidArg, WorkspaceIdArg } from '../../../../core/graph
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { SprintsService } from '../../application/sprints.service.js';
-import { CompleteSprintMovesInput, CreateSprintInput, SprintGql, UpdateSprintInput } from './sprint.types.js';
+import { CompleteSprintMovesInput, CreateSprintInput, SprintGql, SprintReportGql, UpdateSprintInput } from './sprint.types.js';
 
 @Resolver(() => SprintGql)
 export class SprintsResolver {
@@ -21,6 +21,12 @@ export class SprintsResolver {
   @RequirePermissions('task.view')
   sprint(@WorkspaceIdArg() _workspaceId: string, @UuidArg('sprintId') sprintId: string, @CurrentAccess() access: WorkspaceAccess): Promise<SprintGql> {
     return this.sprintsService.get(access.workspaceId, sprintId);
+  }
+
+  @Query(() => SprintReportGql, { description: 'Committed vs delivered, with scope added or removed mid-sprint; needs task.view in the sprint’s space' })
+  @RequirePermissions('task.view')
+  sprintReport(@WorkspaceIdArg() _workspaceId: string, @UuidArg('sprintId') sprintId: string, @CurrentAccess() access: WorkspaceAccess): Promise<SprintReportGql> {
+    return this.sprintsService.report(access.workspaceId, sprintId);
   }
 
   @Mutation(() => SprintGql)

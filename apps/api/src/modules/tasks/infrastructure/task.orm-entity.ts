@@ -51,6 +51,9 @@ export class TaskOrmEntity extends TenantOrmEntity implements Task {
   estimateMinutes: number | null;
 
   @Column({ type: 'smallint', nullable: true })
+  storyPoints: number | null;
+
+  @Column({ type: 'smallint', nullable: true })
   progress: number | null;
 
   @Column({ type: 'jsonb', default: () => `'{}'::jsonb` })

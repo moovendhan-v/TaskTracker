@@ -21,6 +21,7 @@ import {
   PLATFORM_ROLES,
   REALTIME_ENTITY_TYPES,
   SPACE_STATUSES,
+  SPRINT_REPORT_OUTCOMES,
   SPRINT_STATUSES,
   STATUS_CATEGORIES,
   TASK_PRIORITIES,
@@ -48,6 +49,7 @@ export const NotifyAudienceEnum = enumOf(NOTIFY_AUDIENCES);
 export const AutomationRunStatusEnum = enumOf(AUTOMATION_RUN_STATUSES);
 export const TaskPriorityEnum = enumOf(TASK_PRIORITIES);
 export const SprintStatusEnum = enumOf(SPRINT_STATUSES);
+export const SprintReportOutcomeEnum = enumOf(SPRINT_REPORT_OUTCOMES);
 export const LeaveStatusEnum = enumOf(LEAVE_STATUSES);
 export const LeaveDecisionEnum = enumOf(LEAVE_DECISIONS);
 export const EmploymentTypeEnum = enumOf(EMPLOYMENT_TYPES);
@@ -77,6 +79,7 @@ registerEnumType(IconKeyEnum, { name: 'IconKey', description: 'Icons for spaces,
 registerEnumType(ForecastKindEnum, { name: 'ForecastKind' });
 registerEnumType(TaskPriorityEnum, { name: 'TaskPriority' });
 registerEnumType(SprintStatusEnum, { name: 'SprintStatus' });
+registerEnumType(SprintReportOutcomeEnum, { name: 'SprintReportOutcome' });
 registerEnumType(LeaveStatusEnum, { name: 'LeaveStatus' });
 registerEnumType(LeaveDecisionEnum, { name: 'LeaveDecision' });
 registerEnumType(EmploymentTypeEnum, { name: 'EmploymentType' });

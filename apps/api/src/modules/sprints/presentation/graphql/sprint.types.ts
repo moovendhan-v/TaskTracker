@@ -7,13 +7,56 @@ import {
   SPRINT_COMPLETE_MAX_MOVES,
   SPRINT_MAX_DAYS,
   type CreateSprintRequest,
+  type SprintReportItem,
+  type SprintReportOutcome,
+  type SprintReportResponse,
+  type SprintReportTotals,
   type SprintResponse,
   type SprintStatus,
   type UpdateSprintRequest,
 } from '@taskflow/shared-types';
-import { SprintStatusEnum } from '../../../../core/graphql/enums.js';
+import { SprintReportOutcomeEnum, SprintStatusEnum } from '../../../../core/graphql/enums.js';
 import { IsCalendarDate, IsClearable, IsNotBlank, IsOmittable, OnOrAfter, WithinDaysOf } from '../../../../core/graphql/validation.js';
 import { FormSchema } from '../../../../core/forms/form-schema.decorators.js';
+
+@ObjectType('SprintReportTotals')
+export class SprintReportTotalsGql implements SprintReportTotals {
+  @Field(() => Int) tasks: number;
+  @Field(() => Int) points: number;
+}
+
+@ObjectType('SprintReportItem')
+export class SprintReportItemGql implements SprintReportItem {
+  @Field(() => ID, { nullable: true, description: 'Null when the task was deleted since' }) taskId: string | null;
+  @Field(() => Int) number: number;
+  @Field() title: string;
+  @Field(() => Int, { nullable: true }) points: number | null;
+  @Field(() => SprintReportOutcomeEnum) outcome: SprintReportOutcome;
+  @Field({ description: 'Planned in after the sprint started' }) added: boolean;
+  @Field({ description: 'Taken out before the end' }) removed: boolean;
+  @Field(() => String, { nullable: true, description: 'Where unfinished work went: a sprint name or Backlog' }) movedTo: string | null;
+}
+
+@ObjectType('SprintReport', { description: 'What a sprint committed to and delivered: live while active, fixed once completed' })
+export class SprintReportGql implements SprintReportResponse {
+  @Field(() => ID) sprintId: string;
+  @Field() name: string;
+  @Field() goal: string;
+  @Field(() => SprintStatusEnum) status: SprintStatus;
+  @Field() startDate: string;
+  @Field() endDate: string;
+  @Field(() => String, { nullable: true }) startedAt: string | null;
+  @Field(() => String, { nullable: true }) completedAt: string | null;
+  @Field({ description: 'False for sprints started before snapshots were kept' }) hasStartSnapshot: boolean;
+  @Field(() => SprintReportTotalsGql) committed: SprintReportTotalsGql;
+  @Field(() => SprintReportTotalsGql) completed: SprintReportTotalsGql;
+  @Field(() => SprintReportTotalsGql) cancelled: SprintReportTotalsGql;
+  @Field(() => SprintReportTotalsGql) notCompleted: SprintReportTotalsGql;
+  @Field(() => SprintReportTotalsGql) added: SprintReportTotalsGql;
+  @Field(() => SprintReportTotalsGql) removed: SprintReportTotalsGql;
+  @Field(() => Int) unestimated: number;
+  @Field(() => [SprintReportItemGql], { complexity: 500 }) items: SprintReportItemGql[];
+}
 
 @ObjectType('Sprint')
 export class SprintGql implements SprintResponse {
@@ -28,6 +71,10 @@ export class SprintGql implements SprintResponse {
   @Field(() => Int) doneTasks: number;
   @Field(() => String, { nullable: true }) completedAt: string | null;
   @Field(() => Int, { nullable: true, description: 'Tasks in the sprint when it was completed; null before then' }) committedTasks: number | null;
+  @Field(() => Int, { description: 'Story points of the tasks in it now' }) totalPoints: number;
+  @Field(() => Int, { description: 'Story points of its done tasks' }) donePoints: number;
+  @Field(() => Int, { nullable: true, description: 'Story points in it when it was completed; null before then' }) committedPoints: number | null;
+  @Field(() => String, { nullable: true }) startedAt: string | null;
 }
 
 @FormSchema('sprint.create')

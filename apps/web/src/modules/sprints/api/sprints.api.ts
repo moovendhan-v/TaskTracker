@@ -6,6 +6,7 @@ import {
   CreateSprintDocument,
   DeleteSprintDocument,
   SprintDocument,
+  SprintReportDocument,
   SprintsDocument,
   SprintTasksDocument,
   StartSprintDocument,
@@ -26,6 +27,7 @@ export const sprintsApi = {
   complete: async (path: SprintPath, { moveOpenTasksToSprintId, moves }: CompleteSprintRequest) =>
     (await graphql(CompleteSprintDocument, { ...path, moveOpenTasksToSprintId, rollover: moves?.length ? { moves } : null })).completeSprint,
   tasks: async (path: SprintPath) => (await graphql(SprintTasksDocument, path)).sprintTasks,
+  report: async (path: SprintPath) => (await graphql(SprintReportDocument, path)).sprintReport,
   /** Approved leave in the range, dates only (needs sprint.manage). */
   availability: async (workspaceId: string, from: string, to: string) => (await graphql(TeamAvailabilityDocument, { workspaceId, from, to })).teamAvailability,
   backlog: async (workspaceId: string, spaceId: string) => (await graphql(BacklogDocument, { workspaceId, spaceId })).backlog,

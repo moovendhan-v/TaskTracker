@@ -725,6 +725,9 @@ input CreateTaskInput {
 
   """One of the space's statuses; defaults to its first not-started status"""
   statusId: ID
+
+  """Story points, 0–100"""
+  storyPoints: Int
   title: String!
   type: TaskType
 }
@@ -2563,6 +2566,11 @@ type Query {
   spaceTemplateContent(includeContent: Boolean! = false, spaceId: ID!, workspaceId: ID!): JSONObject!
   spaces(workspaceId: ID!): [Space!]!
   sprint(sprintId: ID!, workspaceId: ID!): Sprint!
+
+  """
+  Committed vs delivered, with scope added or removed mid-sprint; needs task.view in the sprint’s space
+  """
+  sprintReport(sprintId: ID!, workspaceId: ID!): SprintReport!
   sprintTasks(sprintId: ID!, workspaceId: ID!): [Task!]!
   sprints(spaceId: ID!, workspaceId: ID!): [Sprint!]!
 
@@ -2954,9 +2962,15 @@ enum SpaceStatus {
 }
 
 type Sprint {
+  """Story points in it when it was completed; null before then"""
+  committedPoints: Int
+
   """Tasks in the sprint when it was completed; null before then"""
   committedTasks: Int
   completedAt: String
+
+  """Story points of its done tasks"""
+  donePoints: Int!
   doneTasks: Int!
 
   """yyyy-mm-dd"""
@@ -2968,8 +2982,66 @@ type Sprint {
 
   """yyyy-mm-dd"""
   startDate: String!
+  startedAt: String
   status: SprintStatus!
+
+  """Story points of the tasks in it now"""
+  totalPoints: Int!
   totalTasks: Int!
+}
+
+"""
+What a sprint committed to and delivered: live while active, fixed once completed
+"""
+type SprintReport {
+  added: SprintReportTotals!
+  cancelled: SprintReportTotals!
+  committed: SprintReportTotals!
+  completed: SprintReportTotals!
+  completedAt: String
+  endDate: String!
+  goal: String!
+
+  """False for sprints started before snapshots were kept"""
+  hasStartSnapshot: Boolean!
+  items: [SprintReportItem!]!
+  name: String!
+  notCompleted: SprintReportTotals!
+  removed: SprintReportTotals!
+  sprintId: ID!
+  startDate: String!
+  startedAt: String
+  status: SprintStatus!
+  unestimated: Int!
+}
+
+type SprintReportItem {
+  """Planned in after the sprint started"""
+  added: Boolean!
+
+  """Where unfinished work went: a sprint name or Backlog"""
+  movedTo: String
+  number: Int!
+  outcome: SprintReportOutcome!
+  points: Int
+
+  """Taken out before the end"""
+  removed: Boolean!
+
+  """Null when the task was deleted since"""
+  taskId: ID
+  title: String!
+}
+
+enum SprintReportOutcome {
+  cancelled
+  done
+  open
+}
+
+type SprintReportTotals {
+  points: Int!
+  tasks: Int!
 }
 
 enum SprintStatus {
@@ -3061,6 +3133,9 @@ type Task {
   startDate: String
   status: TaskStatus!
   statusId: ID!
+
+  """Story points, 0–100"""
+  storyPoints: Int
   subtaskCount: Int!
   title: String!
   type: TaskType!
@@ -3427,6 +3502,9 @@ input UpdateTaskInput {
   sprintId: ID
   startDate: String
   statusId: ID
+
+  """Story points, 0–100"""
+  storyPoints: Int
   title: String
   type: TaskType
 }

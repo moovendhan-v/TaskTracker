@@ -19,6 +19,7 @@ export interface Task {
   sprintId: string | null;
   position: number;
   estimateMinutes: number | null;
+  storyPoints: number | null;
   progress: number | null;
   metadata: TaskMetadata;
   customFields: CustomFieldValues;
