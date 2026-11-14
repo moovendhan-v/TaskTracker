@@ -769,6 +769,7 @@ input CreateTaskStatusInput {
   category: StatusCategory!
   color: String!
   name: String!
+  wipLimit: Int
 }
 
 input CreateWorkspaceInput {
@@ -3271,6 +3272,9 @@ type TaskStatus {
   name: String!
   position: Int!
   spaceId: ID!
+
+  """Work-in-progress limit for its board column; null for none"""
+  wipLimit: Int
 }
 
 type TaskTimeSummary {
@@ -3552,6 +3556,9 @@ input UpdateTaskStatusInput {
   category: StatusCategory
   color: String
   name: String
+
+  """null removes the limit"""
+  wipLimit: Int
 }
 
 input UpdateTimeEntryInput {

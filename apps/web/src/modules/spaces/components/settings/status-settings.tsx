@@ -1,6 +1,6 @@
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
-import { STATUS_CATEGORIES, STATUS_NAME_MAX, type StatusCategory, type TaskStatusResponse } from '@taskflow/shared-types';
+import { STATUS_CATEGORIES, STATUS_NAME_MAX, WIP_LIMIT_MAX, type StatusCategory, type TaskStatusResponse } from '@taskflow/shared-types';
 import { PALETTE } from '@/components/common/color-picker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -94,6 +94,33 @@ export function StatusSettings({ workspaceId, spaceId, canManage }: StatusSettin
               <span className="flex-1 text-sm">{status.name}</span>
             )}
             <span className="flex-1" />
+            {canManage ? (
+              <Input
+                key={`limit-${status.wipLimit ?? ''}`}
+                type="number"
+                min={1}
+                max={WIP_LIMIT_MAX}
+                defaultValue={status.wipLimit ?? ''}
+                placeholder="No limit"
+                aria-label={`Board limit for ${status.name}`}
+                title="Work-in-progress limit for this board column; the board warns at and over it"
+                className="h-8 w-24 font-mono"
+                onBlur={(event) => {
+                  const raw = event.target.value.trim();
+                  const next = raw === '' ? null : Math.round(Number(raw));
+                  if (next !== null && !(next >= 1 && next <= WIP_LIMIT_MAX)) {
+                    event.target.value = status.wipLimit === null ? '' : String(status.wipLimit);
+                    return;
+                  }
+                  if (next !== status.wipLimit) mutations.update.mutate({ statusId: status.id, body: { wipLimit: next } });
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') event.currentTarget.blur();
+                }}
+              />
+            ) : status.wipLimit !== null ? (
+              <span className="text-xs text-muted-foreground">Limit {status.wipLimit}</span>
+            ) : null}
             {canManage ? (
               <Select value={status.category} onValueChange={(category: StatusCategory) => mutations.update.mutate({ statusId: status.id, body: { category } })}>
                 <SelectTrigger className="h-8 w-36" aria-label={`What ${status.name} means`}>

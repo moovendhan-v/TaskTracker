@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TaskResponse, TaskStatusResponse } from '@taskflow/shared-types';
 import { groupTasks } from './group-tasks';
 
-const status = (id: string, name: string, position: number): TaskStatusResponse => ({ id, spaceId: 's', name, color: '#000000', category: 'unstarted', position });
+const status = (id: string, name: string, position: number): TaskStatusResponse => ({ id, spaceId: 's', name, color: '#000000', category: 'unstarted', position, wipLimit: null });
 const todo = status('todo', 'To do', 1);
 const doing = status('doing', 'Doing', 2);
 const task = (id: string, extra: Partial<TaskResponse>) => ({ id, statusId: 'todo', status: todo, position: 1, priority: 'none', assigneeId: null, ...extra }) as TaskResponse;

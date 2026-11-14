@@ -25,7 +25,7 @@ const OTHER_LIST = '44444444-4444-4444-8444-444444444444';
 const SPACE = 'space-a';
 const actor: Actor = { userId: 'user-1', platformRole: 'USER', ip: null };
 
-const status = (id: string, name: string, category: TaskStatusResponse['category'], spaceId = SPACE): TaskStatusResponse => ({ id, spaceId, name, color: '#000000', category, position: 0 });
+const status = (id: string, name: string, category: TaskStatusResponse['category'], spaceId = SPACE): TaskStatusResponse => ({ id, spaceId, name, color: '#000000', category, position: 0, wipLimit: null });
 const STATUSES = [status('s-todo', 'To do', 'unstarted'), status('s-doing', 'In progress', 'started'), status('s-done', 'Done', 'done'), status('s-other', 'Elsewhere', 'started', 'space-b')];
 
 function accessWith(...permissions: Permission[]): WorkspaceAccess {

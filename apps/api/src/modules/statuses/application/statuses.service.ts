@@ -73,7 +73,7 @@ export class StatusesService implements OnModuleInit {
     const existing = await this.statuses.listForSpace(workspaceId, spaceId);
     StatusPolicy.assertRoomFor(existing);
     const position = Math.max(0, ...existing.map((status) => status.position)) + 1;
-    const [created] = await this.statuses.createMany([{ workspaceId, spaceId, name: request.name.trim(), color: request.color, category: request.category, position }]);
+    const [created] = await this.statuses.createMany([{ workspaceId, spaceId, name: request.name.trim(), color: request.color, category: request.category, position, wipLimit: request.wipLimit ?? null }]);
     return StatusMapper.toResponse(found(created, 'Status'));
   }
 
@@ -85,6 +85,7 @@ export class StatusesService implements OnModuleInit {
     if (request.name !== undefined) status.name = request.name.trim();
     if (request.color !== undefined) status.color = request.color;
     if (request.category !== undefined) status.category = request.category;
+    if (request.wipLimit !== undefined) status.wipLimit = request.wipLimit;
     return StatusMapper.toResponse(await this.statuses.save(status));
   }
 

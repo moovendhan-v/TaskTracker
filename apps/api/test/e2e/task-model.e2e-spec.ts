@@ -90,6 +90,23 @@ describe('task model: statuses, numbers, subtasks, relations, custom fields, act
     expect(search.searchTasks.items.map((t) => t.title)).toContain('Numbered B');
   });
 
+  it('keeps an optional work-in-progress limit per status, for its board column', async () => {
+    const UPDATE = 'mutation($w: ID!, $s: ID!, $input: UpdateTaskStatusInput!) { updateStatus(workspaceId: $w, statusId: $s, input: $input) { name wipLimit } }';
+    const LIST = 'query($w: ID!, $sp: ID!) { statuses(workspaceId: $w, spaceId: $sp) { name wipLimit } }';
+    const inProgress = ws.statuses['In progress'];
+    expect((await ws.owner.data<{ updateStatus: { wipLimit: number | null } }>(UPDATE, vars({ s: inProgress, input: { wipLimit: 3 } }))).updateStatus.wipLimit).toBe(3);
+    // Renaming leaves the limit alone; null removes it.
+    expect((await ws.owner.data<{ updateStatus: { wipLimit: number | null } }>(UPDATE, vars({ s: inProgress, input: { name: 'In progress' } }))).updateStatus.wipLimit).toBe(3);
+    const listed = (await ws.owner.data<{ statuses: { name: string; wipLimit: number | null }[] }>(LIST, vars({ sp: ws.spaceId }))).statuses;
+    expect(listed.find((status) => status.name === 'In progress')?.wipLimit).toBe(3);
+    expect(listed.find((status) => status.name === 'To do')?.wipLimit).toBeNull();
+    // 1 to 999, and only for people who manage the space.
+    expect((await ws.owner.error(UPDATE, vars({ s: inProgress, input: { wipLimit: 0 } }))).code).toBe('BAD_USER_INPUT');
+    expect((await ws.owner.error(UPDATE, vars({ s: inProgress, input: { wipLimit: 1000 } }))).code).toBe('BAD_USER_INPUT');
+    expect((await member.error(UPDATE, vars({ s: inProgress, input: { wipLimit: 5 } }))).code).toBe('FORBIDDEN');
+    expect((await ws.owner.data<{ updateStatus: { wipLimit: number | null } }>(UPDATE, vars({ s: inProgress, input: { wipLimit: null } }))).updateStatus.wipLimit).toBeNull();
+  });
+
   it('records completion when a task enters a done status, and clears it on reopen', async () => {
     const task = await create({ title: 'Finish me' });
     expect((await update(task.id, { statusId: ws.statuses['Done'] })).completedAt).not.toBeNull();
