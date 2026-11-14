@@ -250,8 +250,10 @@ export class AutomationEngine implements OnModuleInit {
         continue;
       }
       // Marked as ran first: if the action throws, execute() turns this entry into the failure.
-      trace.push({ stepId: step.id, outcome: 'ran', detail: step.action.type === 'webhook' ? 'Queued to send' : '' });
-      await this.applyAction(step.action, rule, actor, access, taskId, context, step.id);
+      const entry: FlowTraceEntry = { stepId: step.id, outcome: 'ran', detail: step.action.type === 'webhook' ? 'Queued to send' : '' };
+      trace.push(entry);
+      const detail = await this.applyAction(step.action, rule, actor, access, taskId, context, step.id);
+      if (detail) entry.detail = detail;
     }
     return { end: 'done' };
   }
@@ -270,7 +272,8 @@ export class AutomationEngine implements OnModuleInit {
     };
   }
 
-  private async applyAction(action: AutomationAction, rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext, stepId: string): Promise<void> {
+  /** Runs one action; may return a note for the run's trace. */
+  private async applyAction(action: AutomationAction, rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext, stepId: string): Promise<string | void> {
     switch (action.type) {
       case 'set_status':
         await this.tasksService.update(actor, access, taskId, { statusId: action.statusId as string });
@@ -306,6 +309,12 @@ export class AutomationEngine implements OnModuleInit {
         const body = fillAutomationMessage(action.message ?? '', { task: `#${task.number} ${task.title}`, status: task.status.name, actor: 'Automation', pr: context.pr });
         await this.chatService.send(actor, access, { channelId: action.channelId as string, body });
         return;
+      }
+      case 'move_to_list': {
+        // Lists were checked against the rule's space when it was saved; the task
+        // service checks again (same space, task.update) with the owner's access now.
+        const { moved } = await this.tasksService.moveToList(actor, access, taskId, action.listId as string);
+        return moved ? undefined : 'Already in that list';
       }
       case 'webhook': {
         // Queued, not sent: the scheduler calls it after this transaction commits, outside it.

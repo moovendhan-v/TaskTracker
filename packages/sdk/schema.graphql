@@ -181,6 +181,9 @@ type AutomationAction {
 
   """set_due_date: days from the day it runs; null clears"""
   days: Int
+
+  """move_to_list: the list (in the rule’s space)"""
+  listId: ID
   message: String
   priority: TaskPriority
   statusId: ID
@@ -196,6 +199,7 @@ input AutomationActionInput {
   audiences: [NotifyAudience!]
   channelId: ID
   days: Int
+  listId: ID
   message: String
   priority: TaskPriority
   statusId: ID
@@ -209,6 +213,7 @@ enum AutomationActionType {
   add_watcher
   assign
   comment
+  move_to_list
   notify
   post_chat
   set_due_date

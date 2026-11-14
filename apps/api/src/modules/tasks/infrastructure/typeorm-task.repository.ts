@@ -108,6 +108,23 @@ export class TypeOrmTaskRepository extends TaskRepository {
     return this.repository.find({ where: { workspaceId, parentId }, order: { position: 'ASC', createdAt: 'ASC' }, take: limit });
   }
 
+  async moveSubtree(workspaceId: string, taskId: string, listId: string, position: number): Promise<number> {
+    const result: unknown = await this.transactional.manager.query(
+      `WITH RECURSIVE tree AS (
+         SELECT id, 0 AS depth FROM task WHERE workspace_id = $1 AND id = $2
+         UNION ALL
+         SELECT t.id, tree.depth + 1 FROM task t JOIN tree ON t.parent_id = tree.id
+         WHERE t.workspace_id = $1 AND tree.depth < 10
+       )
+       UPDATE task SET list_id = $3, position = CASE WHEN task.id = $2 THEN $4 ELSE task.position END, updated_at = now()
+         FROM tree WHERE task.workspace_id = $1 AND task.id = tree.id
+       RETURNING task.id`,
+      [workspaceId, taskId, listId, position],
+    );
+    // UPDATE … RETURNING comes back as [rows, count].
+    return Array.isArray(result) && Array.isArray(result[0]) ? result[0].length : 0;
+  }
+
   async depthOf(workspaceId: string, taskId: string): Promise<number> {
     const rows: { depth: number }[] = await this.transactional.manager.query(
       `WITH RECURSIVE chain AS (

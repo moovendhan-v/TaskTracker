@@ -286,6 +286,7 @@ export function simulateFlow(flow: AutomationFlow, task: FlowTaskFacts, today: s
         facts.statusCategory = effects.statusCategoryOf(action.statusId) ?? facts.statusCategory;
       }
       if (action.type === 'set_priority' && action.priority) facts.priority = action.priority;
+      if (action.type === 'move_to_list' && action.listId) facts.listId = action.listId;
       if (action.type === 'assign' && action.userId) facts.assigneeIds = [action.userId];
       if (action.type === 'unassign') facts.assigneeIds = [];
       if (action.type === 'set_due_date') facts.dueDate = action.days === null || action.days === undefined ? null : addDays(today, action.days);

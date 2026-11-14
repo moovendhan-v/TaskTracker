@@ -976,6 +976,31 @@ test('starts an automation from a template and test-runs it on a task without ch
   await expect(page.getByText('Nudge, then escalate overdue work', { exact: true })).toBeVisible();
 });
 
+test('builds a move-to-list automation, then turns it off', async () => {
+  await page.getByRole('button', { name: 'New automation' }).click();
+  const builder = page.getByRole('dialog', { name: 'New automation' });
+  await builder.getByLabel('Automation name').fill('File finished work');
+  await builder.getByLabel('Trigger').click();
+  await page.getByRole('option', { name: 'Status changes' }).click();
+  // Turn the starter step into "Move to a list".
+  await builder.getByRole('treeitem').filter({ hasText: /notify/i }).first().click();
+  await builder.getByLabel('Action type').click();
+  await page.getByRole('option', { name: 'Move to a list' }).click();
+  await expect(builder.getByRole('button', { name: 'Create automation' })).toBeEnabled();
+  await builder.getByLabel('List to move to').click();
+  const target = (await page.getByRole('option').first().textContent())!.trim();
+  await page.getByRole('option').first().click();
+  await expect(page.getByText(new RegExp(`When status changes, then move it to ${target}`))).toBeVisible();
+  await expect(builder.getByText(/goes to the end of the list, with its subtasks/)).toBeVisible();
+  await shot('e1-automation-move-to-list', builder);
+  await builder.getByRole('button', { name: 'Create automation' }).click();
+  await expect(builder).toBeHidden();
+  await expect(page.getByText(`When status changes, then move it to ${target}.`)).toBeVisible();
+  // Off, so the rest of the journey's status changes leave tasks where they are.
+  await page.getByRole('switch', { name: 'File finished work is on' }).click({ force: true });
+  await expect(page.getByRole('switch', { name: 'File finished work is off' })).not.toBeChecked();
+});
+
 test('opens an empty inbox', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
   await expect(page).toHaveURL(/\/inbox$/);

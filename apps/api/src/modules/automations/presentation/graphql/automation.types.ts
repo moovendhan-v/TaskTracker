@@ -68,6 +68,7 @@ export class AutomationActionGql implements AutomationAction {
   @Field(() => String, { nullable: true }) message?: string | null;
   @Field(() => Int, { nullable: true, description: 'set_due_date: days from the day it runs; null clears' }) days?: number | null;
   @Field(() => ID, { nullable: true, description: 'post_chat: the channel' }) channelId?: string | null;
+  @Field(() => ID, { nullable: true, description: 'move_to_list: the list (in the rule’s space)' }) listId?: string | null;
   @Field(() => String, { nullable: true, description: 'webhook: an https URL on an allowlisted host' }) url?: string | null;
 }
 
@@ -134,6 +135,7 @@ export class AutomationActionInput implements AutomationAction {
   @Field(() => String, { nullable: true }) @IsOptional() @IsString() @MaxLength(AUTOMATION_LIMITS.messageMax) message?: string | null;
   @Field(() => Int, { nullable: true }) @IsOptional() @IsInt() @Min(0) @Max(FLOW_LIMITS.daysMax) days?: number | null;
   @Field(() => ID, { nullable: true }) @IsOptional() @IsUUID('4') channelId?: string | null;
+  @Field(() => ID, { nullable: true }) @IsOptional() @IsUUID('4') listId?: string | null;
   @Field(() => String, { nullable: true }) @IsOptional() @IsString() @MaxLength(AUTOMATION_LIMITS.urlMax) url?: string | null;
 }
 

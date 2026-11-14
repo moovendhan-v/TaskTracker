@@ -17,6 +17,7 @@ export type AutomationActionInput = {
   audiences?: Array<NotifyAudience> | null | undefined;
   channelId?: string | null | undefined;
   days?: number | null | undefined;
+  listId?: string | null | undefined;
   message?: string | null | undefined;
   priority?: TaskPriority | null | undefined;
   statusId?: string | null | undefined;
@@ -30,6 +31,7 @@ export type AutomationActionType =
   | 'add_watcher'
   | 'assign'
   | 'comment'
+  | 'move_to_list'
   | 'notify'
   | 'post_chat'
   | 'set_due_date'
@@ -1123,7 +1125,7 @@ export type WorkspaceAuditLogQueryVariables = Exact<{
 
 export type WorkspaceAuditLogQuery = { workspaceAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string }> } };
 
-export type AutomationRuleFieldsFragment = { id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null }> };
+export type AutomationRuleFieldsFragment = { id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null, listId: string | null }> };
 
 export type AutomationsQueryVariables = Exact<{
   workspaceId: string;
@@ -1131,7 +1133,7 @@ export type AutomationsQueryVariables = Exact<{
 }>;
 
 
-export type AutomationsQuery = { automations: Array<{ id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null }> }> };
+export type AutomationsQuery = { automations: Array<{ id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null, listId: string | null }> }> };
 
 export type AutomationRunsQueryVariables = Exact<{
   workspaceId: string;
@@ -1148,7 +1150,7 @@ export type CreateAutomationMutationVariables = Exact<{
 }>;
 
 
-export type CreateAutomationMutation = { createAutomation: { id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null }> } };
+export type CreateAutomationMutation = { createAutomation: { id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null, listId: string | null }> } };
 
 export type UpdateAutomationMutationVariables = Exact<{
   workspaceId: string;
@@ -1157,7 +1159,7 @@ export type UpdateAutomationMutationVariables = Exact<{
 }>;
 
 
-export type UpdateAutomationMutation = { updateAutomation: { id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null }> } };
+export type UpdateAutomationMutation = { updateAutomation: { id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null, listId: string | null }> } };
 
 export type SetAutomationEnabledMutationVariables = Exact<{
   workspaceId: string;
@@ -1166,7 +1168,7 @@ export type SetAutomationEnabledMutationVariables = Exact<{
 }>;
 
 
-export type SetAutomationEnabledMutation = { setAutomationEnabled: { id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null }> } };
+export type SetAutomationEnabledMutation = { setAutomationEnabled: { id: string, spaceId: string, name: string, enabled: boolean, flowJson: string | null, createdById: string | null, runCount: number, lastRunAt: string | null, createdAt: string, trigger: { type: AutomationTriggerType, statusIds: Array<string> | null, categories: Array<StatusCategory> | null, priorities: Array<TaskPriority> | null, days: number | null }, conditions: { listIds: Array<string> | null, priorities: Array<TaskPriority> | null, types: Array<TaskType> | null }, actions: Array<{ type: AutomationActionType, statusId: string | null, priority: TaskPriority | null, userId: string | null, audiences: Array<NotifyAudience> | null, userIds: Array<string> | null, message: string | null, days: number | null, channelId: string | null, url: string | null, listId: string | null }> } };
 
 export type DeleteAutomationMutationVariables = Exact<{
   workspaceId: string;
@@ -3340,6 +3342,7 @@ export const AutomationRuleFieldsFragmentDoc = new TypedDocumentString(`
     days
     channelId
     url
+    listId
   }
   flowJson
   createdById
@@ -4555,6 +4558,7 @@ export const AutomationsDocument = new TypedDocumentString(`
     days
     channelId
     url
+    listId
   }
   flowJson
   createdById
@@ -4614,6 +4618,7 @@ export const CreateAutomationDocument = new TypedDocumentString(`
     days
     channelId
     url
+    listId
   }
   flowJson
   createdById
@@ -4655,6 +4660,7 @@ export const UpdateAutomationDocument = new TypedDocumentString(`
     days
     channelId
     url
+    listId
   }
   flowJson
   createdById
@@ -4700,6 +4706,7 @@ export const SetAutomationEnabledDocument = new TypedDocumentString(`
     days
     channelId
     url
+    listId
   }
   flowJson
   createdById

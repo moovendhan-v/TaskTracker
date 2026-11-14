@@ -229,6 +229,30 @@ export class TasksService {
     return this.respondOne(workspaceId, saved);
   }
 
+  /**
+   * Moves a task, with its subtasks, to the end of another list in the same space
+   * (statuses, sprints and fields belong to the space, so they all stay valid).
+   * Needs task.update in that space. A subtask moves with its parent, not alone.
+   * Returns the task and whether it moved (false when it was already there).
+   */
+  async moveToList(actor: Actor, access: WorkspaceAccess, taskId: string, listId: string): Promise<{ task: TaskResponse; moved: boolean }> {
+    const { workspaceId } = access;
+    const task = await this.getInWorkspace(workspaceId, taskId);
+    const from = await this.listsService.getInWorkspace(workspaceId, task.listId);
+    SpaceGuard.assert(from.spaceId, 'task.update');
+    if (task.listId === listId) return { task: await this.respondOne(workspaceId, task), moved: false };
+    if (task.parentId) throw DomainError.invalid('A subtask moves with its parent task');
+    const to = await this.listsService.getInWorkspace(workspaceId, listId);
+    if (to.spaceId !== from.spaceId) throw DomainError.invalid('A task can move only to a list in its own space');
+
+    await this.tasks.moveSubtree(workspaceId, taskId, to.id, (await this.tasks.maxPosition(workspaceId, to.id)) + TASK_POSITION_STEP);
+    const saved = await this.getInWorkspace(workspaceId, taskId);
+    const changes: TaskChange[] = [{ field: 'list', from: from.name, to: to.name }];
+    await this.activity.record([{ workspaceId, taskId, actorId: actor.userId, kind: 'changed', field: 'list', fromValue: from.name.slice(0, 300), toValue: to.name.slice(0, 300) }]);
+    await this.publish('updated', actor, saved, { changes, spaceId: to.spaceId });
+    return { task: await this.respondOne(workspaceId, saved), moved: true };
+  }
+
   /** Deletes the task and its subtasks. */
   async remove(actor: Actor, workspaceId: string, taskId: string): Promise<TaskResponse> {
     const task = await this.getInWorkspace(workspaceId, taskId);
