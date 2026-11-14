@@ -1033,6 +1033,21 @@ enum DocKind {
   page
 }
 
+"""A page to start new pages from: built in, or saved in this workspace"""
+type DocTemplate {
+  """Ships with the app and can’t be deleted"""
+  builtIn: Boolean!
+
+  """Markdown; {{date}} becomes the day a page is made from it"""
+  content: String!
+  createdAt: String
+  createdById: ID
+  description: String!
+  icon: IconKey
+  id: ID!
+  name: String!
+}
+
 type Document {
   """Markdown; render without raw HTML"""
   content: String!
@@ -1719,6 +1734,9 @@ type Mutation {
   deleteDashboard(dashboardId: ID!, workspaceId: ID!): Boolean!
   deleteDepartment(departmentId: ID!, workspaceId: ID!): Boolean!
 
+  """Delete a saved template (whoever saved it, or someone with doc.manage)"""
+  deleteDocTemplate(templateId: ID!, workspaceId: ID!): Boolean!
+
   """Sub-pages are deleted too"""
   deleteDocument(documentId: ID!, workspaceId: ID!): Boolean!
 
@@ -1919,6 +1937,9 @@ type Mutation {
   Saves the blocks of one of your dashboards. Fails with CONFLICT if it changed since baseVersion
   """
   saveDashboardLayout(dashboardId: ID!, input: SaveDashboardLayoutInput!, workspaceId: ID!): NamedDashboard!
+
+  """Keep a page as a template for this workspace"""
+  saveDocTemplate(input: SaveDocTemplateInput!, workspaceId: ID!): DocTemplate!
 
   """Saves your layout. Fails with CONFLICT if it changed since baseVersion"""
   saveLayout(input: SaveLayoutInput!, workspaceId: ID!): DashboardLayout!
@@ -2411,6 +2432,9 @@ type Query {
     workspaceId: ID!
   ): [NamedDashboard!]!
   departments(workspaceId: ID!): [Department!]!
+
+  """The built-in starters, then this workspace’s saved templates"""
+  docTemplates(workspaceId: ID!): [DocTemplate!]!
   document(documentId: ID!, workspaceId: ID!): Document!
 
   """Page tree without content"""
@@ -2874,6 +2898,13 @@ input SaveAutomationInput {
 input SaveDashboardLayoutInput {
   baseVersion: Int!
   items: [LayoutItemInput!]!
+}
+
+input SaveDocTemplateInput {
+  content: String!
+  description: String
+  icon: IconKey
+  name: String!
 }
 
 input SaveLayoutInput {

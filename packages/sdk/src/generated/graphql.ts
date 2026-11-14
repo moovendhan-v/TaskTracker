@@ -645,6 +645,13 @@ export type SaveDashboardLayoutInput = {
   items: Array<LayoutItemInput>;
 };
 
+export type SaveDocTemplateInput = {
+  content: string;
+  description?: string | null | undefined;
+  icon?: IconKey | null | undefined;
+  name: string;
+};
+
 export type SaveLayoutInput = {
   /** The version you started from; null when you had none saved */
   baseVersion?: number | null | undefined;
@@ -1679,6 +1686,29 @@ export type DeleteDocumentMutationVariables = Exact<{
 
 
 export type DeleteDocumentMutation = { deleteDocument: boolean };
+
+export type DocTemplatesQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type DocTemplatesQuery = { docTemplates: Array<{ id: string, name: string, description: string, icon: IconKey | null, content: string, builtIn: boolean, createdById: string | null, createdAt: string | null }> };
+
+export type SaveDocTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  input: SaveDocTemplateInput;
+}>;
+
+
+export type SaveDocTemplateMutation = { saveDocTemplate: { id: string, name: string, description: string, icon: IconKey | null, content: string, builtIn: boolean, createdById: string | null, createdAt: string | null } };
+
+export type DeleteDocTemplateMutationVariables = Exact<{
+  workspaceId: string;
+  templateId: string;
+}>;
+
+
+export type DeleteDocTemplateMutation = { deleteDocTemplate: boolean };
 
 export type FormSchemasQueryVariables = Exact<{
   names?: Array<string> | string | null | undefined;
@@ -5835,6 +5865,39 @@ export const DeleteDocumentDocument = new TypedDocumentString(`
   deleteDocument(workspaceId: $workspaceId, documentId: $documentId)
 }
     `) as unknown as TypedDocumentString<DeleteDocumentMutation, DeleteDocumentMutationVariables>;
+export const DocTemplatesDocument = new TypedDocumentString(`
+    query DocTemplates($workspaceId: ID!) {
+  docTemplates(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    icon
+    content
+    builtIn
+    createdById
+    createdAt
+  }
+}
+    `) as unknown as TypedDocumentString<DocTemplatesQuery, DocTemplatesQueryVariables>;
+export const SaveDocTemplateDocument = new TypedDocumentString(`
+    mutation SaveDocTemplate($workspaceId: ID!, $input: SaveDocTemplateInput!) {
+  saveDocTemplate(workspaceId: $workspaceId, input: $input) {
+    id
+    name
+    description
+    icon
+    content
+    builtIn
+    createdById
+    createdAt
+  }
+}
+    `) as unknown as TypedDocumentString<SaveDocTemplateMutation, SaveDocTemplateMutationVariables>;
+export const DeleteDocTemplateDocument = new TypedDocumentString(`
+    mutation DeleteDocTemplate($workspaceId: ID!, $templateId: ID!) {
+  deleteDocTemplate(workspaceId: $workspaceId, templateId: $templateId)
+}
+    `) as unknown as TypedDocumentString<DeleteDocTemplateMutation, DeleteDocTemplateMutationVariables>;
 export const FormSchemasDocument = new TypedDocumentString(`
     query FormSchemas($names: [String!]) {
   formSchemas(names: $names) {

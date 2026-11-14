@@ -21,3 +21,7 @@ mutation MoveDocument($workspaceId: ID!, $documentId: ID!, $parentId: ID, $posit
 }
 
 mutation DeleteDocument($workspaceId: ID!, $documentId: ID!) { deleteDocument(workspaceId: $workspaceId, documentId: $documentId) }
+
+query DocTemplates($workspaceId: ID!) { docTemplates(workspaceId: $workspaceId) { id name description icon content builtIn createdById createdAt } }
+mutation SaveDocTemplate($workspaceId: ID!, $input: SaveDocTemplateInput!) { saveDocTemplate(workspaceId: $workspaceId, input: $input) { id name description icon content builtIn createdById createdAt } }
+mutation DeleteDocTemplate($workspaceId: ID!, $templateId: ID!) { deleteDocTemplate(workspaceId: $workspaceId, templateId: $templateId) }
