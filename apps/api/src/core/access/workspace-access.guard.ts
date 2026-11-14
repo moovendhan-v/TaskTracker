@@ -1,7 +1,6 @@
 import {
   type CanActivate,
   type ExecutionContext,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,6 +8,7 @@ import { Reflector } from '@nestjs/core';
 import { isUUID } from 'class-validator';
 import type { Permission } from '@taskflow/shared-types';
 import { AuditLogger } from '../audit/audit-logger.port.js';
+import { DomainError } from '../domain/domain-error.js';
 import { UnitOfWork } from '../database/unit-of-work.port.js';
 import { describeOperation, getRequest, getWorkspaceIdTarget, isWriteOperation } from '../http/request-context.js';
 import { AccessService } from './access.service.js';
@@ -37,7 +37,9 @@ export class WorkspaceAccessGuard implements CanActivate {
         context.getHandler(),
         context.getClass(),
       ]) ?? [];
-    if (!AccessService.hasAll(access, required)) throw new ForbiddenException('Missing workspace permission');
+    const missing = required.find((permission) => !access.permissions.has(permission));
+    // Says which permission, so the app can explain it ("Why?") and offer to request it.
+    if (missing) throw DomainError.missingPermission(missing, null, 'Missing workspace permission');
 
     // Written in its own transaction before the operation runs, so the attempt is kept even if the operation fails.
     if (access.viaPlatformRole && isWriteOperation(context)) {
