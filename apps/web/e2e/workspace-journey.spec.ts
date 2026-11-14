@@ -442,6 +442,39 @@ test('writes a doc with autosave and a preview that drops unsafe markup', async 
   expect(unsafeUrls).toBe(0);
 });
 
+test('starts a page from a template, and saves a page as one', async () => {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const now = new Date();
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  await page.getByRole('button', { name: 'New page from a template' }).click();
+  const gallery = page.getByRole('dialog', { name: 'New page from a template' });
+  await gallery.getByRole('button', { name: /^Retrospective/ }).click();
+  await expect(gallery.getByLabel('Preview of Retrospective')).toContainText('What went well');
+  await gallery.getByRole('button', { name: 'Use “Retrospective”' }).click();
+  await expect(gallery).toBeHidden();
+  await expect(page.getByLabel('Document title')).toHaveValue('Retrospective');
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Markdown' }).click();
+  await expect(page.getByLabel('Page content (markdown)')).toHaveValue(new RegExp(`^# Retrospective, ${today}`));
+
+  // Keep it as the team's own template.
+  await page.getByRole('button', { name: 'Export' }).click();
+  await page.getByRole('menuitem', { name: 'Save as template…' }).click();
+  const save = page.getByRole('dialog', { name: 'Save as template' });
+  await save.getByLabel('Name').fill('Team retro');
+  await save.getByLabel('Description').fill('Our retro, with this sprint’s date');
+  await save.getByRole('button', { name: 'Save template' }).click();
+  await expect(save).toBeHidden();
+
+  await page.getByRole('button', { name: 'New page from a template' }).click();
+  await gallery.getByRole('button', { name: /^Team retro/ }).click();
+  await expect(gallery.getByLabel('Preview of Team retro')).toContainText(`Retrospective, ${today}`);
+  await shot('b5-doc-templates', gallery);
+  await gallery.getByRole('button', { name: 'Delete template' }).click();
+  await expect(gallery.getByRole('button', { name: /^Team retro/ })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(gallery).toBeHidden();
+});
+
 test('edits a page together, live, in two tabs', async () => {
   const other = await page.context().newPage();
   await other.goto(page.url());
