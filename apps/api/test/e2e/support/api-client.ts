@@ -86,11 +86,11 @@ export class TestUser {
   }
 
   /** Runs an operation that must fail and returns its first error. */
-  async error(query: string, variables: Record<string, unknown> = {}): Promise<{ code: string | undefined; message: string }> {
+  async error(query: string, variables: Record<string, unknown> = {}): Promise<{ code: string | undefined; message: string; extensions: Record<string, unknown> }> {
     const result = await this.gql(query, variables);
     const error = result.errors?.[0];
     if (!error) throw new Error(`Expected an error, got: ${JSON.stringify(result.data)}`);
-    return { code: error.extensions?.code, message: error.message };
+    return { code: error.extensions?.code, message: error.message, extensions: (error.extensions ?? {}) as Record<string, unknown> };
   }
 
   /** A GET the way a browser follows a link: with this user's cookies, keeping any it gets, not following redirects. */
