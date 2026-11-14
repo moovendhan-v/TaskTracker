@@ -177,6 +177,46 @@ test('steps through the list from the task preview with j / k and the arrows', a
   await expect(page).not.toHaveURL(/task=/);
 });
 
+test('adds custom fields to the project and fills them in on a task', async () => {
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('button', { name: 'More views and tools' }).click();
+  await page.getByRole('menuitem', { name: /^Settings/ }).click();
+  const addField = async (name: string, type?: string, options: string[] = []) => {
+    await page.getByRole('button', { name: 'Add field' }).click();
+    const dialog = page.getByRole('dialog', { name: 'New field' });
+    await dialog.getByLabel('Name').fill(name);
+    if (type) {
+      await dialog.getByLabel('Type').click();
+      await page.getByRole('option', { name: type, exact: true }).click();
+    }
+    for (const option of options) {
+      await dialog.getByLabel('New option').fill(option);
+      await dialog.getByRole('button', { name: 'Add', exact: true }).click();
+    }
+    await dialog.getByRole('button', { name: 'Create field' }).click();
+    await expect(dialog).toBeHidden();
+  };
+  await addField('Customer');
+  await addField('Effort', 'Dropdown', ['Small', 'Large']);
+
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('link', { name: 'List', exact: true }).click();
+  await page.getByRole('button', { name: 'Write release notes', exact: true }).click();
+  const panel = page.getByRole('dialog', { name: 'Write release notes' });
+  await panel.getByLabel('Customer', { exact: true }).fill('Acme Corp');
+  await panel.getByLabel('Customer', { exact: true }).press('Enter');
+  await panel.getByLabel('Effort', { exact: true }).click();
+  await page.getByRole('option', { name: 'Large' }).click();
+  await expect(panel.getByLabel('Effort', { exact: true })).toHaveText('Large');
+  await shot('c2-custom-fields', panel.locator('dl').first());
+
+  // Saved: they're still there after a reload.
+  await page.reload();
+  const reopened = page.getByRole('dialog', { name: 'Write release notes' });
+  await expect(reopened.getByLabel('Customer', { exact: true })).toHaveValue('Acme Corp');
+  await expect(reopened.getByLabel('Effort', { exact: true })).toHaveText('Large');
+  await page.keyboard.press('Escape');
+  await expect(page).not.toHaveURL(/task=/);
+});
+
 test('edits a task and renders comments as text, never HTML', async () => {
   await page.getByRole('button', { name: 'Write release notes', exact: true }).click();
   await expect(page).toHaveURL(/task=/);

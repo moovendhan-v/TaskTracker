@@ -35,6 +35,7 @@ import { Section } from '@/components/kit/section';
 import { PullRequestsSection } from '@/modules/integrations';
 import { TaskAttachments } from './task-attachments';
 import { TaskChecklist } from './task-checklist';
+import { TaskCustomFields } from './task-custom-fields';
 import { TaskStepper } from './task-stepper';
 import { DateRangeField } from '@/components/kit/range-calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -240,7 +241,7 @@ function TaskProperties({ workspaceId, task }: { workspaceId: string; task: Task
                 if (next !== task.storyPoints) save({ storyPoints: next });
                 setPoints(next === null ? '' : String(next));
               }}
-              className={cn(inputClass, 'w-16 font-mono')}
+              className={cn(inputClass, 'w-[4.5rem] font-mono')}
             />
             <datalist id="story-point-scale">
               {STORY_POINT_SCALE.map((value) => (
@@ -250,6 +251,17 @@ function TaskProperties({ workspaceId, task }: { workspaceId: string; task: Task
             <span className="text-muted-foreground">pts</span>
           </span>
         </Property>
+        <TaskCustomFields
+          workspaceId={workspaceId}
+          task={task}
+          canEdit={canEdit}
+          onSave={(customFields) => save({ customFields })}
+          row={(label, content) => (
+            <Property key={label} label={label}>
+              {content}
+            </Property>
+          )}
+        />
         <Property label="Complete">
           <span className="flex items-center gap-2">
             <input
