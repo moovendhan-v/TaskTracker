@@ -22,6 +22,6 @@ export const SpaceGuard = {
 
   /** Throws FORBIDDEN unless the caller may use `permission` inside `spaceId`. */
   assert(spaceId: string, permission: SpaceScopedPermission): void {
-    if (!SpaceGuard.allowed(spaceId, permission)) throw DomainError.forbidden(`Your role can’t use ${permission} in this space`);
+    if (!SpaceGuard.allowed(spaceId, permission)) throw DomainError.missingPermission(permission, spaceId, `Your role can’t use ${permission} in this space`);
   },
 };

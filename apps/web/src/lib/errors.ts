@@ -44,3 +44,24 @@ export function getErrorMessage(error: unknown, fallback = 'Something went wrong
   }
   return fallback;
 }
+
+/** The permission a FORBIDDEN error says you lack (and the project, for project-level checks), if it says. */
+export function missingPermissionOf(error: unknown): { permission: string; spaceId: string | null } | null {
+  if (!(error instanceof GraphQLRequestError) || error.code !== 'FORBIDDEN') return null;
+  const extensions = error.errors[0]?.extensions;
+  const permission = extensions?.['missingPermission'];
+  if (typeof permission !== 'string' || !/^[a-z]+\.[a-z_]+$/.test(permission)) return null;
+  const spaceId = extensions?.['spaceId'];
+  return { permission, spaceId: typeof spaceId === 'string' && /^[0-9a-f-]{36}$/i.test(spaceId) ? spaceId : null };
+}
+
+/** Where "Why?" goes: the access checker on that permission (and project), for you, with Request access. */
+export function whyHref(workspaceId: string, missing: { permission: string; spaceId: string | null }): string {
+  const search = new URLSearchParams({ permission: missing.permission, ...(missing.spaceId ? { space: missing.spaceId } : {}) });
+  return `/w/${workspaceId}/access?${search.toString()}`;
+}
+
+/** The workspace in the current address (/w/<id>/…), for links from places without route params. */
+export function workspaceInPath(pathname: string): string | null {
+  return /^\/w\/([0-9a-f-]{36})(?:\/|$)/i.exec(pathname)?.[1] ?? null;
+}

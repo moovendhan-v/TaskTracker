@@ -8,6 +8,8 @@ export class DomainError extends Error {
   constructor(
     readonly kind: DomainErrorKind,
     message: string,
+    /** Forbidden because the caller lacks this permission (in this space, when set): clients offer "Why?". */
+    readonly missing?: { permission: string; spaceId: string | null },
   ) {
     super(message);
     this.name = 'DomainError';
@@ -19,6 +21,11 @@ export class DomainError extends Error {
 
   static forbidden(message: string): DomainError {
     return new DomainError('forbidden', message);
+  }
+
+  /** Forbidden for want of one permission (the caller's own; nothing about anyone else is revealed). */
+  static missingPermission(permission: string, spaceId: string | null, message: string): DomainError {
+    return new DomainError('forbidden', message, { permission, spaceId });
   }
 
   static invalid(message: string): DomainError {

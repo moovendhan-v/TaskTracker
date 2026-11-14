@@ -60,6 +60,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
           statusCode: status,
           // Per-field messages, so forms can show each one next to its input.
           ...(exception instanceof FieldValidationException ? { fields: exception.fields } : {}),
+          // The permission the caller lacks (their own), so the app can say why and offer to request it.
+          ...(exception instanceof DomainError && exception.missing
+            ? { missingPermission: exception.missing.permission, ...(exception.missing.spaceId ? { spaceId: exception.missing.spaceId } : {}) }
+            : {}),
         },
       });
     }

@@ -4,6 +4,7 @@ import { formSchemasQuery } from '@/core/forms/use-form-schema';
 import { OfflineBanner } from '@/core/layout/offline-banner';
 import { Providers } from './providers';
 import { createQueryClient } from './query-client';
+import { setAppNavigate } from '@/lib/navigate';
 import { createAppRouter } from './routes';
 
 export function App() {
@@ -13,7 +14,11 @@ export function App() {
     void client.prefetchQuery(formSchemasQuery);
     return client;
   });
-  const [router] = useState(() => createAppRouter(queryClient));
+  const [router] = useState(() => {
+    const created = createAppRouter(queryClient);
+    setAppNavigate((href) => void created.navigate({ href }));
+    return created;
+  });
   return (
     <Providers queryClient={queryClient}>
       <OfflineBanner />
