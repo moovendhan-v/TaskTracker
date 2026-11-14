@@ -241,7 +241,7 @@ function TaskProperties({ workspaceId, task }: { workspaceId: string; task: Task
                 if (next !== task.storyPoints) save({ storyPoints: next });
                 setPoints(next === null ? '' : String(next));
               }}
-              className={cn(inputClass, 'w-16 font-mono')}
+              className={cn(inputClass, 'w-[4.5rem] font-mono')}
             />
             <datalist id="story-point-scale">
               {STORY_POINT_SCALE.map((value) => (
