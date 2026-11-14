@@ -16,6 +16,7 @@ fragment NamedDashboardFields on NamedDashboard {
   name
   visibility
   ownerId
+  spaceId
   mine
   version
   period
@@ -25,7 +26,7 @@ fragment NamedDashboardFields on NamedDashboard {
   items { id type x y w h tabs pinned config { title accent spaceId limit includeClosed mine priorities fields categories chart breakdownChart assigneeIds followContext } }
 }
 
-query Dashboards($workspaceId: ID!) { dashboards(workspaceId: $workspaceId) { ...NamedDashboardFields } }
+query Dashboards($workspaceId: ID!, $spaceId: ID) { dashboards(workspaceId: $workspaceId, spaceId: $spaceId) { ...NamedDashboardFields } }
 
 query DashboardTeams($workspaceId: ID!) { dashboardTeams(workspaceId: $workspaceId) { id name } }
 

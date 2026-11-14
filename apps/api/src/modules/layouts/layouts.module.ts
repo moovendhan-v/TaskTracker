@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { SpacesModule } from '../spaces/spaces.module.js';
 import { DashboardsService } from './application/dashboards.service.js';
 import { LayoutsService } from './application/layouts.service.js';
 import { DashboardRepository } from './domain/dashboard.repository.js';
@@ -8,8 +9,9 @@ import { TypeOrmLayoutRepository } from './infrastructure/typeorm-layout.reposit
 import { DashboardsResolver } from './presentation/graphql/dashboards.resolver.js';
 import { LayoutsResolver } from './presentation/graphql/layouts.resolver.js';
 
-/** Personal, arrangeable page layouts (the v2 block grid) and named Home dashboards. */
+/** Personal, arrangeable page layouts (the v2 block grid) and named dashboards (Home and project pages). */
 @Module({
+  imports: [SpacesModule],
   providers: [
     LayoutsService,
     LayoutsResolver,

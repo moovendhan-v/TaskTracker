@@ -1,21 +1,26 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentAccess } from '../../../../core/access/current-access.decorator.js';
 import { RequirePermissions } from '../../../../core/access/require-permissions.decorator.js';
-import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
+import { OptionalUuidArg, UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { DashboardsService } from '../../application/dashboards.service.js';
 import { CreateDashboardInput, DashboardTeamGql, LayoutVersionGql, NamedDashboardGql, SaveDashboardLayoutInput, UpdateDashboardInput } from './layout.types.js';
 
-/** Home dashboard tabs. Same access as the dashboard itself; ownership is checked per dashboard. */
+/** Dashboard tabs on Home and on project pages. Same access as the dashboard itself; ownership is checked per dashboard. */
 @Resolver(() => NamedDashboardGql)
 export class DashboardsResolver {
   constructor(private readonly service: DashboardsService) {}
 
-  @Query(() => [NamedDashboardGql], { description: 'Your dashboards, and the ones shared with the workspace or with a team you are in' })
+  @Query(() => [NamedDashboardGql], { description: 'Your dashboards, and the ones shared with the workspace or with a team you are in: Home’s, or one project’s' })
   @RequirePermissions('task.view')
-  dashboards(@WorkspaceIdArg() _workspaceId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<NamedDashboardGql[]> {
-    return this.service.list(access.workspaceId, actor.userId);
+  dashboards(
+    @WorkspaceIdArg() _workspaceId: string,
+    @OptionalUuidArg('spaceId', 'A project: its dashboards instead of Home’s') spaceId: string | null,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<NamedDashboardGql[]> {
+    return this.service.list(access.workspaceId, actor.userId, spaceId);
   }
 
   @Query(() => [DashboardTeamGql], { description: 'Departments you belong to or lead: the teams you can share a dashboard with' })

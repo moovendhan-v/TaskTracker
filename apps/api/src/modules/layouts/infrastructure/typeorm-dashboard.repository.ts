@@ -7,6 +7,7 @@ interface Row {
   id: string;
   workspace_id: string;
   owner_id: string;
+  space_id: string | null;
   name: string;
   visibility: DashboardVisibility;
   items: LayoutItem[];
@@ -18,7 +19,7 @@ interface Row {
 }
 
 const COLUMNS =
-  'id, workspace_id, owner_id, name, visibility, items, version, period, department_id, (SELECT d.name FROM department d WHERE d.workspace_id = dashboard.workspace_id AND d.id = dashboard.department_id) AS department_name, updated_at';
+  'id, workspace_id, owner_id, space_id, name, visibility, items, version, period, department_id, (SELECT d.name FROM department d WHERE d.workspace_id = dashboard.workspace_id AND d.id = dashboard.department_id) AS department_name, updated_at';
 /** Who may read a dashboard ($1 workspace, $2 user): the same rule as the row-level security policy. */
 const VISIBLE = `(owner_id = $2 OR visibility = 'workspace' OR (visibility = 'department' AND (
   EXISTS (SELECT 1 FROM department d WHERE d.workspace_id = $1 AND d.id = dashboard.department_id AND d.head_user_id = $2)
@@ -27,6 +28,7 @@ const toRecord = (row: Row): DashboardRecord => ({
   id: row.id,
   workspaceId: row.workspace_id,
   ownerId: row.owner_id,
+  spaceId: row.space_id ?? null,
   name: row.name,
   visibility: row.visibility,
   items: row.items,
@@ -53,10 +55,10 @@ export class TypeOrmDashboardRepository extends DashboardRepository {
     return this.transactional.manager.query(sql, params).then(rowsOf);
   }
 
-  async listVisible(workspaceId: string, userId: string): Promise<DashboardRecord[]> {
+  async listVisible(workspaceId: string, userId: string, spaceId: string | null): Promise<DashboardRecord[]> {
     const rows = await this.query(
-      `SELECT ${COLUMNS} FROM dashboard WHERE workspace_id = $1 AND ${VISIBLE} ORDER BY created_at, id LIMIT 200`,
-      [workspaceId, userId],
+      `SELECT ${COLUMNS} FROM dashboard WHERE workspace_id = $1 AND space_id IS NOT DISTINCT FROM $3::uuid AND ${VISIBLE} ORDER BY created_at, id LIMIT 200`,
+      [workspaceId, userId, spaceId],
     );
     return rows.map(toRecord);
   }
@@ -71,10 +73,10 @@ export class TypeOrmDashboardRepository extends DashboardRepository {
     return Number(rows[0]?.count ?? 0);
   }
 
-  async create(record: Pick<DashboardRecord, 'workspaceId' | 'ownerId' | 'name' | 'visibility' | 'items'>): Promise<DashboardRecord> {
+  async create(record: Pick<DashboardRecord, 'workspaceId' | 'ownerId' | 'spaceId' | 'name' | 'visibility' | 'items'>): Promise<DashboardRecord> {
     const [row] = await this.query(
-      `INSERT INTO dashboard (workspace_id, owner_id, name, visibility, items) VALUES ($1, $2, $3, $4, $5::jsonb) RETURNING ${COLUMNS}`,
-      [record.workspaceId, record.ownerId, record.name, record.visibility, JSON.stringify(record.items)],
+      `INSERT INTO dashboard (workspace_id, owner_id, space_id, name, visibility, items) VALUES ($1, $2, $3, $4, $5, $6::jsonb) RETURNING ${COLUMNS}`,
+      [record.workspaceId, record.ownerId, record.spaceId, record.name, record.visibility, JSON.stringify(record.items)],
     );
     return toRecord(row!);
   }

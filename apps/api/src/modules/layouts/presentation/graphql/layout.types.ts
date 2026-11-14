@@ -130,6 +130,7 @@ export class NamedDashboardGql implements NamedDashboardResponse {
   @Field() name: string;
   @Field(() => String) visibility: DashboardVisibility;
   @Field(() => ID) ownerId: string;
+  @Field(() => ID, { nullable: true, description: 'The project it belongs to; null for a Home dashboard' }) spaceId: string | null;
   @Field({ description: 'You own it, so you can edit, share or delete it' }) mine: boolean;
   @Field(() => Int) version: number;
   @Field(() => [LayoutItemGql]) items: LayoutItemGql[];
@@ -149,8 +150,9 @@ export class DashboardTeamGql implements DashboardTeam {
 export class CreateDashboardInput {
   @Field() @IsString() @IsNotBlank() @MaxLength(DASHBOARD_LIMITS.nameMax) name: string;
   @Field(() => String, { defaultValue: 'private' }) @IsIn(DASHBOARD_VISIBILITIES) visibility: DashboardVisibility = 'private';
+  @Field(() => ID, { nullable: true, description: 'A project: the dashboard goes on its page and holds project blocks' }) @IsClearable() @IsUUID('4') spaceId?: string | null;
 
-  @Field(() => [LayoutItemInput], { nullable: true, description: 'Start from these blocks; the default Home layout when omitted' })
+  @Field(() => [LayoutItemInput], { nullable: true, description: 'Start from these blocks; the page’s default layout when omitted' })
   @IsClearable()
   @IsArray()
   @ArrayMaxSize(LAYOUT_LIMITS.items)
