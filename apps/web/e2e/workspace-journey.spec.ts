@@ -1140,6 +1140,9 @@ test('filters the inbox and snoozes an item until later', async () => {
 
   // From the keyboard: j / k (or ↓ / ↑) move, e marks read, s opens the snooze menu.
   const items = list.getByRole('listitem');
+  // The un-snoozed comment comes back unread, on top: wait for that order before stepping.
+  await expect(items.nth(0)).toContainText('commented');
+  await expect(items.nth(0).getByLabel('Unread')).toBeVisible();
   await page.keyboard.press('j');
   await expect(items.nth(0).getByRole('link')).toBeFocused();
   await page.keyboard.press('ArrowDown');
