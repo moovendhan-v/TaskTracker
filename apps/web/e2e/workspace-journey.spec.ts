@@ -318,6 +318,33 @@ test('limits work in progress per column, and splits the board into swimlanes', 
   await expect(page.getByRole('region', { name: 'Swimlane No priority' })).toHaveCount(0);
 });
 
+test('adds a named dashboard to the project page', async () => {
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('button', { name: 'More views and tools' }).click();
+  await page.getByRole('menuitem', { name: /^Dashboard/ }).click();
+  const tabs = page.getByRole('navigation', { name: 'Dashboards' });
+  await expect(tabs.getByRole('button', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
+  // Projects have no My work tab; that's Home's.
+  await expect(tabs.getByRole('button', { name: 'My work' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'New dashboard' }).click();
+  const dialog = page.getByRole('dialog', { name: 'New dashboard' });
+  await dialog.getByLabel('Dashboard name').fill('Delivery health');
+  await dialog.getByRole('button', { name: 'Create' }).click();
+  await expect(tabs.getByText('Delivery health')).toBeVisible();
+  await expect(page.getByText('Private: only you can see this dashboard.')).toBeVisible();
+  await shot('c4-project-dashboard');
+
+  // It belongs to this project: it's back after a reload, and Home doesn't list it.
+  await page.reload();
+  await expect(page.getByRole('navigation', { name: 'Dashboards' }).getByText('Delivery health')).toBeVisible();
+  const projectUrl = page.url();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Home' }).click();
+  await expect(page.getByRole('navigation', { name: 'Dashboards' }).getByRole('button', { name: 'My work' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Dashboards' }).getByText('Delivery health')).toHaveCount(0);
+  await page.goto(projectUrl);
+  await expect(page.getByRole('navigation', { name: 'Dashboards' })).toBeVisible();
+});
+
 test('plans, starts and completes a sprint', async () => {
   // Sprints lives in the "More views" menu next to the core views.
   await page.getByRole('navigation', { name: 'Project views' }).getByRole('button', { name: 'More views and tools' }).click();
