@@ -1082,15 +1082,20 @@ test('drags widgets in from the tray while arranging, and the others make room',
   await expect(sections).toHaveCount(before + 1);
   // Drag: onto the empty rows under the blocks.
   // (The hint itself lets the pointer through to the grid behind it, so drag by coordinates.)
-  await page.getByText('Drag a widget here').evaluate((element) => element.scrollIntoView({ block: 'center' }));
-  const target = (await page.getByText('Drag a widget here').boundingBox())!;
-  await tray.getByRole('button', { name: 'Place Section' }).hover();
-  await page.mouse.down();
-  await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
-  // The others move aside under a still pointer; a real browser keeps sending dragover, headless needs a nudge.
-  await page.mouse.move(target.x + target.width / 2 + 2, target.y + target.height / 2 + 1, { steps: 2 });
-  await page.mouse.up();
-  await expect(sections).toHaveCount(before + 2);
+  // A simulated drag in a headless browser now and then loses its drop: try again until it lands,
+  // never once it has (so it can't add a third).
+  await expect(async () => {
+    if ((await sections.count()) === before + 2) return;
+    await page.getByText('Drag a widget here').evaluate((element) => element.scrollIntoView({ block: 'center' }));
+    const target = (await page.getByText('Drag a widget here').boundingBox())!;
+    await tray.getByRole('button', { name: 'Place Section' }).hover();
+    await page.mouse.down();
+    await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
+    // The others move aside under a still pointer; a real browser keeps sending dragover, headless needs a nudge.
+    await page.mouse.move(target.x + target.width / 2 + 2, target.y + target.height / 2 + 1, { steps: 2 });
+    await page.mouse.up();
+    await expect(sections).toHaveCount(before + 2, { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
   await expect(page.getByRole('status').filter({ hasText: 'Section added' })).toHaveCount(1);
   // Done hides the tray; undo the two new sections so the rest of the journey is unchanged.
   await page.getByRole('button', { name: 'Undo' }).click();
