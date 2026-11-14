@@ -69,6 +69,24 @@ export class InMemoryTaskRepository extends TaskRepository {
     return [...this.rows.values()].filter((t) => t.workspaceId === workspaceId && t.parentId === parentId).slice(0, limit);
   }
 
+  async moveSubtree(workspaceId: string, taskId: string, listId: string, position: number): Promise<number> {
+    const ids = new Set([taskId]);
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const task of this.rows.values()) {
+        if (task.workspaceId === workspaceId && task.parentId && ids.has(task.parentId) && !ids.has(task.id)) {
+          ids.add(task.id);
+          grew = true;
+        }
+      }
+    }
+    for (const id of ids) {
+      const task = this.rows.get(id)!;
+      this.rows.set(id, { ...task, listId, position: id === taskId ? position : task.position });
+    }
+    return ids.size;
+  }
+
   async depthOf(workspaceId: string, taskId: string): Promise<number> {
     let depth = 0;
     let current = this.rows.get(taskId);

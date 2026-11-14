@@ -5,7 +5,7 @@ fragment AutomationRuleFields on AutomationRule {
   enabled
   trigger { type statusIds categories priorities days }
   conditions { listIds priorities types }
-  actions { type statusId priority userId audiences userIds message days channelId url }
+  actions { type statusId priority userId audiences userIds message days channelId url listId }
   flowJson
   createdById
   runCount

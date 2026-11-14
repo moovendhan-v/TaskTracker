@@ -84,6 +84,7 @@ const STARTERS: Record<AutomationAction['type'], AutomationAction> = {
   add_watcher: { type: 'add_watcher' },
   post_chat: { type: 'post_chat', message: 'New: {{task}}' },
   webhook: { type: 'webhook', url: '' },
+  move_to_list: { type: 'move_to_list' },
 };
 
 /** Settings of one action, by its type. */
@@ -152,6 +153,25 @@ export function ActionFields({ action, onChange, choices }: { action: Automation
             </SelectContent>
           </Select>
         </Field>
+      ) : null}
+      {action.type === 'move_to_list' ? (
+        <>
+          <Field label="List">
+            <Select value={action.listId ?? ''} onValueChange={(listId) => onChange({ ...action, listId })}>
+              <SelectTrigger aria-label="List to move to">
+                <SelectValue placeholder="Pick a list" />
+              </SelectTrigger>
+              <SelectContent>
+                {choices.lists.map((list) => (
+                  <SelectItem key={list.id} value={list.id}>
+                    {list.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <span className="text-xs text-muted-foreground">Lists in this space. The task goes to the end of the list, with its subtasks; status and fields stay as they are.</span>
+        </>
       ) : null}
       {action.type === 'set_priority' ? (
         <Field label="Priority">

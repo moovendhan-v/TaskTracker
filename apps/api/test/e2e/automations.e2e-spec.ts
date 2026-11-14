@@ -22,6 +22,44 @@ describe('automations', () => {
     await addMember(ws, member, 'Member');
   });
 
+  it('moves a task, with its subtasks, to another list in the space', async () => {
+    const list = async (spaceId: string, name: string) =>
+      (await ws.owner.data<{ createList: { id: string } }>('mutation($w: ID!, $s: ID!, $n: String!) { createList(workspaceId: $w, spaceId: $s, input: { name: $n }) { id } }', vars({ s: spaceId, n: name }))).createList.id;
+    const archive = await list(ws.spaceId, 'Archive');
+    const { createSpace } = await ws.owner.data<{ createSpace: { id: string } }>('mutation($w: ID!) { createSpace(workspaceId: $w, input: { name: "Elsewhere" }) { id } }', vars());
+    const elsewhere = await list(createSpace.id, 'Other space list');
+    const moveRule = { name: 'Archive done work', trigger: { type: 'task_status_changed', categories: ['done'] } };
+
+    // Only lists of the rule's own space.
+    expect((await ws.owner.error(CREATE, vars({ s: ws.spaceId, input: { ...moveRule, actions: [{ type: 'move_to_list', listId: elsewhere }] } }))).message).toMatch(/lists of this space/);
+    expect((await ws.owner.error(CREATE, vars({ s: ws.spaceId, input: { ...moveRule, actions: [{ type: 'move_to_list' }] } }))).message).toMatch(/pick a list/);
+    const id = await rule({ ...moveRule, actions: [{ type: 'move_to_list', listId: archive }] });
+
+    const parent = await newTask(ws.owner, { title: 'Ship the release' });
+    const child = await newTask(ws.owner, { title: 'Write release notes', parentId: parent });
+    const where = async (t: string) => (await ws.owner.data<{ task: { listId: string } }>('query($w: ID!, $t: ID!) { task(workspaceId: $w, taskId: $t) { listId } }', vars({ t }))).task.listId;
+
+    // A subtask doesn't move alone: the run fails and says why; the status change still goes through.
+    await ws.owner.data(UPDATE_TASK, vars({ t: child, input: { statusId: ws.statuses['Done'] } }));
+    expect(await where(child)).toBe(ws.listId);
+    const runs = async () => (await ws.owner.data<{ automationRuns: { status: string; message: string | null; taskId: string }[] }>(RUNS, vars({ r: id }))).automationRuns;
+    expect((await runs())[0]).toMatchObject({ status: 'failed', taskId: child, message: expect.stringMatching(/subtask moves with its parent/) });
+
+    // The parent moves, and takes its subtask along.
+    await ws.owner.data(UPDATE_TASK, vars({ t: parent, input: { statusId: ws.statuses['Done'] } }));
+    expect(await where(parent)).toBe(archive);
+    expect(await where(child)).toBe(archive);
+    expect((await runs())[0]).toMatchObject({ status: 'succeeded', taskId: parent });
+    const activity = (await ws.owner.data<{ taskActivity: { field: string | null; from: string | null; to: string | null }[] }>(
+      'query($w: ID!, $t: ID!) { taskActivity(workspaceId: $w, taskId: $t) { field from to } }',
+      vars({ t: parent }),
+    )).taskActivity;
+    expect(activity).toContainEqual({ field: 'list', from: 'Backlog', to: 'Archive' });
+
+    // Off again, so later tests' done tasks stay put.
+    await ws.owner.data('mutation($w: ID!, $r: ID!) { deleteAutomation(workspaceId: $w, ruleId: $r) }', vars({ r: id }));
+  });
+
   it('needs automation.manage', async () => {
     const result = await member.error(CREATE, vars({ s: ws.spaceId, input: { name: 'x', trigger: { type: 'task_created' }, actions: [{ type: 'unassign' }] } }));
     expect(result.code).toBe('FORBIDDEN');

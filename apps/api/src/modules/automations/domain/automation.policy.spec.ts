@@ -27,6 +27,11 @@ describe('AutomationPolicy', () => {
     expect(() => AutomationPolicy.normalizeActions([{ type: 'notify', audiences: ['assignee'], message: ' ' }])).toThrow(/message/);
     expect(() => AutomationPolicy.normalizeActions([{ type: 'notify', message: 'hi' }])).toThrow(/who to notify/);
     expect(() => AutomationPolicy.normalizeActions([{ type: 'set_status', statusId: 'nope' }])).toThrow(/status/);
+    // move_to_list keeps only the list, needs task.update, and its list is checked against the space.
+    expect(AutomationPolicy.normalizeActions([{ type: 'move_to_list', listId: S1, statusId: S1 }])).toEqual([{ type: 'move_to_list', listId: S1 }]);
+    expect(() => AutomationPolicy.normalizeActions([{ type: 'move_to_list', listId: 'nope' }])).toThrow(/pick a list/);
+    expect(AutomationPolicy.requiredPermissions([{ type: 'move_to_list', listId: S1 }])).toEqual(['task.update']);
+    expect(AutomationPolicy.referencedIds({ type: 'task_created' }, {}, [{ type: 'move_to_list', listId: S1 }]).listIds).toEqual([S1]);
   });
 
   it('lists what the actions need from the person the rule runs as', () => {

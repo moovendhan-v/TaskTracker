@@ -57,6 +57,7 @@ const ACTION_PERMISSIONS: Record<AutomationAction['type'], Permission[]> = {
   add_watcher: ['task.update'],
   post_chat: ['chat.use'],
   webhook: [],
+  move_to_list: ['task.update'],
 };
 
 export const AutomationPolicy = {
@@ -141,6 +142,9 @@ export const AutomationPolicy = {
           if (!url || url.length > AUTOMATION_LIMITS.urlMax) throw DomainError.invalid(`${where}: enter the webhook URL`);
           return { type: action.type, url };
         }
+        case 'move_to_list':
+          if (!action.listId || !UUID.test(action.listId)) throw DomainError.invalid(`${where}: pick a list`);
+          return { type: action.type, listId: action.listId };
         default:
           throw DomainError.invalid(`${where}: unknown action`);
       }
@@ -185,7 +189,7 @@ export const AutomationPolicy = {
   referencedIds(trigger: AutomationTrigger, conditions: AutomationConditions, actions: readonly AutomationAction[]): ReferencedIds {
     return {
       statusIds: [...(trigger.statusIds ?? []), ...actions.flatMap((action) => (action.statusId ? [action.statusId] : []))],
-      listIds: [...(conditions.listIds ?? [])],
+      listIds: [...(conditions.listIds ?? []), ...actions.flatMap((action) => (action.type === 'move_to_list' && action.listId ? [action.listId] : []))],
       userIds: actions.flatMap((action) => [...(action.userId ? [action.userId] : []), ...(action.userIds ?? [])]),
     };
   },

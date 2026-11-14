@@ -25,6 +25,7 @@ export const ACTION_LABELS: Record<AutomationAction['type'], string> = {
   add_watcher: 'Add a watcher',
   post_chat: 'Post in chat',
   webhook: 'Call a webhook',
+  move_to_list: 'Move to a list',
 };
 
 export const AUDIENCE_LABELS: Record<NotifyAudience, string> = {
@@ -107,6 +108,8 @@ export function describeAction(action: AutomationAction, names: Names): string {
       return `post in ${action.channelId ? `#${names.channel?.(action.channelId) ?? 'a channel'}` : '…'}`;
     case 'webhook':
       return `call a webhook on ${hostOf(action.url)}`;
+    case 'move_to_list':
+      return `move it to ${action.listId ? names.list(action.listId) : '…'}`;
   }
 }
 

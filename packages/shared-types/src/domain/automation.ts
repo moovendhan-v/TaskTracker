@@ -31,7 +31,7 @@ export function isScheduledTrigger(type: AutomationTriggerType): type is Schedul
   return (SCHEDULED_TRIGGERS as readonly string[]).includes(type);
 }
 
-export const AUTOMATION_ACTIONS = ['set_status', 'set_priority', 'assign', 'unassign', 'notify', 'comment', 'set_due_date', 'add_watcher', 'post_chat', 'webhook'] as const;
+export const AUTOMATION_ACTIONS = ['set_status', 'set_priority', 'assign', 'unassign', 'notify', 'comment', 'set_due_date', 'add_watcher', 'post_chat', 'webhook', 'move_to_list'] as const;
 export type AutomationActionType = (typeof AUTOMATION_ACTIONS)[number];
 
 /** Who a notify action reaches, besides people named by id. */
@@ -74,6 +74,8 @@ export interface AutomationAction {
   channelId?: string | null;
   /** webhook: an https:// URL on a host this server allows (AUTOMATION_WEBHOOK_HOSTS). */
   url?: string | null;
+  /** move_to_list: a list in the rule's space; the task moves there with its subtasks. */
+  listId?: string | null;
 }
 
 export const AUTOMATION_LIMITS = {

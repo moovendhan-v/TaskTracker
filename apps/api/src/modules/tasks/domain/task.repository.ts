@@ -34,6 +34,8 @@ export abstract class TaskRepository {
   /** Direct subtasks, in position order. */
   abstract listSubtasks(workspaceId: string, parentId: string, limit: number): Promise<Task[]>;
   /** How many ancestors a task has (0 for a top-level task). */
+  /** Moves a task and all its subtasks to another list; the task itself goes to `position`. Returns how many moved. */
+  abstract moveSubtree(workspaceId: string, taskId: string, listId: string, position: number): Promise<number>;
   abstract depthOf(workspaceId: string, taskId: string): Promise<number>;
   abstract create(task: NewTask): Promise<Task>;
   abstract save(task: Task): Promise<Task>;
