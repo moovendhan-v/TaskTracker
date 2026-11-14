@@ -1227,8 +1227,11 @@ test('switches the sidebar to the Minimal and Manager layouts', async () => {
   await expect(sidebar.getByRole('link', { name: 'Members' })).toHaveCount(0);
   await expect(sidebar.getByRole('link', { name: 'Timesheets' })).toHaveCount(0);
   await expect(sidebar.getByRole('link', { name: 'My tasks' })).toBeVisible();
-  // Manager: the people section comes before the projects.
+  // Manager: the people section comes before the projects. The save goes to the server in the
+  // background; wait for it, or the reload below can come first.
+  const saved = page.waitForResponse((response) => response.request().postData()?.includes('"sidebarPreset":"manager"') === true && response.ok());
   await presets.getByRole('radio', { name: 'Manager' }).click();
+  await saved;
   await expect(sidebar.getByRole('link', { name: 'Members' })).toBeVisible();
   const order = await sidebar.locator('h3, [role="heading"], button, a').allInnerTexts();
   expect(order.findIndex((text) => /Directory|Time off/.test(text))).toBeLessThan(order.findIndex((text) => /Members/.test(text)));
