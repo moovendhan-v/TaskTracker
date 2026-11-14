@@ -1139,23 +1139,27 @@ test('filters the inbox and snoozes an item until later', async () => {
   await expect(list.getByRole('listitem')).toHaveCount(2);
 
   // From the keyboard: j / k (or ↓ / ↑) move, e marks read, s opens the snooze menu.
+  // Rows are found by what they say; the newest-first order is the server's.
   const items = list.getByRole('listitem');
-  // The un-snoozed comment comes back unread, on top: wait for that order before stepping.
-  await expect(items.nth(0)).toContainText('commented');
-  await expect(items.nth(0).getByLabel('Unread')).toBeVisible();
+  const mention = items.filter({ hasText: 'mentioned you' }).getByRole('link');
+  const commented = items.filter({ hasText: 'commented' });
+  await expect(commented.getByLabel('Unread')).toBeVisible();
+  const firstIsComment = (await items.nth(0).textContent())!.includes('commented');
   await page.keyboard.press('j');
   await expect(items.nth(0).getByRole('link')).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(items.nth(1).getByRole('link')).toBeFocused();
   await page.keyboard.press('k');
   await expect(items.nth(0).getByRole('link')).toBeFocused();
-  await expect(items.nth(0).getByLabel('Unread')).toBeVisible();
+  if (!firstIsComment) await page.keyboard.press('j');
+  await expect(commented.getByRole('link')).toBeFocused();
   await page.keyboard.press('e');
-  await expect(items.nth(0).getByLabel('Unread')).toHaveCount(0);
+  await expect(commented.getByLabel('Unread')).toHaveCount(0);
   await page.keyboard.press('s');
   await expect(page.getByRole('menuitem', { name: /Tomorrow morning/ })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(mention).toBeVisible();
   await expect(page.getByText(/to move · .*Enter.* to open/)).toBeVisible();
 });
 

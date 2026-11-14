@@ -60,6 +60,8 @@ export class TypeOrmNotificationRepository extends NotificationRepository {
       // Snoozed: soonest back first. Inbox: newest first, where a snooze that ended counts from when it ended.
       .orderBy(filter.snoozed ? 'notification.snoozed_until' : 'GREATEST(notification.created_at, COALESCE(notification.snoozed_until, notification.created_at))', filter.snoozed ? 'ASC' : 'DESC')
       .addOrderBy('notification.created_at', 'DESC')
+      // Ties (several created at once) keep one order, so the list and its pages don't shuffle between loads.
+      .addOrderBy('notification.id', 'DESC')
       .offset((page.page - 1) * page.pageSize)
       .limit(page.pageSize)
       .getRawMany<ViewRow>();
