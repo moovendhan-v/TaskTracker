@@ -398,7 +398,7 @@ export function ScheduleFields({ schedule, onChange }: { schedule: AutomationSch
           />
         </Field>
       ) : null}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+      <div className="grid gap-3">
         <Field label="At">
           <Input type="time" aria-label="Time of day" value={schedule.time} required onChange={(event) => event.target.value && onChange({ ...schedule, time: event.target.value.slice(0, 5) })} className="w-28" />
         </Field>
