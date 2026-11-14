@@ -152,6 +152,31 @@ test('shows changes made in another tab without reloading', async () => {
   await expect(page.getByRole('button', { name: 'Book the launch venue' })).toBeVisible();
 });
 
+test('steps through the list from the task preview with j / k and the arrows', async () => {
+  await page.getByRole('button', { name: 'Write release notes', exact: true }).click();
+  const first = page.getByRole('dialog', { name: 'Write release notes' });
+  await expect(first).toBeVisible();
+  const position = first.getByText(/^\d+ of 4$/);
+  await expect(position).toBeVisible();
+  const where = Number((await position.textContent())!.split(' ')[0]);
+  await shot('c2-task-stepper', first.locator('header'));
+
+  // Next from the keyboard opens the next row's task; previous comes back.
+  const step = where < 4 ? { key: 'j', button: 'Next task', back: 'k' } : { key: 'k', button: 'Previous task', back: 'j' };
+  const url = page.url();
+  await page.keyboard.press(step.key);
+  await expect(page).not.toHaveURL(url);
+  await expect(page.getByRole('dialog', { name: 'Write release notes' })).toHaveCount(0);
+  await expect(page.getByRole('dialog').getByText(new RegExp(`^${where + (step.key === 'j' ? 1 : -1)} of 4$`))).toBeVisible();
+  await page.keyboard.press(step.back === 'k' ? 'ArrowUp' : 'ArrowDown');
+  await expect(page.getByRole('dialog', { name: 'Write release notes' })).toBeVisible();
+  // And with the buttons.
+  await page.getByRole('dialog').getByRole('button', { name: step.button }).click();
+  await expect(page.getByRole('dialog', { name: 'Write release notes' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page).not.toHaveURL(/task=/);
+});
+
 test('edits a task and renders comments as text, never HTML', async () => {
   await page.getByRole('button', { name: 'Write release notes', exact: true }).click();
   await expect(page).toHaveURL(/task=/);
@@ -1112,6 +1137,30 @@ test('filters the inbox and snoozes an item until later', async () => {
   await expect(page.getByText('Nothing snoozed')).toBeVisible();
   await page.getByRole('tab', { name: 'All' }).click();
   await expect(list.getByRole('listitem')).toHaveCount(2);
+
+  // From the keyboard: j / k (or ↓ / ↑) move, e marks read, s opens the snooze menu.
+  // Rows are found by what they say; the newest-first order is the server's.
+  const items = list.getByRole('listitem');
+  const mention = items.filter({ hasText: 'mentioned you' }).getByRole('link');
+  const commented = items.filter({ hasText: 'commented' });
+  await expect(commented.getByLabel('Unread')).toBeVisible();
+  const firstIsComment = (await items.nth(0).textContent())!.includes('commented');
+  await page.keyboard.press('j');
+  await expect(items.nth(0).getByRole('link')).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(items.nth(1).getByRole('link')).toBeFocused();
+  await page.keyboard.press('k');
+  await expect(items.nth(0).getByRole('link')).toBeFocused();
+  if (!firstIsComment) await page.keyboard.press('j');
+  await expect(commented.getByRole('link')).toBeFocused();
+  await page.keyboard.press('e');
+  await expect(commented.getByLabel('Unread')).toHaveCount(0);
+  await page.keyboard.press('s');
+  await expect(page.getByRole('menuitem', { name: /Tomorrow morning/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(mention).toBeVisible();
+  await expect(page.getByText(/to move · .*Enter.* to open/)).toBeVisible();
 });
 
 test('chats in a channel, replies in a thread and turns a message into a task', async () => {

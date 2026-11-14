@@ -1,4 +1,6 @@
 import { GitBranchIcon, PlusIcon } from 'lucide-react';
+import { isEditable } from '@/lib/keys';
+import { useShareTaskOrder } from '../../store/task-sequence.store';
 import { useEffect, useRef, useState } from 'react';
 import { isClosedCategory, type Permission, type TaskResponse, type TaskStatusResponse } from '@taskflow/shared-types';
 import { Section } from '@/components/kit/section';
@@ -34,9 +36,6 @@ interface ListViewProps {
 
 const GRID = 'grid grid-cols-[1.75rem_3.25rem_minmax(12rem,1fr)_9rem_7rem_7.5rem_9rem] items-center gap-2';
 
-function isEditable(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-}
 
 /** Tasks in groups with column headers, inline editing, quick add and multi-select. */
 export function ListView({ workspaceId, tasks, statuses, groupBy, defaultListId, spaceId, scopeKey, onOpen, hideEmpty = false }: ListViewProps) {
@@ -47,6 +46,8 @@ export function ListView({ workspaceId, tasks, statuses, groupBy, defaultListId,
   const selectedIds = [...selected].filter((id) => tasks.some((task) => task.id === id));
   const bulk = (body: Parameters<typeof updateMany.mutate>[0]['body']) => updateMany.mutate({ taskIds: selectedIds, body }, { onSuccess: () => setSelected(new Set()) });
   const container = useRef<HTMLDivElement>(null);
+  // The preview steps through the rows in the order shown, group by group.
+  useShareTaskOrder(groups.flatMap((group) => group.tasks.map((task) => task.id)));
 
   // J / K move between rows, X selects the focused row, Enter opens it (v2 tracker keys).
   useEffect(() => {

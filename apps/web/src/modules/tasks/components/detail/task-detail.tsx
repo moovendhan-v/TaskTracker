@@ -35,6 +35,7 @@ import { Section } from '@/components/kit/section';
 import { PullRequestsSection } from '@/modules/integrations';
 import { TaskAttachments } from './task-attachments';
 import { TaskChecklist } from './task-checklist';
+import { TaskStepper } from './task-stepper';
 import { DateRangeField } from '@/components/kit/range-calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
@@ -89,6 +90,7 @@ export function TaskDetail({ workspaceId, taskId, onClose, onOpen }: TaskDetailP
       ) : null}
       <span aria-hidden className="text-subtle-foreground">/</span>
       <CopyId task={task} />
+      <TaskStepper taskId={task.id} onOpen={onOpen} />
     </>
   ) : null;
 
