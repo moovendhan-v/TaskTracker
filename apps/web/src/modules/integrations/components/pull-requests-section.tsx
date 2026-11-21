@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useCreateGithubIssue, useGithubConflicts, useResolveGithubConflict, useTaskGithubIssues, useTaskPullRequests } from '../hooks/use-integrations';
 
-const STATE = {
+export const PULL_REQUEST_STATE = {
   open: { icon: GitPullRequestIcon, label: 'Open', className: 'text-good' },
   merged: { icon: GitMergeIcon, label: 'Merged', className: 'text-chart-1' },
   closed: { icon: GitPullRequestClosedIcon, label: 'Closed', className: 'text-critical' },
@@ -109,7 +109,7 @@ export function PullRequestsSection({ workspaceId, taskId, canEdit = false }: { 
       ) : null}
       <ul className="divide-y">
         {links.map((link) => {
-          const state = STATE[link.state];
+          const state = PULL_REQUEST_STATE[link.state];
           const Icon = state.icon;
           return (
             <li key={link.id}>

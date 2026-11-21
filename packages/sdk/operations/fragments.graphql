@@ -51,6 +51,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt

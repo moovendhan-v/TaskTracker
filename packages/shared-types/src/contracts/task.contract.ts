@@ -47,6 +47,8 @@ export interface TaskResponse {
   /** 0–100. */
   progress: number | null;
   subtaskCount: number;
+  /** Linked GitHub pull requests by state; null when none are linked. */
+  pullRequests?: TaskPullRequestSummary | null;
   /** Null unless a policy lets the caller read `task.metadata`. */
   metadata: TaskMetadata | null;
   customFields: CustomFieldValues;
@@ -54,6 +56,12 @@ export interface TaskResponse {
   createdById: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TaskPullRequestSummary {
+  open: number;
+  merged: number;
+  closed: number;
 }
 
 export interface CreateTaskRequest {

@@ -3223,6 +3223,9 @@ type Task {
 
   """0–100"""
   progress: Int
+
+  """Linked GitHub pull requests by state; null when none"""
+  pullRequests: TaskPullRequestSummary
   spaceId: ID!
   sprintId: ID
   startDate: String
@@ -3304,6 +3307,12 @@ enum TaskPriority {
   none
   normal
   urgent
+}
+
+type TaskPullRequestSummary {
+  closed: Int!
+  merged: Int!
+  open: Int!
 }
 
 type TaskRelation {

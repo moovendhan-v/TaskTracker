@@ -1,3 +1,5 @@
+import { entityTag } from '../../../core/cache/cache-keys.js';
+import { CacheStore } from '../../../core/cache/cache-store.port.js';
 import { randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import {
@@ -47,6 +49,7 @@ export class GithubConnectionsService {
     private readonly tasksService: TasksService,
     private readonly auditLogger: AuditLogger,
     private readonly customFields: CustomFieldsService,
+    private readonly cache: CacheStore,
   ) {}
 
   /** A labels field must be a task "Labels (many)" field of this workspace. */
@@ -83,6 +86,8 @@ export class GithubConnectionsService {
     }
     if (!canInSpace(access, task.spaceId, 'task.update')) throw DomainError.forbidden('You need to be able to edit that task to link it');
     await this.github.upsertLink({ workspaceId: access.workspaceId, connectionId: item.connectionId, taskId: task.id, repo: item.repo, number: item.number, title: item.title, url: item.url, state: item.state, author: item.author, branch: item.branch });
+    // Task responses carry a pull request summary, and links don't raise task events.
+    await this.cache.invalidateTags([entityTag(access.workspaceId, 'task')]);
     await this.github.deleteInboxItem(access.workspaceId, item.id);
     await this.auditLogger.record(actor, { action: 'github.pull_request.link', targetType: 'task', targetId: task.id, workspaceId: access.workspaceId, metadata: { repo: item.repo, number: item.number, taskNumber } });
     return item;
@@ -183,6 +188,8 @@ export class GithubConnectionsService {
   async remove(_actor: Actor, access: WorkspaceAccess, connectionId: string): Promise<GithubConnectionResponse> {
     const connection = await this.get(access.workspaceId, connectionId);
     await this.github.delete(access.workspaceId, connectionId);
+    // Its pull request links went with it.
+    await this.cache.invalidateTags([entityTag(access.workspaceId, 'task')]);
     return GithubMapper.toResponse(connection);
   }
 

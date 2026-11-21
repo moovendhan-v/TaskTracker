@@ -1,3 +1,4 @@
+import type { TaskPullRequestSummary } from '@taskflow/shared-types';
 import { randomUUID } from 'node:crypto';
 import { evaluateQuery } from '../../../core/query/evaluate-query.js';
 import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
@@ -55,6 +56,11 @@ export class InMemoryTaskRepository extends TaskRepository {
     const next = (this.numbers.get(workspaceId) ?? 0) + 1;
     this.numbers.set(workspaceId, next);
     return next;
+  }
+
+  /** Pull requests live in the GitHub integration; unit tests have none. */
+  async pullRequestSummaries(): Promise<Map<string, TaskPullRequestSummary>> {
+    return new Map();
   }
 
   async countSubtasks(workspaceId: string, taskIds: readonly string[]): Promise<Map<string, number>> {

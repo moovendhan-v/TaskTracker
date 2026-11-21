@@ -4,6 +4,7 @@ import { StatusPill } from '@/components/kit/status-pill';
 import { cn } from '@/lib/cn';
 import { dayOf, formatDueDay, today } from '@/lib/days';
 import { queryKeys } from '@/lib/query-keys';
+import { PullRequestSummary } from '@/modules/integrations';
 import { useMemberName } from '@/modules/members';
 import { ResourceTable } from '@/modules/resources';
 import { isClosed, PRIORITY_META, PriorityIcon, tasksApi, TypeBadge } from '@/modules/tasks';
@@ -60,6 +61,7 @@ export function TaskTableView({ workspaceId, spaceId, listId, baseFilter, search
           );
         },
         type: (task) => <TypeBadge type={task.type} />,
+        pullRequests: (task) => <PullRequestSummary summary={task.pullRequests} />,
         assigneeId: (task) => {
           const ids = task.assigneeIds?.length ? task.assigneeIds : task.assigneeId ? [task.assigneeId] : [];
           if (ids.length > 1) {

@@ -1745,7 +1745,7 @@ export type FolderFieldsFragment = { id: string, spaceId: string, parentId: stri
 
 export type TaskStatusFieldsFragment = { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null };
 
-export type TaskFieldsFragment = { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } };
+export type TaskFieldsFragment = { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null };
 
 export type CustomFieldFieldsFragment = { id: string, spaceId: string | null, entity: CustomFieldEntity, name: string, type: CustomFieldType, required: boolean, position: number, options: Array<{ id: string, label: string, color: string | null }> };
 
@@ -2798,7 +2798,7 @@ export type SearchTasksQueryVariables = Exact<{
 }>;
 
 
-export type SearchTasksQuery = { searchTasks: { page: number, pageSize: number, total: number, items: Array<{ id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } }> } };
+export type SearchTasksQuery = { searchTasks: { page: number, pageSize: number, total: number, items: Array<{ id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null }> } };
 
 export type SearchMembersQueryVariables = Exact<{
   workspaceId: string;
@@ -3005,7 +3005,7 @@ export type TaskQueryVariables = Exact<{
 }>;
 
 
-export type TaskQuery = { task: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } } };
+export type TaskQuery = { task: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null } };
 
 export type SprintTasksQueryVariables = Exact<{
   workspaceId: string;
@@ -3013,7 +3013,7 @@ export type SprintTasksQueryVariables = Exact<{
 }>;
 
 
-export type SprintTasksQuery = { sprintTasks: Array<{ id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } }> };
+export type SprintTasksQuery = { sprintTasks: Array<{ id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null }> };
 
 export type BacklogQueryVariables = Exact<{
   workspaceId: string;
@@ -3021,7 +3021,7 @@ export type BacklogQueryVariables = Exact<{
 }>;
 
 
-export type BacklogQuery = { backlog: Array<{ id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } }> };
+export type BacklogQuery = { backlog: Array<{ id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null }> };
 
 export type CreateTaskMutationVariables = Exact<{
   workspaceId: string;
@@ -3030,7 +3030,7 @@ export type CreateTaskMutationVariables = Exact<{
 }>;
 
 
-export type CreateTaskMutation = { createTask: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } } };
+export type CreateTaskMutation = { createTask: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null } };
 
 export type CreateTaskInSpaceMutationVariables = Exact<{
   workspaceId: string;
@@ -3039,7 +3039,7 @@ export type CreateTaskInSpaceMutationVariables = Exact<{
 }>;
 
 
-export type CreateTaskInSpaceMutation = { createTaskInSpace: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } } };
+export type CreateTaskInSpaceMutation = { createTaskInSpace: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null } };
 
 export type UpdateTaskMutationVariables = Exact<{
   workspaceId: string;
@@ -3048,7 +3048,7 @@ export type UpdateTaskMutationVariables = Exact<{
 }>;
 
 
-export type UpdateTaskMutation = { updateTask: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } } };
+export type UpdateTaskMutation = { updateTask: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null } };
 
 export type DeleteTaskMutationVariables = Exact<{
   workspaceId: string;
@@ -3064,7 +3064,7 @@ export type TaskByNumberQueryVariables = Exact<{
 }>;
 
 
-export type TaskByNumberQuery = { taskByNumber: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } } };
+export type TaskByNumberQuery = { taskByNumber: { id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null } };
 
 export type SubtasksQueryVariables = Exact<{
   workspaceId: string;
@@ -3072,7 +3072,7 @@ export type SubtasksQueryVariables = Exact<{
 }>;
 
 
-export type SubtasksQuery = { subtasks: Array<{ id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null } }> };
+export type SubtasksQuery = { subtasks: Array<{ id: string, number: number, listId: string, spaceId: string, parentId: string | null, type: TaskType, title: string, description: string, statusId: string, priority: TaskPriority, startDate: string | null, dueDate: string | null, assigneeId: string | null, assigneeIds: Array<string>, sprintId: string | null, position: number, estimateMinutes: number | null, storyPoints: number | null, progress: number | null, subtaskCount: number, metadata: Record<string, string | number | boolean | null> | null, customFields: Record<string, string | number | boolean | string[] | null>, completedAt: string | null, createdById: string, createdAt: string, updatedAt: string, status: { id: string, spaceId: string, name: string, color: string, category: StatusCategory, position: number, wipLimit: number | null }, pullRequests: { open: number, merged: number, closed: number } | null }> };
 
 export type TaskRelationsQueryVariables = Exact<{
   workspaceId: string;
@@ -3643,6 +3643,11 @@ export const TaskFieldsFragmentDoc = new TypedDocumentString(`
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt
@@ -8419,6 +8424,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt
@@ -8968,6 +8978,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt
@@ -9014,6 +9029,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt
@@ -9060,6 +9080,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt
@@ -9106,6 +9131,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt
@@ -9152,6 +9182,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt
@@ -9198,6 +9233,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt
@@ -9249,6 +9289,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt
@@ -9295,6 +9340,11 @@ fragment TaskFields on Task {
   storyPoints
   progress
   subtaskCount
+  pullRequests {
+    open
+    merged
+    closed
+  }
   metadata
   customFields
   completedAt

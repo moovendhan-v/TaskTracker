@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { TaskPullRequestSummary } from '@taskflow/shared-types';
 import { In } from 'typeorm';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import { applyResourceQuery } from '../../../core/query/apply-resource-query.js';
@@ -90,6 +91,21 @@ export class TypeOrmTaskRepository extends TaskRepository {
     const [row] = rows;
     if (!row) throw new Error('Workspace not found while numbering a task');
     return Number(row.number);
+  }
+
+  async pullRequestSummaries(workspaceId: string, taskIds: readonly string[]): Promise<Map<string, TaskPullRequestSummary>> {
+    if (taskIds.length === 0) return new Map();
+    const rows: { task_id: string; open: string; merged: string; closed: string }[] = await this.transactional.manager.query(
+      `SELECT task_id,
+              COUNT(*) FILTER (WHERE state = 'open') AS open,
+              COUNT(*) FILTER (WHERE state = 'merged') AS merged,
+              COUNT(*) FILTER (WHERE state = 'closed') AS closed
+         FROM github_pull_request
+        WHERE workspace_id = $1 AND task_id = ANY($2::uuid[])
+        GROUP BY task_id`,
+      [workspaceId, [...taskIds]],
+    );
+    return new Map(rows.map((row) => [row.task_id, { open: Number(row.open), merged: Number(row.merged), closed: Number(row.closed) }]));
   }
 
   async countSubtasks(workspaceId: string, taskIds: readonly string[]): Promise<Map<string, number>> {
