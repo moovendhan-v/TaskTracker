@@ -24,6 +24,9 @@ export interface FakeIssue {
   body: string;
   state: 'open' | 'closed';
   updatedAt: string;
+  labels?: string[];
+  /** GitHub user ids. */
+  assignees?: number[];
 }
 
 /**
@@ -45,6 +48,8 @@ export class FakeGithub {
   /** Every issue change TaskFlow sent: repo#number and the body. */
   readonly patches: { issue: string; body: Record<string, unknown> }[] = [];
   private clock = Date.now();
+  /** GitHub users by id (their login), for assignees. */
+  readonly users = new Map<number, string>();
 
   constructor(privateKeyBase64: string) {
     this.publicKey = createPublicKey(createPrivateKey(Buffer.from(privateKeyBase64, 'base64').toString()));
@@ -80,7 +85,7 @@ export class FakeGithub {
   }
 
   /** A change made on GitHub to an issue. */
-  editIssue(repo: string, number: number, change: Partial<Pick<FakeIssue, 'title' | 'state'>>): void {
+  editIssue(repo: string, number: number, change: Partial<Pick<FakeIssue, 'title' | 'state' | 'labels' | 'assignees'>>): void {
     Object.assign(this.issues.get(repo)!.find((issue) => issue.number === number)!, change, { updatedAt: this.now() });
   }
 
@@ -141,6 +146,11 @@ export class FakeGithub {
 
     const installation = this.installations.get(this.installationTokens.get(bearer) ?? -1);
     if (!installation) return json(401, {});
+    const userMatch = /^\/user\/(\d+)$/.exec(url.pathname);
+    if (request.method === 'GET' && userMatch) {
+      const login = this.users.get(Number(userMatch[1]));
+      return login ? json(200, { id: Number(userMatch[1]), login }) : json(404, {});
+    }
     if (request.method === 'GET' && url.pathname === '/installation/repositories') {
       return json(200, { total_count: installation.repos.length, repositories: installation.repos.map((full_name) => ({ full_name })) });
     }
@@ -169,7 +179,18 @@ export class FakeGithub {
     }
     if (request.method === 'GET' && rest === '/issues') {
       const since = url.searchParams.get('since') ?? '';
-      const issues = this.issues.get(repo)!.filter((issue) => issue.updatedAt >= since).map((issue) => ({ number: issue.number, title: issue.title, state: issue.state, html_url: html('issues', issue.number), updated_at: issue.updatedAt }));
+      const issues = this.issues
+        .get(repo)!
+        .filter((issue) => issue.updatedAt >= since)
+        .map((issue) => ({
+          number: issue.number,
+          title: issue.title,
+          state: issue.state,
+          html_url: html('issues', issue.number),
+          updated_at: issue.updatedAt,
+          labels: (issue.labels ?? []).map((name) => ({ name })),
+          assignees: (issue.assignees ?? []).map((id) => ({ id, login: this.users.get(id) ?? `user${id}` })),
+        }));
       // GitHub lists pull requests among issues; TaskFlow must skip them.
       const pulls = this.pulls.get(repo)!.filter((pull) => pull.updatedAt >= since).map((pull) => ({ number: pull.number, title: pull.title, state: pull.state, html_url: html('pull', pull.number), updated_at: pull.updatedAt, pull_request: {} }));
       return json(200, [...issues, ...pulls].sort((a, b) => a.updated_at.localeCompare(b.updated_at)));
@@ -187,6 +208,13 @@ export class FakeGithub {
       this.patches.push({ issue: `${repo}#${issue.number}`, body });
       if (typeof body['title'] === 'string') issue.title = body['title'];
       if (body['state'] === 'open' || body['state'] === 'closed') issue.state = body['state'];
+      if (Array.isArray(body['labels'])) issue.labels = body['labels'].filter((name): name is string => typeof name === 'string');
+      if (Array.isArray(body['assignees'])) {
+        // By login, like GitHub; unknown logins are refused.
+        const ids = body['assignees'].map((login) => [...this.users].find(([, name]) => name === login)?.[0]);
+        if (ids.some((id) => id === undefined)) return json(422, { message: 'Invalid assignees' });
+        issue.assignees = ids as number[];
+      }
       issue.updatedAt = this.now();
       return json(200, { number: issue.number, html_url: html('issues', issue.number) });
     }

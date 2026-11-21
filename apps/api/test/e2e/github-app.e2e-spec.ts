@@ -1,6 +1,7 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { TestUser } from './support/api-client.js';
+import { runtimeDatabase } from './support/database.js';
 import { FakeGithub } from './support/fake-github.js';
 import { addMember, createWorkspace, type WorkspaceFixture } from './support/fixtures.js';
 import { E2E_GITHUB_APP, FAKE_GITHUB_URL } from './support/test-env.js';
@@ -144,6 +145,59 @@ describe('GitHub App sync', () => {
     await new Promise((resolve) => setTimeout(resolve, 2_500));
     expect(github.patches.length).toBe(sent);
     expect((await issues())[0]).toMatchObject({ closed: false, pending: false, lastError: null });
+  });
+
+  it('syncs labels (through a labels field) and the assignee (through GitHub sign-in) both ways', async () => {
+    // The member signed in with GitHub as dana-gh (user 4242): that's how a GitHub assignee is matched.
+    github.users.set(4242, 'dana-gh');
+    github.users.set(9999, 'stranger');
+    const db = runtimeDatabase();
+    try {
+      await db.query(`INSERT INTO account (id, "accountId", "providerId", "userId", "createdAt", "updatedAt") VALUES ($1, '4242', 'github', $2, now(), now())`, [randomUUID(), member.id]);
+    } finally {
+      await db.end();
+    }
+    const { createCustomField } = await ws.owner.data<{ createCustomField: { id: string; options: { id: string; label: string }[] } }>(
+      'mutation($w: ID!, $input: CreateCustomFieldInput!) { createCustomField(workspaceId: $w, input: $input) { id options { id label } } }',
+      { w: w(), input: { name: 'GH labels', type: 'multi_select', entity: 'task', options: [{ label: 'bug' }, { label: 'ui' }] } },
+    );
+    const [bug, ui] = createCustomField.options;
+    const UPDATE_CONNECTION = 'mutation($w: ID!, $c: ID!, $input: UpdateGithubConnectionInput!) { updateGithubConnection(workspaceId: $w, connectionId: $c, input: $input) { sync { labelsFieldId } } }';
+    // Only a task "Labels (many)" field.
+    expect((await ws.owner.error(UPDATE_CONNECTION, { w: w(), c: connectionId, input: { sync: { labelsFieldId: randomUUID() } } })).message).toMatch(/Labels \(many\)/);
+    expect((await ws.owner.data<{ updateGithubConnection: { sync: { labelsFieldId: string } } }>(UPDATE_CONNECTION, { w: w(), c: connectionId, input: { sync: { labelsFieldId: createCustomField.id } } })).updateGithubConnection.sync.labelsFieldId).toBe(createCustomField.id);
+
+    // TaskFlow → GitHub: a new issue gets the task's labels and assignee.
+    const t = await newTask('Dark mode flickers');
+    await ws.owner.data(UPDATE_TASK, { w: w(), t: t.id, input: { customFields: { [createCustomField.id]: [bug!.id, ui!.id] }, assigneeId: member.id } });
+    const { createGithubIssue } = await ws.owner.data<{ createGithubIssue: { number: number } }>(CREATE_ISSUE, { w: w(), t: t.id, c: connectionId });
+    const number = createGithubIssue.number;
+    await eventually(async () => github.issue('acme/app', number)!, (issue) => (issue.labels ?? []).length === 2 && (issue.assignees ?? [])[0] === 4242, 5_000);
+    expect([...github.issue('acme/app', number)!.labels!].sort()).toEqual(['bug', 'ui']);
+
+    // GitHub → TaskFlow: a new label becomes an option; unassigning there unassigns here.
+    const FIELDS = 'query($w: ID!, $t: ID!) { task(workspaceId: $w, taskId: $t) { assigneeId customFields } }';
+    const read = async () => (await ws.owner.data<{ task: { assigneeId: string | null; customFields: Record<string, string[]> } }>(FIELDS, { w: w(), t: t.id })).task;
+    const sent = github.patches.length;
+    github.editIssue('acme/app', number, { labels: ['bug', 'needs-design'], assignees: [] });
+    const after = await eventually(read, (value) => value.assigneeId === null && (value.customFields[createCustomField.id] ?? []).length === 2);
+    const { customFields } = await ws.owner.data<{ customFields: { id: string; options: { id: string; label: string }[] }[] }>('query($w: ID!) { customFields(workspaceId: $w, entity: task) { id options { id label } } }', { w: w() });
+    const options = customFields.find((field) => field.id === createCustomField.id)!.options;
+    expect(options.map((option) => option.label)).toEqual(['bug', 'ui', 'needs-design']);
+    const needsDesign = options.find((option) => option.label === 'needs-design')!.id;
+    expect([...after.customFields[createCustomField.id]!].sort()).toEqual([bug!.id, needsDesign].sort());
+    // Not echoed back.
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+    expect(github.patches.length).toBe(sent);
+
+    // Assigned there to the linked member: assigned here. Someone nobody here is linked to: left alone.
+    github.editIssue('acme/app', number, { assignees: [4242] });
+    await eventually(read, (value) => value.assigneeId === member.id);
+    github.editIssue('acme/app', number, { assignees: [9999] });
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+    expect((await read()).assigneeId).toBe(member.id);
+    const log = (await ws.owner.data<{ githubSyncLog: { detail: string }[] }>(LOG, { w: w(), c: connectionId })).githubSyncLog.map((entry) => entry.detail);
+    expect(log.some((detail) => detail.includes(`issue #${number} labelled (new: needs-design)`))).toBe(true);
   });
 
   it("lets only people who can edit the task open an issue, and only in the app's repositories", async () => {
