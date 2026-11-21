@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/components/ui/sonner';
 import { formatLongDate } from '@/lib/dates';
 import { getErrorMessage } from '@/lib/errors';
+import { useCustomFields } from '@/modules/spaces';
 import {
   useGithubApp,
   useGithubAppMutations,
@@ -109,6 +110,13 @@ export function GithubIntegration({ workspaceId, canManage }: { workspaceId: str
               />
             </div>
             <SyncSettings sync={connection.sync} onChange={(sync) => mutations.update.mutate({ connectionId: connection.id, body: { sync } })} />
+            {connection.viaApp ? (
+              <IssueSyncSettings
+                workspaceId={workspaceId}
+                labelsFieldId={connection.sync.labelsFieldId ?? null}
+                onChange={(labelsFieldId) => mutations.update.mutate({ connectionId: connection.id, body: { sync: { ...connection.sync, labelsFieldId } } })}
+              />
+            ) : null}
           </li>
         ))}
       </ul>
@@ -378,6 +386,41 @@ function PullRequestInbox({ workspaceId }: { workspaceId: string }) {
 }
 
 /** How pull request events map onto linked tasks: GitHub → TaskFlow only (tasks never change GitHub). */
+/**
+ * Issues opened from tasks (GitHub App): labels sync with a task "Labels (many)" field,
+ * and the assignee with members who signed in with GitHub.
+ */
+function IssueSyncSettings({ workspaceId, labelsFieldId, onChange }: { workspaceId: string; labelsFieldId: string | null; onChange: (labelsFieldId: string | null) => void }) {
+  const { data: fields = [] } = useCustomFields(workspaceId, 'task');
+  const labelFields = fields.filter((field) => field.type === 'multi_select');
+  return (
+    <div className="ml-7 grid gap-1.5 text-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-muted-foreground">Issue labels</span>
+        <ArrowRightIcon className="size-3.5 rotate-180 text-muted-foreground" aria-hidden />
+        <ArrowRightIcon className="-ml-2 size-3.5 text-muted-foreground" aria-hidden />
+        <Select value={labelsFieldId ?? NONE} onValueChange={(next) => onChange(next === NONE ? null : next)}>
+          <SelectTrigger className="h-8 w-56" aria-label="Labels field">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NONE}>Don’t sync labels</SelectItem>
+            {labelFields.map((field) => (
+              <SelectItem key={field.id} value={field.id}>
+                Task field “{field.name}”
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {labelFields.length ? 'Both ways: label names match the field’s options, and new GitHub labels are added as options. ' : 'Add a task field of type Labels (many) in project settings to sync labels. '}
+        Assignees sync both ways for members who signed in with GitHub; anyone else is left alone.
+      </p>
+    </div>
+  );
+}
+
 function SyncSettings({ sync, onChange }: { sync: GithubSyncSettings; onChange: (sync: GithubSyncSettings) => void }) {
   const rows: { key: 'onOpened' | 'onMerged' | 'onClosed'; label: string }[] = [
     { key: 'onOpened', label: 'Pull request opened' },

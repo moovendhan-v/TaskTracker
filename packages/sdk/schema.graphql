@@ -1321,6 +1321,11 @@ type GithubSecret {
 }
 
 type GithubSync {
+  """
+  GitHub App issues: the task "Labels (many)" field their labels sync with
+  """
+  labelsFieldId: ID
+
   """Move linked tasks here when a pull request is closed without merging"""
   onClosed: StatusCategory
 
@@ -1364,6 +1369,8 @@ type GithubSyncEvent {
 }
 
 input GithubSyncInput {
+  """null stops syncing labels"""
+  labelsFieldId: ID
   onClosed: StatusCategory
   onMerged: StatusCategory
   onOpened: StatusCategory
