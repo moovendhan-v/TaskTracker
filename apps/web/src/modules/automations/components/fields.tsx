@@ -458,7 +458,6 @@ export function ScheduleFields({ schedule, onChange }: { schedule: AutomationSch
           </SelectContent>
         </Select>
       </Field>
-      {schedule.runFor === 'once' ? <span className="text-xs text-muted-foreground">Runs once each time, with no task to start from: the first step must be “Create a task”.</span> : null}
       <div className="grid gap-3">
         <Field label="At">
           <Input type="time" aria-label="Time of day" value={schedule.time} required onChange={(event) => event.target.value && onChange({ ...schedule, time: event.target.value.slice(0, 5) })} className="w-28" />

@@ -1254,7 +1254,8 @@ test('builds a weekly recurring task from a template', async () => {
   await shot('e1-automation-create-task', builder);
   await builder.getByRole('button', { name: 'Create automation' }).click();
   await expect(builder).toBeHidden();
-  await page.getByRole('switch', { name: 'Weekly recurring task is on' }).click({ force: true });
+  // The newest card is at the bottom, where the "created" toast can cover its switch: click the switch itself.
+  await page.getByRole('switch', { name: 'Weekly recurring task is on' }).dispatchEvent('click');
   await expect(page.getByRole('switch', { name: 'Weekly recurring task is off' })).not.toBeChecked();
 });
 

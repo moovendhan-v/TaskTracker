@@ -243,7 +243,13 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
             {trigger.type === 'on_schedule' ? <ScheduleFields schedule={trigger.schedule ?? defaultSchedule()} onChange={(schedule) => setTrigger({ ...trigger, schedule })} /> : null}
             {trigger.type === 'on_schedule' ? (
               <p className="text-xs text-muted-foreground">
-                At that time, runs once for each open task in this project that matches (up to {AUTOMATION_LIMITS.tasksPerRun} a minute until all are done). Finished and cancelled tasks are left alone. Saved after today’s time? It starts on the next run day.
+                {trigger.schedule?.runFor === 'once' ? (
+                  <>At that time, runs once, with no task to start from: the first step must be “Create a task”, and the steps after it act on the new task. Saved after today’s time? It starts on the next run day.</>
+                ) : (
+                  <>
+                    At that time, runs once for each open task in this project that matches (up to {AUTOMATION_LIMITS.tasksPerRun} a minute until all are done). Finished and cancelled tasks are left alone. Saved after today’s time? It starts on the next run day.
+                  </>
+                )}
               </p>
             ) : isScheduledTrigger(trigger.type) ? (
               <p className="text-xs text-muted-foreground">Checked every minute. Fires once per open task and due date; finished and cancelled tasks are left alone.</p>
