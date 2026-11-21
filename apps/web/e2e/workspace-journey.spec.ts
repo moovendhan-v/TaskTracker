@@ -370,10 +370,20 @@ test('adds a named dashboard to the project page', async () => {
   await expect(tabs.getByText('Delivery health')).toBeVisible();
   await expect(page.getByText('Private: only you can see this dashboard.')).toBeVisible();
   await shot('c4-project-dashboard');
+  // Its range is saved with it (the owner's choice), and the overview remembers its own.
+  const period = page.getByRole('radiogroup', { name: 'Period' });
+  await period.getByRole('radio', { name: 'Last 30 days' }).click();
+  await expect(page.getByText(/saved with this dashboard/)).toBeVisible();
+  await tabs.getByRole('button', { name: 'Overview' }).click();
+  await period.getByRole('radio', { name: 'This year' }).click();
 
   // It belongs to this project: it's back after a reload, and Home doesn't list it.
   await page.reload();
   await expect(page.getByRole('navigation', { name: 'Dashboards' }).getByText('Delivery health')).toBeVisible();
+  await expect(period.getByRole('radio', { name: 'This year' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('navigation', { name: 'Dashboards' }).getByText('Delivery health').click();
+  await expect(period.getByRole('radio', { name: 'Last 30 days' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('navigation', { name: 'Dashboards' }).getByRole('button', { name: 'Overview' }).click();
   const projectUrl = page.url();
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Home' }).click();
   await expect(page.getByRole('navigation', { name: 'Dashboards' }).getByRole('button', { name: 'My work' })).toBeVisible();
