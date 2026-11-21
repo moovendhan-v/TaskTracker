@@ -839,6 +839,8 @@ test('shows a linked pull request in the task table', async () => {
 
   await page.getByRole('complementary', { name: 'Workspace navigation' }).getByText('Product').click();
   await page.getByRole('navigation', { name: 'Project views' }).getByRole('link', { name: 'Table', exact: true }).click();
+  // The task and its link came in through the API, behind the page's back: load the table afresh.
+  await page.reload();
   const row = page.getByRole('row').filter({ hasText: 'Wire up the GitHub app' });
   await expect(row).toContainText('Open');
   await expect(page.getByRole('columnheader', { name: /Pull request/ })).toBeVisible();
