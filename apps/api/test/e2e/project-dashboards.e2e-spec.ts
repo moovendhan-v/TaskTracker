@@ -25,6 +25,11 @@ describe('dashboards on project pages', () => {
     expect(health.items.map((item) => item.type)).toContain('project-status');
     expect((await ws.owner.error(SAVE, { w, d: health.id, input: { baseVersion: 1, items: [{ id: 'k', type: 'my-tasks', x: 0, y: 0, w: 6, h: 4 }] } })).message).toMatch(/unknown block type/);
     expect((await ws.owner.data<{ saveDashboardLayout: { version: number } }>(SAVE, { w, d: health.id, input: { baseVersion: 1, items: [{ id: 'k', type: 'kpis', x: 0, y: 0, w: 12, h: 3 }] } })).saveDashboardLayout.version).toBe(2);
+    // Its range is saved with it by its owner, so it opens that way for everyone; others can't change it.
+    const UPDATE = 'mutation($w: ID!, $d: ID!, $input: UpdateDashboardInput!) { updateDashboard(workspaceId: $w, dashboardId: $d, input: $input) { period } }';
+    expect((await ws.owner.data<{ updateDashboard: { period: string } }>(UPDATE, { w, d: health.id, input: { period: 'custom:2026-10-01..2026-10-31' } })).updateDashboard.period).toBe('custom:2026-10-01..2026-10-31');
+    expect((await member.data<{ dashboards: { id: string; period: string | null }[] }>('query($w: ID!, $s: ID) { dashboards(workspaceId: $w, spaceId: $s) { id period } }', { w, s: project })).dashboards).toEqual([{ id: health.id, period: 'custom:2026-10-01..2026-10-31' }]);
+    expect((await member.error(UPDATE, { w, d: health.id, input: { period: 'this_week' } })).code).toMatch(/NOT_FOUND|FORBIDDEN/);
     const home = (await ws.owner.data<{ createDashboard: { id: string } }>(CREATE, { w, input: { name: 'Home stats' } })).createDashboard;
 
     // Each page lists its own: Home's don't show on the project, nor the project's on Home or another project.

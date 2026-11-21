@@ -7,7 +7,7 @@ import { Meter } from '@/components/kit/charts';
 import { blockStateOf } from '@/components/kit/block-state';
 import { usePreferences } from '@/core/preferences/use-preferences';
 import { queryKeys } from '@/lib/query-keys';
-import { formatNumericDate, type Period } from '@/lib/periods';
+import { formatNumericDate, periodPhrase, type Period } from '@/lib/periods';
 import { useCustomFields } from '@/modules/spaces';
 import { useMemberName } from '@/modules/members';
 import { useOpenTask } from '@/modules/tasks';
@@ -18,6 +18,7 @@ import { useDashboardLayout, useLayout } from '../hooks/use-layout';
 import { useDashboardTeams, useNamedDashboardMutations, useNamedDashboards } from '../hooks/use-named-dashboards';
 import { dashboardInput } from '../lib/dashboard-input';
 import { ArrangeableGrid } from './arrangeable-grid';
+import { useProjectOverviewPeriod } from '../hooks/use-project-dashboard-period';
 import { DashboardFilters } from './dashboard-filters';
 import { DashboardTabs, type HomeTab } from './dashboard-tabs';
 import { HoursByTask, HoursPerDay, KpiRow, StatusBreakdown, Workload } from './dashboard-panels';
@@ -235,10 +236,8 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   const { weekStart } = usePreferences();
   const queryClient = useQueryClient();
   const openTask = useOpenTask();
-  const [period, setPeriod] = useState<Period>('this_month');
   const [weekAhead] = useState(() => Date.now() + 7 * 86_400_000);
-  const dashboard = useDashboard(workspaceId, dashboardInput(period, weekStart, { spaceId: space.id }));
-  const state = blockStateOf(dashboard, { what: 'this project' });
+
   const layout = useLayout(workspaceId, 'project');
   const memberName = useMemberName(workspaceId);
   const [tab, setTab] = useState<HomeTab>('overview');
@@ -250,7 +249,24 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
   // A dashboard that went away falls back to the overview once the list has loaded.
   const waiting = tab.startsWith('dashboard:') && !active && named.isFetching;
   const current: HomeTab = tab.startsWith('dashboard:') && !active && !waiting ? 'overview' : tab;
+  // Each tab keeps its own range. A named dashboard opens with the one its owner saved with it;
+  // the overview with the one last used for this project in this browser.
+  const [overviewPeriod, rememberOverview] = useProjectOverviewPeriod(space.id);
+  const [periods, setPeriods] = useState<Partial<Record<string, Period>>>({});
+  const period: Period = periods[current] ?? (active ? active.period : overviewPeriod) ?? 'this_month';
+  const setPeriod = (next: Period) => {
+    setPeriods((all) => ({ ...all, [current]: next }));
+    if (!active) rememberOverview(next);
+    else if (active.mine && active.period !== next) mutations.update.mutate({ id: active.id, period: next });
+  };
+  const periodNote = active
+    ? active.mine
+      ? 'hours are for this period (saved with this dashboard), task counts are all-time'
+      : `hours are for this period (this dashboard opens with ${periodPhrase(active.period ?? 'this_month')}), task counts are all-time`
+    : 'hours are for this period, task counts are all-time';
   const nameOf = (userId: string) => memberName(userId) ?? 'a teammate';
+  const dashboard = useDashboard(workspaceId, dashboardInput(period, weekStart, { spaceId: space.id }));
+  const state = blockStateOf(dashboard, { what: 'this project' });
   // A task list set to "mine" or some priorities asks for the same period and project, narrowed.
   const scope: BlockScope = { workspaceId, inputFor: ({ mine, userIds, priorities, categories }) => dashboardInput(period, weekStart, { spaceId: space.id, mine, userIds, priorities, categories }) };
   const { data: fields = [] } = useCustomFields(workspaceId, 'space');
@@ -288,7 +304,7 @@ export function ProjectDashboard({ workspaceId, space }: { workspaceId: string; 
         period={period}
         onPeriod={setPeriod}
         weekStart={weekStart}
-        note="hours are for this period, task counts are all-time"
+        note={periodNote}
         refreshing={dashboard.isFetching}
         onRefresh={() => void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardRoot(workspaceId) })}
       />
