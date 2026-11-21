@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysBetween, shiftDay, startOfWeekDay, taskSpan, weekday } from './days';
+import { daysBetween, formatDueDay, shiftDay, startOfWeekDay, taskSpan, today, weekday } from './days';
 
 describe('days', () => {
   it('shifts across months and years', () => {
@@ -17,5 +17,11 @@ describe('days', () => {
     expect(taskSpan({ startDate: '2026-10-19T12:00:00.000Z', dueDate: '2026-10-23T12:00:00.000Z' })).toEqual({ start: '2026-10-19', end: '2026-10-23' });
     expect(taskSpan({ startDate: null, dueDate: '2026-10-23T12:00:00.000Z' })).toEqual({ start: '2026-10-23', end: '2026-10-23' });
     expect(taskSpan({ startDate: null, dueDate: null })).toBeNull();
+  });
+
+  it('formats a due day, with the year only outside this one', () => {
+    const year = today().slice(0, 4);
+    expect(formatDueDay(`${year}-03-05`)).not.toMatch(/\d{4}/);
+    expect(formatDueDay(`${Number(year) + 1}-03-05`)).toContain(String(Number(year) + 1));
   });
 });

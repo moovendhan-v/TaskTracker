@@ -52,10 +52,16 @@ const labels = {
   weekday: new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' }),
   monthDay: new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }),
   month: new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric', timeZone: 'UTC' }),
+  monthDayYear: new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }),
 };
 
 export function formatDay(day: Day, style: keyof typeof labels): string {
   return labels[style].format(new Date(dayNumber(day) * MS_PER_DAY));
+}
+
+/** "Nov 15", or "Nov 15, 2027" outside the current year. */
+export function formatDueDay(day: Day): string {
+  return formatDay(day, day.slice(0, 4) === today().slice(0, 4) ? 'monthDay' : 'monthDayYear');
 }
 
 /** The task's span in days: start→due, or a single day when only one is set. */

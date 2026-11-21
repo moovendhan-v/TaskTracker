@@ -318,6 +318,41 @@ test('limits work in progress per column, and splits the board into swimlanes', 
   await expect(page.getByRole('region', { name: 'Swimlane No priority' })).toHaveCount(0);
 });
 
+test('shows the project as a table and a month calendar', async () => {
+  // Due dates for a few tasks, set through the API as the signed-in user (dates later this month or next; none overdue,
+  // so the overdue automations later in the journey have nothing to act on).
+  const workspaceId = /\/w\/([0-9a-f-]+)/.exec(page.url())![1];
+  const gql = async <T,>(query: string, variables: Record<string, unknown>): Promise<T> => {
+    const response = await page.request.post('/api/graphql', { data: { query, variables }, headers: { origin: new URL(page.url()).origin } });
+    const body = (await response.json()) as { data: T; errors?: unknown[] };
+    expect(body.errors).toBeUndefined();
+    return body.data;
+  };
+  const { searchTasks } = await gql<{ searchTasks: { items: { id: string; title: string }[] } }>('query($w: ID!) { searchTasks(workspaceId: $w, query: { pageSize: 50 }) { items { id title } } }', { w: workspaceId });
+  const inDays = (days: number) => new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + days)).toISOString();
+  for (const [title, days] of [['Write release notes', 2], ['Design onboarding emails', 2], ['Book the launch venue', 5]] as const) {
+    const task = searchTasks.items.find((item) => item.title === title)!;
+    await gql('mutation($w: ID!, $t: ID!, $input: UpdateTaskInput!) { updateTask(workspaceId: $w, taskId: $t, input: $input) { id } }', { w: workspaceId, t: task.id, input: { dueDate: inDays(days) } });
+  }
+
+  const views = page.getByRole('navigation', { name: 'Project views' });
+  await views.getByRole('link', { name: 'Table', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: /Due date/ })).toBeVisible();
+  await expect(page.getByRole('row').filter({ hasText: 'Write release notes' })).toBeVisible();
+  await shot('c1-table');
+
+  await views.getByRole('link', { name: 'Calendar', exact: true }).click();
+  const month = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(new Date());
+  await expect(page.getByRole('heading', { name: month })).toBeVisible();
+  // Days near the end of the month may land in the next one.
+  if (new Date(inDays(5)).getUTCMonth() !== new Date().getMonth()) await page.getByRole('button', { name: 'Next month' }).click();
+  await expect(page.getByRole('button', { name: /Book the launch venue/ })).toBeVisible();
+  // Tasks without a date can't sit on a day, so the calendar says how many there are.
+  await expect(page.getByText(/\d+ tasks? (has|have) no date/)).toBeVisible();
+  await shot('c1-calendar');
+  await views.getByRole('link', { name: 'Board', exact: true }).click();
+});
+
 test('adds a named dashboard to the project page', async () => {
   await page.getByRole('navigation', { name: 'Project views' }).getByRole('button', { name: 'More views and tools' }).click();
   await page.getByRole('menuitem', { name: /^Dashboard/ }).click();

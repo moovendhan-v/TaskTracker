@@ -1,10 +1,12 @@
 import type { FilterNode, TaskResponse } from '@taskflow/shared-types';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { StatusPill } from '@/components/kit/status-pill';
+import { cn } from '@/lib/cn';
+import { dayOf, formatDueDay, today } from '@/lib/days';
 import { queryKeys } from '@/lib/query-keys';
 import { useMemberName } from '@/modules/members';
 import { ResourceTable } from '@/modules/resources';
-import { PRIORITY_META, PriorityIcon, tasksApi, TypeBadge } from '@/modules/tasks';
+import { isClosed, PRIORITY_META, PriorityIcon, tasksApi, TypeBadge } from '@/modules/tasks';
 
 interface TaskTableViewProps {
   workspaceId: string;
@@ -34,14 +36,32 @@ export function TaskTableView({ workspaceId, spaceId, listId, baseFilter, search
         number: (task) => <span className="text-muted-foreground tabular-nums">#{task.number}</span>,
         title: (task) => <span className="font-medium">{task.title}</span>,
         statusId: (task) => <StatusPill status={task.status} />,
-        priority: (task) => (
-          <span className="inline-flex items-center gap-1.5">
-            <PriorityIcon priority={task.priority} /> {PRIORITY_META[task.priority].label}
-          </span>
-        ),
+        priority: (task) =>
+          task.priority === 'none' ? (
+            <span className="text-muted-foreground">–</span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              <PriorityIcon priority={task.priority} /> {PRIORITY_META[task.priority].label}
+            </span>
+          ),
+        startDate: (task) => {
+          const start = dayOf(task.startDate);
+          return start ? <span className="tabular-nums">{formatDueDay(start)}</span> : <span className="text-muted-foreground">–</span>;
+        },
+        dueDate: (task) => {
+          const due = dayOf(task.dueDate);
+          if (!due) return <span className="text-muted-foreground">–</span>;
+          const overdue = due < today() && !isClosed(task);
+          return (
+            <span className={cn('tabular-nums', overdue && 'font-medium text-destructive')} title={overdue ? 'Overdue' : undefined}>
+              {formatDueDay(due)}
+              {overdue ? <span className="sr-only"> (overdue)</span> : null}
+            </span>
+          );
+        },
         type: (task) => <TypeBadge type={task.type} />,
         assigneeId: (task) => {
-          const ids = task.assigneeIds?.length ? task.assigneeIds : (task.assigneeId ? [task.assigneeId] : []);
+          const ids = task.assigneeIds?.length ? task.assigneeIds : task.assigneeId ? [task.assigneeId] : [];
           if (ids.length > 1) {
             return (
               <span className="inline-flex items-center gap-1.5">

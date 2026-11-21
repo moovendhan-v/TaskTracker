@@ -28,7 +28,7 @@ export const CLOSED_STATUS_SQL = `(${STATUS_CATEGORY_SQL} IN ('done', 'cancelled
   search: ['task.title', `('#' || task.number::text)`],
 })
 export class TaskQueryResource {
-  @QueryField({ type: 'number', column: 'task.number', label: 'ID', sortable: true, display: 'number', width: 80 })
+  @QueryField({ type: 'number', column: 'task.number', label: 'ID', sortable: true, display: 'number', width: 64 })
   number: number;
 
   @QueryField({ type: 'string', column: 'task.title', label: 'Name', sortable: true, width: 360 })
