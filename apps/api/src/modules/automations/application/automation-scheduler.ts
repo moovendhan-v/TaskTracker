@@ -139,6 +139,10 @@ export class AutomationScheduler implements OnApplicationBootstrap, OnModuleDest
     if (!date) return;
     if (savedAfterRunTime(rule.updatedAt, date, schedule.time, schedule.timeZone)) return;
     const key = `${KEY_PREFIX.on_schedule}${date}`;
+    if (schedule.runFor === 'once') {
+      if (await this.automations.claimOnceFire(rule.workspaceId, rule.id, key)) await this.engine.runOnce(rule, date);
+      return;
+    }
     for (const taskId of await this.automations.openTasksToFire(rule.workspaceId, rule.spaceId, rule.id, key, rule.conditions, AUTOMATION_LIMITS.tasksPerRun)) {
       if (await this.automations.claimFire(rule.workspaceId, rule.id, taskId, key)) await this.engine.runScheduled(rule, taskId);
     }

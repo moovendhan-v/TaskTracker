@@ -40,6 +40,8 @@ export abstract class AutomationRepository {
   /** Tasks in a sprint: those in it now (started), or those it held when it completed (end snapshot), still existing. */
   abstract sprintTaskIds(workspaceId: string, sprintId: string, phase: 'start' | 'end', limit: number): Promise<string[]>;
   abstract claimFire(workspaceId: string, ruleId: string, taskId: string, key: string): Promise<boolean>;
+  /** Claims a fire that has no task (a run-once schedule); false if this rule already fired for the key. */
+  abstract claimOnceFire(workspaceId: string, ruleId: string, key: string): Promise<boolean>;
   /** Takes a transaction-level advisory lock; false when another scheduler holds it. */
   abstract tryLock(key: string): Promise<boolean>;
 

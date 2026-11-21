@@ -78,4 +78,11 @@ export const AUTOMATION_TEMPLATES: readonly AutomationTemplate[] = [
     trigger: { type: 'task_status_changed', categories: ['done'] },
     flow: { steps: [{ id: 'action-1', kind: 'action', action: { type: 'post_chat', message: '✅ {{task}} is done' } }] },
   },
+  {
+    id: 'recurring-task',
+    name: 'Weekly recurring task',
+    description: 'Every Monday morning, create a check-in task due that Friday (pick the list after)',
+    trigger: { type: 'on_schedule', schedule: { frequency: 'weekly', weekdays: [1], time: '09:00', timeZone: 'UTC', runFor: 'once' } },
+    flow: { steps: [{ id: 'action-1', kind: 'action', action: { type: 'create_task', title: 'Weekly check-in {{date}}', days: 4 } }] },
+  },
 ];

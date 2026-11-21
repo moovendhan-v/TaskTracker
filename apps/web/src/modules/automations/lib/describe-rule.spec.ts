@@ -17,6 +17,10 @@ describe('describing scheduled automations', () => {
   it('describes moving a task to a list', () => {
     expect(describeRule({ trigger: { type: 'task_status_changed', categories: ['done'] }, conditions: {}, actions: [{ type: 'move_to_list', listId: 'l1' }] }, names)).toMatch(/then move it to Bugs\.$/);
     expect(describeRule({ trigger: { type: 'task_created' }, conditions: {}, actions: [{ type: 'move_to_list' }] }, names)).toMatch(/then move it to …\.$/);
+    expect(
+      describeRule({ trigger: { type: 'on_schedule', schedule: { frequency: 'daily', time: '09:00', timeZone: 'UTC', runFor: 'once' } }, conditions: {}, actions: [{ type: 'create_task', title: 'Stand-up {{date}}', listId: 'l1' }] }, names),
+    ).not.toMatch(/each open task/);
+    expect(describeRule({ trigger: { type: 'task_created' }, conditions: {}, actions: [{ type: 'create_task', title: 'Review', listId: 'l1' }] }, names)).toMatch(/then create “Review” in Bugs\.$/);
   });
 
   it('describes repeating schedules and sprint triggers', () => {

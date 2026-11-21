@@ -34,6 +34,28 @@ describe('AutomationPolicy', () => {
     expect(AutomationPolicy.referencedIds({ type: 'task_created' }, {}, [{ type: 'move_to_list', listId: S1 }]).listIds).toEqual([S1]);
   });
 
+  it('checks create-task actions and run-once schedules', () => {
+    expect(AutomationPolicy.normalizeActions([{ type: 'create_task', listId: L1, title: ' Stand-up {{date}} ', statusId: S1 }])).toEqual([{ type: 'create_task', listId: L1, title: 'Stand-up {{date}}', userId: null, days: null }]);
+    expect(() => AutomationPolicy.normalizeActions([{ type: 'create_task', listId: L1, title: 'x'.repeat(201) }])).toThrow(/too long/);
+    expect(() => AutomationPolicy.normalizeActions([{ type: 'create_task', listId: L1, title: 'Ok', days: -1 }])).toThrow(/due in/);
+    // Assigning the new task needs task.assign too; its list is checked against the space.
+    expect(AutomationPolicy.requiredPermissions([{ type: 'create_task', listId: L1, title: 'Ok' }])).toEqual(['task.create']);
+    expect(AutomationPolicy.requiredPermissions([{ type: 'create_task', listId: L1, title: 'Ok', userId: 'u' }])).toEqual(['task.create', 'task.assign']);
+    expect(AutomationPolicy.referencedIds({ type: 'task_created' }, {}, [{ type: 'create_task', listId: L1, title: 'Ok', userId: 'u' }])).toMatchObject({ listIds: [L1], userIds: ['u'] });
+
+    const once = AutomationPolicy.normalizeTrigger({ type: 'on_schedule', schedule: { frequency: 'daily', time: '09:00', timeZone: 'UTC', runFor: 'once' } });
+    expect(once.schedule?.runFor).toBe('once');
+    expect(AutomationPolicy.normalizeTrigger({ type: 'on_schedule', schedule: { frequency: 'daily', time: '09:00', timeZone: 'UTC', runFor: 'each_task' } }).schedule?.runFor).toBeUndefined();
+    expect(() => AutomationPolicy.normalizeTrigger({ type: 'on_schedule', schedule: { frequency: 'daily', time: '09:00', timeZone: 'UTC', runFor: 'twice' as 'once' } })).toThrow(/runs for/);
+    const create = { type: 'create_task' as const, listId: L1, title: 'Ok' };
+    expect(() => AutomationPolicy.assertRunsOnceShape(once, {}, null, [create, { type: 'unassign' }])).not.toThrow();
+    expect(() => AutomationPolicy.assertRunsOnceShape(once, {}, null, [{ type: 'unassign' }, create])).toThrow(/start by creating/);
+    expect(() => AutomationPolicy.assertRunsOnceShape(once, { types: ['bug'] }, null, [create])).toThrow(/remove the conditions/);
+    expect(() => AutomationPolicy.assertRunsOnceShape(once, {}, { steps: [{ id: 'i', kind: 'if', condition: { field: 'type', types: ['bug'] }, yes: [{ id: 'a', kind: 'action', action: create }], no: [] }] }, [create])).toThrow(/start by creating/);
+    // Each-task schedules and other triggers don't need it.
+    expect(() => AutomationPolicy.assertRunsOnceShape({ type: 'task_created' }, {}, null, [{ type: 'unassign' }])).not.toThrow();
+  });
+
   it('lists what the actions need from the person the rule runs as', () => {
     expect(AutomationPolicy.requiredPermissions([{ type: 'assign', userId: 'u' }, { type: 'notify' }])).toEqual(['task.update', 'task.assign']);
   });

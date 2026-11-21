@@ -18,6 +18,7 @@ import {
   type FlowTaskFacts,
   type FlowTraceEntry,
   type FlowWaitStep,
+  TASK_TITLE_MAX,
   type TaskResponse,
 } from '@taskflow/shared-types';
 import { AccessService } from '../../../core/access/access.service.js';
@@ -46,6 +47,13 @@ export interface RunContext {
   sprint?: string;
   /** Webhook calls this run queued, linked to the run once it's recorded. */
   queued?: string[];
+  /** The run date of a scheduled run ({{date}}); today when not set. */
+  date?: string;
+}
+
+/** The task the steps act on. A run-once schedule starts with none; a create-task step moves it to the new task. */
+interface Cursor {
+  taskId: string | null;
 }
 
 /** Where a walk through steps ended. */
@@ -183,6 +191,16 @@ export class AutomationEngine implements OnModuleInit {
   }
 
   /**
+   * Fires a schedule set to run once (not per task): there is no task yet, and
+   * the flow's first step (checked when the rule was saved) creates one. The
+   * scheduler has already claimed this run date.
+   */
+  async runOnce(rule: AutomationRule, date: string): Promise<void> {
+    if (AutomationEngine.running.getStore()) return;
+    await this.execute(rule, null, { actorId: null, date });
+  }
+
+  /**
    * Carries on a run that reached a wait step, with the rule's owner's access as
    * it is now. Dropped (and the run marked skipped) if the rule was turned off or
    * its flow changed while waiting.
@@ -212,13 +230,15 @@ export class AutomationEngine implements OnModuleInit {
     await this.execute(rule, task, job.context, { steps, trace: [...trace], runId: job.runId });
   }
 
-  private async execute(rule: AutomationRule, task: TaskResponse, given: RunContext, resume?: Resume): Promise<void> {
+  private async execute(rule: AutomationRule, task: TaskResponse | null, given: RunContext, resume?: Resume): Promise<void> {
     const context: RunContext = { ...given, queued: [] };
     const flow = rule.flow ?? flowFromRule(rule.conditions, rule.actions);
     const trace: FlowTraceEntry[] = resume?.trace ?? [];
+    const cursor: Cursor = { taskId: task?.id ?? null };
+    // The run is logged against the task that started it, or (run once) the task it created.
     const record = (status: 'succeeded' | 'failed' | 'skipped' | 'waiting', message: string, resumesAt: Date | null = null) =>
       this.automations.recordRun(
-        { workspaceId: rule.workspaceId, ruleId: rule.id, taskId: task.id, status, message: message.slice(0, 300), trace: trace.slice(0, TRACE_MAX), resumesAt },
+        { workspaceId: rule.workspaceId, ruleId: rule.id, taskId: task?.id ?? cursor.taskId, status, message: message.slice(0, 300), trace: trace.slice(0, TRACE_MAX), resumesAt },
         resume?.runId,
       );
 
@@ -231,10 +251,10 @@ export class AutomationEngine implements OnModuleInit {
     try {
       const ended = await this.transactional.savepoint(() =>
         this.transactional.runInScope({ kind: 'workspace', workspaceId: rule.workspaceId, userId: actor.userId, spaceRules: access.spaceRules }, () =>
-          AutomationEngine.running.run(true, () => this.runSteps(resume?.steps ?? flow.steps, rule, actor, access, task.id, context, trace)),
+          AutomationEngine.running.run(true, () => this.runSteps(resume?.steps ?? flow.steps, rule, actor, access, cursor, context, trace)),
         ),
       );
-      if (ended.end === 'wait') {
+      if (ended.end === 'wait' && cursor.taskId) {
         // What ran before the wait is kept; the rest runs when the scheduler picks the job up.
         const runAt = new Date(this.clock.now().getTime() + ended.step.minutes * 60_000);
         const runId = await record('waiting', `Waiting ${describeWait(ended.step.minutes)}`, runAt);
@@ -242,7 +262,7 @@ export class AutomationEngine implements OnModuleInit {
         await this.automations.scheduleJob({
           workspaceId: rule.workspaceId,
           ruleId: rule.id,
-          taskId: task.id,
+          taskId: cursor.taskId,
           runId,
           stepId: ended.step.id,
           flowHash: flowHash(flow),
@@ -268,7 +288,7 @@ export class AutomationEngine implements OnModuleInit {
    * Walks the steps in order. If-steps look at the task as it is at that moment,
    * so an earlier step's change counts. Ends early at a stop or a wait.
    */
-  private async runSteps(steps: readonly FlowStep[], rule: AutomationRule, actor: Actor, access: WorkspaceAccess, taskId: string, context: RunContext, trace: FlowTraceEntry[]): Promise<StepsEnd> {
+  private async runSteps(steps: readonly FlowStep[], rule: AutomationRule, actor: Actor, access: WorkspaceAccess, cursor: Cursor, context: RunContext, trace: FlowTraceEntry[]): Promise<StepsEnd> {
     for (const step of steps) {
       if (step.kind === 'stop') {
         trace.push({ stepId: step.id, outcome: 'stopped', detail: '' });
@@ -279,19 +299,52 @@ export class AutomationEngine implements OnModuleInit {
         return { end: 'wait', step };
       }
       if (step.kind === 'if') {
-        const holds = evaluateCondition(step.condition, await this.factsOf(rule.workspaceId, taskId), this.clock.now().toISOString().slice(0, 10));
+        const holds = evaluateCondition(step.condition, await this.factsOf(rule.workspaceId, taskOf(cursor)), this.clock.now().toISOString().slice(0, 10));
         trace.push({ stepId: step.id, outcome: holds ? 'took-yes' : 'took-no', detail: '' });
-        const inner = await this.runSteps(holds ? step.yes : step.no, rule, actor, access, taskId, context, trace);
+        const inner = await this.runSteps(holds ? step.yes : step.no, rule, actor, access, cursor, context, trace);
         if (inner.end !== 'done') return inner;
         continue;
       }
       // Marked as ran first: if the action throws, execute() turns this entry into the failure.
       const entry: FlowTraceEntry = { stepId: step.id, outcome: 'ran', detail: step.action.type === 'webhook' ? 'Queued to send' : '' };
       trace.push(entry);
-      const detail = await this.applyAction(step.action, rule, actor, access, taskId, context, step.id);
+      const detail =
+        step.action.type === 'create_task'
+          ? await this.createTask(step.action, rule, actor, access, cursor, context)
+          : await this.applyAction(step.action, rule, actor, access, taskOf(cursor), context, step.id);
       if (detail) entry.detail = detail;
     }
     return { end: 'done' };
+  }
+
+  /**
+   * Creates a task in the rule's space as the rule's owner (task.create, and
+   * task.assign for an assignee, checked again by the task service). Later steps
+   * act on the new task. Rules don't fire for it: it's made while a rule runs.
+   */
+  private async createTask(action: AutomationAction, rule: AutomationRule, actor: Actor, access: WorkspaceAccess, cursor: Cursor, context: RunContext): Promise<string> {
+    const today = this.clock.now().toISOString().slice(0, 10);
+    const source = cursor.taskId ? await this.tasksService.get(rule.workspaceId, cursor.taskId) : null;
+    const title =
+      fillAutomationMessage(action.title ?? '', {
+        task: source ? `#${source.number} ${source.title}` : '',
+        status: source?.status.name ?? '',
+        actor: 'Automation',
+        pr: context.pr,
+        sprint: context.sprint,
+        date: context.date ?? today,
+      })
+        .trim()
+        .slice(0, TASK_TITLE_MAX) || 'New task';
+    const created = await this.tasksService.create(actor, access, action.listId as string, {
+      title,
+      ...(action.userId ? { assigneeId: action.userId } : {}),
+      ...(action.days !== null && action.days !== undefined ? { dueDate: addDays(today, action.days) } : {}),
+    });
+    // Lists were checked against the rule's space when it was saved; one moved since is refused (the savepoint undoes the task).
+    if (created.spaceId !== rule.spaceId) throw DomainError.invalid('That list is no longer in this project');
+    cursor.taskId = created.id;
+    return `Created #${created.number}`;
   }
 
   private async factsOf(workspaceId: string, taskId: string): Promise<FlowTaskFacts> {
@@ -402,4 +455,10 @@ export class AutomationEngine implements OnModuleInit {
         })),
     );
   }
+}
+
+/** The task the steps act on; a run-once flow that hasn't created one yet can't act on a task. */
+function taskOf(cursor: Cursor): string {
+  if (!cursor.taskId) throw DomainError.invalid('There is no task yet: start with “Create a task”');
+  return cursor.taskId;
 }

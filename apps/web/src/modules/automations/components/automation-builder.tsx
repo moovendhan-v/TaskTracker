@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { viewerTimeZone } from '@/lib/time-zone';
 import { useLists } from '@/modules/lists';
 import { useMembers } from '@/modules/members';
 import { useChatChannels } from '@/modules/chat';
@@ -90,7 +91,8 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
   const useTemplate = (id: string) => {
     const template = AUTOMATION_TEMPLATES.find((item) => item.id === id);
     if (!template) return;
-    setTrigger(template.trigger);
+    // Schedules run in the viewer's own time zone.
+    setTrigger(template.trigger.schedule ? { ...template.trigger, schedule: { ...template.trigger.schedule, timeZone: viewerTimeZone() } } : template.trigger);
     setFlow(template.flow);
     if (!name.trim()) setName(template.name);
     setSelectedId(template.flow.steps[0]?.id ?? null);

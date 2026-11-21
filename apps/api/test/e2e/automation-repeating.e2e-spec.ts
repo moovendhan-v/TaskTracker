@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { runtimeDatabase } from './support/database.js';
 import { createWorkspace, type WorkspaceFixture } from './support/fixtures.js';
 
-const CREATE = 'mutation($w: ID!, $s: ID!, $input: SaveAutomationInput!) { createAutomation(workspaceId: $w, spaceId: $s, input: $input) { id trigger { type schedule { frequency time timeZone weekdays monthDay } } } }';
+const CREATE = 'mutation($w: ID!, $s: ID!, $input: SaveAutomationInput!) { createAutomation(workspaceId: $w, spaceId: $s, input: $input) { id trigger { type schedule { frequency time timeZone weekdays monthDay runFor } } } }';
 const DELETE = 'mutation($w: ID!, $r: ID!) { deleteAutomation(workspaceId: $w, ruleId: $r) }';
 const RUNS = 'query($w: ID!, $r: ID!) { automationRuns(workspaceId: $w, ruleId: $r) { status message taskId } }';
 const CREATE_TASK = 'mutation($w: ID!, $l: ID!, $input: CreateTaskInput!) { createTask(workspaceId: $w, listId: $l, input: $input) { id } }';
@@ -66,7 +66,7 @@ describe('repeating schedules and sprint triggers', () => {
     expect(await bad({ frequency: 'monthly', time: '09:00', timeZone: 'UTC' })).toMatch(/day of the month/);
     // Only what the frequency uses is kept.
     const saved = await create({ name: 'Mondays', enabled: false, trigger: { type: 'on_schedule', schedule: { frequency: 'weekly', time: '09:30', timeZone: 'Europe/Berlin', weekdays: [3, 1, 1], monthDay: 5 } }, actions: comment('x') });
-    expect(saved.trigger.schedule).toEqual({ frequency: 'weekly', time: '09:30', timeZone: 'Europe/Berlin', weekdays: [1, 3], monthDay: null });
+    expect(saved.trigger.schedule).toEqual({ frequency: 'weekly', time: '09:30', timeZone: 'Europe/Berlin', weekdays: [1, 3], monthDay: null, runFor: null });
   });
 
   it('runs on schedule for each matching open task, once per day', async () => {
@@ -98,6 +98,60 @@ describe('repeating schedules and sprint triggers', () => {
     expect(await runsOf(otherDay.id)).toEqual([]);
     await ws.owner.data(DELETE, { w, r: daily.id });
     await ws.owner.data(DELETE, { w, r: otherDay.id });
+  });
+
+  it('runs once per run day by creating a task, which the later steps act on', async () => {
+    const TASK = 'query($w: ID!, $t: ID!) { task(workspaceId: $w, taskId: $t) { title dueDate assigneeId listId } }';
+    const me = (await ws.owner.data<{ me: { id: string } }>('{ me { id } }')).me.id;
+    const once = (extra: Record<string, unknown> = {}) => ({ type: 'on_schedule', schedule: { frequency: 'daily', time: '00:00', timeZone: 'UTC', runFor: 'once', ...extra } });
+    const createStep = { id: 'a1', kind: 'action', action: { type: 'create_task', listId: ws.listId, title: 'Stand-up notes {{date}}', userId: me, days: 2 } };
+    const commentStep = { id: 'a2', kind: 'action', action: { type: 'comment', message: 'Made by the schedule: {{task}}' } };
+
+    // It has no task to start from: the flow must begin by creating one, and flat conditions can't apply.
+    const bad = async (input: Record<string, unknown>) => (await ws.owner.error(CREATE, { w, s: ws.spaceId, input: { name: 'Bad', trigger: once(), ...input } })).message;
+    expect(await bad({ actions: comment('x') })).toMatch(/start by creating a task/);
+    expect(await bad({ actions: [], flowJson: JSON.stringify({ steps: [commentStep, createStep] }) })).toMatch(/start by creating a task/);
+    expect(await bad({ conditions: { types: ['bug'] }, actions: [createStep.action] })).toMatch(/remove the conditions/);
+    expect(await bad({ actions: [{ type: 'create_task', listId: ws.listId, title: '  ' }] })).toMatch(/title/);
+    expect(await bad({ actions: [{ type: 'create_task', title: 'No list' }] })).toMatch(/pick the list/);
+    expect(await ws.owner.error(CREATE, { w, s: ws.spaceId, input: { name: 'Bad', trigger: { type: 'on_schedule', schedule: { frequency: 'daily', time: '00:00', timeZone: 'UTC', runFor: 'twice' } }, actions: comment('x') } })).toBeTruthy();
+
+    const rule = await create({ name: 'Daily stand-up', trigger: once(), actions: [], flowJson: JSON.stringify({ steps: [createStep, commentStep] }) });
+    expect(rule.trigger.schedule).toMatchObject({ runFor: 'once' });
+    await savedYesterday(rule.id);
+    const [run] = await eventually(async () => {
+      const found = await runsOf(rule.id);
+      return found.length ? found : undefined;
+    });
+    expect(run).toMatchObject({ status: 'succeeded' });
+    const today = new Date().toISOString().slice(0, 10);
+    const made = (await ws.owner.data<{ task: { title: string; dueDate: string | null; assigneeId: string | null; listId: string } }>(TASK, { w, t: run!.taskId })).task;
+    expect(made).toMatchObject({ title: `Stand-up notes ${today}`, assigneeId: me, listId: ws.listId });
+    expect(made.dueDate?.slice(0, 10)).toBe(new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10));
+    // The comment step acted on the new task.
+    expect(await commentsOn(run!.taskId)).toEqual([expect.stringMatching(/^Made by the schedule: #\d+ Stand-up notes /)]);
+    // Once per run day, however many ticks pass.
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+    expect(await runsOf(rule.id)).toHaveLength(1);
+    await ws.owner.data(DELETE, { w, r: rule.id });
+  });
+
+  it('creates a follow-up task from a task trigger, without firing other rules', async () => {
+    const follow = await create({ name: 'Follow-up', trigger: { type: 'task_created' }, conditions: { types: ['bug'] }, actions: [{ type: 'create_task', listId: ws.listId, title: 'Write a test for {{task}}' }, { type: 'set_priority', priority: 'high' }] });
+    const bug = await newTask({ title: 'Crash on save', type: 'bug' });
+    const [run] = await runsOf(follow.id);
+    // The run is logged on the bug that started it; the new task got the later step and fired nothing.
+    expect(run).toMatchObject({ status: 'succeeded', taskId: bug });
+    const { searchTasks } = await ws.owner.data<{ searchTasks: { items: { title: string; priority: string }[] } }>(
+      'query($w: ID!, $s: ID) { searchTasks(workspaceId: $w, spaceId: $s, query: { pageSize: 100 }) { items { title priority } } }',
+      { w, s: ws.spaceId },
+    );
+    const made = searchTasks.items.filter((task) => task.title.startsWith('Write a test for'));
+    expect(made).toEqual([{ title: expect.stringMatching(/^Write a test for #\d+ Crash on save$/), priority: 'high' }]);
+    // The bug itself kept its priority.
+    expect(searchTasks.items.find((task) => task.title === 'Crash on save')?.priority).not.toBe('high');
+    expect(await runsOf(follow.id)).toHaveLength(1);
+    await ws.owner.data(DELETE, { w, r: follow.id });
   });
 
   it('runs for each task in a sprint when it starts and when it completes', async () => {

@@ -184,6 +184,8 @@ export class AutomationsService {
     const conditions = flow ? AutomationPolicy.normalizeConditions(undefined) : AutomationPolicy.normalizeConditions(request.conditions);
     const actions = flow ? flowActions(flow) : AutomationPolicy.normalizeActions(request.actions);
 
+    AutomationPolicy.assertRunsOnceShape(trigger, conditions, flow, actions);
+
     const missing = AutomationPolicy.requiredPermissions(actions).filter((permission) => !canInSpace(access, spaceId, permission));
     if (missing.length) throw DomainError.forbidden(`These actions need ${missing.join(', ')} in this space, which you don’t have`);
 

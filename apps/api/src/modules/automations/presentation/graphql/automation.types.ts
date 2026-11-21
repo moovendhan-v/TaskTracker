@@ -7,6 +7,9 @@ import {
   AUTOMATION_TRIGGERS,
   NOTIFY_AUDIENCES,
   SCHEDULE_FREQUENCIES,
+  SCHEDULE_RUN_FOR,
+  TASK_TITLE_MAX,
+  type ScheduleRunFor,
   STATUS_CATEGORIES,
   TASK_PRIORITIES,
   TASK_TYPES,
@@ -51,6 +54,7 @@ export class AutomationScheduleGql implements AutomationSchedule {
   @Field({ description: 'IANA time zone, e.g. Europe/Berlin' }) timeZone: string;
   @Field(() => [Int], { nullable: true, description: 'weekly: 0 = Sunday … 6 = Saturday' }) weekdays?: number[] | null;
   @Field(() => Int, { nullable: true, description: 'monthly: 1–28' }) monthDay?: number | null;
+  @Field(() => String, { nullable: true, description: 'each_task (default) or once: run once per run day, starting by creating a task' }) runFor?: ScheduleRunFor | null;
 }
 
 @InputType('AutomationScheduleInput')
@@ -60,6 +64,7 @@ export class AutomationScheduleInput implements AutomationSchedule {
   @Field() @IsString() @MaxLength(64) timeZone: string;
   @Field(() => [Int], { nullable: true }) @IsOptional() @IsArray() @ArrayMaxSize(7) @IsInt({ each: true }) @Min(0, { each: true }) @Max(6, { each: true }) weekdays?: number[] | null;
   @Field(() => Int, { nullable: true }) @IsOptional() @IsInt() @Min(1) @Max(28) monthDay?: number | null;
+  @Field(() => String, { nullable: true }) @IsOptional() @IsIn(SCHEDULE_RUN_FOR) runFor?: ScheduleRunFor | null;
 }
 
 @ObjectType('AutomationTrigger')
@@ -90,7 +95,8 @@ export class AutomationActionGql implements AutomationAction {
   @Field(() => String, { nullable: true }) message?: string | null;
   @Field(() => Int, { nullable: true, description: 'set_due_date: days from the day it runs; null clears' }) days?: number | null;
   @Field(() => ID, { nullable: true, description: 'post_chat: the channel' }) channelId?: string | null;
-  @Field(() => ID, { nullable: true, description: 'move_to_list: the list (in the rule’s space)' }) listId?: string | null;
+  @Field(() => ID, { nullable: true, description: 'move_to_list / create_task: the list (in the rule’s space)' }) listId?: string | null;
+  @Field(() => String, { nullable: true, description: 'create_task: the title; {{task}}, {{date}} and {{sprint}} are filled in' }) title?: string | null;
   @Field(() => String, { nullable: true, description: 'webhook: an https URL on an allowlisted host' }) url?: string | null;
 }
 
@@ -159,6 +165,7 @@ export class AutomationActionInput implements AutomationAction {
   @Field(() => Int, { nullable: true }) @IsOptional() @IsInt() @Min(0) @Max(FLOW_LIMITS.daysMax) days?: number | null;
   @Field(() => ID, { nullable: true }) @IsOptional() @IsUUID('4') channelId?: string | null;
   @Field(() => ID, { nullable: true }) @IsOptional() @IsUUID('4') listId?: string | null;
+  @Field(() => String, { nullable: true }) @IsOptional() @IsString() @MaxLength(TASK_TITLE_MAX) title?: string | null;
   @Field(() => String, { nullable: true }) @IsOptional() @IsString() @MaxLength(AUTOMATION_LIMITS.urlMax) url?: string | null;
 }
 
