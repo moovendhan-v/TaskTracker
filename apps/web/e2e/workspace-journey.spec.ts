@@ -17,6 +17,8 @@ const email = `dana+${run}@example.com`;
 let context: BrowserContext;
 let page: Page;
 const consoleErrors: string[] = [];
+/** The GitHub webhook the journey connects, for playing GitHub later on. */
+const github = { url: '', secret: '' };
 
 test.beforeAll(async ({ browser }) => {
   context = await browser.newContext();
@@ -795,6 +797,9 @@ test('connects GitHub with a status mapping, a sync log and a pull request inbox
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
   const secret = page.getByRole('dialog', { name: 'Add the webhook to acme/web' });
   await expect(secret).toBeVisible();
+  // Kept for the next step, which plays GitHub sending a pull request.
+  github.url = await secret.getByRole('textbox').nth(0).inputValue();
+  github.secret = await secret.getByRole('textbox').nth(1).inputValue();
   await page.keyboard.press('Escape');
 
   const mapping = page.getByRole('table', { name: 'Status mapping' });
@@ -803,6 +808,41 @@ test('connects GitHub with a status mapping, a sync log and a pull request inbox
   await expect(page.getByRole('dialog', { name: 'acme/web: sync log' }).getByText('Nothing received yet.')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('region', { name: 'Pull requests without a task' })).toContainText('Every pull request mentions a task');
+});
+
+test('shows a linked pull request in the task table', async () => {
+  // A task of its own, so the status sync on "opened" moves nothing other steps rely on.
+  const workspaceId = /\/w\/([0-9a-f-]+)/.exec(page.url())![1];
+  const gql = async <T,>(query: string, variables: Record<string, unknown>): Promise<T> => {
+    const response = await page.request.post('/api/graphql', { data: { query, variables }, headers: { origin: new URL(page.url()).origin } });
+    const body = (await response.json()) as { data: T; errors?: unknown[] };
+    expect(body.errors).toBeUndefined();
+    return body.data;
+  };
+  const { searchTasks } = await gql<{ searchTasks: { items: { listId: string }[] } }>('query($w: ID!) { searchTasks(workspaceId: $w, query: { pageSize: 1 }) { items { listId } } }', { w: workspaceId });
+  const { createTask } = await gql<{ createTask: { number: number } }>('mutation($w: ID!, $l: ID!) { createTask(workspaceId: $w, listId: $l, input: { title: "Wire up the GitHub app" }) { number } }', {
+    w: workspaceId,
+    l: searchTasks.items[0]!.listId,
+  });
+  const prefix = /Tasks are mentioned as ([A-Za-z]+)-42/.exec((await page.getByText(/Tasks are mentioned as/).first().textContent()) ?? '')![1];
+  const body = JSON.stringify({
+    action: 'opened',
+    repository: { full_name: 'acme/web' },
+    pull_request: { number: 7, title: `${prefix}-${createTask.number}: wire up the app`, body: '', html_url: 'https://github.com/acme/web/pull/7', state: 'open', merged: false, head: { ref: 'app' }, user: { login: 'dana' } },
+  });
+  const delivered = await fetch(github.url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-github-event': 'pull_request', 'x-github-delivery': randomUUID(), 'x-hub-signature-256': `sha256=${createHmac('sha256', github.secret).update(body).digest('hex')}` },
+    body,
+  });
+  expect(await delivered.json()).toEqual({ result: 'ok' });
+
+  await page.getByRole('complementary', { name: 'Workspace navigation' }).getByText('Product').click();
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('link', { name: 'Table', exact: true }).click();
+  const row = page.getByRole('row').filter({ hasText: 'Wire up the GitHub app' });
+  await expect(row).toContainText('Open');
+  await expect(page.getByRole('columnheader', { name: /Pull request/ })).toBeVisible();
+  await shot('c1-table-pull-requests');
 });
 
 test('opens the platform admin console after promotion by the operator CLI', async () => {

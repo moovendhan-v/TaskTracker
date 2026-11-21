@@ -67,9 +67,12 @@ export function ResourceTable<T>({ workspaceId, resource, tableKey, label, query
   const rows = useQuery({ queryKey: [...queryKey, query], queryFn: () => fetchPage(query), enabled: Boolean(schema), placeholderData: keepPreviousData });
 
   const fields = schema?.fields ?? [];
+  // Fields added since the layout was saved go at the end, shown or hidden by their default.
+  const known = new Set(saved?.columns ?? []);
+  const added = saved?.columns.length ? fields.filter((field) => !known.has(field.name)) : [];
   const layout: TableLayoutState = {
-    order: saved?.columns.length ? saved.columns : fields.map((field) => field.name),
-    hidden: saved ? saved.hidden : fields.filter((field) => !field.defaultVisible).map((field) => field.name),
+    order: saved?.columns.length ? [...saved.columns, ...added.map((field) => field.name)] : fields.map((field) => field.name),
+    hidden: saved ? [...saved.hidden, ...added.filter((field) => !field.defaultVisible).map((field) => field.name)] : fields.filter((field) => !field.defaultVisible).map((field) => field.name),
     widths: Object.fromEntries((saved?.widths ?? []).map((width) => [width.column, width.width])),
   };
   const persist = (next: { layout?: TableLayoutState; sort?: SortSpec[]; pageSize?: number }) => {

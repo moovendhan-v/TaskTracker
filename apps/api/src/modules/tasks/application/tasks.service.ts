@@ -354,6 +354,7 @@ export class TasksService {
       statuses: await this.statusesService.byId(workspaceId),
       spaceOfList: new Map((await this.listsService.listForWorkspace(workspaceId)).map((list) => [list.id, list.spaceId])),
       subtaskCounts: await this.tasks.countSubtasks(workspaceId, tasks.map((task) => task.id)),
+      pullRequests: await this.tasks.pullRequestSummaries(workspaceId, tasks.map((task) => task.id)),
     };
     return tasks.map((task) => TaskMapper.toResponse(task, context));
   }

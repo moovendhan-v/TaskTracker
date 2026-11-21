@@ -1,4 +1,5 @@
 import type { NormalizedQuery } from '../../../core/query/normalize-query.js';
+import type { TaskPullRequestSummary } from '@taskflow/shared-types';
 import type { NewTask, Task } from './task.js';
 
 export interface TaskPage {
@@ -31,6 +32,8 @@ export abstract class TaskRepository {
   abstract nextNumber(workspaceId: string): Promise<number>;
   /** How many direct subtasks each task has. */
   abstract countSubtasks(workspaceId: string, taskIds: readonly string[]): Promise<Map<string, number>>;
+  /** Linked GitHub pull requests by state, for the tasks that have any (a read of the integration's links). */
+  abstract pullRequestSummaries(workspaceId: string, taskIds: readonly string[]): Promise<Map<string, TaskPullRequestSummary>>;
   /** Direct subtasks, in position order. */
   abstract listSubtasks(workspaceId: string, parentId: string, limit: number): Promise<Task[]>;
   /** How many ancestors a task has (0 for a top-level task). */

@@ -12,6 +12,8 @@ interface Connection {
 const CONNECT = 'mutation($w: ID!, $input: ConnectGithubInput!) { connectGithub(workspaceId: $w, input: $input) { webhookSecret connection { id webhookPath lastDeliveryStatus } } }';
 const TASK = 'query($w: ID!, $t: ID!) { task(workspaceId: $w, taskId: $t) { status { name category } } }';
 const LINKS = 'query($w: ID!, $t: ID!) { taskPullRequests(workspaceId: $w, taskId: $t) { number state title url } }';
+const SEARCH = 'query($w: ID!, $q: ResourceQueryInput) { searchTasks(workspaceId: $w, query: $q) { items { id pullRequests { open merged closed } } } }';
+type Summary = { open: number; merged: number; closed: number } | null;
 
 describe('GitHub integration', () => {
   let ws: WorkspaceFixture;
@@ -82,13 +84,23 @@ describe('GitHub integration', () => {
     expect(form.status).toBe(415);
   });
 
+  const search = async (filter: unknown = null) =>
+    (await ws.owner.data<{ searchTasks: { items: { id: string; pullRequests: Summary }[] } }>(SEARCH, vars({ q: { filter, pageSize: 50 } }))).searchTasks.items;
+  const summaryOf = async (taskId: string) => (await search()).find((item) => item.id === taskId)?.pullRequests;
+
   it('answers pings and links an opened pull request, moving the task to review', async () => {
+    // Read once first, so a stale cached search would show if linking didn't refresh it.
+    expect(await summaryOf(task.id)).toBeNull();
     expect((await deliver({ zen: 'hi' }, { event: 'ping' })).status).toBe(202);
     const response = await deliver(pullRequest('opened'));
     expect(await response.json()).toEqual({ result: 'ok' });
     expect((await ws.owner.data<{ task: { status: { category: string } } }>(TASK, vars({ t: task.id }))).task.status.category).toBe('review');
     const { taskPullRequests } = await member.data<{ taskPullRequests: { number: number; state: string }[] }>(LINKS, vars({ t: task.id }));
     expect(taskPullRequests).toEqual([expect.objectContaining({ number: 17, state: 'open' })]);
+    // The task table's pull request column, and its filter.
+    expect(await summaryOf(task.id)).toEqual({ open: 1, merged: 0, closed: 0 });
+    expect((await search({ field: 'pullRequests', op: 'eq', value: 'open' })).map((item) => item.id)).toEqual([task.id]);
+    expect((await search({ field: 'pullRequests', op: 'is_null' })).map((item) => item.id)).not.toContain(task.id);
   });
 
   it('handles a delivery once, even when GitHub sends it again', async () => {
@@ -106,6 +118,8 @@ describe('GitHub integration', () => {
     expect((await ws.owner.data<{ task: { status: { category: string } } }>(TASK, vars({ t: task.id }))).task.status.category).toBe('done');
     const { taskPullRequests } = await ws.owner.data<{ taskPullRequests: { state: string }[] }>(LINKS, vars({ t: task.id }));
     expect(taskPullRequests[0]?.state).toBe('merged');
+    expect(await summaryOf(task.id)).toEqual({ open: 0, merged: 1, closed: 0 });
+    expect(await search({ field: 'pullRequests', op: 'eq', value: 'open' })).toEqual([]);
     const { notifications } = await member.data<{ notifications: { items: { kind: string; subject: string }[] } }>('query($w: ID!) { notifications(workspaceId: $w) { items { kind subject } } }', vars());
     expect(notifications.items.find((item) => item.kind === 'automation')?.subject).toMatch(/fix the crash \(#17\) shipped #\d+ Crash on save/);
   });

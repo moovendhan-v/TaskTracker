@@ -14,6 +14,7 @@ import {
   type TaskPriority,
   type TaskRelationKind,
   type TaskRelationResponse,
+  type TaskPullRequestSummary,
   type TaskResponse,
   type TaskType,
   type UpdateTaskRequest,
@@ -26,6 +27,13 @@ import { MetadataScalar } from '../../../../core/graphql/metadata.scalar.js';
 import { PageOf } from '../../../../core/graphql/page.type.js';
 import { IsClearable, IsNotBlank, IsOmittable } from '../../../../core/graphql/validation.js';
 import { TaskStatusGql } from '../../../statuses/presentation/graphql/status.types.js';
+
+@ObjectType('TaskPullRequestSummary')
+export class TaskPullRequestSummaryGql implements TaskPullRequestSummary {
+  @Field(() => Int) open: number;
+  @Field(() => Int) merged: number;
+  @Field(() => Int) closed: number;
+}
 
 @ObjectType('Task')
 export class TaskGql implements TaskResponse {
@@ -50,6 +58,7 @@ export class TaskGql implements TaskResponse {
   @Field(() => Int, { nullable: true, description: 'Story points, 0–100' }) storyPoints: number | null;
   @Field(() => Int, { nullable: true, description: '0–100' }) progress: number | null;
   @Field(() => Int) subtaskCount: number;
+  @Field(() => TaskPullRequestSummaryGql, { nullable: true, description: 'Linked GitHub pull requests by state; null when none' }) pullRequests?: TaskPullRequestSummaryGql | null;
   @SensitiveField('task.metadata', () => MetadataScalar) metadata: TaskMetadata | null;
   @Field(() => CustomFieldValuesScalar) customFields: CustomFieldValues;
   @Field(() => String, { nullable: true }) completedAt: string | null;

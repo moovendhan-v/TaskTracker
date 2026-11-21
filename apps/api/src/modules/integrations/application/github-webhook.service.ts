@@ -1,3 +1,5 @@
+import { entityTag } from '../../../core/cache/cache-keys.js';
+import { CacheStore } from '../../../core/cache/cache-store.port.js';
 import { Injectable, Logger } from '@nestjs/common';
 import { canInSpace, taskReferences, type AutomationTriggerType, type StatusCategory, type TaskResponse } from '@taskflow/shared-types';
 import { AccessService } from '../../../core/access/access.service.js';
@@ -52,6 +54,7 @@ export class GithubWebhookService {
     private readonly accessService: AccessService,
     private readonly automationEngine: AutomationEngine,
     private readonly clock: Clock,
+    private readonly cache: CacheStore,
   ) {}
 
   async receive(delivery: WebhookDelivery): Promise<WebhookOutcome> {
@@ -182,6 +185,8 @@ export class GithubWebhookService {
       if (category && (await this.moveTo(connection, access, task, category, pr)) === 'conflict') conflicts += 1;
       if (trigger) await this.automationEngine.run(workspaceId, [trigger], task.id, { actorId: null, pr: `${pr.title} (#${pr.number})` });
     }
+    // Task responses carry a pull request summary, and links don't raise task events.
+    if (linked.length) await this.cache.invalidateTags([entityTag(workspaceId, 'task')]);
     if (linked.length) await this.github.removeFromInbox(workspaceId, connection.id, pr.number);
     else await this.github.upsertInbox({ workspaceId, connectionId: connection.id, repo: connection.repo, number: pr.number, title: pr.title, url: pr.url, author: pr.author, branch: pr.branch, state: pr.state });
     return { linked, conflicts };

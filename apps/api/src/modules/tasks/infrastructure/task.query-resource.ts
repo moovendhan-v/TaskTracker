@@ -9,6 +9,15 @@ export const PRIORITY_RANK_SQL = `CASE task.priority WHEN 'urgent' THEN 0 WHEN '
 /** The category of the task's status; a fixed expression with no user input. */
 export const STATUS_CATEGORY_SQL = `(SELECT task_status.category FROM task_status WHERE task_status.id = task.status_id)`;
 
+/**
+ * The task's linked pull requests at a glance: open if any is open, else merged, else closed;
+ * null with none. Fixed expressions with no user input (the link table has its own RLS).
+ */
+const PULL_REQUEST_STATES = ['open', 'merged', 'closed'] as const;
+const PR_EXISTS = (state: string) => `EXISTS (SELECT 1 FROM github_pull_request pr WHERE pr.task_id = task.id AND pr.state = '${state}')`;
+export const PULL_REQUEST_STATE_SQL = `(CASE WHEN ${PR_EXISTS('open')} THEN 'open' WHEN ${PR_EXISTS('merged')} THEN 'merged' WHEN ${PR_EXISTS('closed')} THEN 'closed' END)`;
+const PULL_REQUEST_RANK_SQL = `(CASE WHEN ${PR_EXISTS('open')} THEN 0 WHEN ${PR_EXISTS('merged')} THEN 1 WHEN ${PR_EXISTS('closed')} THEN 2 ELSE 3 END)`;
+
 /** True when the task's status is done or cancelled. */
 export const CLOSED_STATUS_SQL = `(${STATUS_CATEGORY_SQL} IN ('done', 'cancelled'))`;
 
@@ -48,6 +57,9 @@ export class TaskQueryResource {
 
   @QueryField({ type: 'user', column: 'task.assignee_id', label: 'Assignee', display: 'avatar', width: 120 })
   assigneeId: string;
+
+  @QueryField({ type: 'enum', column: PULL_REQUEST_STATE_SQL, sortColumn: PULL_REQUEST_RANK_SQL, label: 'Pull request', options: PULL_REQUEST_STATES, sortable: true, width: 130 })
+  pullRequests: string;
 
   @QueryField({ type: 'datetime', column: 'task.start_date', label: 'Start date', sortable: true, display: 'date', width: 130, defaultVisible: false })
   startDate: string;
