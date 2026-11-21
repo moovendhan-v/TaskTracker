@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { viewerTimeZone } from '@/lib/time-zone';
 import { useLists } from '@/modules/lists';
 import { useMembers } from '@/modules/members';
 import { useChatChannels } from '@/modules/chat';
@@ -90,7 +91,8 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
   const useTemplate = (id: string) => {
     const template = AUTOMATION_TEMPLATES.find((item) => item.id === id);
     if (!template) return;
-    setTrigger(template.trigger);
+    // Schedules run in the viewer's own time zone.
+    setTrigger(template.trigger.schedule ? { ...template.trigger, schedule: { ...template.trigger.schedule, timeZone: viewerTimeZone() } } : template.trigger);
     setFlow(template.flow);
     if (!name.trim()) setName(template.name);
     setSelectedId(template.flow.steps[0]?.id ?? null);
@@ -241,7 +243,13 @@ export function AutomationBuilder({ workspaceId, spaceId, rule, onClose, onSave,
             {trigger.type === 'on_schedule' ? <ScheduleFields schedule={trigger.schedule ?? defaultSchedule()} onChange={(schedule) => setTrigger({ ...trigger, schedule })} /> : null}
             {trigger.type === 'on_schedule' ? (
               <p className="text-xs text-muted-foreground">
-                At that time, runs once for each open task in this project that matches (up to {AUTOMATION_LIMITS.tasksPerRun} a minute until all are done). Finished and cancelled tasks are left alone. Saved after today’s time? It starts on the next run day.
+                {trigger.schedule?.runFor === 'once' ? (
+                  <>At that time, runs once, with no task to start from: the first step must be “Create a task”, and the steps after it act on the new task. Saved after today’s time? It starts on the next run day.</>
+                ) : (
+                  <>
+                    At that time, runs once for each open task in this project that matches (up to {AUTOMATION_LIMITS.tasksPerRun} a minute until all are done). Finished and cancelled tasks are left alone. Saved after today’s time? It starts on the next run day.
+                  </>
+                )}
               </p>
             ) : isScheduledTrigger(trigger.type) ? (
               <p className="text-xs text-muted-foreground">Checked every minute. Fires once per open task and due date; finished and cancelled tasks are left alone.</p>

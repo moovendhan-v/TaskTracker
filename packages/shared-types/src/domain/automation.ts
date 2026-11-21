@@ -51,14 +51,22 @@ export interface AutomationSchedule {
   timeZone: string;
   weekdays?: number[] | null;
   monthDay?: number | null;
+  /**
+   * 'each_task' (default): the rule runs for each matching open task. 'once': it runs
+   * once per run day for no task: its first step must create one, which the later steps act on.
+   */
+  runFor?: ScheduleRunFor | null;
 }
+
+export const SCHEDULE_RUN_FOR = ['each_task', 'once'] as const;
+export type ScheduleRunFor = (typeof SCHEDULE_RUN_FOR)[number];
 export type ScheduledTriggerType = (typeof SCHEDULED_TRIGGERS)[number];
 
 export function isScheduledTrigger(type: AutomationTriggerType): type is ScheduledTriggerType {
   return (SCHEDULED_TRIGGERS as readonly string[]).includes(type);
 }
 
-export const AUTOMATION_ACTIONS = ['set_status', 'set_priority', 'assign', 'unassign', 'notify', 'comment', 'set_due_date', 'add_watcher', 'post_chat', 'webhook', 'move_to_list'] as const;
+export const AUTOMATION_ACTIONS = ['set_status', 'set_priority', 'assign', 'unassign', 'notify', 'comment', 'set_due_date', 'add_watcher', 'post_chat', 'webhook', 'move_to_list', 'create_task'] as const;
 export type AutomationActionType = (typeof AUTOMATION_ACTIONS)[number];
 
 /** Who a notify action reaches, besides people named by id. */
@@ -103,8 +111,10 @@ export interface AutomationAction {
   channelId?: string | null;
   /** webhook: an https:// URL on a host this server allows (AUTOMATION_WEBHOOK_HOSTS). */
   url?: string | null;
-  /** move_to_list: a list in the rule's space; the task moves there with its subtasks. */
+  /** move_to_list: a list in the rule's space; the task moves there with its subtasks. create_task: the list it's made in. */
   listId?: string | null;
+  /** create_task: the new task's title; {{task}}, {{date}} and {{sprint}} are filled in. (userId assigns it; days sets its due date.) */
+  title?: string | null;
 }
 
 export const AUTOMATION_LIMITS = {
@@ -125,8 +135,9 @@ export const AUTOMATION_RUN_STATUSES = ['succeeded', 'failed', 'skipped', 'waiti
 export type AutomationRunStatus = (typeof AUTOMATION_RUN_STATUSES)[number];
 
 /** Fills a notify message's placeholders. The result is plain text and is shown as text, never HTML. */
-export function fillAutomationMessage(message: string, values: { task: string; status: string; actor: string; pr?: string | null; sprint?: string | null }): string {
+export function fillAutomationMessage(message: string, values: { task: string; status: string; actor: string; pr?: string | null; sprint?: string | null; date?: string | null }): string {
   return message
+    .replaceAll('{{date}}', values.date ?? '')
     .replaceAll('{{task}}', values.task)
     .replaceAll('{{status}}', values.status)
     .replaceAll('{{actor}}', values.actor)

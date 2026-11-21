@@ -182,11 +182,16 @@ type AutomationAction {
   """set_due_date: days from the day it runs; null clears"""
   days: Int
 
-  """move_to_list: the list (in the rule’s space)"""
+  """move_to_list / create_task: the list (in the rule’s space)"""
   listId: ID
   message: String
   priority: TaskPriority
   statusId: ID
+
+  """
+  create_task: the title; {{task}}, {{date}} and {{sprint}} are filled in
+  """
+  title: String
   type: AutomationActionType!
 
   """webhook: an https URL on an allowlisted host"""
@@ -203,6 +208,7 @@ input AutomationActionInput {
   message: String
   priority: TaskPriority
   statusId: ID
+  title: String
   type: AutomationActionType!
   url: String
   userId: String
@@ -213,6 +219,7 @@ enum AutomationActionType {
   add_watcher
   assign
   comment
+  create_task
   move_to_list
   notify
   post_chat
@@ -292,6 +299,11 @@ type AutomationSchedule {
   """monthly: 1–28"""
   monthDay: Int
 
+  """
+  each_task (default) or once: run once per run day, starting by creating a task
+  """
+  runFor: String
+
   """24-hour HH:MM"""
   time: String!
 
@@ -305,6 +317,7 @@ type AutomationSchedule {
 input AutomationScheduleInput {
   frequency: String!
   monthDay: Int
+  runFor: String
   time: String!
   timeZone: String!
   weekdays: [Int!]

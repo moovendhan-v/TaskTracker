@@ -1234,6 +1234,31 @@ test('builds a repeating schedule and a sprint automation', async () => {
   await expect(sprintRule).toBeHidden();
 });
 
+test('builds a weekly recurring task from a template', async () => {
+  await page.getByRole('button', { name: 'New automation' }).click();
+  const builder = page.getByRole('dialog', { name: 'New automation' });
+  await builder.getByLabel('Start from a template').click();
+  await page.getByRole('option', { name: /Weekly recurring task/ }).click();
+  await expect(builder.getByLabel('Automation name')).toHaveValue('Weekly recurring task');
+  // It runs once (not per task), so its first step makes the task.
+  await expect(builder.getByLabel('Runs for')).toContainText('Once (it creates a task)');
+  await builder.getByRole('treeitem').filter({ hasText: /create/i }).first().click();
+  await expect(builder.getByLabel('New task title')).toHaveValue('Weekly check-in {{date}}');
+  await builder.getByLabel('List to create it in').click();
+  const list = (await page.getByRole('option').first().textContent())!.trim();
+  await page.getByRole('option').first().click();
+  await builder.getByLabel('Assign the new task to').click();
+  await page.getByRole('option', { name: 'Nobody' }).click();
+  await expect(page.getByText(new RegExp(`When it's 09:00 every Monday \\([^)]+\\), then create “Weekly check-in \\{\\{date\\}\\}” in ${list}`))).toBeVisible();
+  await expect(builder.getByText(/The steps after this one act on the new task/)).toBeVisible();
+  await shot('e1-automation-create-task', builder);
+  await builder.getByRole('button', { name: 'Create automation' }).click();
+  await expect(builder).toBeHidden();
+  // The newest card is at the bottom, where the "created" toast can cover its switch: click the switch itself.
+  await page.getByRole('switch', { name: 'Weekly recurring task is on' }).dispatchEvent('click');
+  await expect(page.getByRole('switch', { name: 'Weekly recurring task is off' })).not.toBeChecked();
+});
+
 test('opens an empty inbox', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Inbox' }).click();
   await expect(page).toHaveURL(/\/inbox$/);

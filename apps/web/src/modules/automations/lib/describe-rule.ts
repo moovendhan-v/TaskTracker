@@ -51,6 +51,7 @@ export const ACTION_LABELS: Record<AutomationAction['type'], string> = {
   post_chat: 'Post in chat',
   webhook: 'Call a webhook',
   move_to_list: 'Move to a list',
+  create_task: 'Create a task',
 };
 
 export const AUDIENCE_LABELS: Record<NotifyAudience, string> = {
@@ -83,7 +84,7 @@ export function describeRule(rule: { trigger: AutomationTrigger; conditions: Aut
   const { trigger, conditions } = rule;
   let when =
     trigger.type === 'on_schedule' && trigger.schedule
-      ? `it's ${describeSchedule(trigger.schedule)}, for each open task`
+      ? `it's ${describeSchedule(trigger.schedule)}${trigger.schedule.runFor === 'once' ? '' : ', for each open task'}`
       : TRIGGER_LABELS[trigger.type].replace(/^A /, 'a ').replace(/^([A-Z])/, (letter) => letter.toLowerCase());
   if (trigger.type === 'sprint_started' || trigger.type === 'sprint_completed') when += ', for each task in it';
   const targets = [...(trigger.statusIds ?? []).map(names.status), ...(trigger.categories ?? []).map((category) => `any ${CATEGORY_LABELS[category]} status`)];
@@ -139,6 +140,8 @@ export function describeAction(action: AutomationAction, names: Names): string {
       return `call a webhook on ${hostOf(action.url)}`;
     case 'move_to_list':
       return `move it to ${action.listId ? names.list(action.listId) : '…'}`;
+    case 'create_task':
+      return `create “${action.title ? (action.title.length > 40 ? `${action.title.slice(0, 39)}…` : action.title) : '…'}” in ${action.listId ? names.list(action.listId) : '…'}${action.userId ? ` for ${names.person(action.userId)}` : ''}`;
   }
 }
 

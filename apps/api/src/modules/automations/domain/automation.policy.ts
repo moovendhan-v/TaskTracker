@@ -16,7 +16,7 @@ import {
   type TaskType,
 } from '@taskflow/shared-types';
 import { DomainError } from '../../../core/domain/domain-error.js';
-import { FLOW_LIMITS, flowActions, flowSteps, isTimeZone, SCHEDULE_FREQUENCIES, validateFlowShape, type AutomationFlow, type AutomationSchedule, type FlowStep } from '@taskflow/shared-types';
+import { FLOW_LIMITS, flowActions, flowSteps, isTimeZone, SCHEDULE_FREQUENCIES, SCHEDULE_RUN_FOR, TASK_TITLE_MAX, validateFlowShape, type AutomationFlow, type AutomationSchedule, type FlowStep } from '@taskflow/shared-types';
 
 /** The task an automation looks at, after the change that triggered it. */
 export interface TaskFacts {
@@ -58,6 +58,7 @@ const ACTION_PERMISSIONS: Record<AutomationAction['type'], Permission[]> = {
   post_chat: ['chat.use'],
   webhook: [],
   move_to_list: ['task.update'],
+  create_task: ['task.create'],
 };
 
 export const AutomationPolicy = {
@@ -79,7 +80,8 @@ export const AutomationPolicy = {
     if (!schedule || !(SCHEDULE_FREQUENCIES as readonly string[]).includes(schedule.frequency)) throw DomainError.invalid('Choose how often it runs');
     if (typeof schedule.time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(schedule.time)) throw DomainError.invalid('Set the time as HH:MM (24-hour)');
     if (!isTimeZone(schedule.timeZone)) throw DomainError.invalid('Unknown time zone');
-    const base = { frequency: schedule.frequency, time: schedule.time, timeZone: schedule.timeZone };
+    if (schedule.runFor != null && !(SCHEDULE_RUN_FOR as readonly string[]).includes(schedule.runFor)) throw DomainError.invalid('Choose what the schedule runs for');
+    const base = { frequency: schedule.frequency, time: schedule.time, timeZone: schedule.timeZone, ...(schedule.runFor === 'once' ? { runFor: 'once' as const } : {}) };
     if (schedule.frequency === 'weekly') {
       const weekdays = [...new Set(schedule.weekdays ?? [])].filter((day) => Number.isInteger(day) && day >= 0 && day <= 6).sort();
       if (weekdays.length === 0) throw DomainError.invalid('Pick at least one day of the week');
@@ -164,6 +166,17 @@ export const AutomationPolicy = {
         case 'move_to_list':
           if (!action.listId || !UUID.test(action.listId)) throw DomainError.invalid(`${where}: pick a list`);
           return { type: action.type, listId: action.listId };
+        case 'create_task': {
+          if (!action.listId || !UUID.test(action.listId)) throw DomainError.invalid(`${where}: pick the list to add it to`);
+          const title = (action.title ?? '').trim();
+          if (!title) throw DomainError.invalid(`${where}: write the task's title`);
+          if (title.length > TASK_TITLE_MAX) throw DomainError.invalid(`${where}: the title is too long`);
+          if (action.userId != null && (typeof action.userId !== 'string' || action.userId.length > 64)) throw DomainError.invalid(`${where}: pick a person`);
+          if (action.days != null && !(Number.isInteger(action.days) && action.days >= 0 && action.days <= FLOW_LIMITS.daysMax)) {
+            throw DomainError.invalid(`${where}: due in 0 to ${FLOW_LIMITS.daysMax} days, or leave it empty`);
+          }
+          return { type: action.type, listId: action.listId, title, userId: action.userId ?? null, days: action.days ?? null };
+        }
         default:
           throw DomainError.invalid(`${where}: unknown action`);
       }
@@ -187,6 +200,20 @@ export const AutomationPolicy = {
     return normalized;
   },
 
+  /**
+   * A schedule that runs once (not per task) has no task to start from, so its
+   * steps must begin by creating one; flat conditions (which filter tasks) can't apply.
+   */
+  assertRunsOnceShape(trigger: AutomationTrigger, conditions: AutomationConditions, flow: AutomationFlow | null, actions: readonly AutomationAction[]): void {
+    if (trigger.type !== 'on_schedule' || trigger.schedule?.runFor !== 'once') return;
+    if (!flow && (conditions.listIds?.length || conditions.priorities?.length || conditions.types?.length)) {
+      throw DomainError.invalid('A schedule that runs once has no task to filter: remove the conditions');
+    }
+    const first = flow ? flow.steps[0] : null;
+    const startsWithCreate = flow ? first?.kind === 'action' && first.action.type === 'create_task' : actions[0]?.type === 'create_task';
+    if (!startsWithCreate) throw DomainError.invalid('A schedule that runs once must start by creating a task');
+  },
+
   /** Ids a flow's conditions mention. */
   flowConditionIds(flow: AutomationFlow): ReferencedIds {
     const ids: ReferencedIds = { statusIds: [], listIds: [], userIds: [] };
@@ -208,14 +235,14 @@ export const AutomationPolicy = {
   referencedIds(trigger: AutomationTrigger, conditions: AutomationConditions, actions: readonly AutomationAction[]): ReferencedIds {
     return {
       statusIds: [...(trigger.statusIds ?? []), ...actions.flatMap((action) => (action.statusId ? [action.statusId] : []))],
-      listIds: [...(conditions.listIds ?? []), ...actions.flatMap((action) => (action.type === 'move_to_list' && action.listId ? [action.listId] : []))],
+      listIds: [...(conditions.listIds ?? []), ...actions.flatMap((action) => ((action.type === 'move_to_list' || action.type === 'create_task') && action.listId ? [action.listId] : []))],
       userIds: actions.flatMap((action) => [...(action.userId ? [action.userId] : []), ...(action.userIds ?? [])]),
     };
   },
 
   /** Permissions the rule's actions need from the person it runs as. */
   requiredPermissions(actions: readonly AutomationAction[]): Permission[] {
-    return [...new Set(actions.flatMap((action) => ACTION_PERMISSIONS[action.type]))];
+    return [...new Set(actions.flatMap((action) => [...ACTION_PERMISSIONS[action.type], ...(action.type === 'create_task' && action.userId ? (['task.assign'] as const) : [])]))];
   },
 
   /** Whether a rule listens for this trigger, given the task as it now is. */

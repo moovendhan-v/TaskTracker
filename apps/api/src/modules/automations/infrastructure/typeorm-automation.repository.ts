@@ -167,6 +167,15 @@ export class TypeOrmAutomationRepository extends AutomationRepository {
     return rows.length > 0;
   }
 
+  async claimOnceFire(workspaceId: string, ruleId: string, key: string): Promise<boolean> {
+    const rows: unknown[] = await this.transactional.manager.query(
+      `INSERT INTO automation_fire (workspace_id, rule_id, task_id, fire_key) VALUES ($1, $2, NULL, $3)
+       ON CONFLICT (rule_id, fire_key) WHERE task_id IS NULL DO NOTHING RETURNING id`,
+      [workspaceId, ruleId, key],
+    );
+    return rows.length > 0;
+  }
+
   async tryLock(key: string): Promise<boolean> {
     const [row] = (await this.transactional.manager.query(`SELECT pg_try_advisory_xact_lock(hashtext($1)) AS locked`, [key])) as { locked: boolean }[];
     return row?.locked === true;

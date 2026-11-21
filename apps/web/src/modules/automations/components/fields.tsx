@@ -7,6 +7,7 @@ import {
   SCHEDULE_FREQUENCIES,
   STATUS_CATEGORIES,
   TASK_PRIORITIES,
+  TASK_TITLE_MAX,
   TASK_TYPES,
   type AutomationAction,
   type AutomationSchedule,
@@ -89,6 +90,7 @@ const STARTERS: Record<AutomationAction['type'], AutomationAction> = {
   post_chat: { type: 'post_chat', message: 'New: {{task}}' },
   webhook: { type: 'webhook', url: '' },
   move_to_list: { type: 'move_to_list' },
+  create_task: { type: 'create_task', title: 'Weekly check-in {{date}}' },
 };
 
 /** Settings of one action, by its type. */
@@ -175,6 +177,53 @@ export function ActionFields({ action, onChange, choices }: { action: Automation
             </Select>
           </Field>
           <span className="text-xs text-muted-foreground">Lists in this space. The task goes to the end of the list, with its subtasks; status and fields stay as they are.</span>
+        </>
+      ) : null}
+      {action.type === 'create_task' ? (
+        <>
+          <Field label="Title">
+            <Input aria-label="New task title" value={action.title ?? ''} maxLength={TASK_TITLE_MAX} onChange={(event) => onChange({ ...action, title: event.target.value })} placeholder="Weekly check-in {{date}}" />
+          </Field>
+          <Field label="In list">
+            <Select value={action.listId ?? ''} onValueChange={(listId) => onChange({ ...action, listId })}>
+              <SelectTrigger aria-label="List to create it in">
+                <SelectValue placeholder="Pick a list" />
+              </SelectTrigger>
+              <SelectContent>
+                {choices.lists.map((list) => (
+                  <SelectItem key={list.id} value={list.id}>
+                    {list.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Assign to (optional)">
+            <Select value={action.userId ?? 'nobody'} onValueChange={(userId) => onChange({ ...action, userId: userId === 'nobody' ? null : userId })}>
+              <SelectTrigger aria-label="Assign the new task to">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nobody">Nobody</SelectItem>
+                {choices.members.map((member) => (
+                  <SelectItem key={member.userId} value={member.userId}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Due in how many days (empty for no due date)">
+            <Input
+              type="number"
+              min={0}
+              max={FLOW_LIMITS.daysMax}
+              value={action.days ?? ''}
+              onChange={(event) => onChange({ ...action, days: event.target.value === '' ? null : Math.max(0, Math.min(FLOW_LIMITS.daysMax, Math.round(Number(event.target.value)))) })}
+              aria-label="New task due in days"
+            />
+          </Field>
+          <span className="text-xs text-muted-foreground">Created as you, in a list of this space. Fills in {'{{date}}'}, {'{{task}}'} and {'{{sprint}}'}. The steps after this one act on the new task.</span>
         </>
       ) : null}
       {action.type === 'set_priority' ? (
@@ -398,6 +447,17 @@ export function ScheduleFields({ schedule, onChange }: { schedule: AutomationSch
           />
         </Field>
       ) : null}
+      <Field label="Runs">
+        <Select value={schedule.runFor === 'once' ? 'once' : 'each_task'} onValueChange={(runFor: 'once' | 'each_task') => onChange({ ...schedule, runFor: runFor === 'once' ? 'once' : null })}>
+          <SelectTrigger aria-label="Runs for">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="each_task">For each open task</SelectItem>
+            <SelectItem value="once">Once (it creates a task)</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
       <div className="grid gap-3">
         <Field label="At">
           <Input type="time" aria-label="Time of day" value={schedule.time} required onChange={(event) => event.target.value && onChange({ ...schedule, time: event.target.value.slice(0, 5) })} className="w-28" />
