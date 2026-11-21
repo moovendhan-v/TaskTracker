@@ -146,7 +146,7 @@ export class GithubConnectionsService {
       workspaceId: access.workspaceId,
       repo,
       taskPrefix: prefixOf(request.taskPrefix),
-      sync: { ...DEFAULT_GITHUB_SYNC, ...request.sync },
+      sync: { ...DEFAULT_GITHUB_SYNC, ...given(request.sync) },
       secretSealed: this.secretBox.seal(secret),
       createdById: actor.userId,
     });
@@ -162,7 +162,7 @@ export class GithubConnectionsService {
     const saved = await this.github.save({
       ...connection,
       taskPrefix: request.taskPrefix === undefined ? connection.taskPrefix : prefixOf(request.taskPrefix),
-      sync: { ...DEFAULT_GITHUB_SYNC, ...connection.sync, ...request.sync },
+      sync: { ...DEFAULT_GITHUB_SYNC, ...connection.sync, ...given(request.sync) },
       createdById: actor.userId,
     });
     return GithubMapper.toResponse(saved);
@@ -199,4 +199,9 @@ export function prefixOf(value: string | undefined): string {
   const prefix = (value ?? DEFAULT_TASK_PREFIX).trim().toUpperCase();
   if (!PREFIX.test(prefix)) throw DomainError.invalid('The task prefix is letters and digits, starting with a letter, like TF');
   return prefix;
+}
+
+/** Only the settings a request actually sent: an input object can carry the others as undefined, which must not wipe them. */
+function given<T extends object>(settings: T | undefined): Partial<T> {
+  return Object.fromEntries(Object.entries(settings ?? {}).filter(([, value]) => value !== undefined)) as Partial<T>;
 }
