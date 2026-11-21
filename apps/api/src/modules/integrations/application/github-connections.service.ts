@@ -24,6 +24,7 @@ import { Announces } from '../../../core/events/announces.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { workspaceFromAccess } from '../../../core/runtime/change-target.js';
 import { TasksService } from '../../tasks/application/tasks.service.js';
+import { CustomFieldsService } from '../../custom-fields/application/custom-fields.service.js';
 import type { GithubConnection } from '../domain/github.js';
 import { GithubRepository } from '../domain/github.repository.js';
 import { GithubMapper } from './github.mapper.js';
@@ -45,7 +46,15 @@ export class GithubConnectionsService {
     private readonly secretBox: SecretBox,
     private readonly tasksService: TasksService,
     private readonly auditLogger: AuditLogger,
+    private readonly customFields: CustomFieldsService,
   ) {}
+
+  /** A labels field must be a task "Labels (many)" field of this workspace. */
+  private async assertLabelsField(workspaceId: string, fieldId: string | null | undefined): Promise<void> {
+    if (!fieldId) return;
+    const field = (await this.customFields.list(workspaceId, 'task')).find((item) => item.id === fieldId);
+    if (!field || field.type !== 'multi_select') throw DomainError.invalid('Pick a task field of type Labels (many) for GitHub labels');
+  }
 
   /** What the connection's latest deliveries did, newest first. */
   async syncLog(workspaceId: string, connectionId: string): Promise<GithubSyncEventResponse[]> {
@@ -131,6 +140,7 @@ export class GithubConnectionsService {
     const existing = await this.github.list(access.workspaceId);
     if (existing.length >= CONNECTIONS_MAX) throw DomainError.invalid(`A workspace can connect at most ${CONNECTIONS_MAX} repositories`);
     if (existing.some((connection) => connection.repo.toLowerCase() === repo.toLowerCase())) throw DomainError.conflict('That repository is already connected');
+    await this.assertLabelsField(access.workspaceId, request.sync?.labelsFieldId);
     const secret = newSecret();
     const connection = await this.github.create({
       workspaceId: access.workspaceId,
@@ -148,6 +158,7 @@ export class GithubConnectionsService {
   @Announces('integration.updated', workspaceFromAccess)
   async update(actor: Actor, access: WorkspaceAccess, connectionId: string, request: Omit<SaveGithubConnectionRequest, 'repo'>): Promise<GithubConnectionResponse> {
     const connection = await this.get(access.workspaceId, connectionId);
+    await this.assertLabelsField(access.workspaceId, request.sync?.labelsFieldId);
     const saved = await this.github.save({
       ...connection,
       taskPrefix: request.taskPrefix === undefined ? connection.taskPrefix : prefixOf(request.taskPrefix),

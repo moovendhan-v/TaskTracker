@@ -20,6 +20,10 @@ export interface IssueLink {
   url: string;
   syncedTitle: string;
   syncedClosed: boolean;
+  /** Label option ids of the connection's labels field, sorted, as sync last agreed. */
+  syncedLabels: string[];
+  /** The TaskFlow assignee sync last agreed on. */
+  syncedAssigneeId: string | null;
   /** TaskFlow's side changed and hasn't reached GitHub yet. */
   pushDue: boolean;
   pushVersion: number;
@@ -35,6 +39,14 @@ export interface IssuePush {
   installationId: number;
   title: string;
   closed: boolean;
+  /** The task's labels (option ids of the connection's labels field, sorted) and their names; empty without a labels field. */
+  labelIds: string[];
+  labelNames: string[];
+  /** Whether the labels field applies to the task (its project); labels are left alone when it doesn't. */
+  labelsApply: boolean;
+  /** The task's assignee, and their GitHub user id when they signed in with GitHub. */
+  assigneeId: string | null;
+  assigneeGithubId: string | null;
 }
 
 /** An app connection with its installation's GitHub id, for the poller. */

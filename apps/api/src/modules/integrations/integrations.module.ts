@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CustomFieldsModule } from '../custom-fields/custom-fields.module.js';
 import { AutomationsModule } from '../automations/automations.module.js';
 import { StatusesModule } from '../statuses/statuses.module.js';
 import { TasksModule } from '../tasks/tasks.module.js';
@@ -18,7 +19,7 @@ import { GithubAppWebhookController } from './presentation/http/github-app-webho
 import { GithubWebhookController } from './presentation/http/github-webhook.controller.js';
 
 @Module({
-  imports: [TasksModule, StatusesModule, AutomationsModule],
+  imports: [TasksModule, StatusesModule, AutomationsModule, CustomFieldsModule],
   controllers: [GithubWebhookController, GithubAppCallbackController, GithubAppWebhookController],
   providers: [
     GithubConnectionsService,

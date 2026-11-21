@@ -1,4 +1,4 @@
-import type { PullRequestState } from '@taskflow/shared-types';
+import { GITHUB_LABELS_MAX, type PullRequestState } from '@taskflow/shared-types';
 import type { PullRequestEvent } from './github-webhook.policy.js';
 
 /** GitHub's answers are untrusted: these read only what sync uses, checked and trimmed. */
@@ -31,6 +31,10 @@ export interface PolledIssue {
   closed: boolean;
   url: string;
   updatedAt: Date;
+  /** Label names (at most GITHUB_LABELS_MAX); null when the payload didn't say. */
+  labels: string[] | null;
+  /** The first assignee's GitHub user id: null for nobody, undefined when the payload didn't say. */
+  assigneeGithubId?: string | null;
 }
 
 export interface InstallationSummary {
@@ -69,7 +73,23 @@ export const GithubAppPolicy = {
     const url = githubUrl(issue['html_url']);
     const updatedAt = date(issue['updated_at']);
     if (!number || !url || !updatedAt) return null;
-    return { number, title: text(issue['title'], 300), closed: issue['state'] === 'closed', url, updatedAt };
+    const labels = Array.isArray(issue['labels'])
+      ? [...new Set(list(issue['labels']).flatMap((label) => {
+          const name = text(typeof label === 'string' ? label : record(label)['name'], 50).trim();
+          return name ? [name] : [];
+        }))].slice(0, GITHUB_LABELS_MAX)
+      : null;
+    const assignees = Array.isArray(issue['assignees']) ? list(issue['assignees']) : null;
+    const firstId = assignees?.length ? count(record(assignees[0])['id']) : null;
+    return {
+      number,
+      title: text(issue['title'], 300),
+      closed: issue['state'] === 'closed',
+      url,
+      updatedAt,
+      labels,
+      ...(assignees === null ? {} : { assigneeGithubId: firstId ? String(firstId) : null }),
+    };
   },
 
   /** GET /user/installations: the installations the signed-in person can reach. */

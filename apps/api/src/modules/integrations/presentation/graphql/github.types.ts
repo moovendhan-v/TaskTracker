@@ -1,6 +1,6 @@
 import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
-import { IsIn, IsString, Matches, MaxLength, ValidateIf, ValidateNested } from 'class-validator';
+import { IsIn, IsString, IsUUID, Matches, MaxLength, ValidateIf, ValidateNested } from 'class-validator';
 import {
   PULL_REQUEST_STATES,
   REPO_PATTERN,
@@ -34,6 +34,7 @@ export class GithubSyncGql implements GithubSyncSettings {
   @Field(() => StatusCategoryEnum, { nullable: true, description: 'Move linked tasks here when a pull request opens' }) onOpened: StatusCategory | null;
   @Field(() => StatusCategoryEnum, { nullable: true, description: 'Move linked tasks here when a pull request merges' }) onMerged: StatusCategory | null;
   @Field(() => StatusCategoryEnum, { nullable: true, description: 'Move linked tasks here when a pull request is closed without merging' }) onClosed?: StatusCategory | null;
+  @Field(() => ID, { nullable: true, description: 'GitHub App issues: the task "Labels (many)" field their labels sync with' }) labelsFieldId?: string | null;
 }
 
 @ObjectType('GithubSyncEvent', { description: 'What one webhook delivery did' })
@@ -101,6 +102,7 @@ export class GithubSyncInput implements Partial<GithubSyncSettings> {
   @Field(() => StatusCategoryEnum, { nullable: true }) @ValidateIf((_, value) => value !== null && value !== undefined) @IsIn(STATUS_CATEGORIES) onOpened?: StatusCategory | null;
   @Field(() => StatusCategoryEnum, { nullable: true }) @ValidateIf((_, value) => value !== null && value !== undefined) @IsIn(STATUS_CATEGORIES) onMerged?: StatusCategory | null;
   @Field(() => StatusCategoryEnum, { nullable: true }) @ValidateIf((_, value) => value !== null && value !== undefined) @IsIn(STATUS_CATEGORIES) onClosed?: StatusCategory | null;
+  @Field(() => ID, { nullable: true, description: 'null stops syncing labels' }) @ValidateIf((_, value) => value !== null && value !== undefined) @IsUUID('4') labelsFieldId?: string | null;
 }
 
 @FormSchema('github.connect')
