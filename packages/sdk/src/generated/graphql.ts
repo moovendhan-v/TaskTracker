@@ -374,6 +374,8 @@ export type ForecastKind =
   | 'week';
 
 export type GithubSyncInput = {
+  /** null stops syncing labels */
+  labelsFieldId?: string | null | undefined;
   onClosed?: StatusCategory | null | undefined;
   onMerged?: StatusCategory | null | undefined;
   onOpened?: StatusCategory | null | undefined;
@@ -1999,14 +2001,14 @@ export type CorrectAttendanceShiftMutationVariables = Exact<{
 
 export type CorrectAttendanceShiftMutation = { correctAttendanceShift: { id: string, userId: string, startedAt: string, endedAt: string | null, onBreak: boolean, workedMinutes: number, correctedAt: string | null, correctedById: string | null, correctionReason: string | null, breaks: Array<{ start: string, end: string | null }> } };
 
-export type GithubConnectionFieldsFragment = { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null } };
+export type GithubConnectionFieldsFragment = { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null, labelsFieldId: string | null } };
 
 export type GithubConnectionsQueryVariables = Exact<{
   workspaceId: string;
 }>;
 
 
-export type GithubConnectionsQuery = { githubConnections: Array<{ id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null } }> };
+export type GithubConnectionsQuery = { githubConnections: Array<{ id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null, labelsFieldId: string | null } }> };
 
 export type TaskPullRequestsQueryVariables = Exact<{
   workspaceId: string;
@@ -2022,7 +2024,7 @@ export type ConnectGithubMutationVariables = Exact<{
 }>;
 
 
-export type ConnectGithubMutation = { connectGithub: { webhookSecret: string, connection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null } } } };
+export type ConnectGithubMutation = { connectGithub: { webhookSecret: string, connection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null, labelsFieldId: string | null } } } };
 
 export type UpdateGithubConnectionMutationVariables = Exact<{
   workspaceId: string;
@@ -2031,7 +2033,7 @@ export type UpdateGithubConnectionMutationVariables = Exact<{
 }>;
 
 
-export type UpdateGithubConnectionMutation = { updateGithubConnection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null } } };
+export type UpdateGithubConnectionMutation = { updateGithubConnection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null, labelsFieldId: string | null } } };
 
 export type RotateGithubSecretMutationVariables = Exact<{
   workspaceId: string;
@@ -2039,7 +2041,7 @@ export type RotateGithubSecretMutationVariables = Exact<{
 }>;
 
 
-export type RotateGithubSecretMutation = { rotateGithubSecret: { webhookSecret: string, connection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null } } } };
+export type RotateGithubSecretMutation = { rotateGithubSecret: { webhookSecret: string, connection: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null, labelsFieldId: string | null } } } };
 
 export type DisconnectGithubMutationVariables = Exact<{
   workspaceId: string;
@@ -2133,7 +2135,7 @@ export type ConnectGithubRepositoryMutationVariables = Exact<{
 }>;
 
 
-export type ConnectGithubRepositoryMutation = { connectGithubRepository: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null } } };
+export type ConnectGithubRepositoryMutation = { connectGithubRepository: { id: string, repo: string, taskPrefix: string, webhookPath: string, createdById: string | null, lastDeliveryAt: string | null, lastDeliveryStatus: string | null, viaApp: boolean, createdAt: string, sync: { onOpened: StatusCategory | null, onMerged: StatusCategory | null, onClosed: StatusCategory | null, labelsFieldId: string | null } } };
 
 export type RemoveGithubInstallationMutationVariables = Exact<{
   workspaceId: string;
@@ -3988,6 +3990,7 @@ export const GithubConnectionFieldsFragmentDoc = new TypedDocumentString(`
     onOpened
     onMerged
     onClosed
+    labelsFieldId
   }
   webhookPath
   createdById
@@ -6415,6 +6418,7 @@ export const GithubConnectionsDocument = new TypedDocumentString(`
     onOpened
     onMerged
     onClosed
+    labelsFieldId
   }
   webhookPath
   createdById
@@ -6456,6 +6460,7 @@ export const ConnectGithubDocument = new TypedDocumentString(`
     onOpened
     onMerged
     onClosed
+    labelsFieldId
   }
   webhookPath
   createdById
@@ -6482,6 +6487,7 @@ export const UpdateGithubConnectionDocument = new TypedDocumentString(`
     onOpened
     onMerged
     onClosed
+    labelsFieldId
   }
   webhookPath
   createdById
@@ -6507,6 +6513,7 @@ export const RotateGithubSecretDocument = new TypedDocumentString(`
     onOpened
     onMerged
     onClosed
+    labelsFieldId
   }
   webhookPath
   createdById
@@ -6647,6 +6654,7 @@ export const ConnectGithubRepositoryDocument = new TypedDocumentString(`
     onOpened
     onMerged
     onClosed
+    labelsFieldId
   }
   webhookPath
   createdById

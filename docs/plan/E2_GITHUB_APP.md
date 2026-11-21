@@ -36,6 +36,12 @@ them against GitHub.
    retries. Each side remembers what sync last set, so an echo isn't applied twice. When both
    sides changed since sync last agreed, TaskFlow's change wins and is sent (logged in the sync
    log).
+5. **Labels and assignee** (done): each App connection can pick a task "Labels (many)" field;
+   issue labels sync with it both ways (names match options; new GitHub labels become options,
+   at most 50 per field). The assignee syncs both ways for members who signed in with GitHub
+   (their account link holds the GitHub user id; only that id is read). A GitHub assignee
+   nobody here is linked to leaves the task's alone, and a TaskFlow assignee without GitHub
+   leaves the issue's alone. Like titles, each link remembers what sync last agreed on.
 
 ## What it looks like
 
