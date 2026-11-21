@@ -14,7 +14,15 @@ export interface GithubSyncSettings {
   onMerged: StatusCategory | null;
   /** Closed without merging. Off by default: closing a PR often just means another one replaces it. */
   onClosed?: StatusCategory | null;
+  /**
+   * GitHub App issues: the task custom field ("Labels (many)") that holds the issue's
+   * labels, both ways; null to not sync labels. Option names match label names.
+   */
+  labelsFieldId?: string | null;
 }
+
+/** Labels one issue syncs at most (GitHub allows more; the rest are left alone). */
+export const GITHUB_LABELS_MAX = 20;
 
 export const DEFAULT_GITHUB_SYNC: GithubSyncSettings = { onOpened: 'review', onMerged: 'done', onClosed: null };
 
