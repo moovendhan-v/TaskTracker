@@ -829,7 +829,8 @@ test('shows a linked pull request in the task table', async () => {
     expect(body.errors).toBeUndefined();
     return body.data;
   };
-  const { searchTasks } = await gql<{ searchTasks: { items: { listId: string }[] } }>('query($w: ID!) { searchTasks(workspaceId: $w, query: { pageSize: 1 }) { items { listId } } }', { w: workspaceId });
+  // In the same list as the Product tasks the table shows.
+  const { searchTasks } = await gql<{ searchTasks: { items: { listId: string }[] } }>('query($w: ID!) { searchTasks(workspaceId: $w, query: { search: "Write release notes", pageSize: 1 }) { items { listId } } }', { w: workspaceId });
   const { createTask } = await gql<{ createTask: { number: number } }>('mutation($w: ID!, $l: ID!) { createTask(workspaceId: $w, listId: $l, input: { title: "Wire up the GitHub app" }) { number } }', {
     w: workspaceId,
     l: searchTasks.items[0]!.listId,
