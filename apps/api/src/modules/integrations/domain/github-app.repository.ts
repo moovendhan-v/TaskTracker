@@ -22,13 +22,15 @@ export abstract class GithubAppRepository {
   abstract createIssueLink(link: { workspaceId: string; connectionId: string; taskId: string; number: number; url: string; syncedTitle: string; syncedClosed: boolean; createdById: string }): Promise<IssueLink>;
   abstract findIssueLink(workspaceId: string, connectionId: string, number: number): Promise<IssueLink | null>;
   abstract listIssueLinksForTask(workspaceId: string, taskId: string): Promise<(IssueLink & { repo: string })[]>;
-  abstract setSynced(workspaceId: string, linkId: string, title: string, closed: boolean): Promise<void>;
+  abstract setSynced(workspaceId: string, linkId: string, agreed: { title: string; closed: boolean; labels: string[]; assigneeId: string | null }): Promise<void>;
+  /** The workspace member who signed in with this GitHub user id, if any. */
+  abstract memberForGithubId(workspaceId: string, githubUserId: string): Promise<string | null>;
   /** Marks the task's issue links whose title or open / closed state differs from what sync last set; returns how many. */
   abstract markPushDue(workspaceId: string, taskId: string): Promise<number>;
   /** Leases due pushes (one instance each), with the task as it is now. */
   abstract leasePushes(workspaceId: string, now: Date, leaseUntil: Date, limit: number): Promise<IssuePush[]>;
   /** A push went through: sync now agrees on these values. Still due if the task changed again meanwhile. */
-  abstract pushed(workspaceId: string, linkId: string, version: number, title: string, closed: boolean): Promise<void>;
+  abstract pushed(workspaceId: string, linkId: string, version: number, agreed: { title: string; closed: boolean; labels: string[]; assigneeId: string | null }): Promise<void>;
   /** A push failed: try again at `retryAt`, or give up (no longer due) with the error shown. */
   abstract pushFailed(workspaceId: string, linkId: string, error: string, retryAt: Date | null): Promise<void>;
 }

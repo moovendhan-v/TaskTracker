@@ -106,6 +106,32 @@ export class CustomFieldsService implements OnModuleInit {
     return toResponse(await this.fields.save(field));
   }
 
+  /**
+   * For syncing labels (GitHub): the option ids of a task "Labels (many)" field for these
+   * names, matched case-insensitively, adding options for names it doesn't have yet
+   * (up to the field's option limit; the rest are left out). Null when the field is gone
+   * or isn't a task multi-select. Runs as part of the sync, not as a person.
+   */
+  async optionIdsFor(workspaceId: string, fieldId: string, names: readonly string[]): Promise<{ ids: string[]; added: string[] } | null> {
+    const field = await this.fields.findInWorkspace(workspaceId, fieldId);
+    if (!field || field.entity !== 'task' || field.type !== 'multi_select') return null;
+    const byName = new Map(field.options.map((option) => [option.label.toLowerCase(), option.id]));
+    const added: string[] = [];
+    for (const name of names) {
+      const label = name.trim().slice(0, 60);
+      if (!label || byName.has(label.toLowerCase()) || field.options.length + added.length >= CUSTOM_FIELD_LIMITS.optionsMax) continue;
+      added.push(label);
+      byName.set(label.toLowerCase(), '');
+    }
+    if (added.length) {
+      field.options = withIds(field.type, [...field.options, ...added.map((label) => ({ id: '', label, color: null }))]);
+      await this.fields.save(field);
+      for (const option of field.options) byName.set(option.label.toLowerCase(), option.id);
+    }
+    const ids = [...new Set(names.map((name) => byName.get(name.trim().slice(0, 60).toLowerCase())).filter((id): id is string => Boolean(id)))].sort();
+    return { ids, added };
+  }
+
   @Audited('custom_field.delete', change)
   @Announces('custom_field.deleted', workspaceFromArg)
   async remove(_actor: Actor, workspaceId: string, fieldId: string): Promise<CustomFieldResponse> {

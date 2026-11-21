@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, type OnApplicationBootstrap, type OnModuleDestroy } from '@nestjs/common';
-import { TASK_TITLE_MAX, canInSpace, type PullRequestState, type StatusCategory, type TaskResponse } from '@taskflow/shared-types';
+import { TASK_TITLE_MAX, canInSpace, type PullRequestState, type StatusCategory, type TaskResponse, type UpdateTaskRequest } from '@taskflow/shared-types';
 import { ENV } from '../../../config/config.module.js';
 import type { Env } from '../../../config/env.schema.js';
 import { AccessService } from '../../../core/access/access.service.js';
@@ -9,6 +9,7 @@ import { GithubApiError, GithubAppClient } from '../../../core/github-app/github
 import type { WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { EventStream } from '../../../core/realtime/event-stream.js';
 import { Clock } from '../../../core/time/clock.port.js';
+import { CustomFieldsService } from '../../custom-fields/application/custom-fields.service.js';
 import { StatusesService } from '../../statuses/application/statuses.service.js';
 import { TasksService } from '../../tasks/application/tasks.service.js';
 import { GithubAppPolicy, type PolledIssue, type PolledPull } from '../domain/github-app.policy.js';
@@ -62,6 +63,7 @@ export class GithubAppSync implements OnApplicationBootstrap, OnModuleDestroy {
     private readonly transactional: TransactionalManager,
     private readonly stream: EventStream,
     private readonly clock: Clock,
+    private readonly customFields: CustomFieldsService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -162,7 +164,12 @@ export class GithubAppSync implements OnApplicationBootstrap, OnModuleDestroy {
     });
   }
 
-  /** A linked issue changed on GitHub: its title and open / closed state move the task. Runs in the workspace's scope. */
+  /**
+   * A linked issue changed on GitHub: its title, open / closed state, labels (into the
+   * connection's labels field, adding options for new label names) and assignee (the
+   * member who signed in with that GitHub account) move the task. An assignee nobody
+   * here is linked to leaves the task's alone. Runs in the workspace's scope.
+   */
   async applyIssue(connection: GithubConnection, issue: PolledIssue): Promise<void> {
     const { workspaceId } = connection;
     const link = await this.apps.findIssueLink(workspaceId, connection.id, issue.number);
@@ -170,7 +177,14 @@ export class GithubAppSync implements OnApplicationBootstrap, OnModuleDestroy {
     const title = issue.title.trim().slice(0, TASK_TITLE_MAX);
     const titleChanged = title !== link.syncedTitle && title.length > 0;
     const closedChanged = issue.closed !== link.syncedClosed;
-    if (!titleChanged && !closedChanged) return;
+    const labelsFieldId = connection.sync.labelsFieldId ?? null;
+    const labels = labelsFieldId && issue.labels !== null ? await this.customFields.optionIdsFor(workspaceId, labelsFieldId, issue.labels) : null;
+    const labelsChanged = labels !== null && !sameList(labels.ids, link.syncedLabels);
+    const assigneeId = issue.assigneeGithubId === undefined ? undefined : issue.assigneeGithubId === null ? null : await this.apps.memberForGithubId(workspaceId, issue.assigneeGithubId);
+    // Someone not linked to anyone here: leave the task's assignee as it is.
+    const assigneeKnown = assigneeId !== undefined && !(issue.assigneeGithubId && assigneeId === null);
+    const assigneeChanged = assigneeKnown && assigneeId !== link.syncedAssigneeId;
+    if (!titleChanged && !closedChanged && !labelsChanged && !assigneeChanged) return;
     if (link.pushDue) {
       // Changed on both sides since sync last agreed: TaskFlow's change wins and is sent.
       await this.webhooks.noteSync(connection, `ok: issue #${issue.number} changed on both sides; kept TaskFlow's`, { event: 'issues' });
@@ -188,18 +202,47 @@ export class GithubAppSync implements OnApplicationBootstrap, OnModuleDestroy {
       await this.webhooks.noteSync(connection, `ignored: issue #${issue.number}: the connection's owner can't edit ${connection.taskPrefix}-${task.number}`, { event: 'issues' });
       return;
     }
+    const canAssign = canInSpace(access, task.spaceId, 'task.assign');
     const statusId = closedChanged ? await this.statusFor(access, task, issue.closed) : null;
-    const changes = { ...(titleChanged && { title }), ...(statusId && statusId !== task.status.id && { statusId }) };
+    const changes: UpdateTaskRequest = {
+      ...(titleChanged && { title }),
+      ...(statusId && statusId !== task.status.id && { statusId }),
+      ...(labelsChanged && labelsFieldId && { customFields: { [labelsFieldId]: labels!.ids.length ? labels!.ids : null } }),
+      ...(assigneeChanged && canAssign && assigneeId !== task.assigneeId && { assigneeId: assigneeId ?? null }),
+    };
     // What sync now agrees on is set first, so the task change that follows isn't sent back.
-    await this.apps.setSynced(workspaceId, link.id, titleChanged ? title : link.syncedTitle, issue.closed);
+    await this.apps.setSynced(workspaceId, link.id, {
+      title: titleChanged ? title : link.syncedTitle,
+      closed: issue.closed,
+      labels: labelsChanged ? labels!.ids : link.syncedLabels,
+      assigneeId: assigneeChanged && canAssign ? (assigneeId ?? null) : link.syncedAssigneeId,
+    });
     if (Object.keys(changes).length) {
       const actor = { userId: connection.createdById!, platformRole: 'USER' as const, ip: null };
       await this.transactional.runInScope({ kind: 'workspace', workspaceId, userId: actor.userId, ...(access.spaceRules.length ? { spaceRules: access.spaceRules } : {}) }, () =>
         this.tasksService.update(actor, access, task.id, changes),
       );
     }
-    const what = [titleChanged && 'renamed', closedChanged && (issue.closed ? 'closed' : 'reopened')].filter(Boolean).join(' and ');
-    await this.webhooks.noteSync(connection, `ok: issue #${issue.number} ${what}, ${connection.taskPrefix}-${task.number} updated`, { event: 'issues', taskNumbers: [task.number] });
+    const what = [
+      titleChanged && 'renamed',
+      closedChanged && (issue.closed ? 'closed' : 'reopened'),
+      labelsChanged && `labelled${labels!.added.length ? ` (new: ${labels!.added.join(', ')})` : ''}`,
+      assigneeChanged && (canAssign ? 'reassigned' : 'reassigned (not applied: the owner can’t assign)'),
+    ]
+      .filter(Boolean)
+      .join(' and ');
+    await this.webhooks.noteSync(connection, `ok: issue #${issue.number} ${what}, ${connection.taskPrefix}-${task.number} updated`.slice(0, 200), { event: 'issues', taskNumbers: [task.number] });
+  }
+
+  /**
+   * A GitHub user's login from their (stable) id, which the account link stores; GitHub's
+   * issue API assigns by login. Null when GitHub doesn't answer with one.
+   */
+  private async githubLogin(installationId: number, githubUserId: string): Promise<string | null> {
+    if (!/^\d{1,20}$/.test(githubUserId)) return null;
+    const user = await this.client.asInstallation(installationId, 'GET', `/user/${githubUserId}`);
+    const login = user && typeof user === 'object' ? (user as Record<string, unknown>)['login'] : null;
+    return typeof login === 'string' && /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(login) ? login : null;
   }
 
   /** The status a closed (or reopened) issue moves its task to: the first done one, or the first not-started one. */
@@ -209,7 +252,7 @@ export class GithubAppSync implements OnApplicationBootstrap, OnModuleDestroy {
     return statuses.find((status) => status.category === (closed ? 'done' : 'unstarted'))?.id ?? null;
   }
 
-  /** Sends due pushes: each issue gets its task's title and open / closed state. */
+  /** Sends due pushes: each issue gets its task's title, open / closed state, labels and assignee. */
   private async push(workspaceId: string): Promise<void> {
     const now = this.clock.now();
     const pushes = await this.inWorkspace(workspaceId, () => this.apps.leasePushes(workspaceId, now, new Date(now.getTime() + PUSH_LEASE_MS), PUSHES_PER_WORKSPACE));
@@ -218,8 +261,21 @@ export class GithubAppSync implements OnApplicationBootstrap, OnModuleDestroy {
 
   private async send(workspaceId: string, job: IssuePush): Promise<void> {
     try {
-      await this.client.asInstallation(job.installationId, 'PATCH', `${repoPath(job.repo)}/issues/${job.link.number}`, { title: job.title, state: job.closed ? 'closed' : 'open' });
-      await this.inWorkspace(workspaceId, () => this.apps.pushed(workspaceId, job.link.id, job.link.pushVersion, job.title, job.closed));
+      const body: Record<string, unknown> = { title: job.title, state: job.closed ? 'closed' : 'open' };
+      // Labels only where the labels field applies to the task; GitHub creates labels it doesn't have yet.
+      if (job.labelsApply && !sameList(job.labelIds, job.link.syncedLabels)) body['labels'] = job.labelNames;
+      // The assignee by GitHub login, when they signed in with GitHub; unassigning clears it there too.
+      if (job.assigneeId !== job.link.syncedAssigneeId) {
+        if (job.assigneeId === null) body['assignees'] = [];
+        else if (job.assigneeGithubId) {
+          const login = await this.githubLogin(job.installationId, job.assigneeGithubId);
+          if (login) body['assignees'] = [login];
+        }
+      }
+      await this.client.asInstallation(job.installationId, 'PATCH', `${repoPath(job.repo)}/issues/${job.link.number}`, body);
+      await this.inWorkspace(workspaceId, () =>
+        this.apps.pushed(workspaceId, job.link.id, job.link.pushVersion, { title: job.title, closed: job.closed, labels: job.labelsApply ? job.labelIds : job.link.syncedLabels, assigneeId: job.assigneeId }),
+      );
     } catch (error) {
       const status = error instanceof GithubApiError ? error.status : 0;
       const final = [401, 403, 404, 410, 422].includes(status) && !(error instanceof GithubApiError && error.rateLimited);
@@ -236,6 +292,13 @@ export class GithubAppSync implements OnApplicationBootstrap, OnModuleDestroy {
       await this.inWorkspace(workspaceId, () => this.apps.pushFailed(workspaceId, job.link.id, retryAt ? `${reason}; trying again` : reason, retryAt));
     }
   }
+}
+
+/** Two sorted lists of ids are the same. */
+export function sameList(a: readonly string[], b: readonly string[]): boolean {
+  const left = [...a].sort();
+  const right = [...b].sort();
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 /** What happened to a pull request, judged from the state TaskFlow last recorded for it. */

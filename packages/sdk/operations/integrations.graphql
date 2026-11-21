@@ -2,7 +2,7 @@ fragment GithubConnectionFields on GithubConnection {
   id
   repo
   taskPrefix
-  sync { onOpened onMerged onClosed }
+  sync { onOpened onMerged onClosed labelsFieldId }
   webhookPath
   createdById
   lastDeliveryAt
