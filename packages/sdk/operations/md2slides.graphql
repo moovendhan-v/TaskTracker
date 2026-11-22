@@ -1,0 +1,28 @@
+query Md2SlidesCatalog($workspaceId: ID!) {
+  md2slidesCatalog(workspaceId: $workspaceId) {
+    templates {
+      id
+      name
+      description
+      category
+      author
+      authorGithub
+      md
+      accent
+    }
+    contributors {
+      github
+      name
+      role
+      templates
+      website
+    }
+    snippets {
+      label
+      category
+      md
+    }
+    source
+    updatedAt
+  }
+}

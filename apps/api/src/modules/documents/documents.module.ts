@@ -17,6 +17,8 @@ import { MarkdownSanitizer } from './infrastructure/markdown.sanitizer.js';
 import { TypeOrmDocTemplateRepository } from './infrastructure/typeorm-doc-template.repository.js';
 import { TypeOrmDocumentRepository } from './infrastructure/typeorm-document.repository.js';
 import { DocTemplatesResolver } from './presentation/graphql/doc-templates.resolver.js';
+import { Md2SlidesService } from './md2slides/md2slides.service.js';
+import { Md2SlidesResolver } from './presentation/graphql/md2slides.resolver.js';
 
 @Module({
   imports: [SpacesModule],
@@ -25,6 +27,8 @@ import { DocTemplatesResolver } from './presentation/graphql/doc-templates.resol
     DocumentsResolver,
     DocTemplatesService,
     DocTemplatesResolver,
+    Md2SlidesService,
+    Md2SlidesResolver,
     { provide: DocTemplateRepository, useClass: TypeOrmDocTemplateRepository },
     LiveDocsService,
     LiveDocsGateway,
@@ -37,6 +41,6 @@ import { DocTemplatesResolver } from './presentation/graphql/doc-templates.resol
     { provide: DocumentRepository, useClass: TypeOrmDocumentRepository },
     { provide: ContentSanitizer, useClass: MarkdownSanitizer },
   ],
-  exports: [DocumentsService],
+  exports: [DocumentsService, Md2SlidesService],
 })
 export class DocumentsModule {}

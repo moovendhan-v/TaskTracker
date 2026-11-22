@@ -1621,6 +1621,47 @@ enum LogicOperator {
   or
 }
 
+type Md2SlidesCatalog {
+  """Most templates first"""
+  contributors: [Md2SlidesContributor!]!
+  snippets: [Md2SlidesSnippet!]!
+
+  """live (read from md2slides today) or snapshot (the bundled copy)"""
+  source: String!
+  templates: [Md2SlidesTemplate!]!
+  updatedAt: String!
+}
+
+type Md2SlidesContributor {
+  github: String!
+  name: String!
+  role: String!
+
+  """Community templates they made"""
+  templates: Int!
+  website: String
+}
+
+type Md2SlidesSnippet {
+  category: String!
+  label: String!
+  md: String!
+}
+
+"""A community template from md2slides, credited to its contributor"""
+type Md2SlidesTemplate {
+  accent: String
+  author: String!
+  authorGithub: String
+  category: String!
+  description: String!
+  id: String!
+
+  """Markdown: render without raw HTML"""
+  md: String!
+  name: String!
+}
+
 type Member {
   """
   Protected (member.email): null unless a policy lets the caller read it.
@@ -2575,6 +2616,9 @@ type Query {
 
   """Every list in the workspace"""
   lists(workspaceId: ID!): [TaskList!]!
+
+  """Community templates, contributors and snippets from md2slides"""
+  md2slidesCatalog(workspaceId: ID!): Md2SlidesCatalog!
 
   """The signed-in user"""
   me: CurrentUser!
