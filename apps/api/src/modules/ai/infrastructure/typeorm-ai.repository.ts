@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import { AiRepository, type AiSettings } from '../domain/ai.repository.js';
 
+/** TypeORM's Postgres driver returns `[rows, rowCount]` for UPDATE ... RETURNING and plain rows otherwise. */
+const rowsOf = <T>(result: unknown): T[] => (Array.isArray(result) && result.length === 2 && Array.isArray(result[0]) && typeof result[1] === 'number' ? (result[0] as T[]) : (result as T[]));
+
 @Injectable()
 export class TypeOrmAiRepository extends AiRepository {
   constructor(private readonly transactional: TransactionalManager) {
@@ -42,10 +45,12 @@ export class TypeOrmAiRepository extends AiRepository {
   }
 
   async settle(workspaceId: string, userId: string, day: string, delta: number): Promise<number> {
-    const [row] = (await this.transactional.manager.query(
-      `UPDATE ai_usage SET tokens = GREATEST(0, LEAST(tokens + $4, 2000000000)) WHERE workspace_id = $1 AND user_id = $2 AND day = $3::date RETURNING tokens`,
-      [workspaceId, userId, day, Math.round(delta)],
-    )) as { tokens: number }[];
+    const [row] = rowsOf<{ tokens: number }>(
+      await this.transactional.manager.query(
+        `UPDATE ai_usage SET tokens = GREATEST(0, LEAST(tokens + $4, 2000000000)) WHERE workspace_id = $1 AND user_id = $2 AND day = $3::date RETURNING tokens`,
+        [workspaceId, userId, day, Math.round(delta)],
+      ),
+    );
     return row?.tokens ?? 0;
   }
 
