@@ -135,6 +135,11 @@ const envSchema = z.object({
    * AI_<ID>_MODELS (read by core/ai/ai-providers.config.ts). Empty turns AI off.
    */
   AI_PROVIDERS: optionalString(z.string().trim().max(200)),
+  /**
+   * Where TaskFlow reads md2slides' community templates, contributors, snippets and syntax guide
+   * (raw files of the md2slides repository). Empty uses only the bundled snapshot.
+   */
+  MD2SLIDES_SOURCE_URL: z.preprocess((value) => (value === undefined ? 'https://raw.githubusercontent.com/moovendhan-v/md2-slides/main' : value === '' ? undefined : value), z.string().url().refine((url) => url.startsWith('https://') || url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1'), 'MD2SLIDES_SOURCE_URL must use https://').optional()),
   /** How long one AI request may take. */
   AI_TIMEOUT_SECONDS: z.coerce.number().int().min(5).max(120).default(30),
   /** Each person's AI budget per workspace and day (input + output tokens). */

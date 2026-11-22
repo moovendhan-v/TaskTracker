@@ -336,6 +336,8 @@ test('shows the project as a table and a month calendar', async () => {
     const task = searchTasks.items.find((item) => item.title === title)!;
     await gql('mutation($w: ID!, $t: ID!, $input: UpdateTaskInput!) { updateTask(workspaceId: $w, taskId: $t, input: $input) { id } }', { w: workspaceId, t: task.id, input: { dueDate: inDays(days) } });
   }
+  // Changed behind the page's back: load afresh rather than wait on live updates.
+  await page.reload();
 
   const views = page.getByRole('navigation', { name: 'Project views' });
   await views.getByRole('link', { name: 'Table', exact: true }).click();
@@ -572,6 +574,51 @@ test('starts a page from a template, and saves a page as one', async () => {
   await expect(gallery.getByRole('button', { name: /^Team retro/ })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(gallery).toBeHidden();
+  await page.goto(handbook);
+  await expect(page.getByLabel('Document title')).toHaveValue(handbookTitle);
+});
+
+test('starts a slide page from an md2slides community template, adds md2slides blocks and opens it in md2slides', async () => {
+  const handbook = page.url();
+  const handbookTitle = await page.getByLabel('Document title').inputValue();
+  await page.getByRole('button', { name: 'New page from a template' }).click();
+  const gallery = page.getByRole('dialog', { name: 'New page from a template' });
+  await gallery.getByRole('tab', { name: 'md2slides community' }).click();
+  // Templates from the md2slides project, each credited, and the contributors ranked by what they made.
+  const credits = gallery.getByRole('region', { name: 'md2slides contributors' });
+  await expect(credits).toContainText(/\d+ templates by \d+ contributors?/);
+  await expect(credits.getByRole('link').first()).toHaveAttribute('href', /^https:\/\/github\.com\//);
+  const first = gallery.getByRole('list', { name: 'md2slides templates' }).getByRole('button').first();
+  const name = (await first.locator('span').first().textContent())!.trim();
+  await first.click();
+  await expect(gallery.getByText(/^Made by/)).toBeVisible();
+  await shot('b5-md2slides-community', gallery);
+  await gallery.getByRole('button', { name: 'Use template' }).click();
+  await expect(gallery).toBeHidden();
+  await expect(page.getByLabel('Document title')).toHaveValue(name);
+
+  // Every md2slides block, from md2slides' own list.
+  // The toolbar's Add block (the visual editor has one per block too).
+  await page.getByRole('button', { name: 'Add block' }).first().click();
+  await page.getByRole('menuitem', { name: 'All md2slides blocks…' }).click();
+  const blocks = page.getByRole('dialog', { name: 'md2slides blocks' });
+  await blocks.getByLabel('Search md2slides blocks').fill('chart');
+  await expect(blocks.getByRole('button', { name: /Donut chart/ })).toBeVisible();
+  await shot('c5-md2slides-blocks', blocks);
+  await blocks.getByRole('button', { name: /Donut chart/ }).click();
+  await expect(blocks).toBeHidden();
+  await page.getByRole('group', { name: 'Editor mode' }).getByRole('button', { name: 'Markdown' }).click();
+  await expect(page.getByLabel('Page content (markdown)')).toHaveValue(/:::chart/);
+
+  // Opens in md2slides' own player, with the deck in the link's # fragment (the site is stubbed here).
+  await context.route('https://md2slides.cybertechmind.com/**', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>md2slides</title>' }));
+  const opened = context.waitForEvent('page');
+  await page.getByRole('button', { name: 'Export' }).click();
+  await page.getByRole('menuitem', { name: /Open in md2slides/ }).click();
+  const viewer = await opened;
+  await viewer.waitForURL(/^https:\/\/md2slides\.cybertechmind\.com\/v#[A-Za-z0-9_-]{20,}$/);
+  await viewer.close();
+  await context.unroute('https://md2slides.cybertechmind.com/**');
   await page.goto(handbook);
   await expect(page.getByLabel('Document title')).toHaveValue(handbookTitle);
 });

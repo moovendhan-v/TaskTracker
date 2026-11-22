@@ -2465,6 +2465,13 @@ export type DeleteFolderMutationVariables = Exact<{
 
 export type DeleteFolderMutation = { deleteFolder: boolean };
 
+export type Md2SlidesCatalogQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type Md2SlidesCatalogQuery = { md2slidesCatalog: { source: string, updatedAt: string, templates: Array<{ id: string, name: string, description: string, category: string, author: string, authorGithub: string | null, md: string, accent: string | null }>, contributors: Array<{ github: string, name: string, role: string, templates: number, website: string | null }>, snippets: Array<{ label: string, category: string, md: string }> } };
+
 export type MembersQueryVariables = Exact<{
   workspaceId: string;
 }>;
@@ -7494,6 +7501,36 @@ export const DeleteFolderDocument = new TypedDocumentString(`
   deleteFolder(workspaceId: $workspaceId, folderId: $folderId)
 }
     `) as unknown as TypedDocumentString<DeleteFolderMutation, DeleteFolderMutationVariables>;
+export const Md2SlidesCatalogDocument = new TypedDocumentString(`
+    query Md2SlidesCatalog($workspaceId: ID!) {
+  md2slidesCatalog(workspaceId: $workspaceId) {
+    templates {
+      id
+      name
+      description
+      category
+      author
+      authorGithub
+      md
+      accent
+    }
+    contributors {
+      github
+      name
+      role
+      templates
+      website
+    }
+    snippets {
+      label
+      category
+      md
+    }
+    source
+    updatedAt
+  }
+}
+    `) as unknown as TypedDocumentString<Md2SlidesCatalogQuery, Md2SlidesCatalogQueryVariables>;
 export const MembersDocument = new TypedDocumentString(`
     query Members($workspaceId: ID!) {
   members(workspaceId: $workspaceId) {

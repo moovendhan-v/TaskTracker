@@ -50,7 +50,9 @@ export type BlockType =
   | 'timeline'
   | 'task'
   | 'tasks'
-  | 'divider';
+  | 'divider'
+  /** md2slides (or other) Markdown this editor doesn't model, kept exactly as written. */
+  | 'raw';
 
 export interface VisualBlock {
   id: string;
@@ -126,7 +128,7 @@ export function markdownToBlocks(md: string): VisualBlock[] {
     }
 
     // Check for cards block :::cards cols=3
-    if (line.startsWith(':::cards')) {
+    if (/^:::cards(\s+cols=\d+)?\s*$/.test(line)) {
       const colMatch = line.match(/cols=(\d+)/);
       const cols = colMatch && colMatch[1] ? Number(colMatch[1]) : 3;
       i++;
@@ -153,7 +155,7 @@ export function markdownToBlocks(md: string): VisualBlock[] {
     }
 
     // Check for stats block :::stats cols=3
-    if (line.startsWith(':::stats')) {
+    if (/^:::stats(\s+cols=\d+)?\s*$/.test(line)) {
       const colMatch = line.match(/cols=(\d+)/);
       const cols = colMatch && colMatch[1] ? Number(colMatch[1]) : 3;
       i++;
@@ -178,7 +180,7 @@ export function markdownToBlocks(md: string): VisualBlock[] {
     }
 
     // Check for timeline block :::timeline
-    if (line.startsWith(':::timeline')) {
+    if (/^:::timeline\s*$/.test(line)) {
       i++;
       const timelineItems: { id: string; time: string; title: string; desc: string }[] = [];
       while (i < lines.length) {
@@ -197,6 +199,20 @@ export function markdownToBlocks(md: string): VisualBlock[] {
       }
       i++; // skip ':::'
       blocks.push({ id: uid(), type: 'timeline', content: '', meta: { timelineItems } });
+      continue;
+    }
+
+    // Any other md2slides container (:::chart, :::flow, :::cards style=…, …) is kept verbatim, up to its closing :::.
+    if (/^:::[A-Za-z]/.test(line)) {
+      const rawLines = [line];
+      i++;
+      while (i < lines.length) {
+        const nextL = lines[i] ?? '';
+        rawLines.push(nextL);
+        i++;
+        if (/^:::\s*$/.test(nextL)) break;
+      }
+      blocks.push({ id: uid(), type: 'raw', content: rawLines.join('\n') });
       continue;
     }
 
@@ -234,6 +250,7 @@ export function markdownToBlocks(md: string): VisualBlock[] {
 
     // Check for table | col1 | col2 |
     if (line.trim().startsWith('|') && line.includes('|')) {
+      const tableStart = i;
       const tableLines: string[] = [];
       while (i < lines.length) {
         const nextL = lines[i];
@@ -257,6 +274,8 @@ export function markdownToBlocks(md: string): VisualBlock[] {
         blocks.push({ id: uid(), type: 'table', content: '', meta: { headers, rows } });
         continue;
       }
+      // Not a table (e.g. md2slides' '|||' column break): look at these lines again below.
+      i = tableStart;
     }
 
     // Check for checklist items - [ ] or - [x]
@@ -318,6 +337,13 @@ export function markdownToBlocks(md: string): VisualBlock[] {
       pLines.push(nextL);
       i++;
     }
+    // A line no rule above takes (a lone ':::', a '|||' column break, '#tag'…) is kept as written,
+    // so the loop always moves on.
+    if (pLines.length === 0) {
+      blocks.push({ id: uid(), type: 'raw', content: line });
+      i++;
+      continue;
+    }
     blocks.push({ id: uid(), type: 'paragraph', content: pLines.join('\n') });
   }
 
@@ -351,6 +377,8 @@ export function blocksToMarkdown(blocks: VisualBlock[]): string {
         }
         case 'code':
           return `\`\`\`${b.meta?.language || 'typescript'}\n${b.content}\n\`\`\``;
+        case 'raw':
+          return b.content;
         case 'checklist': {
           const items = b.meta?.items || [];
           return items.map((it) => `- [${it.checked ? 'x' : ' '}] ${it.text.trim()}`).join('\n');
@@ -727,6 +755,8 @@ function createDefaultBlock(type: BlockType): VisualBlock {
       return { id: uid(), type: 'paragraph', content: '' };
     case 'divider':
       return { id: uid(), type: 'divider', content: '---' };
+    case 'raw':
+      return { id: uid(), type: 'raw', content: '' };
     case 'callout':
       return { id: uid(), type: 'callout', content: 'Write key note or context here.', meta: { calloutType: 'note' } };
     case 'code':
@@ -1376,6 +1406,22 @@ function BlockRenderer({
         </div>
       );
     }
+
+    case 'raw':
+      return (
+        <div className="rounded-lg border border-dashed bg-muted/30 p-2.5">
+          <div className="mb-1 text-[10.5px] font-medium tracking-wide text-muted-foreground uppercase">md2slides Markdown · presents in md2slides</div>
+          <textarea
+            aria-label="md2slides Markdown"
+            value={block.content}
+            disabled={!canEdit}
+            onChange={(e) => onChange({ content: e.target.value })}
+            rows={Math.max(1, block.content.split('\n').length)}
+            className="w-full resize-none bg-transparent font-mono text-xs outline-none"
+            spellCheck={false}
+          />
+        </div>
+      );
 
     case 'code':
       return (

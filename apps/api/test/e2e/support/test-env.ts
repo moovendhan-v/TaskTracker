@@ -73,6 +73,8 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     AI_OTHER_BASE_URL: 'fake://',
     AI_OTHER_MODELS: 'other-1',
     AI_DAILY_TOKENS_PER_USER: '2000',
+    // md2slides: the bundled snapshot only, so tests never depend on GitHub.
+    MD2SLIDES_SOURCE_URL: '',
     // The TaskFlow GitHub App (E2), talking to the fake GitHub; the poller looks every second.
     GITHUB_APP_ID: E2E_GITHUB_APP.id,
     GITHUB_APP_SLUG: E2E_GITHUB_APP.slug,

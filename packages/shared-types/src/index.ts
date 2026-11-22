@@ -20,6 +20,7 @@ export * from './contracts/comment.contract.js';
 export * from './contracts/sprint.contract.js';
 export * from './contracts/document.contract.js';
 export * from './contracts/ai.contract.js';
+export * from './contracts/md2slides.contract.js';
 export * from './contracts/hr.contract.js';
 export * from './contracts/admin.contract.js';
 export * from './contracts/notification.contract.js';

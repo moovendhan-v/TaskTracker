@@ -1,3 +1,5 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Md2SlidesCommunity } from './md2slides-community';
 import { DOC_TEMPLATE_LIMITS, fillDocTemplate, type DocTemplateResponse } from '@taskflow/shared-types';
 import { LayoutTemplateIcon, TrashIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -39,12 +41,18 @@ export function TemplateGallery({ workspaceId, trigger, onUse, busy }: { workspa
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>New page from a template</DialogTitle>
           <DialogDescription>Starters that ship with TaskFlow, and pages your workspace saved as templates. {'{{date}}'} becomes today.</DialogDescription>
         </DialogHeader>
         {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+        <Tabs defaultValue="workspace" className="grid min-w-0 gap-3">
+          <TabsList aria-label="Template sources">
+            <TabsTrigger value="workspace">Starters and saved</TabsTrigger>
+            <TabsTrigger value="md2slides">md2slides community</TabsTrigger>
+          </TabsList>
+          <TabsContent value="workspace">
         <div className="grid gap-4 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
           <ul aria-label="Templates" className="grid content-start gap-1">
             {templates.map((template) => (
@@ -89,6 +97,18 @@ export function TemplateGallery({ workspaceId, trigger, onUse, busy }: { workspa
             </div>
           ) : null}
         </div>
+          </TabsContent>
+          <TabsContent value="md2slides" className="min-w-0">
+            <Md2SlidesCommunity
+              workspaceId={workspaceId}
+              busy={busy}
+              onUse={(page) => {
+                onUse(page);
+                setOpen(false);
+              }}
+            />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

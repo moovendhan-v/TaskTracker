@@ -8,6 +8,7 @@ import { CommentsResolver } from './modules/comments/presentation/graphql/commen
 import { DocumentsResolver } from './modules/documents/presentation/graphql/documents.resolver.js';
 import { DocTemplatesResolver } from './modules/documents/presentation/graphql/doc-templates.resolver.js';
 import { AiResolver } from './modules/ai/presentation/graphql/ai.resolver.js';
+import { Md2SlidesResolver } from './modules/documents/presentation/graphql/md2slides.resolver.js';
 import { OrganizationsResolver } from './modules/organizations/presentation/graphql/organizations.resolver.js';
 import { OfficeResolver } from './modules/office/presentation/graphql/office.resolver.js';
 import { DepartmentsResolver } from './modules/hr/departments/presentation/graphql/departments.resolver.js';
@@ -67,6 +68,7 @@ export const RESOLVERS = [
   DocumentsResolver,
   DocTemplatesResolver,
   AiResolver,
+  Md2SlidesResolver,
   OrganizationsResolver,
   OfficeResolver,
   DepartmentsResolver,

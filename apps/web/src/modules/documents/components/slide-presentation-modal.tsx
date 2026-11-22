@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
+import { openInMd2Slides } from '../lib/md2slides-share';
 import { parseSlides, type Slide } from '../lib/slides';
 import { MarkdownPreview } from './markdown-preview';
 
@@ -84,15 +85,9 @@ export function SlidePresentationModal({ open, onClose, documentTitle, content }
 
   if (!open) return null;
 
-  const openMd2Slides = () => {
-    navigator.clipboard.writeText(content).then(
-      () => {
-        toast.success('Slide content copied! Opening md2slides studio…');
-        window.open('https://md2slides.cybertechmind.com/app', '_blank', 'noopener,noreferrer');
-      },
-      () => toast.error("Couldn't copy the slides. Check the browser's clipboard permission."),
-    );
-  };
+  // md2slides' own player: every md2slides block and layout works there. The deck rides in the
+  // link's # fragment, so nothing is uploaded.
+  const openMd2Slides = () => void openInMd2Slides(content, documentTitle, { present: true }).catch(() => toast.error("Couldn't open md2slides"));
 
   const progressPercent = ((currentSlideIndex + 1) / Math.max(1, slides.length)) * 100;
 
@@ -118,9 +113,9 @@ export function SlidePresentationModal({ open, onClose, documentTitle, content }
             size="sm"
             onClick={openMd2Slides}
             className="h-8 gap-1.5 border-slate-700 bg-slate-800/80 text-xs text-slate-200 hover:bg-slate-700"
-            title="Open in md2slides.cybertechmind.com"
+            title="Present with md2slides' own player (the deck stays in the link, nothing is uploaded)"
           >
-            <span>md2slides Studio</span>
+            <span>Present in md2slides</span>
             <ExternalLinkIcon className="size-3 text-slate-400" />
           </Button>
 
