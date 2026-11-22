@@ -1,3 +1,6 @@
+import { BlocksIcon, LinkIcon } from 'lucide-react';
+import { docAsDeck, md2slidesViewerUrl, openInMd2Slides } from '../lib/md2slides-share';
+import { Md2SlidesBlockPicker } from './md2slides-block-picker';
 import { AiSummaryButton } from '@/modules/ai';
 import {
   ActivityIcon,
@@ -178,16 +181,15 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
   };
 
   // Export to md2slides
-  const exportToMd2Slides = () => {
-    let slideDeck = content;
-    if (!slideDeck.includes('---')) {
-      slideDeck = `# ${title}\n\n${content.replace(/\n(## [^\n]+)/g, '\n---\n\n$1')}`;
-    }
-    void navigator.clipboard.writeText(slideDeck).then(() => {
-      toast.success('Slide deck copied! Opening md2slides studio…');
-      window.open('https://md2slides.cybertechmind.com/app', '_blank', 'noopener,noreferrer');
-    });
-  };
+  const exportToMd2Slides = () => void openInMd2Slides(docAsDeck(title, content), title).catch(() => toast.error("Couldn't open md2slides"));
+  const copyMd2SlidesLink = () =>
+    void md2slidesViewerUrl(docAsDeck(title, content), title)
+      .then((url) => navigator.clipboard.writeText(url))
+      .then(
+        () => toast.success('md2slides link copied: anyone with it can view this deck'),
+        () => toast.error("Couldn't copy the link"),
+      );
+  const [blocksOpen, setBlocksOpen] = useState(false);
 
   const openInNewTab = () => {
     const url = `${window.location.pathname}?view=full`;
@@ -195,6 +197,8 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
   };
 
   return (
+    <>
+    <Md2SlidesBlockPicker workspaceId={workspaceId} open={blocksOpen} onOpenChange={setBlocksOpen} onInsert={insertSnippet} />
     <div
       className={cn(
         'flex flex-col bg-background transition-all',
@@ -344,6 +348,10 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
                     <CodeIcon className="size-4 mr-2 text-critical" />
                     <span>Code Block</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setBlocksOpen(true)}>
+                    <BlocksIcon className="size-4 mr-2 text-primary" />
+                    <span>All md2slides blocks…</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => insertSnippet('---\n\n')}>
                     <MinusIcon className="size-4 mr-2 text-muted-foreground" />
                     <span>New Slide Divider (---)</span>
@@ -467,10 +475,14 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
                 <PresentationIcon className="size-4 mr-2 text-chart-1" />
                 <div className="flex flex-col">
                   <span className="flex items-center gap-1 font-medium">
-                    md2slides Studio <ExternalLinkIcon className="size-3" />
+                    Open in md2slides <ExternalLinkIcon className="size-3" />
                   </span>
-                  <span className="text-[10px] text-muted-foreground">Opens md2slides.cybertechmind.com</span>
+                  <span className="text-[10px] text-muted-foreground">md2slides' own player; nothing is uploaded</span>
                 </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={copyMd2SlidesLink} className="cursor-pointer">
+                <LinkIcon className="size-4 mr-2 text-muted-foreground" />
+                <span>Copy md2slides link</span>
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
@@ -562,6 +574,7 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
       />
       {savingTemplate ? <SaveAsTemplateDialog workspaceId={workspaceId} title={title} content={content} open onOpenChange={setSavingTemplate} /> : null}
     </div>
+    </>
   );
 }
 
