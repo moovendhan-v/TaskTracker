@@ -42,14 +42,15 @@ export function AiSummaryButton({ workspaceId, target, label = 'Summarise', what
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(26rem,calc(100vw-2rem))] p-0" aria-label={`AI summary of ${what}`}>
         <div className="flex items-center gap-2 border-b px-3 py-2">
-          <SparklesIcon className="size-4 text-primary" />
-          <span className="text-sm font-medium">AI summary</span>
+          <SparklesIcon className="size-4 shrink-0 text-primary" />
+          <span className="shrink-0 text-sm font-medium whitespace-nowrap">AI summary</span>
           {summary ? (
-            <span className="truncate text-xs text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground" title={summary ? `${summary.providerLabel} · ${summary.model}` : undefined}>
               {summary.providerLabel} · {summary.model}
             </span>
-          ) : null}
-          <span className="flex-1" />
+          ) : (
+            <span className="flex-1" />
+          )}
           <Button variant="ghost" size="icon-sm" aria-label="Summarise again" disabled={summarize.isPending} onClick={run}>
             <RefreshCwIcon />
           </Button>
