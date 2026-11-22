@@ -1,0 +1,52 @@
+fragment AiSettingsFields on AiSettings {
+  available
+  enabled
+  providerId
+  model
+  providers {
+    id
+    label
+    models
+  }
+  dailyTokens
+  usedToday
+}
+
+fragment AiSummaryFields on AiSummary {
+  text
+  providerLabel
+  model
+  tokens
+  usedToday
+  dailyTokens
+}
+
+query AiSettings($workspaceId: ID!) {
+  aiSettings(workspaceId: $workspaceId) {
+    ...AiSettingsFields
+  }
+}
+
+mutation UpdateAiSettings($workspaceId: ID!, $input: UpdateAiSettingsInput!) {
+  updateAiSettings(workspaceId: $workspaceId, input: $input) {
+    ...AiSettingsFields
+  }
+}
+
+mutation SummarizeTask($workspaceId: ID!, $taskId: ID!) {
+  summarizeTask(workspaceId: $workspaceId, taskId: $taskId) {
+    ...AiSummaryFields
+  }
+}
+
+mutation SummarizeDocument($workspaceId: ID!, $documentId: ID!) {
+  summarizeDocument(workspaceId: $workspaceId, documentId: $documentId) {
+    ...AiSummaryFields
+  }
+}
+
+mutation SummarizeChat($workspaceId: ID!, $channelId: ID!, $threadRootId: ID) {
+  summarizeChat(workspaceId: $workspaceId, channelId: $channelId, threadRootId: $threadRootId) {
+    ...AiSummaryFields
+  }
+}
