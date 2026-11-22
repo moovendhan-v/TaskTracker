@@ -30,6 +30,25 @@ export class TypeOrmAiRepository extends AiRepository {
     return row?.tokens ?? 0;
   }
 
+  async reserve(workspaceId: string, userId: string, day: string, tokens: number, budget: number): Promise<boolean> {
+    const rows = (await this.transactional.manager.query(
+      `INSERT INTO ai_usage (workspace_id, user_id, day, requests, tokens) VALUES ($1, $2, $3::date, 1, $4)
+       ON CONFLICT (workspace_id, user_id, day) DO UPDATE SET requests = ai_usage.requests + 1, tokens = LEAST(ai_usage.tokens + EXCLUDED.tokens, 2000000000)
+       WHERE ai_usage.tokens < $5
+       RETURNING tokens`,
+      [workspaceId, userId, day, Math.max(0, Math.min(tokens, 1_000_000)), budget],
+    )) as unknown[];
+    return rows.length > 0;
+  }
+
+  async settle(workspaceId: string, userId: string, day: string, delta: number): Promise<number> {
+    const [row] = (await this.transactional.manager.query(
+      `UPDATE ai_usage SET tokens = GREATEST(0, LEAST(tokens + $4, 2000000000)) WHERE workspace_id = $1 AND user_id = $2 AND day = $3::date RETURNING tokens`,
+      [workspaceId, userId, day, Math.round(delta)],
+    )) as { tokens: number }[];
+    return row?.tokens ?? 0;
+  }
+
   async addUsage(workspaceId: string, userId: string, day: string, tokens: number): Promise<number> {
     const [row] = (await this.transactional.manager.query(
       `INSERT INTO ai_usage (workspace_id, user_id, day, requests, tokens) VALUES ($1, $2, $3::date, 1, $4)

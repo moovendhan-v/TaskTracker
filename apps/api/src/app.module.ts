@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { AppConfigModule } from './config/config.module.js';
+import { AppConfigModule, ENV } from './config/config.module.js';
+import type { Env } from './config/env.schema.js';
+import { rateLimitRedis, RedisThrottlerStorage } from './core/rate-limit/redis-rate-limit.js';
 import { AiModule } from './core/ai/ai.module.js';
 import { AiFeaturesModule } from './modules/ai/ai.module.js';
 import { AccessModule } from './core/access/access.module.js';
@@ -71,7 +73,14 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     ScanningModule,
     QueryModule,
     GraphqlApiModule,
-    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
+    // Limits hold across API instances: counted in Redis when it's set (required in production).
+    ThrottlerModule.forRootAsync({
+      inject: [ENV],
+      useFactory: (env: Env) => ({
+        throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
+        ...(env.REDIS_URL ? { storage: new RedisThrottlerStorage(rateLimitRedis(env.REDIS_URL)) } : {}),
+      }),
+    }),
     AuthModule,
     AuditModule,
     AccessModule.forRoot({ imports: [MembersModule], membershipReader: TypeOrmMembershipReader }),
