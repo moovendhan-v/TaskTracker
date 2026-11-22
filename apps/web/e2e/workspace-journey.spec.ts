@@ -336,6 +336,8 @@ test('shows the project as a table and a month calendar', async () => {
     const task = searchTasks.items.find((item) => item.title === title)!;
     await gql('mutation($w: ID!, $t: ID!, $input: UpdateTaskInput!) { updateTask(workspaceId: $w, taskId: $t, input: $input) { id } }', { w: workspaceId, t: task.id, input: { dueDate: inDays(days) } });
   }
+  // Changed behind the page's back: load afresh rather than wait on live updates.
+  await page.reload();
 
   const views = page.getByRole('navigation', { name: 'Project views' });
   await views.getByRole('link', { name: 'Table', exact: true }).click();
@@ -596,7 +598,8 @@ test('starts a slide page from an md2slides community template, adds md2slides b
   await expect(page.getByLabel('Document title')).toHaveValue(name);
 
   // Every md2slides block, from md2slides' own list.
-  await page.getByRole('button', { name: 'Add block' }).click();
+  // The toolbar's Add block (the visual editor has one per block too).
+  await page.getByRole('button', { name: 'Add block' }).first().click();
   await page.getByRole('menuitem', { name: 'All md2slides blocks…' }).click();
   const blocks = page.getByRole('dialog', { name: 'md2slides blocks' });
   await blocks.getByLabel('Search md2slides blocks').fill('chart');

@@ -47,7 +47,7 @@ export function TemplateGallery({ workspaceId, trigger, onUse, busy }: { workspa
           <DialogDescription>Starters that ship with TaskFlow, and pages your workspace saved as templates. {'{{date}}'} becomes today.</DialogDescription>
         </DialogHeader>
         {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
-        <Tabs defaultValue="workspace" className="grid gap-3">
+        <Tabs defaultValue="workspace" className="grid min-w-0 gap-3">
           <TabsList aria-label="Template sources">
             <TabsTrigger value="workspace">Starters and saved</TabsTrigger>
             <TabsTrigger value="md2slides">md2slides community</TabsTrigger>
@@ -98,7 +98,7 @@ export function TemplateGallery({ workspaceId, trigger, onUse, busy }: { workspa
           ) : null}
         </div>
           </TabsContent>
-          <TabsContent value="md2slides">
+          <TabsContent value="md2slides" className="min-w-0">
             <Md2SlidesCommunity
               workspaceId={workspaceId}
               busy={busy}

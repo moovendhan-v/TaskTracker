@@ -27,13 +27,13 @@ export function Md2SlidesCommunity({ workspaceId, onUse, busy }: { workspaceId: 
   const current: Md2SlidesTemplate | undefined = shown.find((template) => template.id === selected) ?? shown[0];
 
   return (
-    <div className="grid gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-48 flex-1">
+    <div className="grid min-w-0 gap-3">
+      <div className="grid min-w-0 gap-2">
+        <div className="relative">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input aria-label="Search md2slides templates" placeholder={`Search ${templates.length} templates`} value={search} onChange={(event) => setSearch(event.target.value)} className="h-8 pl-8" />
         </div>
-        <div role="group" aria-label="Categories" className="flex max-w-full gap-1 overflow-x-auto">
+        <div role="group" aria-label="Categories" className="flex min-w-0 gap-1 overflow-x-auto pb-1">
           {[null, ...categories].map((value) => (
             <button
               key={value ?? 'all'}
