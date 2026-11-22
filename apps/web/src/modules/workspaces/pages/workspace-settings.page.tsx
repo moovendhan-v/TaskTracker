@@ -66,8 +66,8 @@ export function WorkspaceSettingsPage({ workspaceId }: { workspaceId: string }) 
         </Card>
         {canManage ? <WorkspaceOrganizationCard workspaceId={workspaceId} /> : null}
         {canManage ? <TwoStepRequirementCard workspaceId={workspaceId} /> : null}
-        {canManage ? <ChatRetentionCard workspaceId={workspaceId} /> : null}
         {canManage ? <AiSettingsCard workspaceId={workspaceId} /> : null}
+        {canManage ? <ChatRetentionCard workspaceId={workspaceId} /> : null}
         {canManage ? (
           <Card className="border-destructive/40">
             <CardHeader>
