@@ -65,6 +65,14 @@ export function apiProcessEnv(port: number): NodeJS.ProcessEnv {
     // Webhook steps call a local receiver in tests; production refuses both settings below.
     AUTOMATION_WEBHOOK_HOSTS: 'localhost,127.0.0.1',
     AUTOMATION_WEBHOOK_INSECURE_FOR_TESTS: 'true',
+    // AI (E5): a scripted fake model; tests never call a real provider. A small budget so the cap is testable.
+    AI_PROVIDERS: 'fake,other',
+    AI_FAKE_BASE_URL: 'fake://',
+    AI_FAKE_MODELS: 'fake-small,fake-large',
+    AI_FAKE_LABEL: 'Fake AI',
+    AI_OTHER_BASE_URL: 'fake://',
+    AI_OTHER_MODELS: 'other-1',
+    AI_DAILY_TOKENS_PER_USER: '2000',
     // The TaskFlow GitHub App (E2), talking to the fake GitHub; the poller looks every second.
     GITHUB_APP_ID: E2E_GITHUB_APP.id,
     GITHUB_APP_SLUG: E2E_GITHUB_APP.slug,

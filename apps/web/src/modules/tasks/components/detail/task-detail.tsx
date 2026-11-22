@@ -1,3 +1,4 @@
+import { AiSummaryButton } from '@/modules/ai';
 import {
   CheckIcon,
   CopyIcon,
@@ -356,6 +357,7 @@ function TaskMain({
           </DropdownMenu>
           <StatusPicker variant="pill" workspaceId={workspaceId} value={task.status} disabled={!canEdit} onChange={(status) => update.mutate({ taskId: task.id, body: { statusId: status.id }, status })} />
           <div className="flex-1" />
+          <AiSummaryButton key={task.id} workspaceId={workspaceId} target={{ kind: 'task', taskId: task.id }} what="this task" />
           <TaskTimeControls workspaceId={workspaceId} task={{ id: task.id, number: task.number, title: task.title, spaceId: task.spaceId }} />
           {can('task.delete') ? (
             <DropdownMenu>

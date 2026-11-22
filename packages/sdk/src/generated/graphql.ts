@@ -811,6 +811,12 @@ export type UpdateAdminUserInput = {
   suspended?: boolean | null | undefined;
 };
 
+export type UpdateAiSettingsInput = {
+  enabled: boolean;
+  model?: string | null | undefined;
+  providerId?: string | null | undefined;
+};
+
 export type UpdateChatChannelInput = {
   name?: string | null | undefined;
   topic?: string | null | undefined;
@@ -1062,6 +1068,50 @@ export type AdminAuditLogQueryVariables = Exact<{
 
 
 export type AdminAuditLogQuery = { adminAuditLog: { page: number, pageSize: number, total: number, items: Array<{ id: string, actorId: string, actorName: string, action: string, targetType: string, targetId: string | null, workspaceId: string | null, ip: string | null, metadata: Record<string, unknown> | null, createdAt: string }> } };
+
+export type AiSettingsFieldsFragment = { available: boolean, enabled: boolean, providerId: string | null, model: string | null, dailyTokens: number, usedToday: number, providers: Array<{ id: string, label: string, models: Array<string> }> };
+
+export type AiSummaryFieldsFragment = { text: string, providerLabel: string, model: string, tokens: number, usedToday: number, dailyTokens: number };
+
+export type AiSettingsQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type AiSettingsQuery = { aiSettings: { available: boolean, enabled: boolean, providerId: string | null, model: string | null, dailyTokens: number, usedToday: number, providers: Array<{ id: string, label: string, models: Array<string> }> } };
+
+export type UpdateAiSettingsMutationVariables = Exact<{
+  workspaceId: string;
+  input: UpdateAiSettingsInput;
+}>;
+
+
+export type UpdateAiSettingsMutation = { updateAiSettings: { available: boolean, enabled: boolean, providerId: string | null, model: string | null, dailyTokens: number, usedToday: number, providers: Array<{ id: string, label: string, models: Array<string> }> } };
+
+export type SummarizeTaskMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type SummarizeTaskMutation = { summarizeTask: { text: string, providerLabel: string, model: string, tokens: number, usedToday: number, dailyTokens: number } };
+
+export type SummarizeDocumentMutationVariables = Exact<{
+  workspaceId: string;
+  documentId: string;
+}>;
+
+
+export type SummarizeDocumentMutation = { summarizeDocument: { text: string, providerLabel: string, model: string, tokens: number, usedToday: number, dailyTokens: number } };
+
+export type SummarizeChatMutationVariables = Exact<{
+  workspaceId: string;
+  channelId: string;
+  threadRootId?: string | null | undefined;
+}>;
+
+
+export type SummarizeChatMutation = { summarizeChat: { text: string, providerLabel: string, model: string, tokens: number, usedToday: number, dailyTokens: number } };
 
 export type DashboardTaskFieldsFragment = { id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } };
 
@@ -3338,6 +3388,31 @@ export const AccessExplanationFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"AccessExplanationFields"}) as unknown as TypedDocumentString<AccessExplanationFieldsFragment, unknown>;
+export const AiSettingsFieldsFragmentDoc = new TypedDocumentString(`
+    fragment AiSettingsFields on AiSettings {
+  available
+  enabled
+  providerId
+  model
+  providers {
+    id
+    label
+    models
+  }
+  dailyTokens
+  usedToday
+}
+    `, {"fragmentName":"AiSettingsFields"}) as unknown as TypedDocumentString<AiSettingsFieldsFragment, unknown>;
+export const AiSummaryFieldsFragmentDoc = new TypedDocumentString(`
+    fragment AiSummaryFields on AiSummary {
+  text
+  providerLabel
+  model
+  tokens
+  usedToday
+  dailyTokens
+}
+    `, {"fragmentName":"AiSummaryFields"}) as unknown as TypedDocumentString<AiSummaryFieldsFragment, unknown>;
 export const DashboardTaskFieldsFragmentDoc = new TypedDocumentString(`
     fragment DashboardTaskFields on DashboardTask {
   id
@@ -4340,6 +4415,90 @@ export const AdminAuditLogDocument = new TypedDocumentString(`
   metadata
   createdAt
 }`) as unknown as TypedDocumentString<AdminAuditLogQuery, AdminAuditLogQueryVariables>;
+export const AiSettingsDocument = new TypedDocumentString(`
+    query AiSettings($workspaceId: ID!) {
+  aiSettings(workspaceId: $workspaceId) {
+    ...AiSettingsFields
+  }
+}
+    fragment AiSettingsFields on AiSettings {
+  available
+  enabled
+  providerId
+  model
+  providers {
+    id
+    label
+    models
+  }
+  dailyTokens
+  usedToday
+}`) as unknown as TypedDocumentString<AiSettingsQuery, AiSettingsQueryVariables>;
+export const UpdateAiSettingsDocument = new TypedDocumentString(`
+    mutation UpdateAiSettings($workspaceId: ID!, $input: UpdateAiSettingsInput!) {
+  updateAiSettings(workspaceId: $workspaceId, input: $input) {
+    ...AiSettingsFields
+  }
+}
+    fragment AiSettingsFields on AiSettings {
+  available
+  enabled
+  providerId
+  model
+  providers {
+    id
+    label
+    models
+  }
+  dailyTokens
+  usedToday
+}`) as unknown as TypedDocumentString<UpdateAiSettingsMutation, UpdateAiSettingsMutationVariables>;
+export const SummarizeTaskDocument = new TypedDocumentString(`
+    mutation SummarizeTask($workspaceId: ID!, $taskId: ID!) {
+  summarizeTask(workspaceId: $workspaceId, taskId: $taskId) {
+    ...AiSummaryFields
+  }
+}
+    fragment AiSummaryFields on AiSummary {
+  text
+  providerLabel
+  model
+  tokens
+  usedToday
+  dailyTokens
+}`) as unknown as TypedDocumentString<SummarizeTaskMutation, SummarizeTaskMutationVariables>;
+export const SummarizeDocumentDocument = new TypedDocumentString(`
+    mutation SummarizeDocument($workspaceId: ID!, $documentId: ID!) {
+  summarizeDocument(workspaceId: $workspaceId, documentId: $documentId) {
+    ...AiSummaryFields
+  }
+}
+    fragment AiSummaryFields on AiSummary {
+  text
+  providerLabel
+  model
+  tokens
+  usedToday
+  dailyTokens
+}`) as unknown as TypedDocumentString<SummarizeDocumentMutation, SummarizeDocumentMutationVariables>;
+export const SummarizeChatDocument = new TypedDocumentString(`
+    mutation SummarizeChat($workspaceId: ID!, $channelId: ID!, $threadRootId: ID) {
+  summarizeChat(
+    workspaceId: $workspaceId
+    channelId: $channelId
+    threadRootId: $threadRootId
+  ) {
+    ...AiSummaryFields
+  }
+}
+    fragment AiSummaryFields on AiSummary {
+  text
+  providerLabel
+  model
+  tokens
+  usedToday
+  dailyTokens
+}`) as unknown as TypedDocumentString<SummarizeChatMutation, SummarizeChatMutationVariables>;
 export const DashboardDocument = new TypedDocumentString(`
     query Dashboard($workspaceId: ID!, $input: DashboardInput!) {
   dashboard(workspaceId: $workspaceId, input: $input) {

@@ -130,6 +130,15 @@ const envSchema = z.object({
   /** Leave both unset to use the AWS default credential chain (e.g. an instance role). */
   S3_ACCESS_KEY_ID: optionalString(z.string().trim().min(1)),
   S3_SECRET_ACCESS_KEY: optionalString(z.string().trim().min(1)),
+  /**
+   * AI (E5): comma-separated provider ids; each id has AI_<ID>_BASE_URL, AI_<ID>_API_KEY and
+   * AI_<ID>_MODELS (read by core/ai/ai-providers.config.ts). Empty turns AI off.
+   */
+  AI_PROVIDERS: optionalString(z.string().trim().max(200)),
+  /** How long one AI request may take. */
+  AI_TIMEOUT_SECONDS: z.coerce.number().int().min(5).max(120).default(30),
+  /** Each person's AI budget per workspace and day (input + output tokens). */
+  AI_DAILY_TOKENS_PER_USER: z.coerce.number().int().min(1000).max(10_000_000).default(200_000),
 })
   .refine((env) => [env.LIVEKIT_URL, env.LIVEKIT_API_KEY, env.LIVEKIT_API_SECRET].every((value) => value === undefined) || [env.LIVEKIT_URL, env.LIVEKIT_API_KEY, env.LIVEKIT_API_SECRET].every((value) => value !== undefined), {
     path: ['LIVEKIT_API_SECRET'],

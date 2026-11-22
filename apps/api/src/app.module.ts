@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppConfigModule } from './config/config.module.js';
+import { AiModule } from './core/ai/ai.module.js';
+import { AiFeaturesModule } from './modules/ai/ai.module.js';
 import { AccessModule } from './core/access/access.module.js';
 import { DataScopeInterceptor } from './core/access/data-scope.interceptor.js';
 import { AuditModule } from './core/audit/audit.module.js';
@@ -100,6 +102,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     PreferencesModule,
     LayoutsModule,
     StorageModule,
+    AiModule,
+    AiFeaturesModule,
     ChatModule,
     AttachmentsModule,
     ChecklistsModule,

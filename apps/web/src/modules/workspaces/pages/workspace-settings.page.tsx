@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { AiSettingsCard } from '@/modules/ai';
 import { ChatRetentionCard } from '@/modules/chat';
 import { GithubIntegration } from '@/modules/integrations';
 import { WorkspaceOrganizationCard } from '@/modules/organizations';
@@ -65,6 +66,7 @@ export function WorkspaceSettingsPage({ workspaceId }: { workspaceId: string }) 
         </Card>
         {canManage ? <WorkspaceOrganizationCard workspaceId={workspaceId} /> : null}
         {canManage ? <TwoStepRequirementCard workspaceId={workspaceId} /> : null}
+        {canManage ? <AiSettingsCard workspaceId={workspaceId} /> : null}
         {canManage ? <ChatRetentionCard workspaceId={workspaceId} /> : null}
         {canManage ? (
           <Card className="border-destructive/40">

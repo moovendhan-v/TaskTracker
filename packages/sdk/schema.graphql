@@ -107,6 +107,37 @@ type AdminWorkspacePage {
   total: Int!
 }
 
+"""A provider the server has configured (never its URL or key)"""
+type AiProviderOption {
+  id: String!
+  label: String!
+  models: [String!]!
+}
+
+type AiSettings {
+  """The server has at least one AI provider configured"""
+  available: Boolean!
+
+  """Your AI budget per day in this workspace (tokens)"""
+  dailyTokens: Int!
+  enabled: Boolean!
+  model: String
+  providerId: String
+  providers: [AiProviderOption!]!
+  usedToday: Int!
+}
+
+type AiSummary {
+  dailyTokens: Int!
+  model: String!
+  providerLabel: String!
+
+  """Plain text written by a model: render as text, never HTML"""
+  text: String!
+  tokens: Int!
+  usedToday: Int!
+}
+
 type AttachedPolicy {
   managed: Boolean!
   name: String!
@@ -2029,6 +2060,15 @@ type Mutation {
   startTimer(input: StartTimerInput!, workspaceId: ID!): TimeEntry!
   stopTimer(workspaceId: ID!): TimeEntry!
 
+  """Summarise a chat channel’s recent messages, or one thread"""
+  summarizeChat(channelId: ID!, threadRootId: ID, workspaceId: ID!): AiSummary!
+
+  """Summarise a doc page"""
+  summarizeDocument(documentId: ID!, workspaceId: ID!): AiSummary!
+
+  """Summarise a task with its comments"""
+  summarizeTask(taskId: ID!, workspaceId: ID!): AiSummary!
+
   """Adds your reaction, or removes it if it is already there"""
   toggleChatReaction(emoji: String!, messageId: ID!, workspaceId: ID!): ChatMessage!
   unrelateTasks(relationId: ID!, workspaceId: ID!): Boolean!
@@ -2037,6 +2077,9 @@ type Mutation {
   Suspending signs the user out everywhere. You cannot change your own account.
   """
   updateAdminUser(input: UpdateAdminUserInput!, userId: ID!): AdminUser!
+
+  """Turn AI on or off and pick a configured provider and model"""
+  updateAiSettings(input: UpdateAiSettingsInput!, workspaceId: ID!): AiSettings!
 
   """Saving takes the rule over: it then runs as you"""
   updateAutomation(input: SaveAutomationInput!, ruleId: ID!, workspaceId: ID!): AutomationRule!
@@ -2401,6 +2444,9 @@ type Query {
     pageSize: Int
     search: String
   ): AdminWorkspacePage!
+
+  """Whether AI is on here, the configured providers and your usage today"""
+  aiSettings(workspaceId: ID!): AiSettings!
 
   """Recent runs of one automation, newest first"""
   automationRuns(ruleId: ID!, workspaceId: ID!): [AutomationRun!]!
@@ -3482,6 +3528,12 @@ type TwoStepPolicy {
 input UpdateAdminUserInput {
   platformRole: PlatformRole
   suspended: Boolean
+}
+
+input UpdateAiSettingsInput {
+  enabled: Boolean!
+  model: String
+  providerId: String
 }
 
 input UpdateChatChannelInput {
