@@ -1,3 +1,4 @@
+import { AiSummaryButton } from '@/modules/ai';
 import { useNavigate } from '@tanstack/react-router';
 import type { ChatChannelResponse, ChatMessageResponse } from '@taskflow/shared-types';
 import { ArchiveIcon, BellIcon, BellOffIcon, DownloadIcon, HashIcon, LockIcon, LogOutIcon, MessagesSquareIcon, MoreHorizontalIcon, PencilIcon, UserPlusIcon, UsersIcon, XIcon } from 'lucide-react';
@@ -307,6 +308,7 @@ function ChannelHeader({ workspaceId, channel }: { workspaceId: string; channel:
       <h2 className="truncate text-[15px] font-semibold">{channel.kind === 'dm' ? channelLabel(channel) : channel.name}</h2>
       {channel.topic ? <span className="hidden truncate text-sm text-muted-foreground md:inline">· {channel.topic}</span> : null}
       <span className="flex-1" />
+      <AiSummaryButton key={channel.id} workspaceId={workspaceId} target={{ kind: 'chat', channelId: channel.id }} what="this conversation" label="Catch up" />
       <HuddleButton workspaceId={workspaceId} channelId={channel.id} label={channel.kind === 'dm' ? channelLabel(channel) : `#${channel.name}`} disabled={channel.archived} />
       <span className="flex items-center gap-1 text-xs text-muted-foreground">
         <UsersIcon aria-hidden className="size-3.5" />
@@ -428,6 +430,7 @@ function ThreadPane({ workspaceId, rootId, channelLabel: where, archived, onClos
         <h2 className="text-sm font-semibold">Thread</h2>
         <span className="truncate text-sm text-muted-foreground">{where}</span>
         <span className="flex-1" />
+        <AiSummaryButton key={rootId} workspaceId={workspaceId} target={{ kind: 'chat', channelId: uploadChannelId, threadRootId: rootId }} what="this thread" />
         <Button size="icon-sm" variant="ghost" aria-label="Close thread" onClick={onClose}>
           <XIcon />
         </Button>

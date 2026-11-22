@@ -1,3 +1,4 @@
+import { AiSummaryButton } from '@/modules/ai';
 import {
   ActivityIcon,
   ArrowLeftIcon,
@@ -419,6 +420,8 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
           >
             <Maximize2Icon className="size-3.5" />
           </Button>
+
+          <AiSummaryButton key={document.id} workspaceId={workspaceId} target={{ kind: 'document', documentId: document.id }} what="this page" />
 
           {/* Export Menu */}
           <DropdownMenu>

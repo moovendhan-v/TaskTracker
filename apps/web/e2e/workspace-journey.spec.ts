@@ -858,6 +858,30 @@ test('shows a linked pull request in the task table', async () => {
   await shot('c1-table-pull-requests');
 });
 
+test('turns on AI and summarises a task', async () => {
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  const card = page.getByRole('region', { name: 'AI settings' });
+  await card.getByLabel('Turn on AI for this workspace').click();
+  await card.getByLabel('AI model').click();
+  await page.getByRole('option', { name: 'fake-large' }).click();
+  await card.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('AI is on, using Fake AI')).toBeVisible();
+  await shot('e5-ai-settings', card);
+
+  await page.getByRole('complementary', { name: 'Workspace navigation' }).getByText('Product').click();
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('link', { name: 'Table', exact: true }).click();
+  await page.getByRole('row').filter({ hasText: 'Write release notes' }).click();
+  await page.getByRole('button', { name: 'Summarise this task with AI' }).click();
+  const summary = page.getByRole('dialog', { name: 'AI summary of this task' });
+  // The fake model says what it was asked: the task's title came through, as plain text.
+  await expect(summary.getByTestId('ai-summary')).toContainText('summarize_task');
+  await expect(summary.getByTestId('ai-summary')).toContainText('Write release notes');
+  await expect(summary).toContainText('Fake AI · fake-large');
+  await shot('e5-ai-summary');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+});
+
 test('opens the platform admin console after promotion by the operator CLI', async () => {
   const output = execFileSync('node', ['dist/cli/promote-super-admin.js', email], { cwd: API_DIR, env: apiEnv() }).toString();
   expect(output).toContain('Granted SUPER_ADMIN');

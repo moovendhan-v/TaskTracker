@@ -22,7 +22,14 @@ const WHAT: Record<AiSummaryTarget, string> = {
 };
 
 /** Control characters other than newlines and tabs are dropped, so content can't smuggle in odd bytes. */
-const clean = (text: string) => text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim();
+const clean = (text: string) =>
+  Array.from(text)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code === 9 || code === 10 || code === 13 || (code >= 32 && code !== 127);
+    })
+    .join('')
+    .trim();
 
 /**
  * Keeps the newest parts that fit in the source budget (older ones are dropped first, and the

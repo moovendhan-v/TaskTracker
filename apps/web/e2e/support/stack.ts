@@ -63,6 +63,11 @@ export function apiEnv(): NodeJS.ProcessEnv {
     GITHUB_CLIENT_ID: 'e2e-github-client',
     GITHUB_CLIENT_SECRET: 'e2e-github-placeholder',
     ...(LIVEKIT_BINARY ? { LIVEKIT_URL: `ws://localhost:${LIVEKIT_PORT}`, LIVEKIT_API_KEY: LIVEKIT_KEY, LIVEKIT_API_SECRET: LIVEKIT_SECRET } : {}),
+    // AI (E5): a scripted fake model, so the journey never calls (or pays) a real provider.
+    AI_PROVIDERS: 'fake',
+    AI_FAKE_BASE_URL: 'fake://',
+    AI_FAKE_MODELS: 'fake-small,fake-large',
+    AI_FAKE_LABEL: 'Fake AI',
     STORAGE_DRIVER: 'local',
     STORAGE_LOCAL_DIR: join(tmpdir(), 'taskflow-web-e2e-uploads'),
   };
