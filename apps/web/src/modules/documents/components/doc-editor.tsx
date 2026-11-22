@@ -348,7 +348,7 @@ export function DocEditor({ workspaceId, document, canEdit, treeOpen = true, onT
                     <CodeIcon className="size-4 mr-2 text-critical" />
                     <span>Code Block</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setBlocksOpen(true)}>
+                  <DropdownMenuItem onSelect={() => window.setTimeout(() => setBlocksOpen(true), 0)}>
                     <BlocksIcon className="size-4 mr-2 text-primary" />
                     <span>All md2slides blocks…</span>
                   </DropdownMenuItem>
