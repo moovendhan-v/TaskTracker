@@ -291,7 +291,7 @@ export function ReportBugDialog({ workspaceId, spaceId, open, onOpenChange, onCr
                 <span>
                   Include diagnostics
                   <span className="block text-xs text-muted-foreground">
-                    {capture ? `${capture.console.length} console lines (${errors} errors), ${capture.network.length} requests (${failed} failed), ${capture.actions.length} actions` : ''}
+                    {capture ? `${count(capture.console.length, 'console line')} (${count(errors, 'error')}), ${count(capture.network.length, 'request')} (${failed} failed), ${count(capture.actions.length, 'action')}` : ''}
                     {context ? ` · ${[context.browser, context.os, context.viewport].filter(Boolean).join(', ')}` : ''}. Passwords, tokens and cookies are removed.
                   </span>
                 </span>
@@ -326,6 +326,8 @@ export function ReportBugDialog({ workspaceId, spaceId, open, onOpenChange, onCr
     </>
   );
 }
+
+const count = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 function Choice({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: [string, string][] }) {
   const id = `bug-${label.toLowerCase()}`;

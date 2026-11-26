@@ -280,7 +280,8 @@ export class CaptureRecorder {
   private listenForActions(): void {
     const onClick = (event: MouseEvent) => {
       const element = this.ignored(event.target);
-      if (!element) return;
+      // A click on the bare page (closing a menu, dismissing an overlay) is no step.
+      if (!element || element === document.documentElement || element === document.body) return;
       const target = element.closest('button, a, [role="button"], [role="menuitem"], [role="tab"], [role="option"], label, input, select, summary') ?? element;
       if (target instanceof HTMLInputElement && ['text', 'email', 'search', 'password', 'number', 'url', 'tel'].includes(target.type)) return;
       this.pushAction({ type: 'click', target: describeElement(target), selector: cssSelector(target) });

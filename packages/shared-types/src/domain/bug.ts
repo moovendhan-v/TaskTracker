@@ -125,6 +125,9 @@ export const BUG_LIMITS = {
 /** A failed request: no answer, or an HTTP error. */
 export const isFailedRequest = (entry: Pick<NetworkEntry, 'status' | 'error'>): boolean => entry.status === 0 || entry.status >= 400 || Boolean(entry.error);
 
+/** How many recorded steps a report keeps: the last ones, just before it was filed. */
+export const CAPTURED_STEPS = 12;
+
 /** Reproduction steps written from captured actions: "Go to /settings", "Click “Save”", "Type “abc” into Email". */
 export function stepsFromActions(actions: readonly ActionEntry[]): BugStep[] {
   const steps: BugStep[] = [];
@@ -161,13 +164,16 @@ export function stepsFromActions(actions: readonly ActionEntry[]): BugStep[] {
       steps.push({ text, source: 'captured' });
     }
   }
-  return steps.slice(-BUG_LIMITS.steps);
+  // What led up to the report, not the whole session.
+  return steps.slice(-CAPTURED_STEPS);
 }
 
 function pathOf(url: string): string {
   try {
     const parsed = new URL(url);
-    return `${parsed.pathname}${parsed.search ? '?…' : ''}` || '/';
+    // Ids shortened to their first 8 characters: readable, still unique enough to follow.
+    const path = parsed.pathname.replace(/([0-9a-f]{8})-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '$1…');
+    return `${path}${parsed.search ? '?…' : ''}` || '/';
   } catch {
     return url.slice(0, 200);
   }

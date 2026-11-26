@@ -940,6 +940,11 @@ test('files a bug report with redacted diagnostics, spots a duplicate and moves 
     console.error('Checkout failed: token=abcdef1234567890');
     await fetch('/api/definitely-missing?access_token=leaky').catch(() => undefined);
   });
+  // Those were on purpose: keep them out of the "no browser errors" check at the end.
+  await expect.poll(() => consoleErrors.some((text) => text.includes('Checkout failed'))).toBe(true);
+  for (let index = consoleErrors.length - 1; index >= 0; index -= 1) {
+    if (/Checkout failed|definitely-missing|404 \(Not Found\)/.test(consoleErrors[index]!)) consoleErrors.splice(index, 1);
+  }
 
   await page.getByRole('button', { name: 'Report a bug' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Report a bug or give feedback' });
@@ -949,7 +954,7 @@ test('files a bug report with redacted diagnostics, spots a duplicate and moves 
   await dialog.getByLabel('Expected result').fill('The order is placed');
   await dialog.getByLabel('Actual result').fill('Nothing happens and the console shows an error');
   await dialog.getByLabel(/Steps to reproduce/).fill('Add an item to the cart\nClick “Checkout”');
-  await expect(dialog).toContainText(/console lines \(\d+ errors?\)/);
+  await expect(dialog).toContainText(/console lines? \(\d+ errors?\)/);
   await shot('e6-report-bug', dialog);
   await dialog.getByRole('button', { name: 'File report' }).click();
 

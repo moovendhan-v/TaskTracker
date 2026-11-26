@@ -18,8 +18,12 @@ export function describeElement(element: Element): string {
   }
   const title = clean(element.getAttribute('title'));
   if (title) return title;
-  const text = clean((element as HTMLElement).innerText ?? element.textContent);
-  if (text) return text;
+  const full = ((element as HTMLElement).innerText ?? element.textContent ?? '').replace(/\s+/g, ' ').trim();
+  // A short label is the element's name; a long one means a container (a sidebar, a card), so use
+  // only its own text, not everything inside it.
+  if (full && full.length <= 60) return full;
+  const own = clean(Array.from(element.childNodes).filter((node) => node.nodeType === Node.TEXT_NODE).map((node) => node.textContent).join(' '));
+  if (own) return own;
   const alt = clean(element.getAttribute('alt'));
   if (alt) return alt;
   const role = element.getAttribute('role');

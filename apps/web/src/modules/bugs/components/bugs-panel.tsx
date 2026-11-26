@@ -61,7 +61,7 @@ export function BugsPanel({ workspaceId, spaceId, onOpenTask }: { workspaceId: s
         <Filter label="Severity" value={severity} onChange={setSeverity} options={[[ALL, 'Any severity'], ...BUG_SEVERITIES.map((value): [string, string] => [value, BUG_SEVERITY_LABELS[value]])]} />
         <Filter label="Kind" value={kind} onChange={setKind} options={[[ALL, 'Any kind'], ...BUG_KINDS.map((value): [string, string] => [value, BUG_KIND_LABELS[value]])]} />
         <Filter label="Environment" value={environment} onChange={setEnvironment} options={[[ALL, 'Any environment'], ...BUG_ENVIRONMENTS.map((value): [string, string] => [value, BUG_ENVIRONMENT_LABELS[value]])]} />
-        <Button size="sm" onClick={() => setReporting(true)}>
+        <Button size="sm" data-bug-capture-ignore="" onClick={() => setReporting(true)}>
           <PlusIcon className="mr-1 size-4" /> Report a bug
         </Button>
       </div>
