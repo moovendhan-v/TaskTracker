@@ -30,6 +30,6 @@
     "typescript": "6.0.3"
   },
   "dependencies": {
-    "graphql-ws": "6.4.2"
+    "graphql-ws": "6.4.3"
   }
 }
