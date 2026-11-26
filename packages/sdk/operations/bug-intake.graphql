@@ -1,0 +1,57 @@
+fragment BugIntakeFields on BugIntake {
+  id
+  spaceId
+  publicKey
+  title
+  intro
+  allowedOrigins
+  widgetEnabled
+  portalEnabled
+  updatedAt
+}
+
+fragment BugShareFields on BugShare {
+  id
+  scope
+  createdAt
+  expiresAt
+  lastViewedAt
+  createdByName
+}
+
+query BugIntake($workspaceId: ID!, $spaceId: ID!) {
+  bugIntake(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...BugIntakeFields
+  }
+}
+
+mutation SaveBugIntake($workspaceId: ID!, $spaceId: ID!, $input: SaveBugIntakeInput!) {
+  saveBugIntake(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...BugIntakeFields
+  }
+}
+
+mutation RotateBugIntakeKey($workspaceId: ID!, $spaceId: ID!) {
+  rotateBugIntakeKey(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...BugIntakeFields
+  }
+}
+
+query BugShares($workspaceId: ID!, $taskId: ID!) {
+  bugShares(workspaceId: $workspaceId, taskId: $taskId) {
+    ...BugShareFields
+  }
+}
+
+mutation CreateBugShare($workspaceId: ID!, $taskId: ID!, $days: Int!) {
+  createBugShare(workspaceId: $workspaceId, taskId: $taskId, days: $days) {
+    path
+    share {
+      ...BugShareFields
+    }
+  }
+}
+
+mutation RevokeBugShare($workspaceId: ID!, $shareId: ID!) {
+  revokeBugShare(workspaceId: $workspaceId, shareId: $shareId)
+}

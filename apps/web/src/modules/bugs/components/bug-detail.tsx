@@ -24,6 +24,7 @@ import { timeAgo } from '@/lib/relative-time';
 import { attachmentsApi } from '@/modules/tasks';
 import { useBug, useBugCapture, useBugMutations, useSimilarBugs } from '../hooks/use-bugs';
 import { isVideo, QA_ACTION, QA_TONE, SEVERITY_TONE } from '../lib/bug-meta';
+import { BugShareSection } from './bug-share-section';
 import { CaptureView } from './capture-view';
 
 /**
@@ -151,6 +152,8 @@ function BugBody({ workspaceId, bug, onOpenTask, onOpenBug }: { workspaceId: str
           <h3 className="mb-2 text-sm font-semibold">Diagnostics</h3>
           {capture.data ? <CaptureView capture={capture.data} /> : capture.isError ? <ErrorState error={capture.error} onRetry={() => void capture.refetch()} /> : <p className="text-sm text-muted-foreground">Loading…</p>}
         </section>
+
+        <BugShareSection workspaceId={workspaceId} taskId={bug.taskId} />
 
         {similar.data?.length && bug.qaState !== 'duplicate' ? (
           <section>

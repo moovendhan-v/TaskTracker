@@ -35,7 +35,7 @@ everything below is written from scratch.
 - [~] Screenshots, recordings (WebM/MP4) and replay files through task attachments (WebM/MP4 accepted by magic bytes; replay files with the SDK)
 - [x] Duplicate detection (similar titles in the project) and linking through `duplicates`
 - [x] Retest / reopen / verify, recorded in task activity
-- [ ] Shareable read-only links (signed, expiring, revocable)
+- [x] Shareable read-only links (random, hashed, 1/7/30 days, revocable, audited); status-only tracking links for reporters
 - [x] GraphQL API, permissions, activity, e2e tests (`test/e2e/bugs.e2e-spec.ts`)
 - [x] Values typed into secret-looking fields are never kept, and never appear in generated steps
 
@@ -44,13 +44,13 @@ everything below is written from scratch.
 - [x] Bug detail panel: screenshots, recordings, steps, console, network, actions, QA actions, possible duplicates; comments / assignee / history on the task (one click)
 - [ ] rrweb replay player (with the SDK)
 - [x] Report a bug dialog in the app (screenshot + annotation incl. pixelate, recording with optional mic, element pick, auto diagnostics, similar-report warning)
-- [ ] Client / QA feedback portal (share links + a public intake per project with CAPTCHA)
+- [x] Client / QA feedback portal (`/f/<key>`): public intake per project with origin checks, CAPTCHA, honeypot, per-IP and per-project limits; reporters follow progress at `/f/track/<token>`
 
 ### 3. Capture SDK and browser extension
 - [x] `packages/bug-capture`: console, errors, network (fetch/XHR, GraphQL errors), clicks/inputs → steps,
       environment detection, element picker, annotation canvas, recording (MediaRecorder), redaction
 - [ ] rrweb session replay in `packages/bug-capture`
-- [ ] Embeddable SDK bundle (`<script>` + project key) posting to the public intake
+- [x] Embeddable widget (`packages/feedback-widget`, served at `/embed/v1/feedback.js`): one `<script>` tag, shadow DOM, console/network/clicks capture, screenshot, CAPTCHA; real-browser e2e from another origin
 - [x] Browser extension (Manifest V3, Chrome + Firefox) using the same capture core and an API token (`apps/extension`):
       connect, screenshot + annotate, element pick, tab recording, per-tab or always-on capture, duplicate warning; real-browser e2e
 

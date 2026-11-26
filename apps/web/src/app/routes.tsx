@@ -23,7 +23,7 @@ import { tasksApi } from '@/modules/tasks';
 import { MembersPage } from '@/modules/members';
 import { isProjectView, MyTasksPage, ProjectPage } from '@/modules/projects';
 import { AccessPage, RolesPage } from '@/modules/roles';
-import { ConnectExtensionPage, ExtensionConnectionsCard } from '@/modules/bugs';
+import { ConnectExtensionPage, ExtensionConnectionsCard, FeedbackPortalPage, PublicBugPage } from '@/modules/bugs';
 import { SprintBoardPage } from '@/modules/sprints';
 import { DailyLogPage, TimesheetsPage } from '@/modules/time';
 import { preferencesQuery as preferences } from '@/core/preferences/use-preferences';
@@ -40,6 +40,29 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
   pendingComponent: FullPageSpinner,
+});
+
+/* E6.3 public feedback: the portal and read-only report links, for anyone with the link (signed in or not). */
+const feedbackPortalRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/f/$key',
+  component: function FeedbackPortalRoute() {
+    return <FeedbackPortalPage publicKey={feedbackPortalRoute.useParams().key} />;
+  },
+});
+const trackingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/f/track/$token',
+  component: function TrackingRoute() {
+    return <PublicBugPage token={trackingRoute.useParams().token} />;
+  },
+});
+const sharedBugRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/s/$token',
+  component: function SharedBugRoute() {
+    return <PublicBugPage token={sharedBugRoute.useParams().token} />;
+  },
 });
 
 /* Public pages: signed-in users are sent into the app. */
@@ -407,6 +430,9 @@ const settingsRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
+  feedbackPortalRoute,
+  trackingRoute,
+  sharedBugRoute,
   publicLayout.addChildren([signInRoute, signUpRoute, forgotPasswordRoute, resetPasswordRoute, twoFactorRoute]),
   appLayout.addChildren([
     indexRoute,

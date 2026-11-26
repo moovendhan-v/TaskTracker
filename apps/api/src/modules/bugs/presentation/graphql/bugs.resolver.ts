@@ -1,6 +1,6 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Throttle } from '@nestjs/throttler';
-import { BUG_QA_STATES, type BugCaptureInput, type BugQaState } from '@taskflow/shared-types';
+import { BUG_QA_STATES, type BugQaState } from '@taskflow/shared-types';
 import { CurrentAccess } from '../../../../core/access/current-access.decorator.js';
 import { RequirePermissions } from '../../../../core/access/require-permissions.decorator.js';
 import { DomainError } from '../../../../core/domain/domain-error.js';
@@ -8,24 +8,12 @@ import { OptionalUuidArg, UuidArg, WorkspaceIdArg } from '../../../../core/graph
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
 import { BugsService } from '../../application/bugs.service.js';
+import { parseCapture } from '../../domain/parse-capture.js';
+
+export { parseCapture };
 import { BugFilterInput, BugGql, ReportBugInput, SimilarBugGql, UpdateBugInput } from './bugs.types.js';
 
 const PER_MINUTE = (limit: number) => ({ default: { limit, ttl: 60_000 } });
-
-/** The capture arrives as JSON; anything that isn't an object of arrays is refused here, and every entry is re-validated and redacted in BugPolicy. */
-export function parseCapture(json: string | null | undefined): BugCaptureInput | null {
-  if (!json) return null;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(json);
-  } catch {
-    throw DomainError.invalid('The captured diagnostics are not valid JSON');
-  }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw DomainError.invalid('The captured diagnostics are not in the expected shape');
-  const value = parsed as Record<string, unknown>;
-  const list = (key: string) => (Array.isArray(value[key]) ? (value[key] as never[]).filter((entry) => entry && typeof entry === 'object') : []);
-  return { console: list('console'), network: list('network'), actions: list('actions') };
-}
 
 /** E6 bug reports. Reading needs task.view in the project; reporting task.create; changing task.update. */
 @Resolver(() => BugGql)

@@ -54,6 +54,7 @@ import { GithubIssueLabelsAssignee1730140000000 } from './1730140000000-github-i
 import { AutomationFireOnce1730150000000 } from './1730150000000-automation-fire-once.js';
 import { AiSettingsUsage1730160000000 } from './1730160000000-ai-settings-usage.js';
 import { RevokeRuntimeMigrationsTable1730170000000 } from './1730170000000-revoke-runtime-migrations-table.js';
+import { BugIntakeShares1730200000000 } from './1730200000000-bug-intake-shares.js';
 import { ApiTokens1730190000000 } from './1730190000000-api-tokens.js';
 import { BugReports1730180000000 } from './1730180000000-bug-reports.js';
 import { GithubConflicts1729950000000 } from './1729950000000-github-conflicts.js';
@@ -133,4 +134,5 @@ export const MIGRATIONS = [
   RevokeRuntimeMigrationsTable1730170000000,
   BugReports1730180000000,
   ApiTokens1730190000000,
+  BugIntakeShares1730200000000,
 ];

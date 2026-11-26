@@ -682,6 +682,14 @@ export type SaveAutomationInput = {
   trigger: AutomationTriggerInput;
 };
 
+export type SaveBugIntakeInput = {
+  allowedOrigins: Array<string>;
+  intro?: string | null | undefined;
+  portalEnabled: boolean;
+  title: string;
+  widgetEnabled: boolean;
+};
+
 export type SaveDashboardLayoutInput = {
   baseVersion: number;
   items: Array<LayoutItemInput>;
@@ -1357,6 +1365,60 @@ export type RevealAutomationWebhookSecretMutationVariables = Exact<{
 
 
 export type RevealAutomationWebhookSecretMutation = { revealAutomationWebhookSecret: string };
+
+export type BugIntakeFieldsFragment = { id: string, spaceId: string, publicKey: string, title: string, intro: string, allowedOrigins: Array<string>, widgetEnabled: boolean, portalEnabled: boolean, updatedAt: string };
+
+export type BugShareFieldsFragment = { id: string, scope: string, createdAt: string, expiresAt: string, lastViewedAt: string | null, createdByName: string | null };
+
+export type BugIntakeQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type BugIntakeQuery = { bugIntake: { id: string, spaceId: string, publicKey: string, title: string, intro: string, allowedOrigins: Array<string>, widgetEnabled: boolean, portalEnabled: boolean, updatedAt: string } | null };
+
+export type SaveBugIntakeMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  input: SaveBugIntakeInput;
+}>;
+
+
+export type SaveBugIntakeMutation = { saveBugIntake: { id: string, spaceId: string, publicKey: string, title: string, intro: string, allowedOrigins: Array<string>, widgetEnabled: boolean, portalEnabled: boolean, updatedAt: string } };
+
+export type RotateBugIntakeKeyMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type RotateBugIntakeKeyMutation = { rotateBugIntakeKey: { id: string, spaceId: string, publicKey: string, title: string, intro: string, allowedOrigins: Array<string>, widgetEnabled: boolean, portalEnabled: boolean, updatedAt: string } };
+
+export type BugSharesQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type BugSharesQuery = { bugShares: Array<{ id: string, scope: string, createdAt: string, expiresAt: string, lastViewedAt: string | null, createdByName: string | null }> };
+
+export type CreateBugShareMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+  days: number;
+}>;
+
+
+export type CreateBugShareMutation = { createBugShare: { path: string, share: { id: string, scope: string, createdAt: string, expiresAt: string, lastViewedAt: string | null, createdByName: string | null } } };
+
+export type RevokeBugShareMutationVariables = Exact<{
+  workspaceId: string;
+  shareId: string;
+}>;
+
+
+export type RevokeBugShareMutation = { revokeBugShare: boolean };
 
 export type BugFieldsFragment = { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> };
 
@@ -3670,6 +3732,29 @@ export const AutomationRuleFieldsFragmentDoc = new TypedDocumentString(`
   createdAt
 }
     `, {"fragmentName":"AutomationRuleFields"}) as unknown as TypedDocumentString<AutomationRuleFieldsFragment, unknown>;
+export const BugIntakeFieldsFragmentDoc = new TypedDocumentString(`
+    fragment BugIntakeFields on BugIntake {
+  id
+  spaceId
+  publicKey
+  title
+  intro
+  allowedOrigins
+  widgetEnabled
+  portalEnabled
+  updatedAt
+}
+    `, {"fragmentName":"BugIntakeFields"}) as unknown as TypedDocumentString<BugIntakeFieldsFragment, unknown>;
+export const BugShareFieldsFragmentDoc = new TypedDocumentString(`
+    fragment BugShareFields on BugShare {
+  id
+  scope
+  createdAt
+  expiresAt
+  lastViewedAt
+  createdByName
+}
+    `, {"fragmentName":"BugShareFields"}) as unknown as TypedDocumentString<BugShareFieldsFragment, unknown>;
 export const BugFieldsFragmentDoc = new TypedDocumentString(`
     fragment BugFields on Bug {
   taskId
@@ -5274,6 +5359,93 @@ export const RevealAutomationWebhookSecretDocument = new TypedDocumentString(`
   )
 }
     `) as unknown as TypedDocumentString<RevealAutomationWebhookSecretMutation, RevealAutomationWebhookSecretMutationVariables>;
+export const BugIntakeDocument = new TypedDocumentString(`
+    query BugIntake($workspaceId: ID!, $spaceId: ID!) {
+  bugIntake(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...BugIntakeFields
+  }
+}
+    fragment BugIntakeFields on BugIntake {
+  id
+  spaceId
+  publicKey
+  title
+  intro
+  allowedOrigins
+  widgetEnabled
+  portalEnabled
+  updatedAt
+}`) as unknown as TypedDocumentString<BugIntakeQuery, BugIntakeQueryVariables>;
+export const SaveBugIntakeDocument = new TypedDocumentString(`
+    mutation SaveBugIntake($workspaceId: ID!, $spaceId: ID!, $input: SaveBugIntakeInput!) {
+  saveBugIntake(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...BugIntakeFields
+  }
+}
+    fragment BugIntakeFields on BugIntake {
+  id
+  spaceId
+  publicKey
+  title
+  intro
+  allowedOrigins
+  widgetEnabled
+  portalEnabled
+  updatedAt
+}`) as unknown as TypedDocumentString<SaveBugIntakeMutation, SaveBugIntakeMutationVariables>;
+export const RotateBugIntakeKeyDocument = new TypedDocumentString(`
+    mutation RotateBugIntakeKey($workspaceId: ID!, $spaceId: ID!) {
+  rotateBugIntakeKey(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...BugIntakeFields
+  }
+}
+    fragment BugIntakeFields on BugIntake {
+  id
+  spaceId
+  publicKey
+  title
+  intro
+  allowedOrigins
+  widgetEnabled
+  portalEnabled
+  updatedAt
+}`) as unknown as TypedDocumentString<RotateBugIntakeKeyMutation, RotateBugIntakeKeyMutationVariables>;
+export const BugSharesDocument = new TypedDocumentString(`
+    query BugShares($workspaceId: ID!, $taskId: ID!) {
+  bugShares(workspaceId: $workspaceId, taskId: $taskId) {
+    ...BugShareFields
+  }
+}
+    fragment BugShareFields on BugShare {
+  id
+  scope
+  createdAt
+  expiresAt
+  lastViewedAt
+  createdByName
+}`) as unknown as TypedDocumentString<BugSharesQuery, BugSharesQueryVariables>;
+export const CreateBugShareDocument = new TypedDocumentString(`
+    mutation CreateBugShare($workspaceId: ID!, $taskId: ID!, $days: Int!) {
+  createBugShare(workspaceId: $workspaceId, taskId: $taskId, days: $days) {
+    path
+    share {
+      ...BugShareFields
+    }
+  }
+}
+    fragment BugShareFields on BugShare {
+  id
+  scope
+  createdAt
+  expiresAt
+  lastViewedAt
+  createdByName
+}`) as unknown as TypedDocumentString<CreateBugShareMutation, CreateBugShareMutationVariables>;
+export const RevokeBugShareDocument = new TypedDocumentString(`
+    mutation RevokeBugShare($workspaceId: ID!, $shareId: ID!) {
+  revokeBugShare(workspaceId: $workspaceId, shareId: $shareId)
+}
+    `) as unknown as TypedDocumentString<RevokeBugShareMutation, RevokeBugShareMutationVariables>;
 export const BugsDocument = new TypedDocumentString(`
     query Bugs($workspaceId: ID!, $spaceId: ID!, $filter: BugFilterInput) {
   bugs(workspaceId: $workspaceId, spaceId: $spaceId, filter: $filter) {

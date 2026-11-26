@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TASK_ATTACHMENTS_MAX, TASK_UPLOAD_MAX_BYTES, type TaskAttachmentResponse, type TaskUploadResult, type TaskUploadTicket } from '@taskflow/shared-types';
 import { randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
 import { SpaceGuard } from '../../../core/access/space-guard.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import { domainEvent, type ChangeKind } from '../../../core/events/domain-event.js';
@@ -64,6 +65,17 @@ export class TaskAttachmentsService {
     await this.attachments.markReady(access.workspaceId, file.id, checked.contentType, checked.size, checked.thumbnail);
     await this.announce(actor, access, file.taskId, 'created');
     return { attachment: this.toResponse({ ...file, status: 'ready', contentType: checked.contentType, size: checked.size, hasThumbnail: checked.thumbnail }), error: null };
+  }
+
+  /**
+   * Files bytes the server already holds (a screenshot sent with a public bug report) through the
+   * same path as an upload: the same limits, then the same content check, scan and thumbnail.
+   */
+  async attachBytes(actor: Actor, access: WorkspaceAccess, taskId: string, fileName: string, bytes: Buffer): Promise<TaskUploadResult> {
+    const ticket = await this.request(actor, access, { taskId, fileName, size: bytes.length });
+    const file = await this.own(actor, access, ticket.attachmentId);
+    await this.storage.put(file.storageKey, Readable.from(bytes), 'application/octet-stream');
+    return this.complete(actor, access, ticket.attachmentId);
   }
 
   async remove(actor: Actor, access: WorkspaceAccess, attachmentId: string): Promise<boolean> {

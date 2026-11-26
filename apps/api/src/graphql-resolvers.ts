@@ -10,6 +10,7 @@ import { DocTemplatesResolver } from './modules/documents/presentation/graphql/d
 import { AiResolver } from './modules/ai/presentation/graphql/ai.resolver.js';
 import { Md2SlidesResolver } from './modules/documents/presentation/graphql/md2slides.resolver.js';
 import { ApiTokensResolver } from './modules/api-tokens/presentation/graphql/api-tokens.resolver.js';
+import { BugIntakeResolver } from './modules/bug-intake/presentation/graphql/bug-intake.resolver.js';
 import { BugsResolver } from './modules/bugs/presentation/graphql/bugs.resolver.js';
 import { OrganizationsResolver } from './modules/organizations/presentation/graphql/organizations.resolver.js';
 import { OfficeResolver } from './modules/office/presentation/graphql/office.resolver.js';
@@ -73,6 +74,7 @@ export const RESOLVERS = [
   Md2SlidesResolver,
   BugsResolver,
   ApiTokensResolver,
+  BugIntakeResolver,
   OrganizationsResolver,
   OfficeResolver,
   DepartmentsResolver,

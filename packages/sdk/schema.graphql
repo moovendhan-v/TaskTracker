@@ -518,6 +518,35 @@ input BugFilterInput {
   severities: [String!]
 }
 
+"""
+A project’s public feedback: the embeddable widget and the hosted portal
+"""
+type BugIntake {
+  allowedOrigins: [String!]!
+  id: ID!
+  intro: String!
+  portalEnabled: Boolean!
+
+  """Public by design: it goes in the <script> tag and the portal address"""
+  publicKey: String!
+  spaceId: ID!
+  title: String!
+  updatedAt: String!
+  widgetEnabled: Boolean!
+}
+
+"""A read-only link to a report"""
+type BugShare {
+  createdAt: String!
+  createdByName: String
+  expiresAt: String!
+  id: ID!
+  lastViewedAt: String
+
+  """full or status"""
+  scope: String!
+}
+
 type BugStep {
   """manual or captured"""
   source: String!
@@ -905,6 +934,12 @@ input CreateTaskStatusInput {
 input CreateWorkspaceInput {
   color: String
   name: String!
+}
+
+type CreatedBugShare {
+  """Shown once; only a hash is kept"""
+  path: String!
+  share: BugShare!
 }
 
 type CurrentUser {
@@ -1853,6 +1888,9 @@ type Mutation {
   """HR fixes a shift’s times, saying why. Audited"""
   correctAttendanceShift(input: CorrectAttendanceShiftInput!, shiftId: ID!, workspaceId: ID!): AttendanceShift!
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
+
+  """A read-only link to a report for someone outside the workspace"""
+  createBugShare(days: Int!, taskId: ID!, workspaceId: ID!): CreatedBugShare!
   createChatChannel(input: CreateChatChannelInput!, workspaceId: ID!): ChatChannel!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
   createCustomField(input: CreateCustomFieldInput!, workspaceId: ID!): CustomField!
@@ -2118,9 +2156,18 @@ type Mutation {
 
   """Disconnects a client at once"""
   revokeApiToken(tokenId: ID!, workspaceId: ID!): Boolean!
+  revokeBugShare(shareId: ID!, workspaceId: ID!): Boolean!
+
+  """Replaces the public key; the old one stops working"""
+  rotateBugIntakeKey(spaceId: ID!, workspaceId: ID!): BugIntake!
 
   """A new webhook secret; the old one stops working at once"""
   rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
+
+  """
+  Turns the feedback widget and portal on or off for a project, and sets their sites and texts
+  """
+  saveBugIntake(input: SaveBugIntakeInput!, spaceId: ID!, workspaceId: ID!): BugIntake!
 
   """
   Saves the blocks of one of your dashboards. Fails with CONFLICT if it changed since baseVersion
@@ -2610,6 +2657,10 @@ type Query {
   The report’s captured console, network and actions as JSON (already redacted)
   """
   bugCapture(taskId: ID!, workspaceId: ID!): String!
+  bugIntake(spaceId: ID!, workspaceId: ID!): BugIntake
+
+  """Active read-only links to a report"""
+  bugShares(taskId: ID!, workspaceId: ID!): [BugShare!]!
 
   """Bug reports and feedback of a project, most severe first"""
   bugs(filter: BugFilterInput, spaceId: ID!, workspaceId: ID!): [Bug!]!
@@ -3138,6 +3189,14 @@ input SaveAutomationInput {
   flowJson: String
   name: String!
   trigger: AutomationTriggerInput!
+}
+
+input SaveBugIntakeInput {
+  allowedOrigins: [String!]!
+  intro: String
+  portalEnabled: Boolean!
+  title: String!
+  widgetEnabled: Boolean!
 }
 
 input SaveDashboardLayoutInput {

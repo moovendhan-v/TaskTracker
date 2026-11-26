@@ -289,6 +289,9 @@ importers:
       '@tailwindcss/vite':
         specifier: 4.3.5
         version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
+      '@taskflow/feedback-widget':
+        specifier: workspace:*
+        version: link:../../packages/feedback-widget
       '@testing-library/react':
         specifier: 16.3.3
         version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -332,6 +335,25 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+
+  packages/feedback-widget:
+    dependencies:
+      '@taskflow/bug-capture':
+        specifier: workspace:*
+        version: link:../bug-capture
+      '@taskflow/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+    devDependencies:
+      '@types/node':
+        specifier: 26.6.6
+        version: 26.6.6
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vite:
+        specifier: 8.3.8
+        version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
 
   packages/sdk:
     dependencies:

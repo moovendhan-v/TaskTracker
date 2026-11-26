@@ -32,6 +32,8 @@ const envSchema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   // An empty value (as in .env.example) means unset.
   TURNSTILE_SECRET_KEY: optionalString(z.string().trim().min(1)),
+  /** The public Turnstile site key, handed to the embeddable feedback widget and the feedback portal (E6.3). */
+  TURNSTILE_SITE_KEY: optionalString(z.string().trim().min(1).max(100)),
   /** "Sign in with GitHub" (A4): a GitHub OAuth app's client id and secret; both or neither. */
   GITHUB_CLIENT_ID: optionalString(z.string().trim().min(1).max(100)),
   GITHUB_CLIENT_SECRET: optionalString(z.string().trim().min(1).max(200)),
