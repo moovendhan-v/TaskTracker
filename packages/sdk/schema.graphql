@@ -447,6 +447,70 @@ input BlockConfigInput {
 }
 
 """
+A visual bug report: a task of type bug with QA details and captured diagnostics
+"""
+type Bug {
+  actual: String!
+  assigneeIds: [ID!]!
+  browser: String
+  consoleErrors: Int!
+  createdAt: String!
+  duplicateOfTaskId: ID
+  environment: String!
+  expected: String!
+  failedRequests: Int!
+  kind: String!
+  listId: ID!
+  module: String
+  number: Int!
+  os: String
+  pageUrl: String
+  priority: String!
+  qaState: String!
+  reporterId: ID
+
+  """For reports from outside the workspace (portal, SDK)"""
+  reporterName: String
+  severity: String!
+  source: String!
+  spaceId: ID!
+  statusCategory: String!
+  statusName: String!
+  steps: [BugStep!]!
+  taskId: ID!
+  title: String!
+  updatedAt: String!
+  viewport: String
+}
+
+input BugContextInput {
+  browser: String
+  os: String
+  pageUrl: String
+  userAgent: String
+  viewport: String
+}
+
+input BugFilterInput {
+  environments: [String!]
+  kinds: [String!]
+  qaStates: [String!]
+  search: String
+  severities: [String!]
+}
+
+type BugStep {
+  """manual or captured"""
+  source: String!
+  text: String!
+}
+
+input BugStepInput {
+  source: String!
+  text: String!
+}
+
+"""
 Connect to `url` with `token` (valid for 10 minutes, for this one call)
 """
 type CallJoin {
@@ -1929,6 +1993,9 @@ type Mutation {
   """Returns how many were unread"""
   markAllNotificationsRead(workspaceId: ID!): Int!
 
+  """Link a report to the one it duplicates and close it as a duplicate"""
+  markBugDuplicate(ofTaskId: ID!, taskId: ID!, workspaceId: ID!): Bug!
+
   """Marks the channel read up to this time (never moves backwards)"""
   markChatChannelRead(at: String!, channelId: ID!, workspaceId: ID!): Boolean!
 
@@ -1985,6 +2052,9 @@ type Mutation {
   removeWorkspaceFromOrganization(workspaceId: ID!): Boolean!
   renameOrganization(name: String!, organizationId: ID!): Organization!
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
+
+  """File a bug report or feedback (creates a task of type bug)"""
+  reportBug(input: ReportBugInput!, workspaceId: ID!): Bug!
 
   """
   Asks the people who manage roles for access; returns how many were asked
@@ -2044,6 +2114,9 @@ type Mutation {
   saveView(input: SaveViewInput!): Preferences!
   sendChatMessage(input: SendChatMessageInput!, workspaceId: ID!): ChatMessage!
   setAutomationEnabled(enabled: Boolean!, ruleId: ID!, workspaceId: ID!): AutomationRule!
+
+  """Confirm, mark fixed, ask for a retest, verify, reopen or close"""
+  setBugQaState(state: String!, taskId: ID!, workspaceId: ID!): Bug!
 
   """Make someone an owner, or a plain member again"""
   setChatChannelMemberRole(channelId: ID!, role: String!, userId: ID!, workspaceId: ID!): [ChatMember!]!
@@ -2124,6 +2197,7 @@ type Mutation {
 
   """Saving takes the rule over: it then runs as you"""
   updateAutomation(input: SaveAutomationInput!, ruleId: ID!, workspaceId: ID!): AutomationRule!
+  updateBug(input: UpdateBugInput!, taskId: ID!, workspaceId: ID!): Bug!
   updateChatChannel(channelId: ID!, input: UpdateChatChannelInput!, workspaceId: ID!): ChatChannel!
 
   """Renames a step, or ticks / unticks it"""
@@ -2500,6 +2574,15 @@ type Query {
 
   """Public channels to join"""
   browseChatChannels(first: Int, search: String, workspaceId: ID!): [ChatChannel!]!
+  bug(taskId: ID!, workspaceId: ID!): Bug!
+
+  """
+  The report’s captured console, network and actions as JSON (already redacted)
+  """
+  bugCapture(taskId: ID!, workspaceId: ID!): String!
+
+  """Bug reports and feedback of a project, most severe first"""
+  bugs(filter: BugFilterInput, spaceId: ID!, workspaceId: ID!): [Bug!]!
   callsOverview(workspaceId: ID!): CallsOverview!
   chatChannel(channelId: ID!, workspaceId: ID!): ChatChannel!
   chatChannelMembers(channelId: ID!, workspaceId: ID!): [ChatMember!]!
@@ -2740,6 +2823,9 @@ type Query {
   """Which ways of signing in this server offers"""
   signInOptions: SignInOptions!
 
+  """Reports in the project with a similar title, for spotting duplicates"""
+  similarBugs(excludeTaskId: ID, spaceId: ID!, title: String!, workspaceId: ID!): [SimilarBug!]!
+
   """A space as template content, to export without saving"""
   spaceTemplateContent(includeContent: Boolean! = false, spaceId: ID!, workspaceId: ID!): JSONObject!
   spaces(workspaceId: ID!): [Space!]!
@@ -2888,6 +2974,25 @@ type RelatedTask {
   id: ID!
   number: Int!
   status: TaskStatus!
+  title: String!
+}
+
+input ReportBugInput {
+  actual: String
+
+  """
+  Captured console, network and actions as JSON ({console, network, actions}); redacted again on the server
+  """
+  captureJson: String
+  context: BugContextInput
+  environment: String
+  expected: String
+  kind: String
+  listId: ID
+  module: String
+  severity: String
+  spaceId: ID!
+  steps: [String!]
   title: String!
 }
 
@@ -3092,6 +3197,16 @@ input SetWorkspaceLayoutInput {
 type SignInOptions {
   """Sign in with GitHub is configured"""
   github: Boolean!
+}
+
+type SimilarBug {
+  number: Int!
+  qaState: String!
+
+  """Title similarity, 0–1"""
+  score: Float!
+  taskId: ID!
+  title: String!
 }
 
 enum SortDirection {
@@ -3578,6 +3693,16 @@ input UpdateAiSettingsInput {
   enabled: Boolean!
   model: String
   providerId: String
+}
+
+input UpdateBugInput {
+  actual: String
+  environment: String
+  expected: String
+  kind: String
+  module: String
+  severity: String
+  steps: [BugStepInput!]
 }
 
 input UpdateChatChannelInput {

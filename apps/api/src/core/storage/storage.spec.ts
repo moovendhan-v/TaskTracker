@@ -35,6 +35,12 @@ describe('file types', () => {
   it('trusts the content, not the name', () => {
     const png = bytes(0x89, 'PNG', 0x0d, 0x0a, 0x1a, 0x0a, 'rest');
     expect(detectFileType(png, 'shot.png')).toEqual({ contentType: 'image/png', inline: true });
+    // Screen recordings (E6): WebM by its EBML header, MP4 by its ftyp box; a renamed one is refused.
+    const webm = Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x01, 0x00, 0x00, 0x00]);
+    const mp4 = Buffer.concat([Buffer.from([0, 0, 0, 0x20]), Buffer.from('ftypisom')]);
+    expect(detectFileType(webm, 'recording.webm')).toEqual({ contentType: 'video/webm', inline: true });
+    expect(detectFileType(mp4, 'recording.mp4')).toEqual({ contentType: 'video/mp4', inline: true });
+    expect(detectFileType(webm, 'recording.mp4')).toBeNull();
     expect(detectFileType(png, 'shot.jpg')).toBeNull();
     expect(detectFileType(bytes(0xff, 0xd8, 0xff, 0xe0), 'photo.JPEG')).toEqual({ contentType: 'image/jpeg', inline: true });
     expect(detectFileType(bytes('RIFF', 0, 0, 0, 0, 'WEBPVP8 '), 'a.webp')?.contentType).toBe('image/webp');

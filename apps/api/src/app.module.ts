@@ -6,6 +6,7 @@ import type { Env } from './config/env.schema.js';
 import { rateLimitRedis, RedisThrottlerStorage } from './core/rate-limit/redis-rate-limit.js';
 import { AiModule } from './core/ai/ai.module.js';
 import { AiFeaturesModule } from './modules/ai/ai.module.js';
+import { BugsModule } from './modules/bugs/bugs.module.js';
 import { AccessModule } from './core/access/access.module.js';
 import { DataScopeInterceptor } from './core/access/data-scope.interceptor.js';
 import { AuditModule } from './core/audit/audit.module.js';
@@ -113,6 +114,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     StorageModule,
     AiModule,
     AiFeaturesModule,
+    BugsModule,
     ChatModule,
     AttachmentsModule,
     ChecklistsModule,

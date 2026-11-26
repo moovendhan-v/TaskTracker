@@ -104,6 +104,27 @@ export type BlockConfigInput = {
   title?: string | null | undefined;
 };
 
+export type BugContextInput = {
+  browser?: string | null | undefined;
+  os?: string | null | undefined;
+  pageUrl?: string | null | undefined;
+  userAgent?: string | null | undefined;
+  viewport?: string | null | undefined;
+};
+
+export type BugFilterInput = {
+  environments?: Array<string> | null | undefined;
+  kinds?: Array<string> | null | undefined;
+  qaStates?: Array<string> | null | undefined;
+  search?: string | null | undefined;
+  severities?: Array<string> | null | undefined;
+};
+
+export type BugStepInput = {
+  source: string;
+  text: string;
+};
+
 export type ColumnWidthInput = {
   column: string;
   width: number;
@@ -590,6 +611,22 @@ export type RealtimeEntityType =
   | 'time_entry'
   | 'workspace';
 
+export type ReportBugInput = {
+  actual?: string | null | undefined;
+  /** Captured console, network and actions as JSON ({console, network, actions}); redacted again on the server */
+  captureJson?: string | null | undefined;
+  context?: BugContextInput | null | undefined;
+  environment?: string | null | undefined;
+  expected?: string | null | undefined;
+  kind?: string | null | undefined;
+  listId?: string | null | undefined;
+  module?: string | null | undefined;
+  severity?: string | null | undefined;
+  spaceId: string;
+  steps?: Array<string> | null | undefined;
+  title: string;
+};
+
 export type RequestAccessInput = {
   note?: string | null | undefined;
   permission: string;
@@ -815,6 +852,16 @@ export type UpdateAiSettingsInput = {
   enabled: boolean;
   model?: string | null | undefined;
   providerId?: string | null | undefined;
+};
+
+export type UpdateBugInput = {
+  actual?: string | null | undefined;
+  environment?: string | null | undefined;
+  expected?: string | null | undefined;
+  kind?: string | null | undefined;
+  module?: string | null | undefined;
+  severity?: string | null | undefined;
+  steps?: Array<BugStepInput> | null | undefined;
 };
 
 export type UpdateChatChannelInput = {
@@ -1284,6 +1331,78 @@ export type RevealAutomationWebhookSecretMutationVariables = Exact<{
 
 
 export type RevealAutomationWebhookSecretMutation = { revealAutomationWebhookSecret: string };
+
+export type BugFieldsFragment = { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> };
+
+export type BugsQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  filter?: BugFilterInput | null | undefined;
+}>;
+
+
+export type BugsQuery = { bugs: Array<{ taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> }> };
+
+export type BugQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type BugQuery = { bug: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
+
+export type BugCaptureQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type BugCaptureQuery = { bugCapture: string };
+
+export type SimilarBugsQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  title: string;
+  excludeTaskId?: string | null | undefined;
+}>;
+
+
+export type SimilarBugsQuery = { similarBugs: Array<{ taskId: string, number: number, title: string, qaState: string, score: number }> };
+
+export type ReportBugMutationVariables = Exact<{
+  workspaceId: string;
+  input: ReportBugInput;
+}>;
+
+
+export type ReportBugMutation = { reportBug: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
+
+export type UpdateBugMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+  input: UpdateBugInput;
+}>;
+
+
+export type UpdateBugMutation = { updateBug: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
+
+export type SetBugQaStateMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+  state: string;
+}>;
+
+
+export type SetBugQaStateMutation = { setBugQaState: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
+
+export type MarkBugDuplicateMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+  ofTaskId: string;
+}>;
+
+
+export type MarkBugDuplicateMutation = { markBugDuplicate: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
 
 export type ChatChannelFieldsFragment = { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> };
 
@@ -3512,6 +3631,42 @@ export const AutomationRuleFieldsFragmentDoc = new TypedDocumentString(`
   createdAt
 }
     `, {"fragmentName":"AutomationRuleFields"}) as unknown as TypedDocumentString<AutomationRuleFieldsFragment, unknown>;
+export const BugFieldsFragmentDoc = new TypedDocumentString(`
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}
+    `, {"fragmentName":"BugFields"}) as unknown as TypedDocumentString<BugFieldsFragment, unknown>;
 export const ChatChannelFieldsFragmentDoc = new TypedDocumentString(`
     fragment ChatChannelFields on ChatChannel {
   id
@@ -5037,6 +5192,271 @@ export const RevealAutomationWebhookSecretDocument = new TypedDocumentString(`
   )
 }
     `) as unknown as TypedDocumentString<RevealAutomationWebhookSecretMutation, RevealAutomationWebhookSecretMutationVariables>;
+export const BugsDocument = new TypedDocumentString(`
+    query Bugs($workspaceId: ID!, $spaceId: ID!, $filter: BugFilterInput) {
+  bugs(workspaceId: $workspaceId, spaceId: $spaceId, filter: $filter) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<BugsQuery, BugsQueryVariables>;
+export const BugDocument = new TypedDocumentString(`
+    query Bug($workspaceId: ID!, $taskId: ID!) {
+  bug(workspaceId: $workspaceId, taskId: $taskId) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<BugQuery, BugQueryVariables>;
+export const BugCaptureDocument = new TypedDocumentString(`
+    query BugCapture($workspaceId: ID!, $taskId: ID!) {
+  bugCapture(workspaceId: $workspaceId, taskId: $taskId)
+}
+    `) as unknown as TypedDocumentString<BugCaptureQuery, BugCaptureQueryVariables>;
+export const SimilarBugsDocument = new TypedDocumentString(`
+    query SimilarBugs($workspaceId: ID!, $spaceId: ID!, $title: String!, $excludeTaskId: ID) {
+  similarBugs(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    title: $title
+    excludeTaskId: $excludeTaskId
+  ) {
+    taskId
+    number
+    title
+    qaState
+    score
+  }
+}
+    `) as unknown as TypedDocumentString<SimilarBugsQuery, SimilarBugsQueryVariables>;
+export const ReportBugDocument = new TypedDocumentString(`
+    mutation ReportBug($workspaceId: ID!, $input: ReportBugInput!) {
+  reportBug(workspaceId: $workspaceId, input: $input) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<ReportBugMutation, ReportBugMutationVariables>;
+export const UpdateBugDocument = new TypedDocumentString(`
+    mutation UpdateBug($workspaceId: ID!, $taskId: ID!, $input: UpdateBugInput!) {
+  updateBug(workspaceId: $workspaceId, taskId: $taskId, input: $input) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<UpdateBugMutation, UpdateBugMutationVariables>;
+export const SetBugQaStateDocument = new TypedDocumentString(`
+    mutation SetBugQaState($workspaceId: ID!, $taskId: ID!, $state: String!) {
+  setBugQaState(workspaceId: $workspaceId, taskId: $taskId, state: $state) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<SetBugQaStateMutation, SetBugQaStateMutationVariables>;
+export const MarkBugDuplicateDocument = new TypedDocumentString(`
+    mutation MarkBugDuplicate($workspaceId: ID!, $taskId: ID!, $ofTaskId: ID!) {
+  markBugDuplicate(
+    workspaceId: $workspaceId
+    taskId: $taskId
+    ofTaskId: $ofTaskId
+  ) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<MarkBugDuplicateMutation, MarkBugDuplicateMutationVariables>;
 export const ChatChannelsDocument = new TypedDocumentString(`
     query ChatChannels($workspaceId: ID!) {
   chatChannels(workspaceId: $workspaceId) {

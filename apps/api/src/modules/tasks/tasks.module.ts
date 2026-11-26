@@ -24,6 +24,6 @@ import { TasksResolver } from './presentation/graphql/tasks.resolver.js';
     { provide: TaskRelationRepository, useClass: TypeOrmTaskRelationRepository },
     { provide: TaskActivityRepository, useClass: TypeOrmTaskActivityRepository },
   ],
-  exports: [TasksService],
+  exports: [TasksService, TaskActivityRepository],
 })
 export class TasksModule {}

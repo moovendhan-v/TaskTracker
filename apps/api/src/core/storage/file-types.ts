@@ -13,7 +13,7 @@ const ascii = (text: string) => [...text].map((char) => char.charCodeAt(0));
 const extensionOf = (fileName: string) => (/\.([a-z0-9]{1,8})$/i.exec(fileName)?.[1] ?? '').toLowerCase();
 
 /** Extensions people may upload, by the kind of content they must contain. */
-export const UPLOAD_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'zip', 'docx', 'xlsx', 'pptx', 'txt', 'csv', 'md', 'log', 'json'] as const;
+export const UPLOAD_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'zip', 'docx', 'xlsx', 'pptx', 'txt', 'csv', 'md', 'log', 'json', 'webm', 'mp4'] as const;
 
 export function isAllowedExtension(fileName: string): boolean {
   return (UPLOAD_EXTENSIONS as readonly string[]).includes(extensionOf(fileName));
@@ -45,6 +45,9 @@ export function detectFileType(head: Buffer, fileName: string): DetectedType | n
   if (starts(head, ascii('GIF87a')) || starts(head, ascii('GIF89a'))) return extension === 'gif' ? { contentType: 'image/gif', inline: true } : null;
   if (starts(head, ascii('RIFF')) && starts(head, ascii('WEBP'), 8)) return extension === 'webp' ? { contentType: 'image/webp', inline: true } : null;
   if (starts(head, ascii('%PDF-'))) return extension === 'pdf' ? { contentType: 'application/pdf', inline: false } : null;
+  // Screen recordings (E6): WebM (EBML header) and MP4 (an "ftyp" box at byte 4). Played inline.
+  if (starts(head, [0x1a, 0x45, 0xdf, 0xa3])) return extension === 'webm' ? { contentType: 'video/webm', inline: true } : null;
+  if (starts(head, ascii('ftyp'), 4)) return extension === 'mp4' ? { contentType: 'video/mp4', inline: true } : null;
   if (starts(head, [0x50, 0x4b, 0x03, 0x04])) {
     const office: Record<string, string> = {
       zip: 'application/zip',
