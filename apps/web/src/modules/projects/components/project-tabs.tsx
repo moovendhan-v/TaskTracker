@@ -14,7 +14,7 @@ import { VIEW_META, type ProjectView } from '../lib/views';
 const CORE_VIEWS: readonly ProjectView[] = ['list', 'board', 'table', 'calendar', 'timeline'];
 
 /** Secondary views and tools available in the More views menu. */
-const TOOL_VIEWS: readonly ProjectView[] = ['planner', 'dashboard', 'sprints', 'time', 'automations'];
+const TOOL_VIEWS: readonly ProjectView[] = ['planner', 'dashboard', 'sprints', 'bugs', 'time', 'automations'];
 const PROJECT_MANAGEMENT_VIEWS: readonly ProjectView[] = ['members', 'settings'];
 
 /** The project's views as tabs with a responsive "More views" menu so tabs never awkwardly overflow. */

@@ -1,3 +1,4 @@
+import { BugsPanel } from '@/modules/bugs';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { DownloadIcon, LayersIcon, PlusIcon, RefreshCwIcon, SearchIcon, XIcon } from 'lucide-react';
@@ -219,6 +220,7 @@ export function ProjectPage({ workspaceId, spaceId, view, listId }: ProjectPageP
         {view === 'planner' && tasks.data ? <PlannerView workspaceId={workspaceId} tasks={items} onOpen={openTask} /> : null}
         {view === 'time' ? <TimeReport workspaceId={workspaceId} spaceId={spaceId} onOpenTask={openTask} /> : null}
         {view === 'sprints' ? <SprintsPage workspaceId={workspaceId} spaceId={spaceId} /> : null}
+        {view === 'bugs' ? <BugsPanel workspaceId={workspaceId} spaceId={spaceId} onOpenTask={openTask} /> : null}
         {view === 'members' ? <MembersPage workspaceId={workspaceId} /> : null}
         {view === 'dashboard' ? <ProjectDashboard workspaceId={workspaceId} space={space} /> : null}
         {view === 'automations' ? <AutomationsPanel workspaceId={workspaceId} spaceId={spaceId} onOpenTask={openTask} /> : null}

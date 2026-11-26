@@ -40,14 +40,16 @@ everything below is written from scratch.
 - [x] Values typed into secret-looking fields are never kept, and never appear in generated steps
 
 ### 2. Bug reports (web)
-- [ ] Bugs view per project: filters (kind, severity, environment, QA state), duplicate badge
-- [ ] Bug detail page: screenshots, recording, replay player, steps, console, network, comments, activity
-- [ ] Report a bug dialog in the app (screenshot + annotation, recording, element pick, auto diagnostics)
+- [x] Bugs view per project: filters (kind, severity, environment, QA state), duplicate badge
+- [x] Bug detail panel: screenshots, recordings, steps, console, network, actions, QA actions, possible duplicates; comments / assignee / history on the task (one click)
+- [ ] rrweb replay player (with the SDK)
+- [x] Report a bug dialog in the app (screenshot + annotation incl. pixelate, recording with optional mic, element pick, auto diagnostics, similar-report warning)
 - [ ] Client / QA feedback portal (share links + a public intake per project with CAPTCHA)
 
 ### 3. Capture SDK and browser extension
-- [ ] `packages/bug-capture`: console, errors, network (fetch/XHR), clicks/inputs → steps, rrweb replay,
+- [x] `packages/bug-capture`: console, errors, network (fetch/XHR, GraphQL errors), clicks/inputs → steps,
       environment detection, element picker, annotation canvas, recording (MediaRecorder), redaction
+- [ ] rrweb session replay in `packages/bug-capture`
 - [ ] Embeddable SDK bundle (`<script>` + project key) posting to the public intake
 - [ ] Browser extension (Manifest V3, Chrome + Firefox) using the same capture core and an API token
 

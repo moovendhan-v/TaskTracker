@@ -7,15 +7,18 @@ WORKDIR /repo
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/sdk/package.json packages/sdk/
+COPY packages/bug-capture/package.json packages/bug-capture/
 COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile --filter @taskflow/web...
 COPY packages/shared-types packages/shared-types
 COPY packages/sdk packages/sdk
+COPY packages/bug-capture packages/bug-capture
 COPY apps/web apps/web
 ARG VITE_TURNSTILE_SITE_KEY=""
 ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 RUN pnpm --filter @taskflow/shared-types build \
  && pnpm --filter @taskflow/sdk build \
+ && pnpm --filter @taskflow/bug-capture build \
  && pnpm --filter @taskflow/web build
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime

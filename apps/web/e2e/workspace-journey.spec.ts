@@ -929,6 +929,69 @@ test('turns on AI and summarises a task', async () => {
   await page.keyboard.press('Escape');
 });
 
+test('files a bug report with redacted diagnostics, spots a duplicate and moves it through QA', async () => {
+  await page.getByRole('complementary', { name: 'Workspace navigation' }).getByText('Product').click();
+  await page.getByRole('navigation', { name: 'Project views' }).getByRole('button', { name: /More views/ }).click();
+  await page.getByRole('menuitem', { name: 'Bugs' }).click();
+  await expect(page.getByText('No open reports')).toBeVisible();
+
+  // Something goes wrong on the page: an error with a secret in it, and a failed request.
+  await page.evaluate(async () => {
+    console.error('Checkout failed: token=abcdef1234567890');
+    await fetch('/api/definitely-missing?access_token=leaky').catch(() => undefined);
+  });
+
+  await page.getByRole('button', { name: 'Report a bug' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Report a bug or give feedback' });
+  await dialog.getByLabel('Title').fill('Checkout button does nothing');
+  await dialog.getByLabel('Severity').click();
+  await page.getByRole('option', { name: 'P1 · Critical' }).click();
+  await dialog.getByLabel('Expected result').fill('The order is placed');
+  await dialog.getByLabel('Actual result').fill('Nothing happens and the console shows an error');
+  await dialog.getByLabel(/Steps to reproduce/).fill('Add an item to the cart\nClick “Checkout”');
+  await expect(dialog).toContainText(/console lines \(\d+ errors?\)/);
+  await shot('e6-report-bug', dialog);
+  await dialog.getByRole('button', { name: 'File report' }).click();
+
+  // The report opens: steps, environment and the redacted console and network.
+  const detail = page.getByRole('dialog').filter({ hasText: 'Steps to reproduce' });
+  await expect(detail.getByRole('heading', { name: 'Checkout button does nothing' })).toBeVisible();
+  await expect(detail).toContainText('Click “Checkout”');
+  const consoleLog = detail.getByRole('list', { name: 'Console' });
+  await expect(consoleLog).toContainText('Checkout failed');
+  await expect(consoleLog).not.toContainText('abcdef1234567890');
+  await detail.getByRole('tab', { name: /Network/ }).click();
+  const network = detail.getByRole('list', { name: 'Network' });
+  await expect(network).toContainText('404');
+  await expect(network).not.toContainText('leaky');
+  await shot('e6-bug-detail', detail);
+
+  // QA: confirm, fix, ask for a retest, verify.
+  await detail.getByRole('button', { name: 'Confirm' }).click();
+  await detail.getByRole('button', { name: 'Mark fixed' }).click();
+  await detail.getByRole('button', { name: 'Ask for a retest' }).click();
+  await detail.getByRole('button', { name: 'Verify' }).click();
+  await expect(detail).toContainText('Verified');
+  await page.keyboard.press('Escape');
+
+  // A second, similar report: the dialog points at the first one, and it can be linked as a duplicate.
+  await page.getByRole('button', { name: 'Report a bug' }).first().click();
+  await dialog.getByLabel('Title').fill('Checkout button does nothing at all');
+  await expect(dialog.getByRole('status')).toContainText('Checkout button does nothing');
+  await dialog.getByRole('button', { name: 'File report' }).click();
+  await expect(detail.getByRole('heading', { name: 'Checkout button does nothing at all' })).toBeVisible();
+  await detail.getByRole('button', { name: 'Duplicate of this' }).first().click();
+  await expect(detail).toContainText('Duplicate of');
+  await page.keyboard.press('Escape');
+
+  // The list: open reports only by default; any state shows both.
+  const list = page.getByRole('list', { name: 'Bug reports' });
+  await page.getByLabel('QA state').click();
+  await page.getByRole('option', { name: 'Any state' }).click();
+  await expect(list.getByRole('listitem')).toHaveCount(2);
+  await shot('e6-bugs-list');
+});
+
 test('opens the platform admin console after promotion by the operator CLI', async () => {
   const output = execFileSync('node', ['dist/cli/promote-super-admin.js', email], { cwd: API_DIR, env: apiEnv() }).toString();
   expect(output).toContain('Granted SUPER_ADMIN');
