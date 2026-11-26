@@ -29,7 +29,9 @@ let shared: { url: string; redis: Redis } | null = null;
 /** One connection for rate limiting per process (both limiters share it). */
 export function rateLimitRedis(url: string): Redis {
   if (shared?.url === url) return shared.redis;
-  const redis = new Redis(url, { lazyConnect: false, enableOfflineQueue: false, maxRetriesPerRequest: 1, connectTimeout: 2_000 });
+  // Lazy: nothing connects until the first limit is checked, so commands that only build the auth
+  // config (the migration CLI) don't hold the process open on an idle Redis connection.
+  const redis = new Redis(url, { lazyConnect: true, enableOfflineQueue: true, maxRetriesPerRequest: 1, connectTimeout: 2_000 });
   redis.on('error', (error) => logger.warn(`Rate-limit Redis: ${error.message}`));
   shared = { url, redis };
   return redis;

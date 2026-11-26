@@ -132,5 +132,5 @@ jobs:
           terraform validate
       - name: Docker Compose config is valid
         run: |
-          sed -E 's/^(POSTGRES_PASSWORD|APP_DB_OWNER_PASSWORD|APP_DB_PASSWORD|BETTER_AUTH_SECRET|REDIS_PASSWORD)=$/\1=ci-placeholder/' .env.example > "$RUNNER_TEMP/compose.env"
+          sed -E 's/^(POSTGRES_PASSWORD|APP_DB_OWNER_PASSWORD|APP_DB_PASSWORD|BETTER_AUTH_SECRET|REDIS_PASSWORD|MINIO_ROOT_PASSWORD)=$/\1=ci-placeholder/' .env.example > "$RUNNER_TEMP/compose.env"
           docker compose -f infra/docker/docker-compose.yml --env-file "$RUNNER_TEMP/compose.env" config --quiet
