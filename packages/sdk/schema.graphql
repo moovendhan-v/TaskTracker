@@ -138,6 +138,25 @@ type AiSummary {
   usedToday: Int!
 }
 
+"""
+A connection (browser extension, MCP client) acting as you in this workspace; the token itself is never shown again
+"""
+type ApiToken {
+  client: String!
+  createdAt: String!
+  expiresAt: String!
+  id: ID!
+  lastUsedAt: String
+  name: String!
+
+  """Approved, waiting for the extension to pick it up"""
+  pending: Boolean!
+
+  """The first characters, to tell connections apart"""
+  prefix: String
+  scopes: [String!]!
+}
+
 type AttachedPolicy {
   managed: Boolean!
   name: String!
@@ -1772,6 +1791,11 @@ type Mutation {
 
   """Needs workspace.manage here and owner or admin in the organization"""
   addWorkspaceToOrganization(organizationId: ID!, workspaceId: ID!): Boolean!
+
+  """
+  Lets the browser extension that opened this page act as you here (it picks up its token within 10 minutes)
+  """
+  approveExtensionConnection(challenge: String!, name: String!, workspaceId: ID!): ApiToken!
   archiveChatChannel(archived: Boolean! = true, channelId: ID!, workspaceId: ID!): ChatChannel!
   attachRolePolicy(
     """managed:<key> or a custom policy id"""
@@ -2091,6 +2115,9 @@ type Mutation {
 
   """Ends a grant early"""
   revokeAccessGrant(grantId: ID!, workspaceId: ID!): Boolean!
+
+  """Disconnects a client at once"""
+  revokeApiToken(tokenId: ID!, workspaceId: ID!): Boolean!
 
   """A new webhook secret; the old one stops working at once"""
   rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
@@ -2562,6 +2589,9 @@ type Query {
 
   """Whether AI is on here, the configured providers and your usage today"""
   aiSettings(workspaceId: ID!): AiSettings!
+
+  """Your connected browser extensions and other clients in this workspace"""
+  apiTokens(workspaceId: ID!): [ApiToken!]!
 
   """Recent runs of one automation, newest first"""
   automationRuns(ruleId: ID!, workspaceId: ID!): [AutomationRun!]!

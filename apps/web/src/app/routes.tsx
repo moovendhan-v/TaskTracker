@@ -23,6 +23,7 @@ import { tasksApi } from '@/modules/tasks';
 import { MembersPage } from '@/modules/members';
 import { isProjectView, MyTasksPage, ProjectPage } from '@/modules/projects';
 import { AccessPage, RolesPage } from '@/modules/roles';
+import { ConnectExtensionPage, ExtensionConnectionsCard } from '@/modules/bugs';
 import { SprintBoardPage } from '@/modules/sprints';
 import { DailyLogPage, TimesheetsPage } from '@/modules/time';
 import { preferencesQuery as preferences } from '@/core/preferences/use-preferences';
@@ -100,6 +101,20 @@ const indexRoute = createRoute({
 });
 
 const onboardingRoute = createRoute({ getParentRoute: () => appLayout, path: '/onboarding', component: OnboardingPage });
+
+/* Where the browser extension sends you to connect (E6.3). Signed-in only; carries a PKCE challenge, never a secret. */
+const connectExtensionRoute = createRoute({
+  getParentRoute: () => appLayout,
+  path: '/extension/connect',
+  validateSearch: (search: Record<string, unknown>): { challenge?: string; name?: string } => ({
+    challenge: typeof search.challenge === 'string' ? search.challenge.slice(0, 64) : undefined,
+    name: typeof search.name === 'string' ? search.name.slice(0, 80) : undefined,
+  }),
+  component: function ConnectExtensionRoute() {
+    const { challenge, name } = connectExtensionRoute.useSearch();
+    return <ConnectExtensionPage challenge={challenge} name={name} />;
+  },
+});
 
 /* Platform admin console. Hidden from other users here; enforced by the API (404 for non-admins). */
 const adminRoute = createRoute({
@@ -354,7 +369,17 @@ const accessRoute = createRoute({
 
 /** Personal appearance settings; shown inside the workspace shell, saved per user (not per workspace). */
 const appearanceRoute = createRoute({ getParentRoute: () => workspaceRoute, path: '/appearance', component: AppearancePage });
-const securityRoute = createRoute({ getParentRoute: () => workspaceRoute, path: '/security', component: SecurityPage });
+const securityRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: '/security',
+  component: function SecurityRoute() {
+    return (
+      <SecurityPage>
+        <ExtensionConnectionsCard workspaceId={workspaceRoute.useParams().workspaceId} />
+      </SecurityPage>
+    );
+  },
+});
 
 const organizationsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
@@ -386,6 +411,7 @@ const routeTree = rootRoute.addChildren([
   appLayout.addChildren([
     indexRoute,
     onboardingRoute,
+    connectExtensionRoute,
     adminRoute.addChildren([adminIndexRoute, adminUsersRoute, adminWorkspacesRoute, adminAuditRoute]),
     workspaceRoute.addChildren([
       workspaceHomeRoute,

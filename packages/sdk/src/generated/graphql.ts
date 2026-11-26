@@ -1170,6 +1170,32 @@ export type DashboardQueryVariables = Exact<{
 
 export type DashboardQuery = { dashboard: { hoursOnlyMine: boolean, overdueAging: Array<number>, summary: { projects: number, openTasks: number, closedTasks: number, overdue: number, dueSoon: number, unassigned: number, minutesLogged: number, entries: number, minutesAllTime: number }, byStatus: Array<{ name: string, color: string, category: StatusCategory, count: number }>, byPriority: Array<{ priority: TaskPriority, open: number, overdue: number }>, dueForecast: Array<{ label: string, weekStart: string | null, count: number, kind: ForecastKind }>, createdVsClosed: Array<{ weekStart: string, created: number, closed: number }>, minutesPerDay: Array<{ day: string, minutes: number }>, minutesByPerson: Array<{ userId: string, name: string, minutes: number }>, minutesByProject: Array<{ spaceId: string | null, name: string, minutes: number }>, minutesByTask: Array<{ taskId: string, number: number, title: string, minutes: number }>, people: Array<{ userId: string | null, name: string, open: number, overdue: number, minutes: number }>, projects: Array<{ spaceId: string, name: string, status: SpaceStatus, open: number, closed: number, overdue: number, dueSoon: number, progress: number, minutes: number, assignees: number, updatedAt: string | null }>, phases: Array<{ id: string, number: number, title: string, assigneeName: string | null, dueDate: string | null, done: number, total: number, minutes: number, status: { name: string, color: string, category: StatusCategory } }>, overdueTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, dueSoonTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, recentlyUpdated: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }> } };
 
+export type ApiTokenFieldsFragment = { id: string, name: string, client: string, scopes: Array<string>, prefix: string | null, pending: boolean, createdAt: string, expiresAt: string, lastUsedAt: string | null };
+
+export type ApiTokensQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ApiTokensQuery = { apiTokens: Array<{ id: string, name: string, client: string, scopes: Array<string>, prefix: string | null, pending: boolean, createdAt: string, expiresAt: string, lastUsedAt: string | null }> };
+
+export type ApproveExtensionConnectionMutationVariables = Exact<{
+  workspaceId: string;
+  challenge: string;
+  name: string;
+}>;
+
+
+export type ApproveExtensionConnectionMutation = { approveExtensionConnection: { id: string, name: string, client: string, scopes: Array<string>, prefix: string | null, pending: boolean, createdAt: string, expiresAt: string, lastUsedAt: string | null } };
+
+export type RevokeApiTokenMutationVariables = Exact<{
+  workspaceId: string;
+  tokenId: string;
+}>;
+
+
+export type RevokeApiTokenMutation = { revokeApiToken: boolean };
+
 export type TaskAttachmentFieldsFragment = { id: string, taskId: string, fileName: string, contentType: string, size: number, isImage: boolean, thumbnailUrl: string | null, url: string, uploaderId: string | null, uploaderName: string | null, createdAt: string };
 
 export type TaskAttachmentsQueryVariables = Exact<{
@@ -3557,6 +3583,19 @@ export const DashboardTaskFieldsFragmentDoc = new TypedDocumentString(`
   updatedAt
 }
     `, {"fragmentName":"DashboardTaskFields"}) as unknown as TypedDocumentString<DashboardTaskFieldsFragment, unknown>;
+export const ApiTokenFieldsFragmentDoc = new TypedDocumentString(`
+    fragment ApiTokenFields on ApiToken {
+  id
+  name
+  client
+  scopes
+  prefix
+  pending
+  createdAt
+  expiresAt
+  lastUsedAt
+}
+    `, {"fragmentName":"ApiTokenFields"}) as unknown as TypedDocumentString<ApiTokenFieldsFragment, unknown>;
 export const TaskAttachmentFieldsFragmentDoc = new TypedDocumentString(`
     fragment TaskAttachmentFields on TaskAttachment {
   id
@@ -4781,6 +4820,49 @@ export const DashboardDocument = new TypedDocumentString(`
   dueDate
   updatedAt
 }`) as unknown as TypedDocumentString<DashboardQuery, DashboardQueryVariables>;
+export const ApiTokensDocument = new TypedDocumentString(`
+    query ApiTokens($workspaceId: ID!) {
+  apiTokens(workspaceId: $workspaceId) {
+    ...ApiTokenFields
+  }
+}
+    fragment ApiTokenFields on ApiToken {
+  id
+  name
+  client
+  scopes
+  prefix
+  pending
+  createdAt
+  expiresAt
+  lastUsedAt
+}`) as unknown as TypedDocumentString<ApiTokensQuery, ApiTokensQueryVariables>;
+export const ApproveExtensionConnectionDocument = new TypedDocumentString(`
+    mutation ApproveExtensionConnection($workspaceId: ID!, $challenge: String!, $name: String!) {
+  approveExtensionConnection(
+    workspaceId: $workspaceId
+    challenge: $challenge
+    name: $name
+  ) {
+    ...ApiTokenFields
+  }
+}
+    fragment ApiTokenFields on ApiToken {
+  id
+  name
+  client
+  scopes
+  prefix
+  pending
+  createdAt
+  expiresAt
+  lastUsedAt
+}`) as unknown as TypedDocumentString<ApproveExtensionConnectionMutation, ApproveExtensionConnectionMutationVariables>;
+export const RevokeApiTokenDocument = new TypedDocumentString(`
+    mutation RevokeApiToken($workspaceId: ID!, $tokenId: ID!) {
+  revokeApiToken(workspaceId: $workspaceId, tokenId: $tokenId)
+}
+    `) as unknown as TypedDocumentString<RevokeApiTokenMutation, RevokeApiTokenMutationVariables>;
 export const TaskAttachmentsDocument = new TypedDocumentString(`
     query TaskAttachments($workspaceId: ID!, $taskId: ID!) {
   taskAttachments(workspaceId: $workspaceId, taskId: $taskId) {

@@ -21,6 +21,7 @@ export * from './contracts/sprint.contract.js';
 export * from './contracts/document.contract.js';
 export * from './contracts/ai.contract.js';
 export * from './contracts/bug.contract.js';
+export * from './contracts/api-token.contract.js';
 export * from './domain/bug.js';
 export * from './domain/redaction.js';
 export * from './contracts/md2slides.contract.js';

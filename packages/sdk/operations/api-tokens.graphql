@@ -1,0 +1,27 @@
+fragment ApiTokenFields on ApiToken {
+  id
+  name
+  client
+  scopes
+  prefix
+  pending
+  createdAt
+  expiresAt
+  lastUsedAt
+}
+
+query ApiTokens($workspaceId: ID!) {
+  apiTokens(workspaceId: $workspaceId) {
+    ...ApiTokenFields
+  }
+}
+
+mutation ApproveExtensionConnection($workspaceId: ID!, $challenge: String!, $name: String!) {
+  approveExtensionConnection(workspaceId: $workspaceId, challenge: $challenge, name: $name) {
+    ...ApiTokenFields
+  }
+}
+
+mutation RevokeApiToken($workspaceId: ID!, $tokenId: ID!) {
+  revokeApiToken(workspaceId: $workspaceId, tokenId: $tokenId)
+}

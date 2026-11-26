@@ -1,0 +1,23 @@
+{
+  "name": "@taskflow/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TaskFlow bug reporter for Chrome and Firefox (Manifest V3): screenshot, annotate, record, and file with console and network diagnostics.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@taskflow/bug-capture": "workspace:*",
+    "@taskflow/shared-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "6.0.3",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

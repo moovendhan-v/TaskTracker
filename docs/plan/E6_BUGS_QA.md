@@ -23,7 +23,7 @@ everything below is written from scratch.
 ### 0. Ground work
 - [x] CI green again (test typecheck, generated-file lint warning, compose placeholder for MinIO)
 - [x] Rate-limit Redis connects lazily (the migration CLI no longer hangs when REDIS_URL is set)
-- [ ] API tokens with scopes (read / write) for the extension, SDK-less automation and MCP
+- [x] API tokens with scopes (bugs:read / bugs:write; tasks:* reserved for MCP): PKCE connect, hashed, 90-day expiry, revocable, audited
 
 ### 1. Bug reports (API)
 - [x] `bug_report` (1:1 with a `bug` task): kind (bug, suggestion, enhancement, feature request),
@@ -51,7 +51,8 @@ everything below is written from scratch.
       environment detection, element picker, annotation canvas, recording (MediaRecorder), redaction
 - [ ] rrweb session replay in `packages/bug-capture`
 - [ ] Embeddable SDK bundle (`<script>` + project key) posting to the public intake
-- [ ] Browser extension (Manifest V3, Chrome + Firefox) using the same capture core and an API token
+- [x] Browser extension (Manifest V3, Chrome + Firefox) using the same capture core and an API token (`apps/extension`):
+      connect, screenshot + annotate, element pick, tab recording, per-tab or always-on capture, duplicate warning; real-browser e2e
 
 ### 4. QA and test management
 - [ ] Test cases (steps, expected), suites, plans (sprint / release), runs with results
