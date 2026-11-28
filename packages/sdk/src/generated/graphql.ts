@@ -13,6 +13,12 @@ export type AddMemberInput = {
   roleId: string;
 };
 
+export type AddQaPlanCasesInput = {
+  allReady?: boolean | null | undefined;
+  caseIds?: Array<string> | null | undefined;
+  suiteId?: string | null | undefined;
+};
+
 export type AutomationActionInput = {
   audiences?: Array<NotifyAudience> | null | undefined;
   channelId?: string | null | undefined;
@@ -582,6 +588,16 @@ export type PullRequestState =
   | 'merged'
   | 'open';
 
+export type QaStepInput = {
+  action: string;
+  expected: string;
+};
+
+export type QaStepResultInput = {
+  actual: string;
+  result: string;
+};
+
 export type RealtimeEntityType =
   | 'automation'
   | 'chat_channel'
@@ -610,6 +626,18 @@ export type RealtimeEntityType =
   | 'task_checklist'
   | 'time_entry'
   | 'workspace';
+
+export type RecordQaRunInput = {
+  actual?: string | null | undefined;
+  build?: string | null | undefined;
+  caseId: string;
+  environment?: string | null | undefined;
+  /** File a bug when it fails (default true) */
+  fileBug?: boolean | null | undefined;
+  planId: string;
+  result: string;
+  stepResults?: Array<QaStepResultInput> | null | undefined;
+};
 
 export type ReportBugInput = {
   actual?: string | null | undefined;
@@ -713,6 +741,24 @@ export type SavePolicyInput = {
   description?: string | null | undefined;
   document: PolicyDocumentInput;
   name: string;
+};
+
+export type SaveQaCaseInput = {
+  coversTaskId?: string | null | undefined;
+  preconditions?: string | null | undefined;
+  priority?: string | null | undefined;
+  status?: string | null | undefined;
+  steps: Array<QaStepInput>;
+  suiteId?: string | null | undefined;
+  title: string;
+  type?: string | null | undefined;
+};
+
+export type SaveQaPlanInput = {
+  description?: string | null | undefined;
+  name: string;
+  release?: string | null | undefined;
+  sprintId?: string | null | undefined;
 };
 
 export type SaveViewInput = {
@@ -3039,6 +3085,162 @@ export type ResetPreferencesMutationVariables = Exact<{ [key: string]: never; }>
 
 export type ResetPreferencesMutation = { resetPreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
+export type QaCaseFieldsFragment = { id: string, spaceId: string, suiteId: string | null, number: number, title: string, preconditions: string, priority: string, type: string, status: string, coversTaskId: string | null, coversTaskTitle: string | null, lastResult: string | null, lastRunAt: string | null, updatedAt: string, steps: Array<{ action: string, expected: string }> };
+
+export type QaPlanFieldsFragment = { id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } };
+
+export type QaPlanCaseFieldsFragment = { caseId: string, number: number, title: string, priority: string, type: string, suiteName: string | null, assigneeId: string | null, result: string | null, runId: string | null, executedAt: string | null, executedByName: string | null, bugTaskId: string | null, bugNumber: number | null, bugQaState: string | null, runs: number };
+
+export type QaSuitesQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type QaSuitesQuery = { qaSuites: Array<{ id: string, spaceId: string, name: string, description: string, caseCount: number }> };
+
+export type SaveQaSuiteMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  suiteId?: string | null | undefined;
+  name: string;
+  description?: string | null | undefined;
+}>;
+
+
+export type SaveQaSuiteMutation = { saveQaSuite: { id: string, spaceId: string, name: string, description: string, caseCount: number } };
+
+export type DeleteQaSuiteMutationVariables = Exact<{
+  workspaceId: string;
+  suiteId: string;
+}>;
+
+
+export type DeleteQaSuiteMutation = { deleteQaSuite: boolean };
+
+export type QaCasesQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  suiteId?: string | null | undefined;
+  status?: string | null | undefined;
+  search?: string | null | undefined;
+}>;
+
+
+export type QaCasesQuery = { qaCases: Array<{ id: string, spaceId: string, suiteId: string | null, number: number, title: string, preconditions: string, priority: string, type: string, status: string, coversTaskId: string | null, coversTaskTitle: string | null, lastResult: string | null, lastRunAt: string | null, updatedAt: string, steps: Array<{ action: string, expected: string }> }> };
+
+export type QaCaseRunsQueryVariables = Exact<{
+  workspaceId: string;
+  caseId: string;
+}>;
+
+
+export type QaCaseRunsQuery = { qaCaseRuns: Array<{ id: string, planId: string, planName: string, caseId: string, result: string, actual: string, environment: string | null, build: string | null, bugTaskId: string | null, bugNumber: number | null, retestOf: string | null, executedByName: string | null, executedAt: string, stepResults: Array<{ result: string, actual: string }> }> };
+
+export type SaveQaCaseMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  caseId?: string | null | undefined;
+  input: SaveQaCaseInput;
+}>;
+
+
+export type SaveQaCaseMutation = { saveQaCase: { id: string, spaceId: string, suiteId: string | null, number: number, title: string, preconditions: string, priority: string, type: string, status: string, coversTaskId: string | null, coversTaskTitle: string | null, lastResult: string | null, lastRunAt: string | null, updatedAt: string, steps: Array<{ action: string, expected: string }> } };
+
+export type DeleteQaCaseMutationVariables = Exact<{
+  workspaceId: string;
+  caseId: string;
+}>;
+
+
+export type DeleteQaCaseMutation = { deleteQaCase: boolean };
+
+export type QaPlansQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type QaPlansQuery = { qaPlans: Array<{ id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } }> };
+
+export type QaPlanCasesQueryVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+}>;
+
+
+export type QaPlanCasesQuery = { qaPlanCases: Array<{ caseId: string, number: number, title: string, priority: string, type: string, suiteName: string | null, assigneeId: string | null, result: string | null, runId: string | null, executedAt: string | null, executedByName: string | null, bugTaskId: string | null, bugNumber: number | null, bugQaState: string | null, runs: number }> };
+
+export type SaveQaPlanMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  planId?: string | null | undefined;
+  input: SaveQaPlanInput;
+}>;
+
+
+export type SaveQaPlanMutation = { saveQaPlan: { id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } } };
+
+export type DeleteQaPlanMutationVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+}>;
+
+
+export type DeleteQaPlanMutation = { deleteQaPlan: boolean };
+
+export type AddQaPlanCasesMutationVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+  input: AddQaPlanCasesInput;
+}>;
+
+
+export type AddQaPlanCasesMutation = { addQaPlanCases: number };
+
+export type RemoveQaPlanCaseMutationVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+  caseId: string;
+}>;
+
+
+export type RemoveQaPlanCaseMutation = { removeQaPlanCase: boolean };
+
+export type RecordQaRunMutationVariables = Exact<{
+  workspaceId: string;
+  input: RecordQaRunInput;
+}>;
+
+
+export type RecordQaRunMutation = { recordQaRun: { caseId: string, number: number, title: string, priority: string, type: string, suiteName: string | null, assigneeId: string | null, result: string | null, runId: string | null, executedAt: string | null, executedByName: string | null, bugTaskId: string | null, bugNumber: number | null, bugQaState: string | null, runs: number } };
+
+export type DecideQaPlanMutationVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+  decision: string;
+  note?: string | null | undefined;
+}>;
+
+
+export type DecideQaPlanMutation = { decideQaPlan: { id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } } };
+
+export type QaReadinessQueryVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+}>;
+
+
+export type QaReadinessQuery = { qaReadiness: { ready: boolean, checks: Array<{ key: string, ok: boolean, detail: string }>, openBugs: Array<{ taskId: string, number: number, title: string, severity: string, qaState: string }>, plan: { id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } } } };
+
+export type QaCoverageQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type QaCoverageQuery = { qaCoverage: { features: number, coveredFeatures: number, cases: number, readyCases: number, neverRun: number, uncovered: Array<{ taskId: string, number: number, title: string }>, flaky: Array<{ caseId: string, number: number, title: string }> } };
+
 export type ResourceSchemaQueryVariables = Exact<{
   workspaceId: string;
   resource: string;
@@ -4474,6 +4676,70 @@ export const OrganizationSsoFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"OrganizationSsoFields"}) as unknown as TypedDocumentString<OrganizationSsoFieldsFragment, unknown>;
+export const QaCaseFieldsFragmentDoc = new TypedDocumentString(`
+    fragment QaCaseFields on QaCase {
+  id
+  spaceId
+  suiteId
+  number
+  title
+  preconditions
+  steps {
+    action
+    expected
+  }
+  priority
+  type
+  status
+  coversTaskId
+  coversTaskTitle
+  lastResult
+  lastRunAt
+  updatedAt
+}
+    `, {"fragmentName":"QaCaseFields"}) as unknown as TypedDocumentString<QaCaseFieldsFragment, unknown>;
+export const QaPlanFieldsFragmentDoc = new TypedDocumentString(`
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}
+    `, {"fragmentName":"QaPlanFields"}) as unknown as TypedDocumentString<QaPlanFieldsFragment, unknown>;
+export const QaPlanCaseFieldsFragmentDoc = new TypedDocumentString(`
+    fragment QaPlanCaseFields on QaPlanCase {
+  caseId
+  number
+  title
+  priority
+  type
+  suiteName
+  assigneeId
+  result
+  runId
+  executedAt
+  executedByName
+  bugTaskId
+  bugNumber
+  bugQaState
+  runs
+}
+    `, {"fragmentName":"QaPlanCaseFields"}) as unknown as TypedDocumentString<QaPlanCaseFieldsFragment, unknown>;
 export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
     fragment TemplateFields on ProjectTemplate {
   id
@@ -9200,6 +9466,345 @@ export const ResetPreferencesDocument = new TypedDocumentString(`
     pinned
   }
 }`) as unknown as TypedDocumentString<ResetPreferencesMutation, ResetPreferencesMutationVariables>;
+export const QaSuitesDocument = new TypedDocumentString(`
+    query QaSuites($workspaceId: ID!, $spaceId: ID!) {
+  qaSuites(workspaceId: $workspaceId, spaceId: $spaceId) {
+    id
+    spaceId
+    name
+    description
+    caseCount
+  }
+}
+    `) as unknown as TypedDocumentString<QaSuitesQuery, QaSuitesQueryVariables>;
+export const SaveQaSuiteDocument = new TypedDocumentString(`
+    mutation SaveQaSuite($workspaceId: ID!, $spaceId: ID!, $suiteId: ID, $name: String!, $description: String) {
+  saveQaSuite(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    suiteId: $suiteId
+    name: $name
+    description: $description
+  ) {
+    id
+    spaceId
+    name
+    description
+    caseCount
+  }
+}
+    `) as unknown as TypedDocumentString<SaveQaSuiteMutation, SaveQaSuiteMutationVariables>;
+export const DeleteQaSuiteDocument = new TypedDocumentString(`
+    mutation DeleteQaSuite($workspaceId: ID!, $suiteId: ID!) {
+  deleteQaSuite(workspaceId: $workspaceId, suiteId: $suiteId)
+}
+    `) as unknown as TypedDocumentString<DeleteQaSuiteMutation, DeleteQaSuiteMutationVariables>;
+export const QaCasesDocument = new TypedDocumentString(`
+    query QaCases($workspaceId: ID!, $spaceId: ID!, $suiteId: ID, $status: String, $search: String) {
+  qaCases(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    suiteId: $suiteId
+    status: $status
+    search: $search
+  ) {
+    ...QaCaseFields
+  }
+}
+    fragment QaCaseFields on QaCase {
+  id
+  spaceId
+  suiteId
+  number
+  title
+  preconditions
+  steps {
+    action
+    expected
+  }
+  priority
+  type
+  status
+  coversTaskId
+  coversTaskTitle
+  lastResult
+  lastRunAt
+  updatedAt
+}`) as unknown as TypedDocumentString<QaCasesQuery, QaCasesQueryVariables>;
+export const QaCaseRunsDocument = new TypedDocumentString(`
+    query QaCaseRuns($workspaceId: ID!, $caseId: ID!) {
+  qaCaseRuns(workspaceId: $workspaceId, caseId: $caseId) {
+    id
+    planId
+    planName
+    caseId
+    result
+    stepResults {
+      result
+      actual
+    }
+    actual
+    environment
+    build
+    bugTaskId
+    bugNumber
+    retestOf
+    executedByName
+    executedAt
+  }
+}
+    `) as unknown as TypedDocumentString<QaCaseRunsQuery, QaCaseRunsQueryVariables>;
+export const SaveQaCaseDocument = new TypedDocumentString(`
+    mutation SaveQaCase($workspaceId: ID!, $spaceId: ID!, $caseId: ID, $input: SaveQaCaseInput!) {
+  saveQaCase(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    caseId: $caseId
+    input: $input
+  ) {
+    ...QaCaseFields
+  }
+}
+    fragment QaCaseFields on QaCase {
+  id
+  spaceId
+  suiteId
+  number
+  title
+  preconditions
+  steps {
+    action
+    expected
+  }
+  priority
+  type
+  status
+  coversTaskId
+  coversTaskTitle
+  lastResult
+  lastRunAt
+  updatedAt
+}`) as unknown as TypedDocumentString<SaveQaCaseMutation, SaveQaCaseMutationVariables>;
+export const DeleteQaCaseDocument = new TypedDocumentString(`
+    mutation DeleteQaCase($workspaceId: ID!, $caseId: ID!) {
+  deleteQaCase(workspaceId: $workspaceId, caseId: $caseId)
+}
+    `) as unknown as TypedDocumentString<DeleteQaCaseMutation, DeleteQaCaseMutationVariables>;
+export const QaPlansDocument = new TypedDocumentString(`
+    query QaPlans($workspaceId: ID!, $spaceId: ID!) {
+  qaPlans(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...QaPlanFields
+  }
+}
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}`) as unknown as TypedDocumentString<QaPlansQuery, QaPlansQueryVariables>;
+export const QaPlanCasesDocument = new TypedDocumentString(`
+    query QaPlanCases($workspaceId: ID!, $planId: ID!) {
+  qaPlanCases(workspaceId: $workspaceId, planId: $planId) {
+    ...QaPlanCaseFields
+  }
+}
+    fragment QaPlanCaseFields on QaPlanCase {
+  caseId
+  number
+  title
+  priority
+  type
+  suiteName
+  assigneeId
+  result
+  runId
+  executedAt
+  executedByName
+  bugTaskId
+  bugNumber
+  bugQaState
+  runs
+}`) as unknown as TypedDocumentString<QaPlanCasesQuery, QaPlanCasesQueryVariables>;
+export const SaveQaPlanDocument = new TypedDocumentString(`
+    mutation SaveQaPlan($workspaceId: ID!, $spaceId: ID!, $planId: ID, $input: SaveQaPlanInput!) {
+  saveQaPlan(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    planId: $planId
+    input: $input
+  ) {
+    ...QaPlanFields
+  }
+}
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}`) as unknown as TypedDocumentString<SaveQaPlanMutation, SaveQaPlanMutationVariables>;
+export const DeleteQaPlanDocument = new TypedDocumentString(`
+    mutation DeleteQaPlan($workspaceId: ID!, $planId: ID!) {
+  deleteQaPlan(workspaceId: $workspaceId, planId: $planId)
+}
+    `) as unknown as TypedDocumentString<DeleteQaPlanMutation, DeleteQaPlanMutationVariables>;
+export const AddQaPlanCasesDocument = new TypedDocumentString(`
+    mutation AddQaPlanCases($workspaceId: ID!, $planId: ID!, $input: AddQaPlanCasesInput!) {
+  addQaPlanCases(workspaceId: $workspaceId, planId: $planId, input: $input)
+}
+    `) as unknown as TypedDocumentString<AddQaPlanCasesMutation, AddQaPlanCasesMutationVariables>;
+export const RemoveQaPlanCaseDocument = new TypedDocumentString(`
+    mutation RemoveQaPlanCase($workspaceId: ID!, $planId: ID!, $caseId: ID!) {
+  removeQaPlanCase(workspaceId: $workspaceId, planId: $planId, caseId: $caseId)
+}
+    `) as unknown as TypedDocumentString<RemoveQaPlanCaseMutation, RemoveQaPlanCaseMutationVariables>;
+export const RecordQaRunDocument = new TypedDocumentString(`
+    mutation RecordQaRun($workspaceId: ID!, $input: RecordQaRunInput!) {
+  recordQaRun(workspaceId: $workspaceId, input: $input) {
+    ...QaPlanCaseFields
+  }
+}
+    fragment QaPlanCaseFields on QaPlanCase {
+  caseId
+  number
+  title
+  priority
+  type
+  suiteName
+  assigneeId
+  result
+  runId
+  executedAt
+  executedByName
+  bugTaskId
+  bugNumber
+  bugQaState
+  runs
+}`) as unknown as TypedDocumentString<RecordQaRunMutation, RecordQaRunMutationVariables>;
+export const DecideQaPlanDocument = new TypedDocumentString(`
+    mutation DecideQaPlan($workspaceId: ID!, $planId: ID!, $decision: String!, $note: String) {
+  decideQaPlan(
+    workspaceId: $workspaceId
+    planId: $planId
+    decision: $decision
+    note: $note
+  ) {
+    ...QaPlanFields
+  }
+}
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}`) as unknown as TypedDocumentString<DecideQaPlanMutation, DecideQaPlanMutationVariables>;
+export const QaReadinessDocument = new TypedDocumentString(`
+    query QaReadiness($workspaceId: ID!, $planId: ID!) {
+  qaReadiness(workspaceId: $workspaceId, planId: $planId) {
+    ready
+    checks {
+      key
+      ok
+      detail
+    }
+    openBugs {
+      taskId
+      number
+      title
+      severity
+      qaState
+    }
+    plan {
+      ...QaPlanFields
+    }
+  }
+}
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}`) as unknown as TypedDocumentString<QaReadinessQuery, QaReadinessQueryVariables>;
+export const QaCoverageDocument = new TypedDocumentString(`
+    query QaCoverage($workspaceId: ID!, $spaceId: ID!) {
+  qaCoverage(workspaceId: $workspaceId, spaceId: $spaceId) {
+    features
+    coveredFeatures
+    uncovered {
+      taskId
+      number
+      title
+    }
+    cases
+    readyCases
+    neverRun
+    flaky {
+      caseId
+      number
+      title
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<QaCoverageQuery, QaCoverageQueryVariables>;
 export const ResourceSchemaDocument = new TypedDocumentString(`
     query ResourceSchema($workspaceId: ID!, $resource: String!) {
   resourceSchema(workspaceId: $workspaceId, resource: $resource) {

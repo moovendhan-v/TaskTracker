@@ -74,6 +74,12 @@ type AddMemberResult {
   message: String!
 }
 
+input AddQaPlanCasesInput {
+  allReady: Boolean
+  caseIds: [ID!]
+  suiteId: ID
+}
+
 type AdminUser {
   createdAt: String!
   email: String!
@@ -1824,6 +1830,9 @@ type Mutation {
   addMember(input: AddMemberInput!, workspaceId: ID!): AddMemberResult!
   addOrganizationMember(email: String!, organizationId: ID!, role: String!): [OrganizationMember!]!
 
+  """Adds cases to a plan; returns how many were new"""
+  addQaPlanCases(input: AddQaPlanCasesInput!, planId: ID!, workspaceId: ID!): Int!
+
   """Needs workspace.manage here and owner or admin in the organization"""
   addWorkspaceToOrganization(organizationId: ID!, workspaceId: ID!): Boolean!
 
@@ -1832,6 +1841,7 @@ type Mutation {
   """
   approveExtensionConnection(challenge: String!, name: String!, workspaceId: ID!): ApiToken!
   archiveChatChannel(archived: Boolean! = true, channelId: ID!, workspaceId: ID!): ChatChannel!
+  assignQaPlanCase(assigneeId: String, caseId: ID!, planId: ID!, workspaceId: ID!): Boolean!
   attachRolePolicy(
     """managed:<key> or a custom policy id"""
     policy: String!
@@ -1940,6 +1950,9 @@ type Mutation {
 
   """Approvers cannot decide on their own requests"""
   decideLeaveRequest(input: DecideLeaveInput!, requestId: ID!, workspaceId: ID!): LeaveRequest!
+
+  """QA sign-off: approve or reject a plan (or reopen it)"""
+  decideQaPlan(decision: String!, note: String, planId: ID!, workspaceId: ID!): QaPlan!
   deleteAutomation(ruleId: ID!, workspaceId: ID!): Boolean!
   deleteChatMessage(messageId: ID!, workspaceId: ID!): Boolean!
   deleteChecklistItem(itemId: ID!, workspaceId: ID!): Boolean!
@@ -1966,6 +1979,9 @@ type Mutation {
   """Owners only; its workspaces stay, on their own"""
   deleteOrganization(organizationId: ID!): Boolean!
   deletePolicy(policyId: ID!, workspaceId: ID!): Boolean!
+  deleteQaCase(caseId: ID!, workspaceId: ID!): Boolean!
+  deleteQaPlan(planId: ID!, workspaceId: ID!): Boolean!
+  deleteQaSuite(suiteId: ID!, workspaceId: ID!): Boolean!
   deleteRole(roleId: ID!, workspaceId: ID!): Boolean!
   deleteSpace(spaceId: ID!, workspaceId: ID!): Boolean!
   deleteSprint(sprintId: ID!, workspaceId: ID!): Boolean!
@@ -2099,6 +2115,9 @@ type Mutation {
 
   """Finds or starts the direct message between you and these people"""
   openDirectMessage(userIds: [ID!]!, workspaceId: ID!): ChatChannel!
+
+  """Records a result; a failure files a bug, a passing retest verifies it"""
+  recordQaRun(input: RecordQaRunInput!, workspaceId: ID!): QaPlanCase!
   relateTasks(kind: TaskRelationKind!, relatedTaskId: ID!, taskId: ID!, workspaceId: ID!): [TaskRelation!]!
   removeChatChannelMember(channelId: ID!, userId: ID!, workspaceId: ID!): Boolean!
 
@@ -2111,6 +2130,7 @@ type Mutation {
   """Owners and admins remove people; anyone can remove themselves (leave)"""
   removeOrganizationMember(organizationId: ID!, userId: String!): [OrganizationMember!]!
   removeOrganizationSso(organizationId: ID!): Boolean!
+  removeQaPlanCase(caseId: ID!, planId: ID!, workspaceId: ID!): Boolean!
   removeWorkspaceFromOrganization(workspaceId: ID!): Boolean!
   renameOrganization(name: String!, organizationId: ID!): Organization!
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
@@ -2179,6 +2199,13 @@ type Mutation {
 
   """Saves your layout. Fails with CONFLICT if it changed since baseVersion"""
   saveLayout(input: SaveLayoutInput!, workspaceId: ID!): DashboardLayout!
+
+  """Creates (no caseId) or updates a test case"""
+  saveQaCase(caseId: ID, input: SaveQaCaseInput!, spaceId: ID!, workspaceId: ID!): QaCase!
+
+  """Creates (no planId) or updates a test plan"""
+  saveQaPlan(input: SaveQaPlanInput!, planId: ID, spaceId: ID!, workspaceId: ID!): QaPlan!
+  saveQaSuite(description: String, name: String!, spaceId: ID!, suiteId: ID, workspaceId: ID!): QaSuite!
   saveSpaceAsTemplate(input: SaveAsTemplateInput!, spaceId: ID!, workspaceId: ID!): ProjectTemplate!
 
   """Saves how a table is arranged (columns, widths, paging)"""
@@ -2602,6 +2629,158 @@ enum PullRequestState {
   open
 }
 
+"""A test case: preconditions and steps, each with its expected result"""
+type QaCase {
+  coversTaskId: ID
+  coversTaskTitle: String
+  id: ID!
+  lastResult: String
+  lastRunAt: String
+  number: Int!
+  preconditions: String!
+  priority: String!
+  spaceId: ID!
+  status: String!
+  steps: [QaStep!]!
+  suiteId: ID
+  title: String!
+  type: String!
+  updatedAt: String!
+}
+
+type QaCaseRef {
+  caseId: ID!
+  number: Int!
+  title: String!
+}
+
+type QaCoverage {
+  cases: Int!
+  coveredFeatures: Int!
+  features: Int!
+  flaky: [QaCaseRef!]!
+  neverRun: Int!
+  readyCases: Int!
+  uncovered: [QaTaskRef!]!
+}
+
+type QaOpenBug {
+  number: Int!
+  qaState: String!
+  severity: String!
+  taskId: ID!
+  title: String!
+}
+
+"""What to test for a sprint or a release"""
+type QaPlan {
+  counts: QaPlanCounts!
+  createdAt: String!
+  decidedAt: String
+  decidedByName: String
+  decisionNote: String
+  description: String!
+  id: ID!
+  name: String!
+  release: String
+  spaceId: ID!
+  sprintId: ID
+
+  """open, approved or rejected"""
+  status: String!
+}
+
+type QaPlanCase {
+  assigneeId: ID
+  bugNumber: Int
+  bugQaState: String
+  bugTaskId: ID
+  caseId: ID!
+  executedAt: String
+  executedByName: String
+  number: Int!
+  priority: String!
+  result: String
+  runId: ID
+  runs: Int!
+  suiteName: String
+  title: String!
+  type: String!
+}
+
+type QaPlanCounts {
+  blocked: Int!
+  failed: Int!
+  notRun: Int!
+  passed: Int!
+  skipped: Int!
+  total: Int!
+}
+
+type QaReadiness {
+  checks: [QaReadinessCheck!]!
+  openBugs: [QaOpenBug!]!
+  plan: QaPlan!
+  ready: Boolean!
+}
+
+type QaReadinessCheck {
+  detail: String!
+  key: String!
+  ok: Boolean!
+}
+
+type QaRun {
+  actual: String!
+  bugNumber: Int
+  bugTaskId: ID
+  build: String
+  caseId: ID!
+  environment: String
+  executedAt: String!
+  executedByName: String
+  id: ID!
+  planId: ID!
+  planName: String!
+  result: String!
+  retestOf: ID
+  stepResults: [QaStepResult!]!
+}
+
+type QaStep {
+  action: String!
+  expected: String!
+}
+
+input QaStepInput {
+  action: String!
+  expected: String!
+}
+
+type QaStepResult {
+  actual: String!
+  result: String!
+}
+
+input QaStepResultInput {
+  actual: String!
+  result: String!
+}
+
+type QaSuite {
+  caseCount: Int!
+  description: String!
+  id: ID!
+  name: String!
+  spaceId: ID!
+}
+
+type QaTaskRef {
+  number: Int!
+  taskId: ID!
+  title: String!
+}
+
 type Query {
   """Time-limited grants still running, soonest to end first"""
   accessGrants(workspaceId: ID!): [AccessGrant!]!
@@ -2862,6 +3041,23 @@ type Query {
 
   """Data fields whose visibility policies control"""
   protectedFields(workspaceId: ID!): [FieldDefinition!]!
+  qaCase(caseId: ID!, workspaceId: ID!): QaCase!
+
+  """Every run of a case, newest first"""
+  qaCaseRuns(caseId: ID!, workspaceId: ID!): [QaRun!]!
+  qaCases(search: String, spaceId: ID!, status: String, suiteId: ID, workspaceId: ID!): [QaCase!]!
+
+  """How much of the project the test cases cover"""
+  qaCoverage(spaceId: ID!, workspaceId: ID!): QaCoverage!
+  qaPlan(planId: ID!, workspaceId: ID!): QaPlan!
+
+  """The cases in a plan with their current result"""
+  qaPlanCases(planId: ID!, workspaceId: ID!): [QaPlanCase!]!
+  qaPlans(spaceId: ID!, workspaceId: ID!): [QaPlan!]!
+
+  """Release readiness of a plan"""
+  qaReadiness(planId: ID!, workspaceId: ID!): QaReadiness!
+  qaSuites(spaceId: ID!, workspaceId: ID!): [QaSuite!]!
 
   """Resources the caller can list with resourceSchema"""
   resourceNames(workspaceId: ID!): [String!]!
@@ -3051,6 +3247,19 @@ enum RealtimeEntityType {
   workspace
 }
 
+input RecordQaRunInput {
+  actual: String
+  build: String
+  caseId: ID!
+  environment: String
+
+  """File a bug when it fails (default true)"""
+  fileBug: Boolean
+  planId: ID!
+  result: String!
+  stepResults: [QaStepResultInput!]
+}
+
 type RelatedTask {
   id: ID!
   number: Int!
@@ -3222,6 +3431,24 @@ input SavePolicyInput {
   description: String
   document: PolicyDocumentInput!
   name: String!
+}
+
+input SaveQaCaseInput {
+  coversTaskId: ID
+  preconditions: String
+  priority: String
+  status: String
+  steps: [QaStepInput!]!
+  suiteId: ID
+  title: String!
+  type: String
+}
+
+input SaveQaPlanInput {
+  description: String
+  name: String!
+  release: String
+  sprintId: ID
 }
 
 input SaveViewInput {

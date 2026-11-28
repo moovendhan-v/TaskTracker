@@ -8,6 +8,7 @@ import { AiModule } from './core/ai/ai.module.js';
 import { AiFeaturesModule } from './modules/ai/ai.module.js';
 import { ApiTokensModule } from './modules/api-tokens/api-tokens.module.js';
 import { BugIntakeModule } from './modules/bug-intake/bug-intake.module.js';
+import { QaModule } from './modules/qa/qa.module.js';
 import { BugsModule } from './modules/bugs/bugs.module.js';
 import { AccessModule } from './core/access/access.module.js';
 import { DataScopeInterceptor } from './core/access/data-scope.interceptor.js';
@@ -119,6 +120,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     BugsModule,
     ApiTokensModule,
     BugIntakeModule,
+    QaModule,
     ChatModule,
     AttachmentsModule,
     ChecklistsModule,
