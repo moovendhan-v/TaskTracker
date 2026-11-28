@@ -22,16 +22,21 @@ export function applySecurity(app: NestExpressApplication, env: Env): void {
     res.setHeader('Permissions-Policy', PERMISSIONS_POLICY);
     next();
   });
-  // The public intake (E6.3) is called from customers' own sites by the feedback widget: any
-  // origin, never with credentials (it carries no cookies; its own origin allowlist, CAPTCHA and
-  // rate limits apply in the controller). Everything else: only TaskFlow's own origins.
+  // The public intake (E6.3), browser extension API (/api/extension/*), and signed upload URLs
+  // (/api/storage/uploads/*) are called cross-origin without cookies (`credentials: 'omit'`); they
+  // authenticate with their own keys/tokens and enforce their own rate limits. Everything else:
+  // only TaskFlow's own origins.
   app.enableCors((request: Request, callback: (error: Error | null, options: CorsOptions) => void) => {
-    const publicIntake = (request.url ?? '').startsWith(`/${API_PREFIX}/public/`);
-    callback(
-      null,
-      publicIntake
-        ? { origin: '*', credentials: false, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'], maxAge: 600 }
-        : { origin: env.CORS_ORIGINS, credentials: true },
-    );
+    const url = request.url ?? '';
+    if (url.startsWith(`/${API_PREFIX}/public/`)) {
+      return callback(null, { origin: '*', credentials: false, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'], maxAge: 600 });
+    }
+    if (url.startsWith(`/${API_PREFIX}/extension/`)) {
+      return callback(null, { origin: '*', credentials: false, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type', 'Authorization'], maxAge: 600 });
+    }
+    if (url.startsWith(`/${API_PREFIX}/storage/uploads/`)) {
+      return callback(null, { origin: '*', credentials: false, methods: ['PUT'], allowedHeaders: ['Content-Type'], maxAge: 600 });
+    }
+    callback(null, { origin: env.CORS_ORIGINS, credentials: true });
   });
 }

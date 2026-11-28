@@ -32,7 +32,9 @@ async function showConnect(error?: string): Promise<void> {
     const origin = normalizeServer(server.value);
     if (!origin) return showConnect('Enter your TaskFlow address, starting with https://');
     // Asked here (a click) because browsers only allow permission prompts from a user gesture.
-    if (!(await ext.permissions.request({ origins: [`${origin}/*`] }))) return showConnect('The extension needs permission to talk to your TaskFlow.');
+    // WebExtension match patterns forbid ports (e.g. localhost:5180), so strip the port.
+    const { protocol, hostname } = new URL(origin);
+    if (!(await ext.permissions.request({ origins: [`${protocol}//${hostname}/*`] }))) return showConnect('The extension needs permission to talk to your TaskFlow.');
     const result = await send({ type: 'connect', server: origin });
     if (!result.ok) return showConnect(result.error ?? 'Could not start connecting');
     await showWaiting(origin);

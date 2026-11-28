@@ -85,6 +85,8 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
+    // Let the API's own CORS middleware handle /api/* preflights instead of Vite intercepting OPTIONS.
+    cors: false,
     watch: {
       usePolling: true,
       interval: 100,
