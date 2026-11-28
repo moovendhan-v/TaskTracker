@@ -53,6 +53,12 @@ import { DocTemplates1730130000000 } from './1730130000000-doc-templates.js';
 import { GithubIssueLabelsAssignee1730140000000 } from './1730140000000-github-issue-labels-assignee.js';
 import { AutomationFireOnce1730150000000 } from './1730150000000-automation-fire-once.js';
 import { AiSettingsUsage1730160000000 } from './1730160000000-ai-settings-usage.js';
+import { RevokeRuntimeMigrationsTable1730170000000 } from './1730170000000-revoke-runtime-migrations-table.js';
+import { AgentMarking1730220000000 } from './1730220000000-agent-marking.js';
+import { QaTestManagement1730210000000 } from './1730210000000-qa-test-management.js';
+import { BugIntakeShares1730200000000 } from './1730200000000-bug-intake-shares.js';
+import { ApiTokens1730190000000 } from './1730190000000-api-tokens.js';
+import { BugReports1730180000000 } from './1730180000000-bug-reports.js';
 import { GithubConflicts1729950000000 } from './1729950000000-github-conflicts.js';
 import { ChatRetention1729940000000 } from './1729940000000-chat-retention.js';
 import { DashboardTeams1729930000000 } from './1729930000000-dashboard-teams.js';
@@ -127,4 +133,10 @@ export const MIGRATIONS = [
   GithubIssueLabelsAssignee1730140000000,
   AutomationFireOnce1730150000000,
   AiSettingsUsage1730160000000,
+  RevokeRuntimeMigrationsTable1730170000000,
+  BugReports1730180000000,
+  ApiTokens1730190000000,
+  BugIntakeShares1730200000000,
+  QaTestManagement1730210000000,
+  AgentMarking1730220000000,
 ];

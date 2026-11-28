@@ -1,0 +1,84 @@
+fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}
+
+query Bugs($workspaceId: ID!, $spaceId: ID!, $filter: BugFilterInput) {
+  bugs(workspaceId: $workspaceId, spaceId: $spaceId, filter: $filter) {
+    ...BugFields
+  }
+}
+
+query Bug($workspaceId: ID!, $taskId: ID!) {
+  bug(workspaceId: $workspaceId, taskId: $taskId) {
+    ...BugFields
+  }
+}
+
+query BugCapture($workspaceId: ID!, $taskId: ID!) {
+  bugCapture(workspaceId: $workspaceId, taskId: $taskId)
+}
+
+query SimilarBugs($workspaceId: ID!, $spaceId: ID!, $title: String!, $excludeTaskId: ID) {
+  similarBugs(workspaceId: $workspaceId, spaceId: $spaceId, title: $title, excludeTaskId: $excludeTaskId) {
+    taskId
+    number
+    title
+    qaState
+    score
+  }
+}
+
+mutation ReportBug($workspaceId: ID!, $input: ReportBugInput!) {
+  reportBug(workspaceId: $workspaceId, input: $input) {
+    ...BugFields
+  }
+}
+
+mutation UpdateBug($workspaceId: ID!, $taskId: ID!, $input: UpdateBugInput!) {
+  updateBug(workspaceId: $workspaceId, taskId: $taskId, input: $input) {
+    ...BugFields
+  }
+}
+
+mutation SetBugQaState($workspaceId: ID!, $taskId: ID!, $state: String!) {
+  setBugQaState(workspaceId: $workspaceId, taskId: $taskId, state: $state) {
+    ...BugFields
+  }
+}
+
+mutation MarkBugDuplicate($workspaceId: ID!, $taskId: ID!, $ofTaskId: ID!) {
+  markBugDuplicate(workspaceId: $workspaceId, taskId: $taskId, ofTaskId: $ofTaskId) {
+    ...BugFields
+  }
+}

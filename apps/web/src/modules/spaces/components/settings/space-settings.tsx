@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { FeedbackSettingsCard } from '@/modules/bugs';
 import { SaveAsTemplate } from '@/modules/templates';
 import { usePermissions } from '@/modules/workspaces';
 import { useSpaceMutations } from '../../hooks/use-spaces';
@@ -48,6 +49,7 @@ export function SpaceSettings({ workspaceId, space }: SpaceSettingsProps) {
           <StatusSettings workspaceId={workspaceId} spaceId={space.id} canManage={canManage} />
         </CardContent>
       </Card>
+      {canManage ? <FeedbackSettingsCard workspaceId={workspaceId} spaceId={space.id} spaceName={space.name} /> : null}
       <Card>
         <CardHeader>
           <CardTitle>Custom fields</CardTitle>

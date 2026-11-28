@@ -1,3 +1,4 @@
+import { rateLimitRedis, redisAuthRateLimit } from '../rate-limit/redis-rate-limit.js';
 import { betterAuth } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { passkey } from '@better-auth/passkey';
@@ -121,6 +122,8 @@ export function createAuth(env: Env, pool: Pool, mailer: Mailer, { validateSchem
     },
     rateLimit: {
       enabled: true,
+      // Counted in Redis when it's set (required in production), so limits hold across API instances.
+      ...(env.REDIS_URL ? { customStorage: redisAuthRateLimit(rateLimitRedis(env.REDIS_URL)) } : {}),
       window: 60,
       max: 100,
       customRules: {

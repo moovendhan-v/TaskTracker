@@ -1,6 +1,6 @@
-import { CalendarDaysIcon, ChartGanttIcon, ClockIcon, KanbanIcon, LayoutDashboardIcon, ListIcon, RocketIcon, SettingsIcon, Table2Icon, UsersIcon, UsersRoundIcon, ZapIcon, type LucideIcon } from 'lucide-react';
+import { BugIcon, CalendarDaysIcon, ClipboardCheckIcon, ChartGanttIcon, ClockIcon, KanbanIcon, LayoutDashboardIcon, ListIcon, RocketIcon, SettingsIcon, Table2Icon, UsersIcon, UsersRoundIcon, ZapIcon, type LucideIcon } from 'lucide-react';
 
-export const PROJECT_VIEWS = ['list', 'board', 'table', 'calendar', 'timeline', 'planner', 'time', 'sprints', 'members', 'dashboard', 'automations', 'settings'] as const;
+export const PROJECT_VIEWS = ['list', 'board', 'table', 'calendar', 'timeline', 'planner', 'time', 'sprints', 'bugs', 'qa', 'members', 'dashboard', 'automations', 'settings'] as const;
 export type ProjectView = (typeof PROJECT_VIEWS)[number];
 
 /** Views that show the project's tasks and share the task toolbar. */
@@ -15,6 +15,8 @@ export const VIEW_META: Record<ProjectView, { label: string; icon: LucideIcon; t
   planner: { label: 'Team planner', icon: UsersRoundIcon, tint: 'text-good' },
   time: { label: 'Time', icon: ClockIcon, tint: 'text-warning' },
   sprints: { label: 'Sprints', icon: RocketIcon, tint: 'text-chart-1' },
+  bugs: { label: 'Bugs', icon: BugIcon, tint: 'text-critical' },
+  qa: { label: 'QA', icon: ClipboardCheckIcon, tint: 'text-good' },
   members: { label: 'Members', icon: UsersIcon, tint: 'text-muted-foreground' },
   dashboard: { label: 'Dashboard', icon: LayoutDashboardIcon, tint: 'text-primary' },
   automations: { label: 'Automations', icon: ZapIcon, tint: 'text-warning' },

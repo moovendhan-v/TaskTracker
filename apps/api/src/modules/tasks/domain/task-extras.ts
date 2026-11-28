@@ -16,6 +16,8 @@ export interface TaskActivity {
   taskId: string;
   actorId: string | null;
   actorName: string | null;
+  /** The AI agent that made the change (MCP), or null for a person. */
+  agent: string | null;
   kind: string;
   field: string | null;
   fromValue: string | null;
@@ -23,4 +25,4 @@ export interface TaskActivity {
   createdAt: Date;
 }
 
-export type NewTaskActivity = Omit<TaskActivity, 'id' | 'actorName' | 'createdAt'>;
+export type NewTaskActivity = Omit<TaskActivity, 'id' | 'actorName' | 'createdAt' | 'agent'>;

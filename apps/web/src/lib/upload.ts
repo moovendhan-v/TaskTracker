@@ -43,4 +43,4 @@ export function formatBytes(bytes: number): string {
 }
 
 /** What the file pickers offer; the server checks the real type anyway. */
-export const UPLOAD_ACCEPT = '.png,.jpg,.jpeg,.gif,.webp,.pdf,.zip,.docx,.xlsx,.pptx,.txt,.csv,.md,.log,.json';
+export const UPLOAD_ACCEPT = '.png,.jpg,.jpeg,.gif,.webp,.pdf,.zip,.docx,.xlsx,.pptx,.txt,.csv,.md,.log,.json,.webm,.mp4';

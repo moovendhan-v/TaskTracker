@@ -3,7 +3,7 @@ import { AI_LIMITS, type AiSummaryResponse, type AiSummaryTarget } from '@taskfl
 import { ENV } from '../../../config/config.module.js';
 import type { Env } from '../../../config/env.schema.js';
 import { AiModelRegistry } from '../../../core/ai/ai-model.registry.js';
-import { LanguageModelError } from '../../../core/ai/language-model.port.js';
+import { estimateTokens, LanguageModelError } from '../../../core/ai/language-model.port.js';
 import { DomainError } from '../../../core/domain/domain-error.js';
 import type { Actor, WorkspaceAccess } from '../../../core/http/types/authenticated-request.js';
 import { ChatService } from '../../chat/application/chat.service.js';
@@ -47,18 +47,25 @@ export class AiAssistantService {
 
     const day = this.settings.today();
     const budget = this.env.AI_DAILY_TOKENS_PER_USER;
-    if ((await this.ai.tokensUsed(access.workspaceId, actor.userId, day)) >= budget) throw DomainError.invalid('You have used today’s AI allowance in this workspace; it resets at midnight UTC');
+    const messages = summaryPrompt(source);
+    // The most this request can use is set aside first, atomically, so parallel requests can't
+    // all pass a "still under budget" check; it's corrected to the real use afterwards.
+    const reserved = estimateTokens(messages.map((message) => message.content).join('\n')) + AI_LIMITS.outputTokens;
+    if (!(await this.ai.reserve(access.workspaceId, actor.userId, day, reserved, budget))) {
+      throw DomainError.invalid('You have used today’s AI allowance in this workspace; it resets at midnight UTC');
+    }
 
     let result;
     try {
-      result = await model.generate({ model: settings.model, messages: summaryPrompt(source), maxOutputTokens: AI_LIMITS.outputTokens, temperature: 0.2 });
+      result = await model.generate({ model: settings.model, messages, maxOutputTokens: AI_LIMITS.outputTokens, temperature: 0.2 });
     } catch (error) {
+      await this.ai.settle(access.workspaceId, actor.userId, day, -reserved);
       if (error instanceof LanguageModelError) throw DomainError.invalid(error.message);
       this.logger.error('AI request failed', error instanceof Error ? error.stack : undefined);
       throw DomainError.invalid('The AI request failed');
     }
     const tokens = result.inputTokens + result.outputTokens;
-    const usedToday = await this.ai.addUsage(access.workspaceId, actor.userId, day, tokens);
+    const usedToday = await this.ai.settle(access.workspaceId, actor.userId, day, tokens - reserved);
     const providerLabel = this.registry.list().find((provider) => provider.id === settings.providerId)?.label ?? settings.providerId;
     return { text: cleanAnswer(result.text), providerLabel, model: settings.model, tokens, usedToday, dailyTokens: budget };
   }

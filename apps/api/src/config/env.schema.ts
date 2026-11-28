@@ -32,6 +32,8 @@ const envSchema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   // An empty value (as in .env.example) means unset.
   TURNSTILE_SECRET_KEY: optionalString(z.string().trim().min(1)),
+  /** The public Turnstile site key, handed to the embeddable feedback widget and the feedback portal (E6.3). */
+  TURNSTILE_SITE_KEY: optionalString(z.string().trim().min(1).max(100)),
   /** "Sign in with GitHub" (A4): a GitHub OAuth app's client id and secret; both or neither. */
   GITHUB_CLIENT_ID: optionalString(z.string().trim().min(1).max(100)),
   GITHUB_CLIENT_SECRET: optionalString(z.string().trim().min(1).max(200)),
@@ -140,6 +142,8 @@ const envSchema = z.object({
    * (raw files of the md2slides repository). Empty uses only the bundled snapshot.
    */
   MD2SLIDES_SOURCE_URL: z.preprocess((value) => (value === undefined ? 'https://raw.githubusercontent.com/moovendhan-v/md2-slides/main' : value === '' ? undefined : value), z.string().url().refine((url) => url.startsWith('https://') || url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1'), 'MD2SLIDES_SOURCE_URL must use https://').optional()),
+  /** Platform admins need two-step sign-in for the admin console. Defaults on in production. */
+  PLATFORM_ADMIN_REQUIRE_TWO_STEP: z.enum(['true', 'false']).optional().transform((value) => (value === undefined ? undefined : value === 'true')),
   /** How long one AI request may take. */
   AI_TIMEOUT_SECONDS: z.coerce.number().int().min(5).max(120).default(30),
   /** Each person's AI budget per workspace and day (input + output tokens). */
@@ -220,7 +224,7 @@ const envSchema = z.object({
     message: 'REDIS_URL is required when NODE_ENV=production',
   });
 
-export type Env = z.infer<typeof envSchema>;
+export type Env = Omit<z.infer<typeof envSchema>, 'PLATFORM_ADMIN_REQUIRE_TWO_STEP'> & { PLATFORM_ADMIN_REQUIRE_TWO_STEP: boolean };
 
 /** Parses process.env once at startup and fails fast on missing or invalid values. */
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -229,5 +233,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     const issues = result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
     throw new Error(`Invalid environment configuration:\n${issues.join('\n')}`);
   }
-  return result.data;
+  // Secure default: on in production unless explicitly turned off.
+  return { ...result.data, PLATFORM_ADMIN_REQUIRE_TWO_STEP: result.data.PLATFORM_ADMIN_REQUIRE_TWO_STEP ?? result.data.NODE_ENV === 'production' };
 }

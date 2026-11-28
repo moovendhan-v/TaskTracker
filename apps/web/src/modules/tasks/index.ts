@@ -9,6 +9,7 @@ export { useStatuses, useTask, useTasks, useTaskSearch } from './hooks/use-tasks
 export { useTaskMutations } from './hooks/use-task-mutations';
 export { useOpenTask } from './hooks/use-open-task';
 export { tasksApi } from './api/tasks.api';
+export { attachmentsApi } from './api/attachments.api';
 export { StatusLabel, StatusDot } from './components/shared/status-picker';
 export { PriorityIcon } from './components/shared/priority-picker';
 export { TypeBadge } from './components/shared/type-badge';

@@ -7,5 +7,6 @@ import { TaskAttachmentsResolver } from './presentation/graphql/task-attachments
 /** Files on tasks, on the shared private storage (core/storage). */
 @Module({
   providers: [TaskAttachmentsService, TaskAttachmentsResolver, { provide: TaskAttachmentRepository, useClass: TypeOrmTaskAttachmentRepository }],
+  exports: [TaskAttachmentsService],
 })
 export class AttachmentsModule {}

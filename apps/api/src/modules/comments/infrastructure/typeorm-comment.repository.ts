@@ -1,3 +1,4 @@
+import { AgentContext } from '../../../core/agent/agent-context.js';
 import { Injectable } from '@nestjs/common';
 import type { SelectQueryBuilder } from 'typeorm';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
@@ -12,6 +13,7 @@ interface CommentRow {
   author_id: string;
   author_name: string | null;
   body: string;
+  agent: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -52,7 +54,8 @@ export class TypeOrmCommentRepository extends CommentRepository {
   }
 
   create(comment: NewComment): Promise<Comment> {
-    return this.repository.save(this.repository.create(comment));
+    // Inside an MCP tool call, the comment is the agent's (E6.5).
+    return this.repository.save(this.repository.create({ ...comment, agent: AgentContext.current()?.name ?? null }));
   }
 
   save(comment: Comment): Promise<Comment> {
@@ -75,6 +78,7 @@ export class TypeOrmCommentRepository extends CommentRepository {
         'comment.author_id AS author_id',
         'author.name AS author_name',
         'comment.body AS body',
+        'comment.agent AS agent',
         'comment.created_at AS created_at',
         'comment.updated_at AS updated_at',
       ]);
@@ -89,6 +93,7 @@ function toComment(row: CommentRow): CommentWithAuthor {
     authorId: row.author_id,
     authorName: row.author_name ?? 'Former member',
     body: row.body,
+    agent: row.agent ?? null,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };

@@ -13,4 +13,8 @@ export class CommentOrmEntity extends TenantOrmEntity implements Comment {
 
   @Column({ type: 'text' })
   body: string;
+
+  /** The AI agent that wrote it (MCP), or null for a person. */
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  agent: string | null;
 }

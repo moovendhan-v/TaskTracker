@@ -74,6 +74,12 @@ type AddMemberResult {
   message: String!
 }
 
+input AddQaPlanCasesInput {
+  allReady: Boolean
+  caseIds: [ID!]
+  suiteId: ID
+}
+
 type AdminUser {
   createdAt: String!
   email: String!
@@ -136,6 +142,25 @@ type AiSummary {
   text: String!
   tokens: Int!
   usedToday: Int!
+}
+
+"""
+A connection (browser extension, MCP client) acting as you in this workspace; the token itself is never shown again
+"""
+type ApiToken {
+  client: String!
+  createdAt: String!
+  expiresAt: String!
+  id: ID!
+  lastUsedAt: String
+  name: String!
+
+  """Approved, waiting for the extension to pick it up"""
+  pending: Boolean!
+
+  """The first characters, to tell connections apart"""
+  prefix: String
+  scopes: [String!]!
 }
 
 type AttachedPolicy {
@@ -447,6 +472,99 @@ input BlockConfigInput {
 }
 
 """
+A visual bug report: a task of type bug with QA details and captured diagnostics
+"""
+type Bug {
+  actual: String!
+  assigneeIds: [ID!]!
+  browser: String
+  consoleErrors: Int!
+  createdAt: String!
+  duplicateOfTaskId: ID
+  environment: String!
+  expected: String!
+  failedRequests: Int!
+  kind: String!
+  listId: ID!
+  module: String
+  number: Int!
+  os: String
+  pageUrl: String
+  priority: String!
+  qaState: String!
+  reporterId: ID
+
+  """For reports from outside the workspace (portal, SDK)"""
+  reporterName: String
+  severity: String!
+  source: String!
+  spaceId: ID!
+  statusCategory: String!
+  statusName: String!
+  steps: [BugStep!]!
+  taskId: ID!
+  title: String!
+  updatedAt: String!
+  viewport: String
+}
+
+input BugContextInput {
+  browser: String
+  os: String
+  pageUrl: String
+  userAgent: String
+  viewport: String
+}
+
+input BugFilterInput {
+  environments: [String!]
+  kinds: [String!]
+  qaStates: [String!]
+  search: String
+  severities: [String!]
+}
+
+"""
+A project’s public feedback: the embeddable widget and the hosted portal
+"""
+type BugIntake {
+  allowedOrigins: [String!]!
+  id: ID!
+  intro: String!
+  portalEnabled: Boolean!
+
+  """Public by design: it goes in the <script> tag and the portal address"""
+  publicKey: String!
+  spaceId: ID!
+  title: String!
+  updatedAt: String!
+  widgetEnabled: Boolean!
+}
+
+"""A read-only link to a report"""
+type BugShare {
+  createdAt: String!
+  createdByName: String
+  expiresAt: String!
+  id: ID!
+  lastViewedAt: String
+
+  """full or status"""
+  scope: String!
+}
+
+type BugStep {
+  """manual or captured"""
+  source: String!
+  text: String!
+}
+
+input BugStepInput {
+  source: String!
+  text: String!
+}
+
+"""
 Connect to `url` with `token` (valid for 10 minutes, for this one call)
 """
 type CallJoin {
@@ -636,6 +754,8 @@ input ColumnWidthInput {
 }
 
 type Comment {
+  """The AI agent (MCP connection) that wrote it, or null for a person"""
+  agent: String
   authorId: ID!
   authorName: String!
 
@@ -822,6 +942,19 @@ input CreateTaskStatusInput {
 input CreateWorkspaceInput {
   color: String
   name: String!
+}
+
+type CreatedApiToken {
+  apiToken: ApiToken!
+
+  """Shown once: only a hash is kept"""
+  token: String!
+}
+
+type CreatedBugShare {
+  """Shown once; only a hash is kept"""
+  path: String!
+  share: BugShare!
 }
 
 type CurrentUser {
@@ -1706,9 +1839,18 @@ type Mutation {
   addMember(input: AddMemberInput!, workspaceId: ID!): AddMemberResult!
   addOrganizationMember(email: String!, organizationId: ID!, role: String!): [OrganizationMember!]!
 
+  """Adds cases to a plan; returns how many were new"""
+  addQaPlanCases(input: AddQaPlanCasesInput!, planId: ID!, workspaceId: ID!): Int!
+
   """Needs workspace.manage here and owner or admin in the organization"""
   addWorkspaceToOrganization(organizationId: ID!, workspaceId: ID!): Boolean!
+
+  """
+  Lets the browser extension that opened this page act as you here (it picks up its token within 10 minutes)
+  """
+  approveExtensionConnection(challenge: String!, name: String!, workspaceId: ID!): ApiToken!
   archiveChatChannel(archived: Boolean! = true, channelId: ID!, workspaceId: ID!): ChatChannel!
+  assignQaPlanCase(assigneeId: String, caseId: ID!, planId: ID!, workspaceId: ID!): Boolean!
   attachRolePolicy(
     """managed:<key> or a custom policy id"""
     policy: String!
@@ -1764,7 +1906,15 @@ type Mutation {
 
   """HR fixes a shift’s times, saying why. Audited"""
   correctAttendanceShift(input: CorrectAttendanceShiftInput!, shiftId: ID!, workspaceId: ID!): AttendanceShift!
+
+  """
+  A personal access token for an AI assistant (MCP) or a script, shown once
+  """
+  createApiToken(client: String!, days: Int, name: String!, scopes: [String!]!, workspaceId: ID!): CreatedApiToken!
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
+
+  """A read-only link to a report for someone outside the workspace"""
+  createBugShare(days: Int!, taskId: ID!, workspaceId: ID!): CreatedBugShare!
   createChatChannel(input: CreateChatChannelInput!, workspaceId: ID!): ChatChannel!
   createComment(input: CommentInput!, taskId: ID!, workspaceId: ID!): Comment!
   createCustomField(input: CreateCustomFieldInput!, workspaceId: ID!): CustomField!
@@ -1814,6 +1964,9 @@ type Mutation {
 
   """Approvers cannot decide on their own requests"""
   decideLeaveRequest(input: DecideLeaveInput!, requestId: ID!, workspaceId: ID!): LeaveRequest!
+
+  """QA sign-off: approve or reject a plan (or reopen it)"""
+  decideQaPlan(decision: String!, note: String, planId: ID!, workspaceId: ID!): QaPlan!
   deleteAutomation(ruleId: ID!, workspaceId: ID!): Boolean!
   deleteChatMessage(messageId: ID!, workspaceId: ID!): Boolean!
   deleteChecklistItem(itemId: ID!, workspaceId: ID!): Boolean!
@@ -1840,6 +1993,9 @@ type Mutation {
   """Owners only; its workspaces stay, on their own"""
   deleteOrganization(organizationId: ID!): Boolean!
   deletePolicy(policyId: ID!, workspaceId: ID!): Boolean!
+  deleteQaCase(caseId: ID!, workspaceId: ID!): Boolean!
+  deleteQaPlan(planId: ID!, workspaceId: ID!): Boolean!
+  deleteQaSuite(suiteId: ID!, workspaceId: ID!): Boolean!
   deleteRole(roleId: ID!, workspaceId: ID!): Boolean!
   deleteSpace(spaceId: ID!, workspaceId: ID!): Boolean!
   deleteSprint(sprintId: ID!, workspaceId: ID!): Boolean!
@@ -1929,6 +2085,9 @@ type Mutation {
   """Returns how many were unread"""
   markAllNotificationsRead(workspaceId: ID!): Int!
 
+  """Link a report to the one it duplicates and close it as a duplicate"""
+  markBugDuplicate(ofTaskId: ID!, taskId: ID!, workspaceId: ID!): Bug!
+
   """Marks the channel read up to this time (never moves backwards)"""
   markChatChannelRead(at: String!, channelId: ID!, workspaceId: ID!): Boolean!
 
@@ -1970,6 +2129,9 @@ type Mutation {
 
   """Finds or starts the direct message between you and these people"""
   openDirectMessage(userIds: [ID!]!, workspaceId: ID!): ChatChannel!
+
+  """Records a result; a failure files a bug, a passing retest verifies it"""
+  recordQaRun(input: RecordQaRunInput!, workspaceId: ID!): QaPlanCase!
   relateTasks(kind: TaskRelationKind!, relatedTaskId: ID!, taskId: ID!, workspaceId: ID!): [TaskRelation!]!
   removeChatChannelMember(channelId: ID!, userId: ID!, workspaceId: ID!): Boolean!
 
@@ -1982,9 +2144,13 @@ type Mutation {
   """Owners and admins remove people; anyone can remove themselves (leave)"""
   removeOrganizationMember(organizationId: ID!, userId: String!): [OrganizationMember!]!
   removeOrganizationSso(organizationId: ID!): Boolean!
+  removeQaPlanCase(caseId: ID!, planId: ID!, workspaceId: ID!): Boolean!
   removeWorkspaceFromOrganization(workspaceId: ID!): Boolean!
   renameOrganization(name: String!, organizationId: ID!): Organization!
   reorderStatuses(spaceId: ID!, statusIds: [ID!]!, workspaceId: ID!): [TaskStatus!]!
+
+  """File a bug report or feedback (creates a task of type bug)"""
+  reportBug(input: ReportBugInput!, workspaceId: ID!): Bug!
 
   """
   Asks the people who manage roles for access; returns how many were asked
@@ -2022,8 +2188,20 @@ type Mutation {
   """Ends a grant early"""
   revokeAccessGrant(grantId: ID!, workspaceId: ID!): Boolean!
 
+  """Disconnects a client at once"""
+  revokeApiToken(tokenId: ID!, workspaceId: ID!): Boolean!
+  revokeBugShare(shareId: ID!, workspaceId: ID!): Boolean!
+
+  """Replaces the public key; the old one stops working"""
+  rotateBugIntakeKey(spaceId: ID!, workspaceId: ID!): BugIntake!
+
   """A new webhook secret; the old one stops working at once"""
   rotateGithubSecret(connectionId: ID!, workspaceId: ID!): GithubSecret!
+
+  """
+  Turns the feedback widget and portal on or off for a project, and sets their sites and texts
+  """
+  saveBugIntake(input: SaveBugIntakeInput!, spaceId: ID!, workspaceId: ID!): BugIntake!
 
   """
   Saves the blocks of one of your dashboards. Fails with CONFLICT if it changed since baseVersion
@@ -2035,6 +2213,13 @@ type Mutation {
 
   """Saves your layout. Fails with CONFLICT if it changed since baseVersion"""
   saveLayout(input: SaveLayoutInput!, workspaceId: ID!): DashboardLayout!
+
+  """Creates (no caseId) or updates a test case"""
+  saveQaCase(caseId: ID, input: SaveQaCaseInput!, spaceId: ID!, workspaceId: ID!): QaCase!
+
+  """Creates (no planId) or updates a test plan"""
+  saveQaPlan(input: SaveQaPlanInput!, planId: ID, spaceId: ID!, workspaceId: ID!): QaPlan!
+  saveQaSuite(description: String, name: String!, spaceId: ID!, suiteId: ID, workspaceId: ID!): QaSuite!
   saveSpaceAsTemplate(input: SaveAsTemplateInput!, spaceId: ID!, workspaceId: ID!): ProjectTemplate!
 
   """Saves how a table is arranged (columns, widths, paging)"""
@@ -2044,6 +2229,9 @@ type Mutation {
   saveView(input: SaveViewInput!): Preferences!
   sendChatMessage(input: SendChatMessageInput!, workspaceId: ID!): ChatMessage!
   setAutomationEnabled(enabled: Boolean!, ruleId: ID!, workspaceId: ID!): AutomationRule!
+
+  """Confirm, mark fixed, ask for a retest, verify, reopen or close"""
+  setBugQaState(state: String!, taskId: ID!, workspaceId: ID!): Bug!
 
   """Make someone an owner, or a plain member again"""
   setChatChannelMemberRole(channelId: ID!, role: String!, userId: ID!, workspaceId: ID!): [ChatMember!]!
@@ -2124,6 +2312,7 @@ type Mutation {
 
   """Saving takes the rule over: it then runs as you"""
   updateAutomation(input: SaveAutomationInput!, ruleId: ID!, workspaceId: ID!): AutomationRule!
+  updateBug(input: UpdateBugInput!, taskId: ID!, workspaceId: ID!): Bug!
   updateChatChannel(channelId: ID!, input: UpdateChatChannelInput!, workspaceId: ID!): ChatChannel!
 
   """Renames a step, or ticks / unticks it"""
@@ -2454,6 +2643,158 @@ enum PullRequestState {
   open
 }
 
+"""A test case: preconditions and steps, each with its expected result"""
+type QaCase {
+  coversTaskId: ID
+  coversTaskTitle: String
+  id: ID!
+  lastResult: String
+  lastRunAt: String
+  number: Int!
+  preconditions: String!
+  priority: String!
+  spaceId: ID!
+  status: String!
+  steps: [QaStep!]!
+  suiteId: ID
+  title: String!
+  type: String!
+  updatedAt: String!
+}
+
+type QaCaseRef {
+  caseId: ID!
+  number: Int!
+  title: String!
+}
+
+type QaCoverage {
+  cases: Int!
+  coveredFeatures: Int!
+  features: Int!
+  flaky: [QaCaseRef!]!
+  neverRun: Int!
+  readyCases: Int!
+  uncovered: [QaTaskRef!]!
+}
+
+type QaOpenBug {
+  number: Int!
+  qaState: String!
+  severity: String!
+  taskId: ID!
+  title: String!
+}
+
+"""What to test for a sprint or a release"""
+type QaPlan {
+  counts: QaPlanCounts!
+  createdAt: String!
+  decidedAt: String
+  decidedByName: String
+  decisionNote: String
+  description: String!
+  id: ID!
+  name: String!
+  release: String
+  spaceId: ID!
+  sprintId: ID
+
+  """open, approved or rejected"""
+  status: String!
+}
+
+type QaPlanCase {
+  assigneeId: ID
+  bugNumber: Int
+  bugQaState: String
+  bugTaskId: ID
+  caseId: ID!
+  executedAt: String
+  executedByName: String
+  number: Int!
+  priority: String!
+  result: String
+  runId: ID
+  runs: Int!
+  suiteName: String
+  title: String!
+  type: String!
+}
+
+type QaPlanCounts {
+  blocked: Int!
+  failed: Int!
+  notRun: Int!
+  passed: Int!
+  skipped: Int!
+  total: Int!
+}
+
+type QaReadiness {
+  checks: [QaReadinessCheck!]!
+  openBugs: [QaOpenBug!]!
+  plan: QaPlan!
+  ready: Boolean!
+}
+
+type QaReadinessCheck {
+  detail: String!
+  key: String!
+  ok: Boolean!
+}
+
+type QaRun {
+  actual: String!
+  bugNumber: Int
+  bugTaskId: ID
+  build: String
+  caseId: ID!
+  environment: String
+  executedAt: String!
+  executedByName: String
+  id: ID!
+  planId: ID!
+  planName: String!
+  result: String!
+  retestOf: ID
+  stepResults: [QaStepResult!]!
+}
+
+type QaStep {
+  action: String!
+  expected: String!
+}
+
+input QaStepInput {
+  action: String!
+  expected: String!
+}
+
+type QaStepResult {
+  actual: String!
+  result: String!
+}
+
+input QaStepResultInput {
+  actual: String!
+  result: String!
+}
+
+type QaSuite {
+  caseCount: Int!
+  description: String!
+  id: ID!
+  name: String!
+  spaceId: ID!
+}
+
+type QaTaskRef {
+  number: Int!
+  taskId: ID!
+  title: String!
+}
+
 type Query {
   """Time-limited grants still running, soonest to end first"""
   accessGrants(workspaceId: ID!): [AccessGrant!]!
@@ -2489,6 +2830,9 @@ type Query {
   """Whether AI is on here, the configured providers and your usage today"""
   aiSettings(workspaceId: ID!): AiSettings!
 
+  """Your connected browser extensions and other clients in this workspace"""
+  apiTokens(workspaceId: ID!): [ApiToken!]!
+
   """Recent runs of one automation, newest first"""
   automationRuns(ruleId: ID!, workspaceId: ID!): [AutomationRun!]!
 
@@ -2500,6 +2844,19 @@ type Query {
 
   """Public channels to join"""
   browseChatChannels(first: Int, search: String, workspaceId: ID!): [ChatChannel!]!
+  bug(taskId: ID!, workspaceId: ID!): Bug!
+
+  """
+  The report’s captured console, network and actions as JSON (already redacted)
+  """
+  bugCapture(taskId: ID!, workspaceId: ID!): String!
+  bugIntake(spaceId: ID!, workspaceId: ID!): BugIntake
+
+  """Active read-only links to a report"""
+  bugShares(taskId: ID!, workspaceId: ID!): [BugShare!]!
+
+  """Bug reports and feedback of a project, most severe first"""
+  bugs(filter: BugFilterInput, spaceId: ID!, workspaceId: ID!): [Bug!]!
   callsOverview(workspaceId: ID!): CallsOverview!
   chatChannel(channelId: ID!, workspaceId: ID!): ChatChannel!
   chatChannelMembers(channelId: ID!, workspaceId: ID!): [ChatMember!]!
@@ -2698,6 +3055,23 @@ type Query {
 
   """Data fields whose visibility policies control"""
   protectedFields(workspaceId: ID!): [FieldDefinition!]!
+  qaCase(caseId: ID!, workspaceId: ID!): QaCase!
+
+  """Every run of a case, newest first"""
+  qaCaseRuns(caseId: ID!, workspaceId: ID!): [QaRun!]!
+  qaCases(search: String, spaceId: ID!, status: String, suiteId: ID, workspaceId: ID!): [QaCase!]!
+
+  """How much of the project the test cases cover"""
+  qaCoverage(spaceId: ID!, workspaceId: ID!): QaCoverage!
+  qaPlan(planId: ID!, workspaceId: ID!): QaPlan!
+
+  """The cases in a plan with their current result"""
+  qaPlanCases(planId: ID!, workspaceId: ID!): [QaPlanCase!]!
+  qaPlans(spaceId: ID!, workspaceId: ID!): [QaPlan!]!
+
+  """Release readiness of a plan"""
+  qaReadiness(planId: ID!, workspaceId: ID!): QaReadiness!
+  qaSuites(spaceId: ID!, workspaceId: ID!): [QaSuite!]!
 
   """Resources the caller can list with resourceSchema"""
   resourceNames(workspaceId: ID!): [String!]!
@@ -2739,6 +3113,9 @@ type Query {
 
   """Which ways of signing in this server offers"""
   signInOptions: SignInOptions!
+
+  """Reports in the project with a similar title, for spotting duplicates"""
+  similarBugs(excludeTaskId: ID, spaceId: ID!, title: String!, workspaceId: ID!): [SimilarBug!]!
 
   """A space as template content, to export without saving"""
   spaceTemplateContent(includeContent: Boolean! = false, spaceId: ID!, workspaceId: ID!): JSONObject!
@@ -2884,10 +3261,42 @@ enum RealtimeEntityType {
   workspace
 }
 
+input RecordQaRunInput {
+  actual: String
+  build: String
+  caseId: ID!
+  environment: String
+
+  """File a bug when it fails (default true)"""
+  fileBug: Boolean
+  planId: ID!
+  result: String!
+  stepResults: [QaStepResultInput!]
+}
+
 type RelatedTask {
   id: ID!
   number: Int!
   status: TaskStatus!
+  title: String!
+}
+
+input ReportBugInput {
+  actual: String
+
+  """
+  Captured console, network and actions as JSON ({console, network, actions}); redacted again on the server
+  """
+  captureJson: String
+  context: BugContextInput
+  environment: String
+  expected: String
+  kind: String
+  listId: ID
+  module: String
+  severity: String
+  spaceId: ID!
+  steps: [String!]
   title: String!
 }
 
@@ -3005,6 +3414,14 @@ input SaveAutomationInput {
   trigger: AutomationTriggerInput!
 }
 
+input SaveBugIntakeInput {
+  allowedOrigins: [String!]!
+  intro: String
+  portalEnabled: Boolean!
+  title: String!
+  widgetEnabled: Boolean!
+}
+
 input SaveDashboardLayoutInput {
   baseVersion: Int!
   items: [LayoutItemInput!]!
@@ -3028,6 +3445,24 @@ input SavePolicyInput {
   description: String
   document: PolicyDocumentInput!
   name: String!
+}
+
+input SaveQaCaseInput {
+  coversTaskId: ID
+  preconditions: String
+  priority: String
+  status: String
+  steps: [QaStepInput!]!
+  suiteId: ID
+  title: String!
+  type: String
+}
+
+input SaveQaPlanInput {
+  description: String
+  name: String!
+  release: String
+  sprintId: ID
 }
 
 input SaveViewInput {
@@ -3092,6 +3527,16 @@ input SetWorkspaceLayoutInput {
 type SignInOptions {
   """Sign in with GitHub is configured"""
   github: Boolean!
+}
+
+type SimilarBug {
+  number: Int!
+  qaState: String!
+
+  """Title similarity, 0–1"""
+  score: Float!
+  taskId: ID!
+  title: String!
 }
 
 enum SortDirection {
@@ -3333,6 +3778,11 @@ type Task {
 type TaskActivity {
   actorId: ID
   actorName: String
+
+  """
+  The AI agent (MCP connection) that made the change, or null for a person
+  """
+  agent: String
   createdAt: String!
   field: String
   from: String
@@ -3578,6 +4028,16 @@ input UpdateAiSettingsInput {
   enabled: Boolean!
   model: String
   providerId: String
+}
+
+input UpdateBugInput {
+  actual: String
+  environment: String
+  expected: String
+  kind: String
+  module: String
+  severity: String
+  steps: [BugStepInput!]
 }
 
 input UpdateChatChannelInput {

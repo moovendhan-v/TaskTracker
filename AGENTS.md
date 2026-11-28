@@ -45,6 +45,10 @@ These cover the OWASP Top 10 (2025), API Security Top 10 (2023) and LLM Top 10 (
 - **Third-party APIs** (API10) — Treat their responses as untrusted input: validate them and set timeouts.
 - **AI features** (LLM01–LLM10) — Treat model output as untrusted (never send it straight to HTML, SQL, shell or file paths). No secrets in prompts. Agent tools are least-privilege, and destructive actions need confirmation. Vector search is filtered by tenant. Each user has token and cost limits.
 
+## AI agent API (MCP / UTCP)
+
+GraphQL queries and mutations become AI-agent tools automatically (see `docs/agents/MCP_UTCP.md`), limited by permission and with destructive and security operations excluded. When you add an operation, check that the right one is offered: use `@AgentTool(false)` to hide it, or `@AgentTool(true)` to offer a membership-only mutation. Never offer delete, admin or security operations to agents.
+
 ## Secrets
 
 - Never commit secrets. Use env vars and keep `.env.example` up to date with names only.

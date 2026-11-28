@@ -29,7 +29,7 @@ query TaskRelations($workspaceId: ID!, $taskId: ID!) {
 }
 
 query TaskActivity($workspaceId: ID!, $taskId: ID!) {
-  taskActivity(workspaceId: $workspaceId, taskId: $taskId) { id taskId actorId actorName kind field from to createdAt }
+  taskActivity(workspaceId: $workspaceId, taskId: $taskId) { id taskId actorId actorName agent kind field from to createdAt }
 }
 
 query TaskWatchers($workspaceId: ID!, $taskId: ID!) { taskWatchers(workspaceId: $workspaceId, taskId: $taskId) }

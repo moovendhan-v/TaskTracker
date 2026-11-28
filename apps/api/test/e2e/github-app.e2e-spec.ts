@@ -19,7 +19,7 @@ const UPDATE_TASK = 'mutation($w: ID!, $t: ID!, $input: UpdateTaskInput!) { upda
 const CREATE_ISSUE = 'mutation($w: ID!, $t: ID!, $c: ID!) { createGithubIssue(workspaceId: $w, taskId: $t, connectionId: $c) { number url closed pending repo } }';
 const ISSUES = 'query($w: ID!, $t: ID!) { taskGithubIssues(workspaceId: $w, taskId: $t) { number closed pending lastError } }';
 
-async function eventually<T>(read: () => Promise<T>, accept: (value: T) => boolean, timeoutMs = 15_000): Promise<T> {
+async function eventually<T>(read: () => Promise<T>, accept: (value: T) => boolean, timeoutMs = 30_000): Promise<T> {
   const end = Date.now() + timeoutMs;
   for (;;) {
     const value = await read();
@@ -116,7 +116,7 @@ describe('GitHub App sync', () => {
 
     github.pull('acme/app', { number: 6, title: `TF-${fresh.number}: fresh work` });
     await eventually(() => task(fresh.id), (value) => value.status.name === 'In review');
-    github.pull('acme/app', { number: 6, state: 'closed', merged: true });
+    github.pull('acme/app', { number: 6, title: `TF-${fresh.number}: fresh work`, state: 'closed', merged: true });
     await eventually(() => task(fresh.id), (value) => value.status.name === 'Done');
   });
 

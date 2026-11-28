@@ -1,0 +1,205 @@
+fragment QaCaseFields on QaCase {
+  id
+  spaceId
+  suiteId
+  number
+  title
+  preconditions
+  steps {
+    action
+    expected
+  }
+  priority
+  type
+  status
+  coversTaskId
+  coversTaskTitle
+  lastResult
+  lastRunAt
+  updatedAt
+}
+
+fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}
+
+fragment QaPlanCaseFields on QaPlanCase {
+  caseId
+  number
+  title
+  priority
+  type
+  suiteName
+  assigneeId
+  result
+  runId
+  executedAt
+  executedByName
+  bugTaskId
+  bugNumber
+  bugQaState
+  runs
+}
+
+query QaSuites($workspaceId: ID!, $spaceId: ID!) {
+  qaSuites(workspaceId: $workspaceId, spaceId: $spaceId) {
+    id
+    spaceId
+    name
+    description
+    caseCount
+  }
+}
+
+mutation SaveQaSuite($workspaceId: ID!, $spaceId: ID!, $suiteId: ID, $name: String!, $description: String) {
+  saveQaSuite(workspaceId: $workspaceId, spaceId: $spaceId, suiteId: $suiteId, name: $name, description: $description) {
+    id
+    spaceId
+    name
+    description
+    caseCount
+  }
+}
+
+mutation DeleteQaSuite($workspaceId: ID!, $suiteId: ID!) {
+  deleteQaSuite(workspaceId: $workspaceId, suiteId: $suiteId)
+}
+
+query QaCases($workspaceId: ID!, $spaceId: ID!, $suiteId: ID, $status: String, $search: String) {
+  qaCases(workspaceId: $workspaceId, spaceId: $spaceId, suiteId: $suiteId, status: $status, search: $search) {
+    ...QaCaseFields
+  }
+}
+
+query QaCaseRuns($workspaceId: ID!, $caseId: ID!) {
+  qaCaseRuns(workspaceId: $workspaceId, caseId: $caseId) {
+    id
+    planId
+    planName
+    caseId
+    result
+    stepResults {
+      result
+      actual
+    }
+    actual
+    environment
+    build
+    bugTaskId
+    bugNumber
+    retestOf
+    executedByName
+    executedAt
+  }
+}
+
+mutation SaveQaCase($workspaceId: ID!, $spaceId: ID!, $caseId: ID, $input: SaveQaCaseInput!) {
+  saveQaCase(workspaceId: $workspaceId, spaceId: $spaceId, caseId: $caseId, input: $input) {
+    ...QaCaseFields
+  }
+}
+
+mutation DeleteQaCase($workspaceId: ID!, $caseId: ID!) {
+  deleteQaCase(workspaceId: $workspaceId, caseId: $caseId)
+}
+
+query QaPlans($workspaceId: ID!, $spaceId: ID!) {
+  qaPlans(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...QaPlanFields
+  }
+}
+
+query QaPlanCases($workspaceId: ID!, $planId: ID!) {
+  qaPlanCases(workspaceId: $workspaceId, planId: $planId) {
+    ...QaPlanCaseFields
+  }
+}
+
+mutation SaveQaPlan($workspaceId: ID!, $spaceId: ID!, $planId: ID, $input: SaveQaPlanInput!) {
+  saveQaPlan(workspaceId: $workspaceId, spaceId: $spaceId, planId: $planId, input: $input) {
+    ...QaPlanFields
+  }
+}
+
+mutation DeleteQaPlan($workspaceId: ID!, $planId: ID!) {
+  deleteQaPlan(workspaceId: $workspaceId, planId: $planId)
+}
+
+mutation AddQaPlanCases($workspaceId: ID!, $planId: ID!, $input: AddQaPlanCasesInput!) {
+  addQaPlanCases(workspaceId: $workspaceId, planId: $planId, input: $input)
+}
+
+mutation RemoveQaPlanCase($workspaceId: ID!, $planId: ID!, $caseId: ID!) {
+  removeQaPlanCase(workspaceId: $workspaceId, planId: $planId, caseId: $caseId)
+}
+
+mutation RecordQaRun($workspaceId: ID!, $input: RecordQaRunInput!) {
+  recordQaRun(workspaceId: $workspaceId, input: $input) {
+    ...QaPlanCaseFields
+  }
+}
+
+mutation DecideQaPlan($workspaceId: ID!, $planId: ID!, $decision: String!, $note: String) {
+  decideQaPlan(workspaceId: $workspaceId, planId: $planId, decision: $decision, note: $note) {
+    ...QaPlanFields
+  }
+}
+
+query QaReadiness($workspaceId: ID!, $planId: ID!) {
+  qaReadiness(workspaceId: $workspaceId, planId: $planId) {
+    ready
+    checks {
+      key
+      ok
+      detail
+    }
+    openBugs {
+      taskId
+      number
+      title
+      severity
+      qaState
+    }
+    plan {
+      ...QaPlanFields
+    }
+  }
+}
+
+query QaCoverage($workspaceId: ID!, $spaceId: ID!) {
+  qaCoverage(workspaceId: $workspaceId, spaceId: $spaceId) {
+    features
+    coveredFeatures
+    uncovered {
+      taskId
+      number
+      title
+    }
+    cases
+    readyCases
+    neverRun
+    flaky {
+      caseId
+      number
+      title
+    }
+  }
+}

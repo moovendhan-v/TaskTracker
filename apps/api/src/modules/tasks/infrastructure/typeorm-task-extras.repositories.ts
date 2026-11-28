@@ -1,3 +1,4 @@
+import { AgentContext } from '../../../core/agent/agent-context.js';
 import { Injectable } from '@nestjs/common';
 import { TransactionalManager } from '../../../core/database/transactional-manager.js';
 import type { NewTaskActivity, TaskActivity, TaskRelation } from '../domain/task-extras.js';
@@ -68,7 +69,9 @@ export class TypeOrmTaskActivityRepository extends TaskActivityRepository {
 
   async record(entries: readonly NewTaskActivity[]): Promise<void> {
     if (entries.length === 0) return;
-    await this.transactional.repository(TaskActivityOrmEntity).insert([...entries]);
+    // Inside an MCP tool call, the change is the agent's (E6.5).
+    const agent = AgentContext.current()?.name ?? null;
+    await this.transactional.repository(TaskActivityOrmEntity).insert(entries.map((entry) => ({ ...entry, agent })));
   }
 
   async list(workspaceId: string, taskId: string, limit: number): Promise<TaskActivity[]> {

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Report a bug · TaskFlow</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+      @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
+      header { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; }
+      .canvas-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: auto; max-height: 75vh; background: var(--soft); }
+      canvas { display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .recording { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #111; color: #fff; border-radius: 999px; padding: 8px 14px; display: flex; gap: 10px; align-items: center; box-shadow: 0 6px 20px #0005; }
+      .recording button { background: #fff; color: #111; }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module" src="./report.ts"></script>
+  </body>
+</html>

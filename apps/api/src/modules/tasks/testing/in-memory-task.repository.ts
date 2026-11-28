@@ -178,7 +178,7 @@ export class InMemoryTaskActivityRepository extends TaskActivityRepository {
   readonly rows: TaskActivity[] = [];
 
   async record(entries: readonly NewTaskActivity[]): Promise<void> {
-    for (const entry of entries) this.rows.unshift({ ...entry, id: randomUUID(), actorName: null, createdAt: new Date() });
+    for (const entry of entries) this.rows.unshift({ ...entry, id: randomUUID(), actorName: null, agent: null, createdAt: new Date() });
   }
 
   async list(workspaceId: string, taskId: string, limit: number): Promise<TaskActivity[]> {

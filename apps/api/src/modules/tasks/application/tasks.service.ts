@@ -340,6 +340,7 @@ export class TasksService {
       taskId: entry.taskId,
       actorId: entry.actorId,
       actorName: entry.actorName,
+      agent: entry.agent ?? null,
       kind: entry.kind,
       field: entry.field,
       from: entry.fromValue,

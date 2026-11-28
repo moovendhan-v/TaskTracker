@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2Icon, CopyIcon, DownloadIcon, FingerprintIcon, KeyRoundIcon, ShieldCheckIcon, ShieldIcon, Trash2Icon } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { encode } from 'uqr';
 import { PageHeader } from '@/components/common/page-header';
 import { notify } from '@/components/kit/notify';
@@ -208,7 +208,8 @@ function GithubCard({ accounts }: { accounts: readonly { id: string; providerId:
  * asks for your password, shows a QR code and backup codes, and only takes effect
  * once you've entered a code from the app; turning it off asks for your password.
  */
-export function SecurityPage() {
+/** Two-step sign-in, passkeys, linked accounts; `children` adds more cards (the extension connections). */
+export function SecurityPage({ children }: { children?: ReactNode } = {}) {
   const queryClient = useQueryClient();
   const enabled = useQuery({ queryKey: KEY, queryFn: () => authApi.twoFactorEnabled() });
   const accounts = useQuery({ queryKey: ACCOUNTS, queryFn: () => authApi.linkedAccounts() });
@@ -348,6 +349,7 @@ export function SecurityPage() {
         </Card>
         <PasskeysCard />
         <GithubCard accounts={accounts.data ?? []} />
+        {children}
       </div>
     </div>
   );

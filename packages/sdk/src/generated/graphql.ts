@@ -13,6 +13,12 @@ export type AddMemberInput = {
   roleId: string;
 };
 
+export type AddQaPlanCasesInput = {
+  allReady?: boolean | null | undefined;
+  caseIds?: Array<string> | null | undefined;
+  suiteId?: string | null | undefined;
+};
+
 export type AutomationActionInput = {
   audiences?: Array<NotifyAudience> | null | undefined;
   channelId?: string | null | undefined;
@@ -102,6 +108,27 @@ export type BlockConfigInput = {
   priorities?: Array<TaskPriority> | null | undefined;
   spaceId?: string | null | undefined;
   title?: string | null | undefined;
+};
+
+export type BugContextInput = {
+  browser?: string | null | undefined;
+  os?: string | null | undefined;
+  pageUrl?: string | null | undefined;
+  userAgent?: string | null | undefined;
+  viewport?: string | null | undefined;
+};
+
+export type BugFilterInput = {
+  environments?: Array<string> | null | undefined;
+  kinds?: Array<string> | null | undefined;
+  qaStates?: Array<string> | null | undefined;
+  search?: string | null | undefined;
+  severities?: Array<string> | null | undefined;
+};
+
+export type BugStepInput = {
+  source: string;
+  text: string;
 };
 
 export type ColumnWidthInput = {
@@ -561,6 +588,16 @@ export type PullRequestState =
   | 'merged'
   | 'open';
 
+export type QaStepInput = {
+  action: string;
+  expected: string;
+};
+
+export type QaStepResultInput = {
+  actual: string;
+  result: string;
+};
+
 export type RealtimeEntityType =
   | 'automation'
   | 'chat_channel'
@@ -589,6 +626,34 @@ export type RealtimeEntityType =
   | 'task_checklist'
   | 'time_entry'
   | 'workspace';
+
+export type RecordQaRunInput = {
+  actual?: string | null | undefined;
+  build?: string | null | undefined;
+  caseId: string;
+  environment?: string | null | undefined;
+  /** File a bug when it fails (default true) */
+  fileBug?: boolean | null | undefined;
+  planId: string;
+  result: string;
+  stepResults?: Array<QaStepResultInput> | null | undefined;
+};
+
+export type ReportBugInput = {
+  actual?: string | null | undefined;
+  /** Captured console, network and actions as JSON ({console, network, actions}); redacted again on the server */
+  captureJson?: string | null | undefined;
+  context?: BugContextInput | null | undefined;
+  environment?: string | null | undefined;
+  expected?: string | null | undefined;
+  kind?: string | null | undefined;
+  listId?: string | null | undefined;
+  module?: string | null | undefined;
+  severity?: string | null | undefined;
+  spaceId: string;
+  steps?: Array<string> | null | undefined;
+  title: string;
+};
 
 export type RequestAccessInput = {
   note?: string | null | undefined;
@@ -645,6 +710,14 @@ export type SaveAutomationInput = {
   trigger: AutomationTriggerInput;
 };
 
+export type SaveBugIntakeInput = {
+  allowedOrigins: Array<string>;
+  intro?: string | null | undefined;
+  portalEnabled: boolean;
+  title: string;
+  widgetEnabled: boolean;
+};
+
 export type SaveDashboardLayoutInput = {
   baseVersion: number;
   items: Array<LayoutItemInput>;
@@ -668,6 +741,24 @@ export type SavePolicyInput = {
   description?: string | null | undefined;
   document: PolicyDocumentInput;
   name: string;
+};
+
+export type SaveQaCaseInput = {
+  coversTaskId?: string | null | undefined;
+  preconditions?: string | null | undefined;
+  priority?: string | null | undefined;
+  status?: string | null | undefined;
+  steps: Array<QaStepInput>;
+  suiteId?: string | null | undefined;
+  title: string;
+  type?: string | null | undefined;
+};
+
+export type SaveQaPlanInput = {
+  description?: string | null | undefined;
+  name: string;
+  release?: string | null | undefined;
+  sprintId?: string | null | undefined;
 };
 
 export type SaveViewInput = {
@@ -815,6 +906,16 @@ export type UpdateAiSettingsInput = {
   enabled: boolean;
   model?: string | null | undefined;
   providerId?: string | null | undefined;
+};
+
+export type UpdateBugInput = {
+  actual?: string | null | undefined;
+  environment?: string | null | undefined;
+  expected?: string | null | undefined;
+  kind?: string | null | undefined;
+  module?: string | null | undefined;
+  severity?: string | null | undefined;
+  steps?: Array<BugStepInput> | null | undefined;
 };
 
 export type UpdateChatChannelInput = {
@@ -1123,6 +1224,43 @@ export type DashboardQueryVariables = Exact<{
 
 export type DashboardQuery = { dashboard: { hoursOnlyMine: boolean, overdueAging: Array<number>, summary: { projects: number, openTasks: number, closedTasks: number, overdue: number, dueSoon: number, unassigned: number, minutesLogged: number, entries: number, minutesAllTime: number }, byStatus: Array<{ name: string, color: string, category: StatusCategory, count: number }>, byPriority: Array<{ priority: TaskPriority, open: number, overdue: number }>, dueForecast: Array<{ label: string, weekStart: string | null, count: number, kind: ForecastKind }>, createdVsClosed: Array<{ weekStart: string, created: number, closed: number }>, minutesPerDay: Array<{ day: string, minutes: number }>, minutesByPerson: Array<{ userId: string, name: string, minutes: number }>, minutesByProject: Array<{ spaceId: string | null, name: string, minutes: number }>, minutesByTask: Array<{ taskId: string, number: number, title: string, minutes: number }>, people: Array<{ userId: string | null, name: string, open: number, overdue: number, minutes: number }>, projects: Array<{ spaceId: string, name: string, status: SpaceStatus, open: number, closed: number, overdue: number, dueSoon: number, progress: number, minutes: number, assignees: number, updatedAt: string | null }>, phases: Array<{ id: string, number: number, title: string, assigneeName: string | null, dueDate: string | null, done: number, total: number, minutes: number, status: { name: string, color: string, category: StatusCategory } }>, overdueTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, dueSoonTasks: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }>, recentlyUpdated: Array<{ id: string, number: number, title: string, spaceId: string, spaceName: string, assigneeName: string | null, priority: TaskPriority, dueDate: string | null, updatedAt: string, status: { name: string, color: string, category: StatusCategory } }> } };
 
+export type ApiTokenFieldsFragment = { id: string, name: string, client: string, scopes: Array<string>, prefix: string | null, pending: boolean, createdAt: string, expiresAt: string, lastUsedAt: string | null };
+
+export type ApiTokensQueryVariables = Exact<{
+  workspaceId: string;
+}>;
+
+
+export type ApiTokensQuery = { apiTokens: Array<{ id: string, name: string, client: string, scopes: Array<string>, prefix: string | null, pending: boolean, createdAt: string, expiresAt: string, lastUsedAt: string | null }> };
+
+export type ApproveExtensionConnectionMutationVariables = Exact<{
+  workspaceId: string;
+  challenge: string;
+  name: string;
+}>;
+
+
+export type ApproveExtensionConnectionMutation = { approveExtensionConnection: { id: string, name: string, client: string, scopes: Array<string>, prefix: string | null, pending: boolean, createdAt: string, expiresAt: string, lastUsedAt: string | null } };
+
+export type RevokeApiTokenMutationVariables = Exact<{
+  workspaceId: string;
+  tokenId: string;
+}>;
+
+
+export type RevokeApiTokenMutation = { revokeApiToken: boolean };
+
+export type CreateApiTokenMutationVariables = Exact<{
+  workspaceId: string;
+  name: string;
+  client: string;
+  scopes: Array<string> | string;
+  days?: number | null | undefined;
+}>;
+
+
+export type CreateApiTokenMutation = { createApiToken: { token: string, apiToken: { id: string, name: string, client: string, scopes: Array<string>, prefix: string | null, pending: boolean, createdAt: string, expiresAt: string, lastUsedAt: string | null } } };
+
 export type TaskAttachmentFieldsFragment = { id: string, taskId: string, fileName: string, contentType: string, size: number, isImage: boolean, thumbnailUrl: string | null, url: string, uploaderId: string | null, uploaderName: string | null, createdAt: string };
 
 export type TaskAttachmentsQueryVariables = Exact<{
@@ -1284,6 +1422,132 @@ export type RevealAutomationWebhookSecretMutationVariables = Exact<{
 
 
 export type RevealAutomationWebhookSecretMutation = { revealAutomationWebhookSecret: string };
+
+export type BugIntakeFieldsFragment = { id: string, spaceId: string, publicKey: string, title: string, intro: string, allowedOrigins: Array<string>, widgetEnabled: boolean, portalEnabled: boolean, updatedAt: string };
+
+export type BugShareFieldsFragment = { id: string, scope: string, createdAt: string, expiresAt: string, lastViewedAt: string | null, createdByName: string | null };
+
+export type BugIntakeQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type BugIntakeQuery = { bugIntake: { id: string, spaceId: string, publicKey: string, title: string, intro: string, allowedOrigins: Array<string>, widgetEnabled: boolean, portalEnabled: boolean, updatedAt: string } | null };
+
+export type SaveBugIntakeMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  input: SaveBugIntakeInput;
+}>;
+
+
+export type SaveBugIntakeMutation = { saveBugIntake: { id: string, spaceId: string, publicKey: string, title: string, intro: string, allowedOrigins: Array<string>, widgetEnabled: boolean, portalEnabled: boolean, updatedAt: string } };
+
+export type RotateBugIntakeKeyMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type RotateBugIntakeKeyMutation = { rotateBugIntakeKey: { id: string, spaceId: string, publicKey: string, title: string, intro: string, allowedOrigins: Array<string>, widgetEnabled: boolean, portalEnabled: boolean, updatedAt: string } };
+
+export type BugSharesQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type BugSharesQuery = { bugShares: Array<{ id: string, scope: string, createdAt: string, expiresAt: string, lastViewedAt: string | null, createdByName: string | null }> };
+
+export type CreateBugShareMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+  days: number;
+}>;
+
+
+export type CreateBugShareMutation = { createBugShare: { path: string, share: { id: string, scope: string, createdAt: string, expiresAt: string, lastViewedAt: string | null, createdByName: string | null } } };
+
+export type RevokeBugShareMutationVariables = Exact<{
+  workspaceId: string;
+  shareId: string;
+}>;
+
+
+export type RevokeBugShareMutation = { revokeBugShare: boolean };
+
+export type BugFieldsFragment = { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> };
+
+export type BugsQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  filter?: BugFilterInput | null | undefined;
+}>;
+
+
+export type BugsQuery = { bugs: Array<{ taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> }> };
+
+export type BugQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type BugQuery = { bug: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
+
+export type BugCaptureQueryVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+}>;
+
+
+export type BugCaptureQuery = { bugCapture: string };
+
+export type SimilarBugsQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  title: string;
+  excludeTaskId?: string | null | undefined;
+}>;
+
+
+export type SimilarBugsQuery = { similarBugs: Array<{ taskId: string, number: number, title: string, qaState: string, score: number }> };
+
+export type ReportBugMutationVariables = Exact<{
+  workspaceId: string;
+  input: ReportBugInput;
+}>;
+
+
+export type ReportBugMutation = { reportBug: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
+
+export type UpdateBugMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+  input: UpdateBugInput;
+}>;
+
+
+export type UpdateBugMutation = { updateBug: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
+
+export type SetBugQaStateMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+  state: string;
+}>;
+
+
+export type SetBugQaStateMutation = { setBugQaState: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
+
+export type MarkBugDuplicateMutationVariables = Exact<{
+  workspaceId: string;
+  taskId: string;
+  ofTaskId: string;
+}>;
+
+
+export type MarkBugDuplicateMutation = { markBugDuplicate: { taskId: string, number: number, title: string, spaceId: string, listId: string, statusName: string, statusCategory: string, priority: string, assigneeIds: Array<string>, kind: string, severity: string, environment: string, module: string | null, expected: string, actual: string, qaState: string, source: string, pageUrl: string | null, browser: string | null, os: string | null, viewport: string | null, reporterId: string | null, reporterName: string | null, duplicateOfTaskId: string | null, consoleErrors: number, failedRequests: number, createdAt: string, updatedAt: string, steps: Array<{ text: string, source: string }> } };
 
 export type ChatChannelFieldsFragment = { id: string, kind: string, name: string | null, topic: string, archived: boolean, myRole: string | null, muted: boolean, memberCount: number, unreadCount: number, lastMessageAt: string | null, createdAt: string, dmMembers: Array<{ id: string, name: string }> };
 
@@ -1620,7 +1884,7 @@ export type CommentsQueryVariables = Exact<{
 }>;
 
 
-export type CommentsQuery = { comments: Array<{ id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string }> };
+export type CommentsQuery = { comments: Array<{ id: string, taskId: string, authorId: string, authorName: string, body: string, agent: string | null, createdAt: string, updatedAt: string }> };
 
 export type CreateCommentMutationVariables = Exact<{
   workspaceId: string;
@@ -1629,7 +1893,7 @@ export type CreateCommentMutationVariables = Exact<{
 }>;
 
 
-export type CreateCommentMutation = { createComment: { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string } };
+export type CreateCommentMutation = { createComment: { id: string, taskId: string, authorId: string, authorName: string, body: string, agent: string | null, createdAt: string, updatedAt: string } };
 
 export type UpdateCommentMutationVariables = Exact<{
   workspaceId: string;
@@ -1638,7 +1902,7 @@ export type UpdateCommentMutationVariables = Exact<{
 }>;
 
 
-export type UpdateCommentMutation = { updateComment: { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string } };
+export type UpdateCommentMutation = { updateComment: { id: string, taskId: string, authorId: string, authorName: string, body: string, agent: string | null, createdAt: string, updatedAt: string } };
 
 export type DeleteCommentMutationVariables = Exact<{
   workspaceId: string;
@@ -1799,7 +2063,7 @@ export type TaskFieldsFragment = { id: string, number: number, listId: string, s
 
 export type CustomFieldFieldsFragment = { id: string, spaceId: string | null, entity: CustomFieldEntity, name: string, type: CustomFieldType, required: boolean, position: number, options: Array<{ id: string, label: string, color: string | null }> };
 
-export type CommentFieldsFragment = { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string };
+export type CommentFieldsFragment = { id: string, taskId: string, authorId: string, authorName: string, body: string, agent: string | null, createdAt: string, updatedAt: string };
 
 export type SprintFieldsFragment = { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null, totalPoints: number, donePoints: number, committedPoints: number | null, startedAt: string | null };
 
@@ -2832,6 +3096,162 @@ export type ResetPreferencesMutationVariables = Exact<{ [key: string]: never; }>
 
 export type ResetPreferencesMutation = { resetPreferences: { theme: string, accent: string, density: string, radius: string, font: string, sidebarCollapsed: boolean, sidebarWidth: number, sidebarPreset: string, defaultTaskView: string, taskDetailMode: string, dateFormat: string, timeFormat: string, weekStart: number, tables: Array<{ key: string, columns: Array<string>, hidden: Array<string>, pageSize: number | null, widths: Array<{ column: string, width: number }>, sort: Array<{ field: string, direction: SortDirection }> | null }>, savedViews: Array<{ id: string, name: string, resource: string, scope: string | null, where: string | null, columns: Array<string> | null, pinned: boolean, color: string | null, filterJson: string | null, sort: Array<{ field: string, direction: SortDirection }> | null }>, tabs: Array<{ id: string, path: string, title: string, pinned: boolean }> } };
 
+export type QaCaseFieldsFragment = { id: string, spaceId: string, suiteId: string | null, number: number, title: string, preconditions: string, priority: string, type: string, status: string, coversTaskId: string | null, coversTaskTitle: string | null, lastResult: string | null, lastRunAt: string | null, updatedAt: string, steps: Array<{ action: string, expected: string }> };
+
+export type QaPlanFieldsFragment = { id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } };
+
+export type QaPlanCaseFieldsFragment = { caseId: string, number: number, title: string, priority: string, type: string, suiteName: string | null, assigneeId: string | null, result: string | null, runId: string | null, executedAt: string | null, executedByName: string | null, bugTaskId: string | null, bugNumber: number | null, bugQaState: string | null, runs: number };
+
+export type QaSuitesQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type QaSuitesQuery = { qaSuites: Array<{ id: string, spaceId: string, name: string, description: string, caseCount: number }> };
+
+export type SaveQaSuiteMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  suiteId?: string | null | undefined;
+  name: string;
+  description?: string | null | undefined;
+}>;
+
+
+export type SaveQaSuiteMutation = { saveQaSuite: { id: string, spaceId: string, name: string, description: string, caseCount: number } };
+
+export type DeleteQaSuiteMutationVariables = Exact<{
+  workspaceId: string;
+  suiteId: string;
+}>;
+
+
+export type DeleteQaSuiteMutation = { deleteQaSuite: boolean };
+
+export type QaCasesQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  suiteId?: string | null | undefined;
+  status?: string | null | undefined;
+  search?: string | null | undefined;
+}>;
+
+
+export type QaCasesQuery = { qaCases: Array<{ id: string, spaceId: string, suiteId: string | null, number: number, title: string, preconditions: string, priority: string, type: string, status: string, coversTaskId: string | null, coversTaskTitle: string | null, lastResult: string | null, lastRunAt: string | null, updatedAt: string, steps: Array<{ action: string, expected: string }> }> };
+
+export type QaCaseRunsQueryVariables = Exact<{
+  workspaceId: string;
+  caseId: string;
+}>;
+
+
+export type QaCaseRunsQuery = { qaCaseRuns: Array<{ id: string, planId: string, planName: string, caseId: string, result: string, actual: string, environment: string | null, build: string | null, bugTaskId: string | null, bugNumber: number | null, retestOf: string | null, executedByName: string | null, executedAt: string, stepResults: Array<{ result: string, actual: string }> }> };
+
+export type SaveQaCaseMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  caseId?: string | null | undefined;
+  input: SaveQaCaseInput;
+}>;
+
+
+export type SaveQaCaseMutation = { saveQaCase: { id: string, spaceId: string, suiteId: string | null, number: number, title: string, preconditions: string, priority: string, type: string, status: string, coversTaskId: string | null, coversTaskTitle: string | null, lastResult: string | null, lastRunAt: string | null, updatedAt: string, steps: Array<{ action: string, expected: string }> } };
+
+export type DeleteQaCaseMutationVariables = Exact<{
+  workspaceId: string;
+  caseId: string;
+}>;
+
+
+export type DeleteQaCaseMutation = { deleteQaCase: boolean };
+
+export type QaPlansQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type QaPlansQuery = { qaPlans: Array<{ id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } }> };
+
+export type QaPlanCasesQueryVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+}>;
+
+
+export type QaPlanCasesQuery = { qaPlanCases: Array<{ caseId: string, number: number, title: string, priority: string, type: string, suiteName: string | null, assigneeId: string | null, result: string | null, runId: string | null, executedAt: string | null, executedByName: string | null, bugTaskId: string | null, bugNumber: number | null, bugQaState: string | null, runs: number }> };
+
+export type SaveQaPlanMutationVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+  planId?: string | null | undefined;
+  input: SaveQaPlanInput;
+}>;
+
+
+export type SaveQaPlanMutation = { saveQaPlan: { id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } } };
+
+export type DeleteQaPlanMutationVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+}>;
+
+
+export type DeleteQaPlanMutation = { deleteQaPlan: boolean };
+
+export type AddQaPlanCasesMutationVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+  input: AddQaPlanCasesInput;
+}>;
+
+
+export type AddQaPlanCasesMutation = { addQaPlanCases: number };
+
+export type RemoveQaPlanCaseMutationVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+  caseId: string;
+}>;
+
+
+export type RemoveQaPlanCaseMutation = { removeQaPlanCase: boolean };
+
+export type RecordQaRunMutationVariables = Exact<{
+  workspaceId: string;
+  input: RecordQaRunInput;
+}>;
+
+
+export type RecordQaRunMutation = { recordQaRun: { caseId: string, number: number, title: string, priority: string, type: string, suiteName: string | null, assigneeId: string | null, result: string | null, runId: string | null, executedAt: string | null, executedByName: string | null, bugTaskId: string | null, bugNumber: number | null, bugQaState: string | null, runs: number } };
+
+export type DecideQaPlanMutationVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+  decision: string;
+  note?: string | null | undefined;
+}>;
+
+
+export type DecideQaPlanMutation = { decideQaPlan: { id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } } };
+
+export type QaReadinessQueryVariables = Exact<{
+  workspaceId: string;
+  planId: string;
+}>;
+
+
+export type QaReadinessQuery = { qaReadiness: { ready: boolean, checks: Array<{ key: string, ok: boolean, detail: string }>, openBugs: Array<{ taskId: string, number: number, title: string, severity: string, qaState: string }>, plan: { id: string, spaceId: string, name: string, description: string, sprintId: string | null, release: string | null, status: string, decidedByName: string | null, decidedAt: string | null, decisionNote: string | null, createdAt: string, counts: { total: number, passed: number, failed: number, blocked: number, skipped: number, notRun: number } } } };
+
+export type QaCoverageQueryVariables = Exact<{
+  workspaceId: string;
+  spaceId: string;
+}>;
+
+
+export type QaCoverageQuery = { qaCoverage: { features: number, coveredFeatures: number, cases: number, readyCases: number, neverRun: number, uncovered: Array<{ taskId: string, number: number, title: string }>, flaky: Array<{ caseId: string, number: number, title: string }> } };
+
 export type ResourceSchemaQueryVariables = Exact<{
   workspaceId: string;
   resource: string;
@@ -3145,7 +3565,7 @@ export type TaskActivityQueryVariables = Exact<{
 }>;
 
 
-export type TaskActivityQuery = { taskActivity: Array<{ id: string, taskId: string, actorId: string | null, actorName: string | null, kind: string, field: string | null, from: string | null, to: string | null, createdAt: string }> };
+export type TaskActivityQuery = { taskActivity: Array<{ id: string, taskId: string, actorId: string | null, actorName: string | null, agent: string | null, kind: string, field: string | null, from: string | null, to: string | null, createdAt: string }> };
 
 export type TaskWatchersQueryVariables = Exact<{
   workspaceId: string;
@@ -3438,6 +3858,19 @@ export const DashboardTaskFieldsFragmentDoc = new TypedDocumentString(`
   updatedAt
 }
     `, {"fragmentName":"DashboardTaskFields"}) as unknown as TypedDocumentString<DashboardTaskFieldsFragment, unknown>;
+export const ApiTokenFieldsFragmentDoc = new TypedDocumentString(`
+    fragment ApiTokenFields on ApiToken {
+  id
+  name
+  client
+  scopes
+  prefix
+  pending
+  createdAt
+  expiresAt
+  lastUsedAt
+}
+    `, {"fragmentName":"ApiTokenFields"}) as unknown as TypedDocumentString<ApiTokenFieldsFragment, unknown>;
 export const TaskAttachmentFieldsFragmentDoc = new TypedDocumentString(`
     fragment TaskAttachmentFields on TaskAttachment {
   id
@@ -3512,6 +3945,65 @@ export const AutomationRuleFieldsFragmentDoc = new TypedDocumentString(`
   createdAt
 }
     `, {"fragmentName":"AutomationRuleFields"}) as unknown as TypedDocumentString<AutomationRuleFieldsFragment, unknown>;
+export const BugIntakeFieldsFragmentDoc = new TypedDocumentString(`
+    fragment BugIntakeFields on BugIntake {
+  id
+  spaceId
+  publicKey
+  title
+  intro
+  allowedOrigins
+  widgetEnabled
+  portalEnabled
+  updatedAt
+}
+    `, {"fragmentName":"BugIntakeFields"}) as unknown as TypedDocumentString<BugIntakeFieldsFragment, unknown>;
+export const BugShareFieldsFragmentDoc = new TypedDocumentString(`
+    fragment BugShareFields on BugShare {
+  id
+  scope
+  createdAt
+  expiresAt
+  lastViewedAt
+  createdByName
+}
+    `, {"fragmentName":"BugShareFields"}) as unknown as TypedDocumentString<BugShareFieldsFragment, unknown>;
+export const BugFieldsFragmentDoc = new TypedDocumentString(`
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}
+    `, {"fragmentName":"BugFields"}) as unknown as TypedDocumentString<BugFieldsFragment, unknown>;
 export const ChatChannelFieldsFragmentDoc = new TypedDocumentString(`
     fragment ChatChannelFields on ChatChannel {
   id
@@ -3769,6 +4261,7 @@ export const CommentFieldsFragmentDoc = new TypedDocumentString(`
   authorId
   authorName
   body
+  agent
   createdAt
   updatedAt
 }
@@ -4195,6 +4688,70 @@ export const OrganizationSsoFieldsFragmentDoc = new TypedDocumentString(`
   }
 }
     `, {"fragmentName":"OrganizationSsoFields"}) as unknown as TypedDocumentString<OrganizationSsoFieldsFragment, unknown>;
+export const QaCaseFieldsFragmentDoc = new TypedDocumentString(`
+    fragment QaCaseFields on QaCase {
+  id
+  spaceId
+  suiteId
+  number
+  title
+  preconditions
+  steps {
+    action
+    expected
+  }
+  priority
+  type
+  status
+  coversTaskId
+  coversTaskTitle
+  lastResult
+  lastRunAt
+  updatedAt
+}
+    `, {"fragmentName":"QaCaseFields"}) as unknown as TypedDocumentString<QaCaseFieldsFragment, unknown>;
+export const QaPlanFieldsFragmentDoc = new TypedDocumentString(`
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}
+    `, {"fragmentName":"QaPlanFields"}) as unknown as TypedDocumentString<QaPlanFieldsFragment, unknown>;
+export const QaPlanCaseFieldsFragmentDoc = new TypedDocumentString(`
+    fragment QaPlanCaseFields on QaPlanCase {
+  caseId
+  number
+  title
+  priority
+  type
+  suiteName
+  assigneeId
+  result
+  runId
+  executedAt
+  executedByName
+  bugTaskId
+  bugNumber
+  bugQaState
+  runs
+}
+    `, {"fragmentName":"QaPlanCaseFields"}) as unknown as TypedDocumentString<QaPlanCaseFieldsFragment, unknown>;
 export const TemplateFieldsFragmentDoc = new TypedDocumentString(`
     fragment TemplateFields on ProjectTemplate {
   id
@@ -4626,6 +5183,75 @@ export const DashboardDocument = new TypedDocumentString(`
   dueDate
   updatedAt
 }`) as unknown as TypedDocumentString<DashboardQuery, DashboardQueryVariables>;
+export const ApiTokensDocument = new TypedDocumentString(`
+    query ApiTokens($workspaceId: ID!) {
+  apiTokens(workspaceId: $workspaceId) {
+    ...ApiTokenFields
+  }
+}
+    fragment ApiTokenFields on ApiToken {
+  id
+  name
+  client
+  scopes
+  prefix
+  pending
+  createdAt
+  expiresAt
+  lastUsedAt
+}`) as unknown as TypedDocumentString<ApiTokensQuery, ApiTokensQueryVariables>;
+export const ApproveExtensionConnectionDocument = new TypedDocumentString(`
+    mutation ApproveExtensionConnection($workspaceId: ID!, $challenge: String!, $name: String!) {
+  approveExtensionConnection(
+    workspaceId: $workspaceId
+    challenge: $challenge
+    name: $name
+  ) {
+    ...ApiTokenFields
+  }
+}
+    fragment ApiTokenFields on ApiToken {
+  id
+  name
+  client
+  scopes
+  prefix
+  pending
+  createdAt
+  expiresAt
+  lastUsedAt
+}`) as unknown as TypedDocumentString<ApproveExtensionConnectionMutation, ApproveExtensionConnectionMutationVariables>;
+export const RevokeApiTokenDocument = new TypedDocumentString(`
+    mutation RevokeApiToken($workspaceId: ID!, $tokenId: ID!) {
+  revokeApiToken(workspaceId: $workspaceId, tokenId: $tokenId)
+}
+    `) as unknown as TypedDocumentString<RevokeApiTokenMutation, RevokeApiTokenMutationVariables>;
+export const CreateApiTokenDocument = new TypedDocumentString(`
+    mutation CreateApiToken($workspaceId: ID!, $name: String!, $client: String!, $scopes: [String!]!, $days: Int) {
+  createApiToken(
+    workspaceId: $workspaceId
+    name: $name
+    client: $client
+    scopes: $scopes
+    days: $days
+  ) {
+    token
+    apiToken {
+      ...ApiTokenFields
+    }
+  }
+}
+    fragment ApiTokenFields on ApiToken {
+  id
+  name
+  client
+  scopes
+  prefix
+  pending
+  createdAt
+  expiresAt
+  lastUsedAt
+}`) as unknown as TypedDocumentString<CreateApiTokenMutation, CreateApiTokenMutationVariables>;
 export const TaskAttachmentsDocument = new TypedDocumentString(`
     query TaskAttachments($workspaceId: ID!, $taskId: ID!) {
   taskAttachments(workspaceId: $workspaceId, taskId: $taskId) {
@@ -5037,6 +5663,358 @@ export const RevealAutomationWebhookSecretDocument = new TypedDocumentString(`
   )
 }
     `) as unknown as TypedDocumentString<RevealAutomationWebhookSecretMutation, RevealAutomationWebhookSecretMutationVariables>;
+export const BugIntakeDocument = new TypedDocumentString(`
+    query BugIntake($workspaceId: ID!, $spaceId: ID!) {
+  bugIntake(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...BugIntakeFields
+  }
+}
+    fragment BugIntakeFields on BugIntake {
+  id
+  spaceId
+  publicKey
+  title
+  intro
+  allowedOrigins
+  widgetEnabled
+  portalEnabled
+  updatedAt
+}`) as unknown as TypedDocumentString<BugIntakeQuery, BugIntakeQueryVariables>;
+export const SaveBugIntakeDocument = new TypedDocumentString(`
+    mutation SaveBugIntake($workspaceId: ID!, $spaceId: ID!, $input: SaveBugIntakeInput!) {
+  saveBugIntake(workspaceId: $workspaceId, spaceId: $spaceId, input: $input) {
+    ...BugIntakeFields
+  }
+}
+    fragment BugIntakeFields on BugIntake {
+  id
+  spaceId
+  publicKey
+  title
+  intro
+  allowedOrigins
+  widgetEnabled
+  portalEnabled
+  updatedAt
+}`) as unknown as TypedDocumentString<SaveBugIntakeMutation, SaveBugIntakeMutationVariables>;
+export const RotateBugIntakeKeyDocument = new TypedDocumentString(`
+    mutation RotateBugIntakeKey($workspaceId: ID!, $spaceId: ID!) {
+  rotateBugIntakeKey(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...BugIntakeFields
+  }
+}
+    fragment BugIntakeFields on BugIntake {
+  id
+  spaceId
+  publicKey
+  title
+  intro
+  allowedOrigins
+  widgetEnabled
+  portalEnabled
+  updatedAt
+}`) as unknown as TypedDocumentString<RotateBugIntakeKeyMutation, RotateBugIntakeKeyMutationVariables>;
+export const BugSharesDocument = new TypedDocumentString(`
+    query BugShares($workspaceId: ID!, $taskId: ID!) {
+  bugShares(workspaceId: $workspaceId, taskId: $taskId) {
+    ...BugShareFields
+  }
+}
+    fragment BugShareFields on BugShare {
+  id
+  scope
+  createdAt
+  expiresAt
+  lastViewedAt
+  createdByName
+}`) as unknown as TypedDocumentString<BugSharesQuery, BugSharesQueryVariables>;
+export const CreateBugShareDocument = new TypedDocumentString(`
+    mutation CreateBugShare($workspaceId: ID!, $taskId: ID!, $days: Int!) {
+  createBugShare(workspaceId: $workspaceId, taskId: $taskId, days: $days) {
+    path
+    share {
+      ...BugShareFields
+    }
+  }
+}
+    fragment BugShareFields on BugShare {
+  id
+  scope
+  createdAt
+  expiresAt
+  lastViewedAt
+  createdByName
+}`) as unknown as TypedDocumentString<CreateBugShareMutation, CreateBugShareMutationVariables>;
+export const RevokeBugShareDocument = new TypedDocumentString(`
+    mutation RevokeBugShare($workspaceId: ID!, $shareId: ID!) {
+  revokeBugShare(workspaceId: $workspaceId, shareId: $shareId)
+}
+    `) as unknown as TypedDocumentString<RevokeBugShareMutation, RevokeBugShareMutationVariables>;
+export const BugsDocument = new TypedDocumentString(`
+    query Bugs($workspaceId: ID!, $spaceId: ID!, $filter: BugFilterInput) {
+  bugs(workspaceId: $workspaceId, spaceId: $spaceId, filter: $filter) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<BugsQuery, BugsQueryVariables>;
+export const BugDocument = new TypedDocumentString(`
+    query Bug($workspaceId: ID!, $taskId: ID!) {
+  bug(workspaceId: $workspaceId, taskId: $taskId) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<BugQuery, BugQueryVariables>;
+export const BugCaptureDocument = new TypedDocumentString(`
+    query BugCapture($workspaceId: ID!, $taskId: ID!) {
+  bugCapture(workspaceId: $workspaceId, taskId: $taskId)
+}
+    `) as unknown as TypedDocumentString<BugCaptureQuery, BugCaptureQueryVariables>;
+export const SimilarBugsDocument = new TypedDocumentString(`
+    query SimilarBugs($workspaceId: ID!, $spaceId: ID!, $title: String!, $excludeTaskId: ID) {
+  similarBugs(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    title: $title
+    excludeTaskId: $excludeTaskId
+  ) {
+    taskId
+    number
+    title
+    qaState
+    score
+  }
+}
+    `) as unknown as TypedDocumentString<SimilarBugsQuery, SimilarBugsQueryVariables>;
+export const ReportBugDocument = new TypedDocumentString(`
+    mutation ReportBug($workspaceId: ID!, $input: ReportBugInput!) {
+  reportBug(workspaceId: $workspaceId, input: $input) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<ReportBugMutation, ReportBugMutationVariables>;
+export const UpdateBugDocument = new TypedDocumentString(`
+    mutation UpdateBug($workspaceId: ID!, $taskId: ID!, $input: UpdateBugInput!) {
+  updateBug(workspaceId: $workspaceId, taskId: $taskId, input: $input) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<UpdateBugMutation, UpdateBugMutationVariables>;
+export const SetBugQaStateDocument = new TypedDocumentString(`
+    mutation SetBugQaState($workspaceId: ID!, $taskId: ID!, $state: String!) {
+  setBugQaState(workspaceId: $workspaceId, taskId: $taskId, state: $state) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<SetBugQaStateMutation, SetBugQaStateMutationVariables>;
+export const MarkBugDuplicateDocument = new TypedDocumentString(`
+    mutation MarkBugDuplicate($workspaceId: ID!, $taskId: ID!, $ofTaskId: ID!) {
+  markBugDuplicate(
+    workspaceId: $workspaceId
+    taskId: $taskId
+    ofTaskId: $ofTaskId
+  ) {
+    ...BugFields
+  }
+}
+    fragment BugFields on Bug {
+  taskId
+  number
+  title
+  spaceId
+  listId
+  statusName
+  statusCategory
+  priority
+  assigneeIds
+  kind
+  severity
+  environment
+  module
+  expected
+  actual
+  steps {
+    text
+    source
+  }
+  qaState
+  source
+  pageUrl
+  browser
+  os
+  viewport
+  reporterId
+  reporterName
+  duplicateOfTaskId
+  consoleErrors
+  failedRequests
+  createdAt
+  updatedAt
+}`) as unknown as TypedDocumentString<MarkBugDuplicateMutation, MarkBugDuplicateMutationVariables>;
 export const ChatChannelsDocument = new TypedDocumentString(`
     query ChatChannels($workspaceId: ID!) {
   chatChannels(workspaceId: $workspaceId) {
@@ -5818,6 +6796,7 @@ export const CommentsDocument = new TypedDocumentString(`
   authorId
   authorName
   body
+  agent
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<CommentsQuery, CommentsQueryVariables>;
@@ -5833,6 +6812,7 @@ export const CreateCommentDocument = new TypedDocumentString(`
   authorId
   authorName
   body
+  agent
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<CreateCommentMutation, CreateCommentMutationVariables>;
@@ -5848,6 +6828,7 @@ export const UpdateCommentDocument = new TypedDocumentString(`
   authorId
   authorName
   body
+  agent
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<UpdateCommentMutation, UpdateCommentMutationVariables>;
@@ -8526,6 +9507,345 @@ export const ResetPreferencesDocument = new TypedDocumentString(`
     pinned
   }
 }`) as unknown as TypedDocumentString<ResetPreferencesMutation, ResetPreferencesMutationVariables>;
+export const QaSuitesDocument = new TypedDocumentString(`
+    query QaSuites($workspaceId: ID!, $spaceId: ID!) {
+  qaSuites(workspaceId: $workspaceId, spaceId: $spaceId) {
+    id
+    spaceId
+    name
+    description
+    caseCount
+  }
+}
+    `) as unknown as TypedDocumentString<QaSuitesQuery, QaSuitesQueryVariables>;
+export const SaveQaSuiteDocument = new TypedDocumentString(`
+    mutation SaveQaSuite($workspaceId: ID!, $spaceId: ID!, $suiteId: ID, $name: String!, $description: String) {
+  saveQaSuite(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    suiteId: $suiteId
+    name: $name
+    description: $description
+  ) {
+    id
+    spaceId
+    name
+    description
+    caseCount
+  }
+}
+    `) as unknown as TypedDocumentString<SaveQaSuiteMutation, SaveQaSuiteMutationVariables>;
+export const DeleteQaSuiteDocument = new TypedDocumentString(`
+    mutation DeleteQaSuite($workspaceId: ID!, $suiteId: ID!) {
+  deleteQaSuite(workspaceId: $workspaceId, suiteId: $suiteId)
+}
+    `) as unknown as TypedDocumentString<DeleteQaSuiteMutation, DeleteQaSuiteMutationVariables>;
+export const QaCasesDocument = new TypedDocumentString(`
+    query QaCases($workspaceId: ID!, $spaceId: ID!, $suiteId: ID, $status: String, $search: String) {
+  qaCases(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    suiteId: $suiteId
+    status: $status
+    search: $search
+  ) {
+    ...QaCaseFields
+  }
+}
+    fragment QaCaseFields on QaCase {
+  id
+  spaceId
+  suiteId
+  number
+  title
+  preconditions
+  steps {
+    action
+    expected
+  }
+  priority
+  type
+  status
+  coversTaskId
+  coversTaskTitle
+  lastResult
+  lastRunAt
+  updatedAt
+}`) as unknown as TypedDocumentString<QaCasesQuery, QaCasesQueryVariables>;
+export const QaCaseRunsDocument = new TypedDocumentString(`
+    query QaCaseRuns($workspaceId: ID!, $caseId: ID!) {
+  qaCaseRuns(workspaceId: $workspaceId, caseId: $caseId) {
+    id
+    planId
+    planName
+    caseId
+    result
+    stepResults {
+      result
+      actual
+    }
+    actual
+    environment
+    build
+    bugTaskId
+    bugNumber
+    retestOf
+    executedByName
+    executedAt
+  }
+}
+    `) as unknown as TypedDocumentString<QaCaseRunsQuery, QaCaseRunsQueryVariables>;
+export const SaveQaCaseDocument = new TypedDocumentString(`
+    mutation SaveQaCase($workspaceId: ID!, $spaceId: ID!, $caseId: ID, $input: SaveQaCaseInput!) {
+  saveQaCase(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    caseId: $caseId
+    input: $input
+  ) {
+    ...QaCaseFields
+  }
+}
+    fragment QaCaseFields on QaCase {
+  id
+  spaceId
+  suiteId
+  number
+  title
+  preconditions
+  steps {
+    action
+    expected
+  }
+  priority
+  type
+  status
+  coversTaskId
+  coversTaskTitle
+  lastResult
+  lastRunAt
+  updatedAt
+}`) as unknown as TypedDocumentString<SaveQaCaseMutation, SaveQaCaseMutationVariables>;
+export const DeleteQaCaseDocument = new TypedDocumentString(`
+    mutation DeleteQaCase($workspaceId: ID!, $caseId: ID!) {
+  deleteQaCase(workspaceId: $workspaceId, caseId: $caseId)
+}
+    `) as unknown as TypedDocumentString<DeleteQaCaseMutation, DeleteQaCaseMutationVariables>;
+export const QaPlansDocument = new TypedDocumentString(`
+    query QaPlans($workspaceId: ID!, $spaceId: ID!) {
+  qaPlans(workspaceId: $workspaceId, spaceId: $spaceId) {
+    ...QaPlanFields
+  }
+}
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}`) as unknown as TypedDocumentString<QaPlansQuery, QaPlansQueryVariables>;
+export const QaPlanCasesDocument = new TypedDocumentString(`
+    query QaPlanCases($workspaceId: ID!, $planId: ID!) {
+  qaPlanCases(workspaceId: $workspaceId, planId: $planId) {
+    ...QaPlanCaseFields
+  }
+}
+    fragment QaPlanCaseFields on QaPlanCase {
+  caseId
+  number
+  title
+  priority
+  type
+  suiteName
+  assigneeId
+  result
+  runId
+  executedAt
+  executedByName
+  bugTaskId
+  bugNumber
+  bugQaState
+  runs
+}`) as unknown as TypedDocumentString<QaPlanCasesQuery, QaPlanCasesQueryVariables>;
+export const SaveQaPlanDocument = new TypedDocumentString(`
+    mutation SaveQaPlan($workspaceId: ID!, $spaceId: ID!, $planId: ID, $input: SaveQaPlanInput!) {
+  saveQaPlan(
+    workspaceId: $workspaceId
+    spaceId: $spaceId
+    planId: $planId
+    input: $input
+  ) {
+    ...QaPlanFields
+  }
+}
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}`) as unknown as TypedDocumentString<SaveQaPlanMutation, SaveQaPlanMutationVariables>;
+export const DeleteQaPlanDocument = new TypedDocumentString(`
+    mutation DeleteQaPlan($workspaceId: ID!, $planId: ID!) {
+  deleteQaPlan(workspaceId: $workspaceId, planId: $planId)
+}
+    `) as unknown as TypedDocumentString<DeleteQaPlanMutation, DeleteQaPlanMutationVariables>;
+export const AddQaPlanCasesDocument = new TypedDocumentString(`
+    mutation AddQaPlanCases($workspaceId: ID!, $planId: ID!, $input: AddQaPlanCasesInput!) {
+  addQaPlanCases(workspaceId: $workspaceId, planId: $planId, input: $input)
+}
+    `) as unknown as TypedDocumentString<AddQaPlanCasesMutation, AddQaPlanCasesMutationVariables>;
+export const RemoveQaPlanCaseDocument = new TypedDocumentString(`
+    mutation RemoveQaPlanCase($workspaceId: ID!, $planId: ID!, $caseId: ID!) {
+  removeQaPlanCase(workspaceId: $workspaceId, planId: $planId, caseId: $caseId)
+}
+    `) as unknown as TypedDocumentString<RemoveQaPlanCaseMutation, RemoveQaPlanCaseMutationVariables>;
+export const RecordQaRunDocument = new TypedDocumentString(`
+    mutation RecordQaRun($workspaceId: ID!, $input: RecordQaRunInput!) {
+  recordQaRun(workspaceId: $workspaceId, input: $input) {
+    ...QaPlanCaseFields
+  }
+}
+    fragment QaPlanCaseFields on QaPlanCase {
+  caseId
+  number
+  title
+  priority
+  type
+  suiteName
+  assigneeId
+  result
+  runId
+  executedAt
+  executedByName
+  bugTaskId
+  bugNumber
+  bugQaState
+  runs
+}`) as unknown as TypedDocumentString<RecordQaRunMutation, RecordQaRunMutationVariables>;
+export const DecideQaPlanDocument = new TypedDocumentString(`
+    mutation DecideQaPlan($workspaceId: ID!, $planId: ID!, $decision: String!, $note: String) {
+  decideQaPlan(
+    workspaceId: $workspaceId
+    planId: $planId
+    decision: $decision
+    note: $note
+  ) {
+    ...QaPlanFields
+  }
+}
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}`) as unknown as TypedDocumentString<DecideQaPlanMutation, DecideQaPlanMutationVariables>;
+export const QaReadinessDocument = new TypedDocumentString(`
+    query QaReadiness($workspaceId: ID!, $planId: ID!) {
+  qaReadiness(workspaceId: $workspaceId, planId: $planId) {
+    ready
+    checks {
+      key
+      ok
+      detail
+    }
+    openBugs {
+      taskId
+      number
+      title
+      severity
+      qaState
+    }
+    plan {
+      ...QaPlanFields
+    }
+  }
+}
+    fragment QaPlanFields on QaPlan {
+  id
+  spaceId
+  name
+  description
+  sprintId
+  release
+  status
+  decidedByName
+  decidedAt
+  decisionNote
+  createdAt
+  counts {
+    total
+    passed
+    failed
+    blocked
+    skipped
+    notRun
+  }
+}`) as unknown as TypedDocumentString<QaReadinessQuery, QaReadinessQueryVariables>;
+export const QaCoverageDocument = new TypedDocumentString(`
+    query QaCoverage($workspaceId: ID!, $spaceId: ID!) {
+  qaCoverage(workspaceId: $workspaceId, spaceId: $spaceId) {
+    features
+    coveredFeatures
+    uncovered {
+      taskId
+      number
+      title
+    }
+    cases
+    readyCases
+    neverRun
+    flaky {
+      caseId
+      number
+      title
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<QaCoverageQuery, QaCoverageQueryVariables>;
 export const ResourceSchemaDocument = new TypedDocumentString(`
     query ResourceSchema($workspaceId: ID!, $resource: String!) {
   resourceSchema(workspaceId: $workspaceId, resource: $resource) {
@@ -9580,6 +10900,7 @@ export const TaskActivityDocument = new TypedDocumentString(`
     taskId
     actorId
     actorName
+    agent
     kind
     field
     from

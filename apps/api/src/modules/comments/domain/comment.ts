@@ -4,6 +4,8 @@ export interface Comment {
   taskId: string;
   authorId: string;
   body: string;
+  /** The AI agent that wrote it (MCP), or null for a person. */
+  agent?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

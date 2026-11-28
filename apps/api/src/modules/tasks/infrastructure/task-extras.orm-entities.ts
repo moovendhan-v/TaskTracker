@@ -57,6 +57,10 @@ export class TaskActivityOrmEntity {
   @Column({ type: 'varchar', length: 30 })
   kind: string;
 
+  /** The AI agent that made the change (MCP), or null for a person. */
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  agent: string | null;
+
   @Column({ type: 'varchar', length: 40, nullable: true })
   field: string | null;
 

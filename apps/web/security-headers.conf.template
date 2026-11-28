@@ -8,5 +8,6 @@ add_header X-Frame-Options "DENY" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 # Calls (D2) use the camera, microphone and screen sharing, on this site only.
 add_header Permissions-Policy "camera=(self), microphone=(self), display-capture=(self), geolocation=()" always;
-# Enable once the site is served over HTTPS:
-# add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+# Browsers ignore HSTS on plain-HTTP responses, so it's safe to send always; once the site is
+# served over HTTPS (TLS at the load balancer in front of this container), it pins HTTPS.
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;

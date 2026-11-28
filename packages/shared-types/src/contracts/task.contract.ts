@@ -102,6 +102,8 @@ export interface TaskActivityResponse {
   taskId: string;
   actorId: string | null;
   actorName: string | null;
+  /** The AI agent (an MCP connection) that made the change for the actor, or null for the person themselves. */
+  agent: string | null;
   kind: string;
   /** Human-readable change, e.g. { field: 'status', from: 'To do', to: 'Done' }. */
   field: string | null;
