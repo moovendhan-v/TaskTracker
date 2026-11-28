@@ -5,6 +5,20 @@ optional screen recording, and the page's console, errors, network calls and you
 It works in Chrome, Edge and Firefox (Manifest V3). It's open source (MIT) and talks only to your
 own TaskFlow server.
 
+## Download
+
+Every TaskFlow server serves the latest build:
+
+- **`https://<your-taskflow>/downloads/extension/latest`** gives the right zip for the browser
+  opening it. Firefox gets the Firefox build; Chrome, Edge, Brave and other browsers get the
+  Chrome/Edge build. Add `?browser=firefox` or `?browser=chrome` to pick one.
+- **`/downloads/extension/latest.json`** shows the version and the file names.
+- **In TaskFlow:** go to **Security → Browser extension** and use **Download for <your browser>**,
+  which also shows the install steps.
+
+Shipping a new version means rebuilding TaskFlow's web image. It builds the extension and bundles
+the zips.
+
 ## Install
 
 ```bash

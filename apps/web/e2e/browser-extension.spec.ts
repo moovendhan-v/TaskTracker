@@ -193,3 +193,29 @@ test('lists the connection under Security, and Disconnect stops it at once', asy
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);
   await expect(popup.getByText('This connection was disconnected or expired')).toBeVisible();
 });
+
+test('serves the latest extension for the browser asking', async () => {
+  const firefox = 'Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0';
+  const chrome = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36';
+  const latest = async (userAgent: string, query = '') => {
+    const response = await page.request.get(`${WEB_URL}/downloads/extension/latest${query}`, { headers: { 'User-Agent': userAgent }, maxRedirects: 0 });
+    return { status: response.status(), location: response.headers()['location'] ?? '' };
+  };
+  expect(await latest(firefox)).toEqual({ status: 302, location: '/downloads/extension/taskflow-extension-firefox.zip' });
+  expect(await latest(chrome)).toEqual({ status: 302, location: '/downloads/extension/taskflow-extension-chrome.zip' });
+  expect((await latest(chrome, '?browser=firefox')).location).toBe('/downloads/extension/taskflow-extension-firefox.zip');
+
+  const zip = await page.request.get(`${WEB_URL}/downloads/extension/latest`, { headers: { 'User-Agent': firefox } });
+  expect(zip.headers()['content-type']).toBe('application/zip');
+  const bytes = await zip.body();
+  expect(bytes.subarray(0, 2).toString()).toBe('PK');
+  expect(bytes.includes(Buffer.from('manifest.json'))).toBe(true);
+  const info = (await (await page.request.get(`${WEB_URL}/downloads/extension/latest.json`)).json()) as { version: string; files: Record<string, string> };
+  expect(info.files).toEqual({ chrome: `taskflow-extension-chrome-${info.version}.zip`, firefox: `taskflow-extension-firefox-${info.version}.zip` });
+
+  await page.goto(`${WEB_URL}/w/${workspaceId}/security`);
+  const download = page.getByTestId('extension-download');
+  await expect(download.getByRole('link', { name: 'Download for Chrome' })).toHaveAttribute('href', '/downloads/extension/latest?browser=chrome');
+  await expect(download).toContainText(`Version ${info.version}`);
+  if (process.env['E2E_SCREENSHOTS']) await page.getByRole('region', { name: 'Browser extension' }).screenshot({ path: '../../docs/screenshots/v2/e6-extension-download.png' });
+});

@@ -52,15 +52,16 @@ everything below is written from scratch.
 - [ ] rrweb session replay in `packages/bug-capture`
 - [x] Embeddable widget (`packages/feedback-widget`, served at `/embed/v1/feedback.js`): one `<script>` tag, shadow DOM, console/network/clicks capture, screenshot, CAPTCHA; real-browser e2e from another origin
 - [x] Browser extension (Manifest V3, Chrome + Firefox) using the same capture core and an API token (`apps/extension`):
-      connect, screenshot + annotate, element pick, tab recording, per-tab or always-on capture, duplicate warning; real-browser e2e
+      connect, screenshot + annotate, element pick, tab recording, per-tab or always-on capture, duplicate warning; real-browser e2e;
+      downloadable per browser at `/downloads/extension/latest`
 
 ### 4. QA and test management
-- [ ] Test cases (steps, expected), suites, plans (sprint / release), runs with results
+- [x] Test cases (steps, expected), suites, plans (sprint / release), runs with results
       (passed, failed, blocked, skipped) and history
-- [ ] Failed case → bug with the run's details; retest links
-- [ ] Links to tasks, bugs, sprints and releases
-- [ ] QA approval / verification of a plan
-- [ ] Coverage and release readiness dashboard
+- [x] Failed case → bug with the run's details; a passing retest verifies it, a failing one reopens it
+- [x] Links to tasks (covered features), bugs, sprints and releases
+- [x] QA approval / rejection of a plan (project admins; failures need a note; approved plans frozen; audited)
+- [x] Coverage (features with tests, never run, flaky) and release readiness checks
 
 ### 5. MCP server
 - [ ] Streamable HTTP MCP endpoint, API-token auth with read / write scopes and space limits

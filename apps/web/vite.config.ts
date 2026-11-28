@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
@@ -36,8 +36,48 @@ function feedbackWidget(): Plugin {
 const devWebPort = process.env.DEV_WEB_PORT ? Number(process.env.DEV_WEB_PORT) : undefined;
 
 // The dev server proxies /api to the API, so the browser sees one origin, like nginx in production.
+// The browser extension (E6.3), built by @taskflow/extension, downloadable from TaskFlow at
+// /downloads/extension/. `latest` picks the package for the browser asking (or ?browser=).
+const EXTENSION_PATH = '/downloads/extension/';
+const extensionDir = fileURLToPath(new URL('../../apps/extension/dist/packages/', import.meta.url));
+function extensionFor(userAgent: string, asked: string | null): 'chrome' | 'firefox' {
+  if (asked === 'firefox' || asked === 'chrome') return asked;
+  return /Firefox\/|FxiOS\//.test(userAgent) ? 'firefox' : 'chrome';
+}
+function extensionDownloads(): Plugin {
+  return {
+    name: 'taskflow-extension-downloads',
+    configureServer(server) {
+      server.middlewares.use(EXTENSION_PATH, (request, response) => {
+        const url = new URL(request.url ?? '/', 'http://localhost');
+        const name = url.pathname.replace(/^\//, '');
+        if (name === 'latest') {
+          response.statusCode = 302;
+          response.setHeader('Location', `${EXTENSION_PATH}taskflow-extension-${extensionFor(request.headers['user-agent'] ?? '', url.searchParams.get('browser'))}.zip`);
+          response.end();
+          return;
+        }
+        const file = `${extensionDir}${name}`;
+        if (!/^[\w.-]+\.(zip|json)$/.test(name) || !existsSync(file)) {
+          response.statusCode = 404;
+          response.end('Not found (build @taskflow/extension first)');
+          return;
+        }
+        response.setHeader('Content-Type', name.endsWith('.json') ? 'application/json' : 'application/zip');
+        if (name.endsWith('.zip')) response.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+        response.setHeader('Cache-Control', 'no-cache');
+        response.end(readFileSync(file));
+      });
+    },
+    generateBundle() {
+      if (!existsSync(`${extensionDir}latest.json`)) this.error('Build @taskflow/extension before the web app (pnpm build does it in order)');
+      for (const name of readdirSync(extensionDir)) this.emitFile({ type: 'asset', fileName: `${EXTENSION_PATH.slice(1)}${name}`, source: readFileSync(`${extensionDir}${name}`) });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), feedbackWidget()],
+  plugins: [react(), tailwindcss(), feedbackWidget(), extensionDownloads()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

@@ -4,6 +4,7 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
+import { zipDirectory } from './zip.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = resolve(here, 'src');
@@ -74,4 +75,17 @@ for (const [browser, manifest] of Object.entries(manifests)) {
   writeFileSync(resolve(target, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 }
 rmSync(out, { recursive: true, force: true });
-console.log('Built dist/chrome and dist/firefox');
+
+// Packages TaskFlow serves at /downloads/extension/ (see apps/web): one per browser, plus what's latest.
+const packages = resolve(here, 'dist/packages');
+mkdirSync(packages, { recursive: true });
+const latest = { version, builtAt: new Date().toISOString(), files: {} };
+for (const browser of Object.keys(manifests)) {
+  const file = `taskflow-extension-${browser}-${version}.zip`;
+  zipDirectory(resolve(here, 'dist', browser), resolve(packages, file));
+  // The same bytes under a name that never changes, for /downloads/extension/latest.
+  cpSync(resolve(packages, file), resolve(packages, `taskflow-extension-${browser}.zip`));
+  latest.files[browser] = file;
+}
+writeFileSync(resolve(packages, 'latest.json'), `${JSON.stringify(latest, null, 2)}\n`);
+console.log(`Built dist/chrome, dist/firefox and dist/packages (${version})`);

@@ -9,12 +9,14 @@ COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/sdk/package.json packages/sdk/
 COPY packages/bug-capture/package.json packages/bug-capture/
 COPY packages/feedback-widget/package.json packages/feedback-widget/
+COPY apps/extension/package.json apps/extension/
 COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile --filter @taskflow/web...
 COPY packages/shared-types packages/shared-types
 COPY packages/sdk packages/sdk
 COPY packages/bug-capture packages/bug-capture
 COPY packages/feedback-widget packages/feedback-widget
+COPY apps/extension apps/extension
 COPY apps/web apps/web
 ARG VITE_TURNSTILE_SITE_KEY=""
 ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
@@ -22,6 +24,7 @@ RUN pnpm --filter @taskflow/shared-types build \
  && pnpm --filter @taskflow/sdk build \
  && pnpm --filter @taskflow/bug-capture build \
  && pnpm --filter @taskflow/feedback-widget build \
+ && pnpm --filter @taskflow/extension build \
  && pnpm --filter @taskflow/web build
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
