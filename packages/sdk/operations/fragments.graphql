@@ -66,7 +66,7 @@ fragment TaskFields on Task {
 
 fragment CustomFieldFields on CustomField { id spaceId entity name type required position options { id label color } }
 
-fragment CommentFields on Comment { id taskId authorId authorName body createdAt updatedAt }
+fragment CommentFields on Comment { id taskId authorId authorName body agent createdAt updatedAt }
 
 fragment SprintFields on Sprint {
   id spaceId name goal status startDate endDate completedAt totalTasks doneTasks committedTasks totalPoints donePoints committedPoints startedAt

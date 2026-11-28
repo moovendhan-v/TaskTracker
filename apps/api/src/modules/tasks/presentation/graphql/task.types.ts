@@ -92,6 +92,7 @@ export class TaskActivityGql implements TaskActivityResponse {
   @Field(() => ID) taskId: string;
   @Field(() => ID, { nullable: true }) actorId: string | null;
   @Field(() => String, { nullable: true }) actorName: string | null;
+  @Field(() => String, { nullable: true, description: 'The AI agent (MCP connection) that made the change, or null for a person' }) agent: string | null;
   @Field({ description: 'created, changed or related' }) kind: string;
   @Field(() => String, { nullable: true }) field: string | null;
   @Field(() => String, { nullable: true }) from: string | null;

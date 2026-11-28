@@ -9,6 +9,7 @@ export const CommentMapper = {
       authorId: comment.authorId,
       authorName: comment.authorName,
       body: comment.body,
+      agent: comment.agent ?? null,
       createdAt: comment.createdAt.toISOString(),
       updatedAt: comment.updatedAt.toISOString(),
     };

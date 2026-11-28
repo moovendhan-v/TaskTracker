@@ -754,6 +754,8 @@ input ColumnWidthInput {
 }
 
 type Comment {
+  """The AI agent (MCP connection) that wrote it, or null for a person"""
+  agent: String
   authorId: ID!
   authorName: String!
 
@@ -940,6 +942,13 @@ input CreateTaskStatusInput {
 input CreateWorkspaceInput {
   color: String
   name: String!
+}
+
+type CreatedApiToken {
+  apiToken: ApiToken!
+
+  """Shown once: only a hash is kept"""
+  token: String!
 }
 
 type CreatedBugShare {
@@ -1897,6 +1906,11 @@ type Mutation {
 
   """HR fixes a shift’s times, saying why. Audited"""
   correctAttendanceShift(input: CorrectAttendanceShiftInput!, shiftId: ID!, workspaceId: ID!): AttendanceShift!
+
+  """
+  A personal access token for an AI assistant (MCP) or a script, shown once
+  """
+  createApiToken(client: String!, days: Int, name: String!, scopes: [String!]!, workspaceId: ID!): CreatedApiToken!
   createAutomation(input: SaveAutomationInput!, spaceId: ID!, workspaceId: ID!): AutomationRule!
 
   """A read-only link to a report for someone outside the workspace"""
@@ -3764,6 +3778,11 @@ type Task {
 type TaskActivity {
   actorId: ID
   actorName: String
+
+  """
+  The AI agent (MCP connection) that made the change, or null for a person
+  """
+  agent: String
   createdAt: String!
   field: String
   from: String

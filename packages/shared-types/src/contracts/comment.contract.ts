@@ -7,6 +7,8 @@ export interface CommentResponse {
   authorName: string;
   /** Plain text. Clients must render it as text, never as HTML. */
   body: string;
+  /** The AI agent (an MCP connection) that wrote it for the author, or null for the author themselves. */
+  agent: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -46,6 +46,17 @@ export class TypeOrmApiTokenRepository extends ApiTokenRepository {
     return toRecord(rows[0]!);
   }
 
+  async insertIssued(token: Omit<NewPendingToken, 'challengeHash' | 'challengeExpiresAt'> & { tokenHash: string; prefix: string }): Promise<ApiTokenRecord> {
+    const rows = rowsOf(
+      await this.query(
+        `INSERT INTO api_token AS t (workspace_id, user_id, name, client, scopes, token_hash, token_prefix, expires_at)
+         VALUES ($1, $2, $3, $4, $5::text[], $6, $7, $8) RETURNING ${COLUMNS}`,
+        [token.workspaceId, token.userId, token.name, token.client, [...token.scopes], token.tokenHash, token.prefix, token.expiresAt],
+      ),
+    );
+    return toRecord(rows[0]!);
+  }
+
   async listOwn(workspaceId: string, userId: string): Promise<ApiTokenRecord[]> {
     const rows = rowsOf(
       await this.query(

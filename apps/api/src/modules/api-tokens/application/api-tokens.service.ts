@@ -66,6 +66,33 @@ export class ApiTokensService {
     return toResponse(record);
   }
 
+  /**
+   * A token for an AI assistant (MCP) or a script, made in TaskFlow by its owner and shown once.
+   * Read-only (bugs:read, tasks:read) or read and write.
+   */
+  async createDirect(actor: Actor, access: WorkspaceAccess, input: { name: string; client: ApiTokenClient; scopes: readonly string[]; days?: number | null }): Promise<IssuedToken> {
+    if (input.client === 'extension') throw DomainError.invalid('Connect the extension from the extension itself');
+    const name = input.name.replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (!name) throw DomainError.invalid('Name the connection, e.g. “Claude Code on my laptop”');
+    const scopes = this.scopes(input.scopes);
+    const days = input.days ?? API_TOKEN_DAYS;
+    if (!Number.isInteger(days) || days < 1 || days > 365) throw DomainError.invalid('Tokens last 1 to 365 days');
+    if ((await this.tokens.countActive(access.workspaceId, actor.userId)) >= MAX_ACTIVE) throw DomainError.conflict(`You have ${MAX_ACTIVE} connections in this workspace already. Disconnect one first.`);
+    const token = `${API_TOKEN_PREFIX}${randomBytes(32).toString('base64url')}`;
+    const record = await this.tokens.insertIssued({
+      workspaceId: access.workspaceId,
+      userId: actor.userId,
+      name,
+      client: input.client,
+      scopes,
+      tokenHash: sha256Hex(token),
+      prefix: token.slice(0, API_TOKEN_PREFIX.length + 4),
+      expiresAt: new Date(Date.now() + days * 86_400_000),
+    });
+    await this.audit.record(actor, { action: 'api_token.create', targetType: 'api_token', targetId: record.id, workspaceId: access.workspaceId, metadata: { name, client: record.client, scopes, days } });
+    return { token, record };
+  }
+
   async list(actor: Actor, access: WorkspaceAccess): Promise<ApiTokenResponse[]> {
     return (await this.tokens.listOwn(access.workspaceId, actor.userId)).map(toResponse);
   }

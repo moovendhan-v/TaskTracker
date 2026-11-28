@@ -64,7 +64,7 @@ everything below is written from scratch.
 - [x] Coverage (features with tests, never run, flaky) and release readiness checks
 
 ### 5. MCP server
-- [ ] Streamable HTTP MCP endpoint, API-token auth with read / write scopes and space limits
-- [ ] Tools: search/get bugs, diagnostics, steps, attachments; create/update bugs and tasks;
-      test cases and results; status, priority, assignee; comments
-- [ ] Every call audited (agent, tool, resource, before/after, outcome); activity shows AI changes apart
+- [x] Streamable HTTP MCP endpoint (`/api/mcp`) and a UTCP 1.0 manual (`/api/utcp`), API-token auth with read / write scopes; the owner's permissions and space limits apply
+- [x] Tools generated from the GraphQL API (bugs, diagnostics, tasks, comments, QA, sprints, docs, time…): new features need no MCP code;
+      destructive, admin and security operations excluded
+- [x] Every call audited (agent, tool, resource, arguments, before/after, outcome); task history and comments mark AI changes

@@ -11,6 +11,7 @@ export class CommentGql implements CommentResponse {
   @Field(() => ID) authorId: string;
   @Field() authorName: string;
   @Field({ description: 'Plain text; render as text, never HTML' }) body: string;
+  @Field(() => String, { nullable: true, description: 'The AI agent (MCP connection) that wrote it, or null for a person' }) agent: string | null;
   @Field() createdAt: string;
   @Field() updatedAt: string;
 }

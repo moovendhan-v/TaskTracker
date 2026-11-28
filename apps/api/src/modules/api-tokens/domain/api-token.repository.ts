@@ -35,6 +35,8 @@ export interface NewPendingToken {
 export abstract class ApiTokenRepository {
   /** Own rows (workspace scope). */
   abstract insertPending(token: NewPendingToken): Promise<ApiTokenRecord>;
+  /** A token issued at once (made in TaskFlow by its owner, e.g. for an MCP client). */
+  abstract insertIssued(token: Omit<NewPendingToken, 'challengeHash' | 'challengeExpiresAt'> & { tokenHash: string; prefix: string }): Promise<ApiTokenRecord>;
   abstract listOwn(workspaceId: string, userId: string): Promise<ApiTokenRecord[]>;
   abstract countActive(workspaceId: string, userId: string): Promise<number>;
   abstract revoke(workspaceId: string, userId: string, id: string): Promise<boolean>;

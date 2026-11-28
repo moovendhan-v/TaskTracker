@@ -68,7 +68,7 @@ function ExtensionDownload() {
 export function ExtensionConnectionsCard({ workspaceId }: { workspaceId: string }) {
   const queryClient = useQueryClient();
   const key = [...queryKeys.workspace(workspaceId), 'api-tokens'];
-  const tokens = useQuery({ queryKey: key, queryFn: () => extensionApi.list(workspaceId) });
+  const tokens = useQuery({ queryKey: key, queryFn: () => extensionApi.list(workspaceId), select: (all) => all.filter((token) => token.client === 'extension') });
   const revoke = useMutation({
     mutationFn: (tokenId: string) => extensionApi.revoke(workspaceId, tokenId),
     onSuccess: () => {

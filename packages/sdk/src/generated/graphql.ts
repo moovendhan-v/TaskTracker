@@ -1250,6 +1250,17 @@ export type RevokeApiTokenMutationVariables = Exact<{
 
 export type RevokeApiTokenMutation = { revokeApiToken: boolean };
 
+export type CreateApiTokenMutationVariables = Exact<{
+  workspaceId: string;
+  name: string;
+  client: string;
+  scopes: Array<string> | string;
+  days?: number | null | undefined;
+}>;
+
+
+export type CreateApiTokenMutation = { createApiToken: { token: string, apiToken: { id: string, name: string, client: string, scopes: Array<string>, prefix: string | null, pending: boolean, createdAt: string, expiresAt: string, lastUsedAt: string | null } } };
+
 export type TaskAttachmentFieldsFragment = { id: string, taskId: string, fileName: string, contentType: string, size: number, isImage: boolean, thumbnailUrl: string | null, url: string, uploaderId: string | null, uploaderName: string | null, createdAt: string };
 
 export type TaskAttachmentsQueryVariables = Exact<{
@@ -1873,7 +1884,7 @@ export type CommentsQueryVariables = Exact<{
 }>;
 
 
-export type CommentsQuery = { comments: Array<{ id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string }> };
+export type CommentsQuery = { comments: Array<{ id: string, taskId: string, authorId: string, authorName: string, body: string, agent: string | null, createdAt: string, updatedAt: string }> };
 
 export type CreateCommentMutationVariables = Exact<{
   workspaceId: string;
@@ -1882,7 +1893,7 @@ export type CreateCommentMutationVariables = Exact<{
 }>;
 
 
-export type CreateCommentMutation = { createComment: { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string } };
+export type CreateCommentMutation = { createComment: { id: string, taskId: string, authorId: string, authorName: string, body: string, agent: string | null, createdAt: string, updatedAt: string } };
 
 export type UpdateCommentMutationVariables = Exact<{
   workspaceId: string;
@@ -1891,7 +1902,7 @@ export type UpdateCommentMutationVariables = Exact<{
 }>;
 
 
-export type UpdateCommentMutation = { updateComment: { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string } };
+export type UpdateCommentMutation = { updateComment: { id: string, taskId: string, authorId: string, authorName: string, body: string, agent: string | null, createdAt: string, updatedAt: string } };
 
 export type DeleteCommentMutationVariables = Exact<{
   workspaceId: string;
@@ -2052,7 +2063,7 @@ export type TaskFieldsFragment = { id: string, number: number, listId: string, s
 
 export type CustomFieldFieldsFragment = { id: string, spaceId: string | null, entity: CustomFieldEntity, name: string, type: CustomFieldType, required: boolean, position: number, options: Array<{ id: string, label: string, color: string | null }> };
 
-export type CommentFieldsFragment = { id: string, taskId: string, authorId: string, authorName: string, body: string, createdAt: string, updatedAt: string };
+export type CommentFieldsFragment = { id: string, taskId: string, authorId: string, authorName: string, body: string, agent: string | null, createdAt: string, updatedAt: string };
 
 export type SprintFieldsFragment = { id: string, spaceId: string, name: string, goal: string, status: SprintStatus, startDate: string, endDate: string, completedAt: string | null, totalTasks: number, doneTasks: number, committedTasks: number | null, totalPoints: number, donePoints: number, committedPoints: number | null, startedAt: string | null };
 
@@ -3554,7 +3565,7 @@ export type TaskActivityQueryVariables = Exact<{
 }>;
 
 
-export type TaskActivityQuery = { taskActivity: Array<{ id: string, taskId: string, actorId: string | null, actorName: string | null, kind: string, field: string | null, from: string | null, to: string | null, createdAt: string }> };
+export type TaskActivityQuery = { taskActivity: Array<{ id: string, taskId: string, actorId: string | null, actorName: string | null, agent: string | null, kind: string, field: string | null, from: string | null, to: string | null, createdAt: string }> };
 
 export type TaskWatchersQueryVariables = Exact<{
   workspaceId: string;
@@ -4250,6 +4261,7 @@ export const CommentFieldsFragmentDoc = new TypedDocumentString(`
   authorId
   authorName
   body
+  agent
   createdAt
   updatedAt
 }
@@ -5214,6 +5226,32 @@ export const RevokeApiTokenDocument = new TypedDocumentString(`
   revokeApiToken(workspaceId: $workspaceId, tokenId: $tokenId)
 }
     `) as unknown as TypedDocumentString<RevokeApiTokenMutation, RevokeApiTokenMutationVariables>;
+export const CreateApiTokenDocument = new TypedDocumentString(`
+    mutation CreateApiToken($workspaceId: ID!, $name: String!, $client: String!, $scopes: [String!]!, $days: Int) {
+  createApiToken(
+    workspaceId: $workspaceId
+    name: $name
+    client: $client
+    scopes: $scopes
+    days: $days
+  ) {
+    token
+    apiToken {
+      ...ApiTokenFields
+    }
+  }
+}
+    fragment ApiTokenFields on ApiToken {
+  id
+  name
+  client
+  scopes
+  prefix
+  pending
+  createdAt
+  expiresAt
+  lastUsedAt
+}`) as unknown as TypedDocumentString<CreateApiTokenMutation, CreateApiTokenMutationVariables>;
 export const TaskAttachmentsDocument = new TypedDocumentString(`
     query TaskAttachments($workspaceId: ID!, $taskId: ID!) {
   taskAttachments(workspaceId: $workspaceId, taskId: $taskId) {
@@ -6758,6 +6796,7 @@ export const CommentsDocument = new TypedDocumentString(`
   authorId
   authorName
   body
+  agent
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<CommentsQuery, CommentsQueryVariables>;
@@ -6773,6 +6812,7 @@ export const CreateCommentDocument = new TypedDocumentString(`
   authorId
   authorName
   body
+  agent
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<CreateCommentMutation, CreateCommentMutationVariables>;
@@ -6788,6 +6828,7 @@ export const UpdateCommentDocument = new TypedDocumentString(`
   authorId
   authorName
   body
+  agent
   createdAt
   updatedAt
 }`) as unknown as TypedDocumentString<UpdateCommentMutation, UpdateCommentMutationVariables>;
@@ -10859,6 +10900,7 @@ export const TaskActivityDocument = new TypedDocumentString(`
     taskId
     actorId
     actorName
+    agent
     kind
     field
     from

@@ -1,6 +1,7 @@
 import { MessageSquareIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
 import { COMMENT_BODY_MAX, type Permission } from '@taskflow/shared-types';
+import { AgentBadge } from '@/components/common/agent-badge';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/core/auth/use-current-user';
@@ -56,6 +57,7 @@ export function CommentThread({ workspaceId, taskId, spaceId, heading = true }: 
               <div className="flex items-center gap-2 text-xs">
                 <UserAvatar name={comment.authorName} className="size-[22px] text-[9px]" />
                 <span className="text-sm font-semibold">{comment.authorName}</span>
+                <AgentBadge agent={comment.agent} />
                 <span className="text-muted-foreground">{formatLongDate(comment.createdAt)}</span>
                 <span className="flex-1" />
                 {comment.authorId === me?.id || can('task.delete') ? (

@@ -1,12 +1,14 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import type { ApiTokenClient } from '@taskflow/shared-types';
+import { DomainError } from '../../../../core/domain/domain-error.js';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentAccess } from '../../../../core/access/current-access.decorator.js';
 import { RequirePermissions } from '../../../../core/access/require-permissions.decorator.js';
 import { UuidArg, WorkspaceIdArg } from '../../../../core/graphql/args.js';
 import { CurrentActor } from '../../../../core/http/decorators/current-actor.decorator.js';
 import type { Actor, WorkspaceAccess } from '../../../../core/http/types/authenticated-request.js';
-import { ApiTokensService } from '../../application/api-tokens.service.js';
-import { ApiTokenGql } from './api-tokens.types.js';
+import { ApiTokensService, toResponse } from '../../application/api-tokens.service.js';
+import { ApiTokenGql, CreatedApiTokenGql } from './api-tokens.types.js';
 
 const PER_MINUTE = (limit: number) => ({ default: { limit, ttl: 60_000 } });
 
@@ -39,5 +41,22 @@ export class ApiTokensResolver {
   @Throttle(PER_MINUTE(30))
   revokeApiToken(@WorkspaceIdArg() _workspaceId: string, @UuidArg('tokenId') tokenId: string, @CurrentActor() actor: Actor, @CurrentAccess() access: WorkspaceAccess): Promise<boolean> {
     return this.service.revoke(actor, access, tokenId);
+  }
+
+  @Mutation(() => CreatedApiTokenGql, { description: 'A personal access token for an AI assistant (MCP) or a script, shown once' })
+  @RequirePermissions()
+  @Throttle(PER_MINUTE(10))
+  async createApiToken(
+    @WorkspaceIdArg() _workspaceId: string,
+    @Args('name') name: string,
+    @Args('client') client: string,
+    @Args('scopes', { type: () => [String] }) scopes: string[],
+    @Args('days', { type: () => Int, nullable: true }) days: number | null,
+    @CurrentActor() actor: Actor,
+    @CurrentAccess() access: WorkspaceAccess,
+  ): Promise<CreatedApiTokenGql> {
+    if (client !== 'mcp' && client !== 'script') throw DomainError.invalid('Unknown client');
+    const issued = await this.service.createDirect(actor, access, { name, client: client as ApiTokenClient, scopes, days });
+    return { token: issued.token, apiToken: toResponse(issued.record) };
   }
 }

@@ -2,7 +2,7 @@ import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { chromium, expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { WEB_URL } from './support/stack';
+import { clientIpHeaders, WEB_URL } from './support/stack';
 
 /**
  * E6.3 browser extension, loaded for real into Chromium: connect it to TaskFlow (PKCE approval in
@@ -37,6 +37,7 @@ test.beforeAll(async () => {
     channel: process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE'] ? undefined : 'chromium',
     executablePath: process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE'] || undefined,
     headless: true,
+    extraHTTPHeaders: clientIpHeaders(),
     viewport: { width: 1280, height: 800 },
     args: [`--disable-extensions-except=${dir}`, `--load-extension=${dir}`],
   });

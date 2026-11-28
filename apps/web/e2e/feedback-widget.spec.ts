@@ -1,6 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
-import { WEB_URL } from './support/stack';
+import { clientIpHeaders, WEB_URL } from './support/stack';
 
 /**
  * E6.3 public feedback, end to end in a browser:
@@ -29,7 +29,7 @@ let key = '';
 let trackingPath = '';
 
 async function signedOut(browser: Browser): Promise<Page> {
-  const fresh = await browser.newContext({ viewport: { width: 1100, height: 850 } });
+  const fresh = await browser.newContext({ extraHTTPHeaders: clientIpHeaders(), viewport: { width: 1100, height: 850 } });
   return fresh.newPage();
 }
 
@@ -41,7 +41,7 @@ const graphql = async <T,>(query: string, variables: object): Promise<T> => {
 };
 
 test.beforeAll(async ({ browser }) => {
-  context = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+  context = await browser.newContext({ extraHTTPHeaders: clientIpHeaders(), viewport: { width: 1280, height: 860 } });
   page = await context.newPage();
 });
 

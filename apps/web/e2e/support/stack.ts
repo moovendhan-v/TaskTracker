@@ -58,7 +58,9 @@ export function apiEnv(): NodeJS.ProcessEnv {
     // The browser talks to the API through the Vite proxy, so the web origin is the API's origin too.
     BETTER_AUTH_URL: WEB_URL,
     CORS_ORIGINS: WEB_URL,
-    TRUST_PROXY: '0',
+    // Each spec's browser sends its own X-Forwarded-For (see clientIpHeaders), so per-IP limits such as
+    // three sign-ups a minute apply per spec, as they would per person.
+    TRUST_PROXY: '1',
     // A placeholder GitHub OAuth app, so "Continue with GitHub" shows; the tests stub github.com.
     GITHUB_CLIENT_ID: 'e2e-github-client',
     GITHUB_CLIENT_SECRET: 'e2e-github-placeholder',
@@ -71,4 +73,10 @@ export function apiEnv(): NodeJS.ProcessEnv {
     STORAGE_DRIVER: 'local',
     STORAGE_LOCAL_DIR: join(tmpdir(), 'taskflow-web-e2e-uploads'),
   };
+}
+
+/** A client address of its own for one spec's browser, so per-IP rate limits don't add up across specs. */
+export function clientIpHeaders(): Record<string, string> {
+  const part = () => Math.floor(Math.random() * 250) + 1;
+  return { 'X-Forwarded-For': `10.${part()}.${part()}.${part()}` };
 }

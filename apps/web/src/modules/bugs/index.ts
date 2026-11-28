@@ -5,3 +5,4 @@ export { ExtensionConnectionsCard } from './components/extension-connections-car
 export { FeedbackSettingsCard } from './components/feedback-settings-card';
 export { FeedbackPortalPage } from './pages/feedback-portal.page';
 export { PublicBugPage } from './pages/public-bug.page';
+export { AiAssistantsCard } from './components/ai-assistants-card';

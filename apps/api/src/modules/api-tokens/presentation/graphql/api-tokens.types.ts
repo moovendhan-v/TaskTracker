@@ -13,3 +13,9 @@ export class ApiTokenGql implements ApiTokenResponse {
   @Field() expiresAt: string;
   @Field(() => String, { nullable: true }) lastUsedAt: string | null;
 }
+
+@ObjectType('CreatedApiToken')
+export class CreatedApiTokenGql {
+  @Field({ description: 'Shown once: only a hash is kept' }) token: string;
+  @Field(() => ApiTokenGql) apiToken: ApiTokenGql;
+}

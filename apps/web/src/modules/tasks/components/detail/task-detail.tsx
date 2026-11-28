@@ -1,3 +1,4 @@
+import { AgentBadge } from '@/components/common/agent-badge';
 import { AiSummaryButton } from '@/modules/ai';
 import {
   CheckIcon,
@@ -644,14 +645,14 @@ function ago(iso: string): string {
   return relative.format(-Math.round(minutes / 1440), 'day');
 }
 
-function History({ activity }: { activity: readonly { id: string; actorName: string | null; field: string | null; from: string | null; to: string | null; kind: string; createdAt: string }[] }) {
+function History({ activity }: { activity: readonly { id: string; actorName: string | null; agent?: string | null; field: string | null; from: string | null; to: string | null; kind: string; createdAt: string }[] }) {
   return (
     <ol className="grid gap-2.5 text-sm">
       {activity.map((item) => (
         <li key={item.id} className="flex gap-2.5">
           <UserAvatar name={item.actorName ?? '?'} className="mt-0.5 size-5 shrink-0 text-[9px]" />
           <span className="text-muted-foreground">
-            <span className="font-medium text-foreground">{item.actorName ?? 'Someone'}</span>{' '}
+            <span className="font-medium text-foreground">{item.actorName ?? 'Someone'}</span> <AgentBadge agent={item.agent} />{' '}
             {item.field ? (
               <>
                 changed {item.field}

@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { WEB_URL } from './support/stack';
+import { clientIpHeaders, WEB_URL } from './support/stack';
 
 /**
  * E6.4 QA in the browser: write test cases in a suite, plan a release, run the cases step by
@@ -27,7 +27,7 @@ const graphql = async <T,>(query: string, variables: object): Promise<T> => {
 };
 
 test.beforeAll(async ({ browser }) => {
-  context = await browser.newContext({ viewport: { width: 1360, height: 900 } });
+  context = await browser.newContext({ extraHTTPHeaders: clientIpHeaders(), viewport: { width: 1360, height: 900 } });
   page = await context.newPage();
 });
 

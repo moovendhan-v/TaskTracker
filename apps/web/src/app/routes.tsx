@@ -23,7 +23,7 @@ import { tasksApi } from '@/modules/tasks';
 import { MembersPage } from '@/modules/members';
 import { isProjectView, MyTasksPage, ProjectPage } from '@/modules/projects';
 import { AccessPage, RolesPage } from '@/modules/roles';
-import { ConnectExtensionPage, ExtensionConnectionsCard, FeedbackPortalPage, PublicBugPage } from '@/modules/bugs';
+import { AiAssistantsCard, ConnectExtensionPage, ExtensionConnectionsCard, FeedbackPortalPage, PublicBugPage } from '@/modules/bugs';
 import { SprintBoardPage } from '@/modules/sprints';
 import { DailyLogPage, TimesheetsPage } from '@/modules/time';
 import { preferencesQuery as preferences } from '@/core/preferences/use-preferences';
@@ -399,6 +399,7 @@ const securityRoute = createRoute({
     return (
       <SecurityPage>
         <ExtensionConnectionsCard workspaceId={workspaceRoute.useParams().workspaceId} />
+        <AiAssistantsCard workspaceId={workspaceRoute.useParams().workspaceId} />
       </SecurityPage>
     );
   },

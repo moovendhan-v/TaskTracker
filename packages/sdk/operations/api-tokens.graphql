@@ -25,3 +25,12 @@ mutation ApproveExtensionConnection($workspaceId: ID!, $challenge: String!, $nam
 mutation RevokeApiToken($workspaceId: ID!, $tokenId: ID!) {
   revokeApiToken(workspaceId: $workspaceId, tokenId: $tokenId)
 }
+
+mutation CreateApiToken($workspaceId: ID!, $name: String!, $client: String!, $scopes: [String!]!, $days: Int) {
+  createApiToken(workspaceId: $workspaceId, name: $name, client: $client, scopes: $scopes, days: $days) {
+    token
+    apiToken {
+      ...ApiTokenFields
+    }
+  }
+}
